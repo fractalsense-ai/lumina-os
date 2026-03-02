@@ -1,0 +1,72 @@
+# calculator-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# This adapter allows the orchestrator to call a basic calculator
+# to verify numerical results in algebra problems.
+# ============================================================
+
+id: adapter/edu/calculator/v1
+version: "1.0.0"
+tool_name: "Basic Algebraic Calculator"
+description: >
+  Evaluates arithmetic and simple algebraic expressions.
+  Used to verify numerical results and check equation balance.
+  The orchestrator may call this to verify a student's
+  claimed numeric answer.
+
+domain_id: domain/edu/algebra-level-1/v1
+
+call_types:
+  - evaluate_expression
+  - check_equation_balance
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [evaluate_expression, check_equation_balance]
+    expression:
+      type: string
+      description: "Arithmetic/algebraic expression to evaluate (for evaluate_expression)"
+      maxLength: 256
+    lhs:
+      type: string
+      description: "Left-hand side expression (for check_equation_balance)"
+      maxLength: 256
+    rhs:
+      type: string
+      description: "Right-hand side expression (for check_equation_balance)"
+      maxLength: 256
+    variable_bindings:
+      type: object
+      description: "Variable name → numeric value substitutions"
+      additionalProperties:
+        type: number
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    result:
+      type: number
+      description: "Numeric result (for evaluate_expression)"
+    balanced:
+      type: boolean
+      description: "Whether LHS == RHS (for check_equation_balance)"
+    error:
+      type: [string, "null"]
+      description: "Error message if evaluation failed (e.g., division by zero)"
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_student_consent: false
+  max_calls_per_session: 50
+  logged_in_ctl: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: request_verification_retry

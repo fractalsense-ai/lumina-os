@@ -1,0 +1,162 @@
+{
+  "id": "domain/edu/algebra-level-1/v1",
+  "version": "0.2.0",
+  "domain_authority": {
+    "name": "Lead Algebra Teacher",
+    "role": "Teacher",
+    "pseudonymous_id": "da_algebra_lead_001"
+  },
+  "meta_authority_id": "domain/edu/curriculum/v1",
+  "description": "Algebra Level 1 for middle school students (grades 6-8). Covers single-variable linear equations, equivalence preservation, and solution verification. Students work toward the 'Linear Equations — Foundations' mastery artifact.\n",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "equivalence_preserved",
+      "description": "Both sides of an equation must remain algebraically equal after every transformation step. A step that breaks equivalence is invalid.\n",
+      "severity": "critical",
+      "check": "verify_algebraic_equivalence(step_before, step_after)",
+      "standing_order_on_violation": "request_more_steps"
+    },
+    {
+      "id": "no_illegal_operations",
+      "description": "The student may not divide by zero, take a square root of a negative (in real-number context), or apply undefined operations.\n",
+      "severity": "critical",
+      "check": "illegal_ops_summary.illegal_operations == []",
+      "standing_order_on_violation": "request_more_steps"
+    },
+    {
+      "id": "solution_verifies",
+      "description": "The proposed solution value must satisfy the original equation when substituted back in.\n",
+      "severity": "critical",
+      "check": "verification_summary.substitution_check == true",
+      "standing_order_on_violation": "request_verification_retry"
+    },
+    {
+      "id": "standard_method_preferred",
+      "description": "Non-standard solution methods are acceptable but should be flagged for Domain Authority review. The student should be aware that standard methods are preferred for this course.\n",
+      "severity": "warning",
+      "check": "method_summary.method_recognized == true",
+      "standing_order_on_violation": "request_method_justification",
+      "signal_type": "NOVEL_PATTERN"
+    },
+    {
+      "id": "show_work_minimum",
+      "description": "Solutions must show at least three distinct transformation steps. A single-step jump from problem to answer is not acceptable.\n",
+      "severity": "warning",
+      "check": "step_count_summary.step_count >= 3",
+      "standing_order_on_violation": "request_more_steps"
+    },
+    {
+      "id": "zpd_drift_minor",
+      "description": "The student's challenge level has drifted outside the ZPD band in >= 30% of the recent window turns.\n",
+      "severity": "warning",
+      "check": "zpd_summary.outside_pct >= 0.3",
+      "standing_order_on_violation": "zpd_scaffold"
+    },
+    {
+      "id": "zpd_drift_major",
+      "description": "The student's challenge level has drifted outside the ZPD band in >= 50% of the recent window turns, or for 3+ consecutive turns.\n",
+      "severity": "warning",
+      "check": "zpd_summary.outside_pct >= 0.5 or zpd_summary.consecutive_outside >= 3",
+      "standing_order_on_violation": "zpd_intervene_or_escalate"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "request_more_steps",
+      "action": "request_more_steps",
+      "trigger_condition": "equivalence_preserved or no_illegal_operations or show_work_minimum",
+      "max_attempts": 3,
+      "escalation_on_exhaust": true,
+      "description": "Ask the student to show their work step by step, identifying each transformation they applied.\n"
+    },
+    {
+      "id": "request_verification_retry",
+      "action": "request_verification_retry",
+      "trigger_condition": "solution_verifies",
+      "max_attempts": 2,
+      "escalation_on_exhaust": true,
+      "description": "Ask the student to substitute their answer back into the original equation and check that both sides are equal.\n"
+    },
+    {
+      "id": "request_method_justification",
+      "action": "request_method_justification",
+      "trigger_condition": "standard_method_preferred",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Acknowledge the non-standard approach and ask the student to explain their reasoning. Flag for Domain Authority review.\n"
+    },
+    {
+      "id": "zpd_scaffold",
+      "action": "zpd_scaffold",
+      "trigger_condition": "zpd_drift_minor",
+      "max_attempts": 3,
+      "escalation_on_exhaust": false,
+      "description": "Reduce challenge level on the next task. Offer an optional hint. Provide additional scaffolding in the explanation.\n"
+    },
+    {
+      "id": "zpd_intervene_or_escalate",
+      "action": "zpd_intervene_or_escalate",
+      "trigger_condition": "zpd_drift_major or frustration_flag",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "Pause the current task. Issue one probe to check understanding. If the probe response does not improve state, escalate to teacher.\n"
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_invariant_unresolvable",
+      "condition": "A critical invariant (equivalence_preserved, no_illegal_operations, or solution_verifies) was violated and the standing order has been exhausted (3 attempts).\n",
+      "target_role": "teacher",
+      "sla_minutes": 30
+    },
+    {
+      "id": "major_zpd_drift_unresolved",
+      "condition": "zpd_intervene_or_escalate standing order was applied and the probe response did not reduce outside_pct below the minor threshold.\n",
+      "target_role": "teacher",
+      "sla_minutes": 30
+    },
+    {
+      "id": "novel_pattern_review",
+      "condition": "standard_method_preferred invariant fired and the method is unrecognized after justification request.\n",
+      "target_role": "teacher",
+      "sla_minutes": 120
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "linear_equations_basic",
+      "name": "Linear Equations — Foundations",
+      "description": "Demonstrates ability to solve single-variable linear equations with equivalence preservation, showing all required steps, and verifying the solution.\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
+      "mastery_threshold": 0.8,
+      "skills_required": [
+        "solve_one_variable",
+        "check_equivalence",
+        "show_work_steps",
+        "verify_solution"
+      ]
+    }
+  ],
+  "zpd_config": {
+    "min_challenge": 0.3,
+    "max_challenge": 0.7,
+    "drift_window_turns": 10,
+    "minor_drift_threshold": 0.3,
+    "major_drift_threshold": 0.5,
+    "persistence_required": 3
+  },
+  "evidence_summary_types": [
+    "step_diff_summary",
+    "illegal_ops_summary",
+    "verification_summary",
+    "method_summary",
+    "step_count_summary",
+    "affect_summary",
+    "zpd_drift_summary"
+  ],
+  "tool_adapters": [
+    "adapter/edu/calculator/v1",
+    "adapter/edu/substitution-checker/v1"
+  ]
+}

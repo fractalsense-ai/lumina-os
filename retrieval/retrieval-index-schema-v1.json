@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/retrieval/retrieval-index-schema-v1.json",
+  "title": "Retrieval Index Schema V1",
+  "description": "Schema for entries in the Project Lumina retrieval index. Each entry represents a retrievable artifact with its metadata, scope, and hash.",
+  "type": "object",
+  "required": [
+    "index_entry_id",
+    "artifact_type",
+    "artifact_id",
+    "artifact_version",
+    "content_hash",
+    "retrieval_scope",
+    "indexed_utc"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "index_entry_id": {
+      "type": "string",
+      "description": "Unique identifier for this index entry"
+    },
+    "artifact_type": {
+      "type": "string",
+      "enum": [
+        "domain_pack",
+        "tool_adapter",
+        "mastery_artifact",
+        "boss_challenge_bundle",
+        "student_profile",
+        "ctl_structured_fields",
+        "session_summary",
+        "evaluation_bundle",
+        "governance_policy"
+      ],
+      "description": "Type of retrievable artifact"
+    },
+    "artifact_id": {
+      "type": "string",
+      "description": "Stable identifier for the artifact (e.g., domain pack ID, artifact ID)"
+    },
+    "artifact_version": {
+      "type": "string",
+      "description": "Semantic version of the artifact"
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hex digest of the canonical artifact content. Must match the CTL CommitmentRecord hash."
+    },
+    "ctl_commitment_record_id": {
+      "type": ["string", "null"],
+      "description": "ID of the CTL CommitmentRecord that committed this artifact's hash. Null for unverified drafts."
+    },
+    "retrieval_scope": {
+      "type": "object",
+      "required": ["minimum_role"],
+      "additionalProperties": false,
+      "properties": {
+        "minimum_role": {
+          "type": "string",
+          "enum": ["orchestrator", "student", "domain_authority", "meta_authority", "administration"],
+          "description": "Minimum role required to retrieve this artifact"
+        },
+        "domain_restriction": {
+          "type": ["string", "null"],
+          "description": "If set, only sessions/actors in this domain may retrieve this artifact"
+        },
+        "session_restriction": {
+          "type": ["string", "null"],
+          "description": "If set, only the named session may retrieve this artifact"
+        },
+        "student_restriction": {
+          "type": ["string", "null"],
+          "description": "If set, only the named pseudonymous student may retrieve this artifact"
+        }
+      }
+    },
+    "semantic_embedding_available": {
+      "type": "boolean",
+      "description": "Whether a semantic embedding is available for fuzzy retrieval of this artifact"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short human-readable summary of the artifact's content (for reranking)"
+    },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Keywords for structured filtering"
+    },
+    "indexed_utc": {
+      "type": "string",
+      "description": "ISO-8601 timestamp when this entry was indexed"
+    },
+    "deprecated": {
+      "type": "boolean",
+      "description": "If true, this artifact is superseded and should not be used in new sessions"
+    },
+    "superseded_by": {
+      "type": ["string", "null"],
+      "description": "Index entry ID of the artifact that supersedes this one"
+    }
+  }
+}

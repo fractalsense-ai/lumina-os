@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/ledger/trace-event-schema.json",
+  "title": "TraceEvent Schema",
+  "description": "A CTL record representing a single decision or observation during an active Project Lumina session.",
+  "type": "object",
+  "required": [
+    "record_type",
+    "record_id",
+    "prev_record_hash",
+    "timestamp_utc",
+    "session_id",
+    "actor_id",
+    "event_type",
+    "decision"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_type": {
+      "type": "string",
+      "const": "TraceEvent",
+      "description": "Discriminator field. Must be 'TraceEvent'."
+    },
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this record (UUID v4)."
+    },
+    "prev_record_hash": {
+      "type": "string",
+      "description": "SHA-256 hex digest of the previous record's canonical JSON, or 'genesis' for the first record.",
+      "pattern": "^([a-f0-9]{64}|genesis)$"
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp when this event occurred."
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the session this event belongs to."
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Pseudonymous identifier of the actor (student, orchestrator, domain authority)."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "invariant_check",
+        "standing_order_applied",
+        "zpd_drift_detected",
+        "probe_issued",
+        "state_update",
+        "tool_call",
+        "outcome_recorded",
+        "audit_requested",
+        "discrepancy_detected",
+        "retrieval_hash_mismatch",
+        "chain_integrity_failure",
+        "other"
+      ],
+      "description": "Type of event."
+    },
+    "invariant_id": {
+      "type": ["string", "null"],
+      "description": "ID of the invariant checked (for invariant_check events)."
+    },
+    "invariant_result": {
+      "type": ["string", "null"],
+      "enum": ["pass", "fail", null],
+      "description": "Result of the invariant check."
+    },
+    "standing_order_id": {
+      "type": ["string", "null"],
+      "description": "ID of the standing order applied (for standing_order_applied events)."
+    },
+    "standing_order_attempt": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Which attempt number this is for the standing order (1-indexed)."
+    },
+    "decision": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Structured description of the orchestrator's decision. No transcript content."
+    },
+    "decision_tier": {
+      "type": ["string", "null"],
+      "enum": ["ok", "minor", "major", null],
+      "description": "ZPD decision tier (for zpd_drift_detected events)."
+    },
+    "evidence_summary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "correctness": {
+          "type": ["string", "null"],
+          "enum": ["correct", "incorrect", "partial", null]
+        },
+        "hint_used": { "type": ["boolean", "null"] },
+        "response_latency_sec": { "type": ["number", "null"] },
+        "frustration_marker_count": { "type": ["integer", "null"], "minimum": 0 },
+        "repeated_error": { "type": ["boolean", "null"] },
+        "off_task_ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      },
+      "description": "Structured evidence summary for this turn. No raw text or transcript content."
+    },
+    "state_snapshot_hash": {
+      "type": ["string", "null"],
+      "pattern": "^([a-f0-9]{64}|null)?$",
+      "description": "SHA-256 hex digest of the compressed state after this event."
+    },
+    "domain_pack_id": {
+      "type": ["string", "null"],
+      "description": "Domain pack active during this event."
+    },
+    "domain_pack_version": {
+      "type": ["string", "null"],
+      "description": "Version of the domain pack active during this event."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional structured metadata. Must not contain PII or transcript content."
+    }
+  }
+}

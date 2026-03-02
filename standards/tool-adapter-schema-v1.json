@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/tool-adapter-schema-v1.json",
+  "title": "Tool Adapter Schema V1",
+  "description": "JSON Schema for Project Lumina tool adapter definitions. Tool adapters define how the orchestrator may call external tools, what inputs are acceptable, and what outputs mean.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "tool_name",
+    "description",
+    "domain_id",
+    "input_schema",
+    "output_schema",
+    "authorization"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique adapter identifier (format: adapter/{domain-short}/{tool-name}/v{major})"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semantic version of this adapter"
+    },
+    "tool_name": {
+      "type": "string",
+      "description": "Human-readable name of the external tool"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what this tool does and when the orchestrator may use it"
+    },
+    "domain_id": {
+      "type": "string",
+      "description": "ID of the domain pack that authorized this tool"
+    },
+    "call_types": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of call type identifiers this adapter supports"
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema fragment describing acceptable inputs to this tool"
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema fragment describing the tool output structure"
+    },
+    "authorization": {
+      "type": "object",
+      "required": ["who_may_call", "requires_student_consent"],
+      "additionalProperties": false,
+      "properties": {
+        "who_may_call": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["orchestrator", "student", "domain_authority"]
+          },
+          "description": "Roles authorized to invoke this tool"
+        },
+        "requires_student_consent": {
+          "type": "boolean",
+          "description": "Whether a specific student consent is required before calling this tool"
+        },
+        "max_calls_per_session": {
+          "type": ["integer", "null"],
+          "description": "Maximum invocations per session, or null for unlimited"
+        },
+        "logged_in_ctl": {
+          "type": "boolean",
+          "description": "Whether calls to this tool are recorded in the CTL as ToolCallRecords"
+        }
+      }
+    },
+    "error_handling": {
+      "type": "object",
+      "properties": {
+        "on_failure": {
+          "type": "string",
+          "enum": ["escalate", "fallback_to_standing_order", "notify_student", "ignore"],
+          "description": "What the orchestrator does when the tool call fails"
+        },
+        "fallback_standing_order_id": {
+          "type": ["string", "null"],
+          "description": "Standing order to invoke on tool failure (if on_failure is fallback_to_standing_order)"
+        }
+      }
+    }
+  }
+}

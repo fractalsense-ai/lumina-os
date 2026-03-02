@@ -1,0 +1,84 @@
+# substitution-checker-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# This adapter verifies that a student's solution satisfies
+# the original equation by substitution.
+# ============================================================
+
+id: adapter/edu/substitution-checker/v1
+version: "1.0.0"
+tool_name: "Solution Substitution Checker"
+description: >
+  Verifies that a proposed solution value satisfies the original
+  equation when substituted in for the variable. Produces the
+  verification_summary evidence type used by the solution_verifies
+  invariant check.
+
+domain_id: domain/edu/algebra-level-1/v1
+
+call_types:
+  - verify_solution
+
+input_schema:
+  type: object
+  required: [call_type, original_equation, variable, proposed_value]
+  properties:
+    call_type:
+      type: string
+      enum: [verify_solution]
+    original_equation:
+      type: string
+      description: "The original equation as presented to the student (e.g., '2x + 3 = 11')"
+      maxLength: 256
+    variable:
+      type: string
+      description: "The variable being solved for (e.g., 'x')"
+      maxLength: 8
+    proposed_value:
+      type: number
+      description: "The student's proposed solution value"
+    steps_shown:
+      type: integer
+      description: "Number of steps the student showed (for step_count_summary)"
+      minimum: 0
+
+output_schema:
+  type: object
+  required: [call_type, substitution_check, verification_summary, step_count_summary]
+  properties:
+    call_type:
+      type: string
+    substitution_check:
+      type: boolean
+      description: "True if substituting proposed_value satisfies the equation"
+    lhs_value:
+      type: number
+      description: "Evaluated LHS after substitution"
+    rhs_value:
+      type: number
+      description: "Evaluated RHS after substitution"
+    verification_summary:
+      type: object
+      properties:
+        substitution_check: { type: boolean }
+        lhs_value: { type: number }
+        rhs_value: { type: number }
+        error: { type: [string, "null"] }
+    step_count_summary:
+      type: object
+      properties:
+        step_count: { type: integer }
+        meets_minimum: { type: boolean }
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_student_consent: false
+  max_calls_per_session: 100
+  logged_in_ctl: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: request_verification_retry

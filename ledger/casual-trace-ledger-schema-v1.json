@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/ledger/casual-trace-ledger-schema-v1.json",
+  "title": "Casual Trace Ledger Schema V1",
+  "description": "Top-level schema for a Project Lumina CTL record. Every record written to the ledger must be one of the defined record types.",
+  "oneOf": [
+    { "$ref": "commitment-record-schema.json" },
+    { "$ref": "trace-event-schema.json" },
+    { "$ref": "escalation-record-schema.json" },
+    {
+      "type": "object",
+      "required": ["record_type", "record_id", "prev_record_hash", "timestamp_utc"],
+      "properties": {
+        "record_type": { "type": "string", "const": "ToolCallRecord" },
+        "record_id": { "type": "string" },
+        "prev_record_hash": { "type": "string" },
+        "timestamp_utc": { "type": "string" },
+        "session_id": { "type": "string" },
+        "tool_adapter_id": { "type": "string" },
+        "tool_adapter_version": { "type": "string" },
+        "call_type": { "type": "string" },
+        "input_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "output_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "success": { "type": "boolean" },
+        "latency_ms": { "type": "integer" },
+        "metadata": { "type": "object" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["record_type", "record_id", "prev_record_hash", "timestamp_utc"],
+      "properties": {
+        "record_type": { "type": "string", "const": "OutcomeRecord" },
+        "record_id": { "type": "string" },
+        "prev_record_hash": { "type": "string" },
+        "timestamp_utc": { "type": "string" },
+        "session_id": { "type": "string" },
+        "student_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "task_version": { "type": "string" },
+        "outcome": {
+          "type": "string",
+          "enum": ["pass", "partial", "fail", "abandoned"]
+        },
+        "mastery_delta": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "artifact_earned": { "type": ["string", "null"] },
+        "evidence_summary_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "metadata": { "type": "object" }
+      }
+    }
+  ]
+}

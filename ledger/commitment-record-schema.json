@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/ledger/commitment-record-schema.json",
+  "title": "CommitmentRecord Schema",
+  "description": "A CTL record representing a deliberate commitment by a Domain Authority, Meta Authority, or the orchestrator acting under explicit authorization.",
+  "type": "object",
+  "required": [
+    "record_type",
+    "record_id",
+    "prev_record_hash",
+    "timestamp_utc",
+    "actor_id",
+    "actor_role",
+    "commitment_type",
+    "subject_id",
+    "summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_type": {
+      "type": "string",
+      "const": "CommitmentRecord",
+      "description": "Discriminator field. Must be 'CommitmentRecord'."
+    },
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this record (UUID v4)."
+    },
+    "prev_record_hash": {
+      "type": "string",
+      "description": "SHA-256 hex digest of the previous record's canonical JSON, or 'genesis' for the first record.",
+      "pattern": "^([a-f0-9]{64}|genesis)$"
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp when this record was created."
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Pseudonymous identifier of the actor making this commitment."
+    },
+    "actor_role": {
+      "type": "string",
+      "enum": ["domain_authority", "meta_authority", "administration", "orchestrator", "system"],
+      "description": "Role of the actor at the time of commitment."
+    },
+    "commitment_type": {
+      "type": "string",
+      "enum": [
+        "domain_pack_activation",
+        "domain_pack_rollback",
+        "policy_change",
+        "escalation_resolution",
+        "session_open",
+        "session_close",
+        "profile_correction",
+        "onboarding",
+        "audit_policy",
+        "other"
+      ],
+      "description": "The type of commitment being made."
+    },
+    "subject_id": {
+      "type": "string",
+      "description": "UUID or identifier of the subject (domain pack ID, session ID, student pseudonymous ID, etc.)."
+    },
+    "subject_version": {
+      "type": ["string", "null"],
+      "description": "Semantic version of the subject (if applicable)."
+    },
+    "subject_hash": {
+      "type": ["string", "null"],
+      "pattern": "^([a-f0-9]{64}|null)?$",
+      "description": "SHA-256 hex digest of the subject content at the time of commitment (e.g., domain pack JSON hash)."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "Human-readable one-line description of what is being committed."
+    },
+    "close_type": {
+      "type": ["string", "null"],
+      "enum": ["normal", "forced", "escalation", null],
+      "description": "For session_close commitment types: how the session ended."
+    },
+    "close_reason": {
+      "type": ["string", "null"],
+      "description": "For forced session closes: brief structured reason."
+    },
+    "references": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional list of related record IDs (e.g., the prior domain pack commitment being superseded)."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional structured metadata. Must not contain PII or transcript content."
+    }
+  }
+}

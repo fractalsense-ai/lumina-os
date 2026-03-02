@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+
+# Test ledger files
+/tmp/
+
+# Editor and OS files
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/

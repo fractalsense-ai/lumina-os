@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/domain-physics-schema-v1.json",
+  "title": "Domain Physics Schema V1",
+  "description": "JSON Schema for Project Lumina Domain Physics documents (derived from YAML source).",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "domain_authority",
+    "meta_authority_id",
+    "invariants",
+    "standing_orders",
+    "escalation_triggers",
+    "artifacts",
+    "zpd_config"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^domain/[a-z0-9_-]+/[a-z0-9_-]+/v[0-9]+$",
+      "description": "Globally unique domain identifier. Format: domain/{org}/{name}/v{major}"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semantic version string (major.minor or major.minor.patch)"
+    },
+    "domain_authority": {
+      "type": "object",
+      "required": ["name", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "pseudonymous_id": { "type": "string" }
+      },
+      "description": "The human Domain Authority who authored this domain pack"
+    },
+    "meta_authority_id": {
+      "type": "string",
+      "description": "ID of the domain pack one level above, or 'root' for top-level packs"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this domain"
+    },
+    "lumina_core_version": {
+      "type": "string",
+      "description": "Version of lumina-core-v1 this pack targets"
+    },
+    "invariants": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/invariant" },
+      "description": "List of domain invariants. Must include at least one critical invariant."
+    },
+    "standing_orders": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/standing_order" },
+      "description": "List of bounded automated responses the orchestrator may take"
+    },
+    "escalation_triggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/escalation_trigger" },
+      "description": "Conditions that cause the system to escalate to the Meta Authority"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" },
+      "description": "Mastery artifacts that can be earned in this domain"
+    },
+    "zpd_config": {
+      "$ref": "#/$defs/zpd_config",
+      "description": "Zone of Proximal Development configuration"
+    },
+    "evidence_summary_types": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of evidence summary types produced in this domain"
+    },
+    "tool_adapters": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of tool adapter IDs available in this domain"
+    }
+  },
+  "$defs": {
+    "invariant": {
+      "type": "object",
+      "required": ["id", "description", "severity", "check"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this invariant within the domain"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the invariant"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "warning"],
+          "description": "critical: halts autonomous action; warning: triggers a standing order"
+        },
+        "check": {
+          "type": "string",
+          "description": "Description or reference of how this invariant is checked"
+        },
+        "standing_order_on_violation": {
+          "type": "string",
+          "description": "ID of the standing order to invoke when this invariant is violated"
+        },
+        "signal_type": {
+          "type": "string",
+          "description": "Optional signal type emitted when this invariant fires (e.g., NOVEL_PATTERN)"
+        }
+      }
+    },
+    "standing_order": {
+      "type": "object",
+      "required": ["id", "action", "trigger_condition", "max_attempts", "escalation_on_exhaust"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this standing order"
+        },
+        "action": {
+          "type": "string",
+          "description": "The automated action taken (e.g., zpd_scaffold, request_more_steps)"
+        },
+        "trigger_condition": {
+          "type": "string",
+          "description": "Invariant ID or drift condition that activates this order"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum times this order may be applied before escalation"
+        },
+        "escalation_on_exhaust": {
+          "type": "boolean",
+          "description": "Whether to escalate when max_attempts is reached"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this standing order does"
+        }
+      }
+    },
+    "escalation_trigger": {
+      "type": "object",
+      "required": ["id", "condition", "target_role"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string",
+          "description": "The condition that triggers escalation"
+        },
+        "target_role": {
+          "type": "string",
+          "description": "Role of the Meta Authority receiving this escalation"
+        },
+        "sla_minutes": {
+          "type": "integer",
+          "description": "SLA for acknowledgement in minutes; breach is itself a reportable event"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["id", "name", "unlock_condition"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "unlock_condition": {
+          "type": "string",
+          "description": "Description of mastery conditions required to earn this artifact"
+        },
+        "mastery_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum mastery level required (0..1)"
+        },
+        "skills_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Skill IDs that must meet the mastery threshold"
+        }
+      }
+    },
+    "zpd_config": {
+      "type": "object",
+      "required": ["min_challenge", "max_challenge", "drift_window_turns", "minor_drift_threshold", "major_drift_threshold"],
+      "additionalProperties": false,
+      "properties": {
+        "min_challenge": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Lower bound of the ZPD band (0..1)"
+        },
+        "max_challenge": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Upper bound of the ZPD band (0..1)"
+        },
+        "drift_window_turns": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Rolling window size (in turns) for drift calculation"
+        },
+        "minor_drift_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of window turns outside ZPD that triggers minor drift (0..1)"
+        },
+        "major_drift_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of window turns outside ZPD that triggers major drift (0..1)"
+        },
+        "persistence_required": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Consecutive turns outside ZPD required before drift is flagged"
+        }
+      }
+    }
+  }
+}

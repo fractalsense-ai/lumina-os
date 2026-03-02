@@ -1,0 +1,91 @@
+# Escalation Example Packet
+# ============================================================
+# This is a worked example of a complete escalation packet
+# for a major ZPD drift event in an Algebra Level 1 session.
+# ============================================================
+#
+# Scenario: Student is working on solving two-step equations.
+# Over 10 turns, 6 were outside the ZPD band (above).
+# The zpd_intervene_or_escalate standing order was applied,
+# but the probe did not improve the student's state.
+# The orchestrator now escalates to the teacher.
+#
+# This EscalationRecord would be appended to the CTL
+# and the teacher would receive a notification.
+
+record_type: EscalationRecord
+record_id: "esc-a1b2c3d4-0042-4000-8000-000000000099"
+prev_record_hash: "9f8e7d6c5b4a3928172615049382716050493827160504938271605049382716"
+timestamp_utc: "2026-03-02T10:22:34Z"
+
+# ── Session Context ─────────────────────────────────────────
+session_id: "session-a3f8c2e1-0001-4000-8000-000000000042"
+student_id: "a3f8c2e1b4d7f9a0c5e2b8d1a6f3c7e4"   # pseudonymous
+
+# ── Escalation Origin ───────────────────────────────────────
+escalating_actor_id: "orchestrator"
+target_meta_authority_id: "da_algebra_lead_001"   # Alice's teacher
+
+# ── Trigger ─────────────────────────────────────────────────
+trigger: >
+  Major ZPD drift detected and unresolved after probe.
+  outside_pct=0.60 (6 of 10 turns above upper ZPD bound).
+  zpd_intervene_or_escalate applied (attempt 1/1, max=1).
+  Probe issued at turn 14. Probe response did not reduce
+  outside_pct below minor_drift_threshold (0.3).
+
+trigger_type: zpd_drift_major
+trigger_standing_order_id: zpd_intervene_or_escalate
+trigger_invariant_id: null
+
+# ── Domain Context ──────────────────────────────────────────
+domain_pack_id: "domain/edu/algebra-level-1/v1"
+domain_pack_version: "0.2.0"
+
+# ── Evidence Summary ────────────────────────────────────────
+# (Structured telemetry only — no transcript content)
+evidence_summary:
+  session_turns: 14
+  current_challenge: 0.82    # well above upper ZPD bound of 0.70
+  zpd_band:
+    min_challenge: 0.30
+    max_challenge: 0.70
+  outside_pct: 0.60          # 60% of last 10 turns outside ZPD
+  consecutive_outside: 4     # 4 consecutive turns outside ZPD
+  consecutive_incorrect: 3
+  hint_count_window: 4       # 4 hints in last 10 turns
+  frustration_flag: true     # consecutive_incorrect=3 triggered frustration
+  affect_valence: -0.23      # notably negative valence
+  standing_order_attempts:
+    zpd_scaffold: 3           # zpd_scaffold was applied 3 times earlier
+    zpd_intervene_or_escalate: 1
+
+# ── Decision Trail ──────────────────────────────────────────
+# SHA-256 hashes of TraceEvent record IDs that led here
+decision_trail_hashes:
+  - "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"
+  - "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c"
+  - "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d"
+  - "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e"
+  - "5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f"
+
+# ── Proposed Action ─────────────────────────────────────────
+proposed_action: >
+  Suggested options for teacher review:
+  1. Adjust domain pack ZPD band upward (student may have grown).
+  2. Switch to a simpler task set (two-step equations too hard).
+  3. Schedule a direct teacher session to identify specific gaps.
+  4. Reduce session duration (affect_valence is negative — student
+     may be fatigued or discouraged).
+
+# ── Status ──────────────────────────────────────────────────
+status: pending
+resolution_commitment_id: null
+sla_deadline_utc: "2026-03-02T10:52:34Z"   # 30-minute SLA
+
+# ── Metadata ────────────────────────────────────────────────
+metadata:
+  session_start_utc: "2026-03-02T10:00:00Z"
+  session_duration_minutes: 22
+  probe_issued_at_turn: 14
+  probe_result: "no_improvement"

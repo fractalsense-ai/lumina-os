@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/ledger/escalation-record-schema.json",
+  "title": "EscalationRecord Schema",
+  "description": "A CTL record representing an escalation event — when the orchestrator could not stabilize a session and passed control upward to the Meta Authority.",
+  "type": "object",
+  "required": [
+    "record_type",
+    "record_id",
+    "prev_record_hash",
+    "timestamp_utc",
+    "session_id",
+    "escalating_actor_id",
+    "target_meta_authority_id",
+    "trigger",
+    "evidence_summary",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_type": {
+      "type": "string",
+      "const": "EscalationRecord",
+      "description": "Discriminator field. Must be 'EscalationRecord'."
+    },
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this escalation record."
+    },
+    "prev_record_hash": {
+      "type": "string",
+      "description": "SHA-256 hex digest of the previous record's canonical JSON.",
+      "pattern": "^([a-f0-9]{64}|genesis)$"
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp when the escalation was created."
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the session being escalated."
+    },
+    "student_id": {
+      "type": ["string", "null"],
+      "description": "Pseudonymous student identifier for the session being escalated."
+    },
+    "escalating_actor_id": {
+      "type": "string",
+      "description": "Pseudonymous identifier of the actor creating the escalation (usually the orchestrator)."
+    },
+    "target_meta_authority_id": {
+      "type": "string",
+      "description": "Pseudonymous identifier of the Meta Authority who should receive this escalation."
+    },
+    "trigger": {
+      "type": "string",
+      "description": "Human-readable description of the condition that triggered escalation. No transcript content.",
+      "maxLength": 256
+    },
+    "trigger_type": {
+      "type": ["string", "null"],
+      "enum": [
+        "zpd_drift_major",
+        "standing_order_exhausted",
+        "critical_invariant_violation",
+        "grounding_failure",
+        "consent_violation",
+        "principle_violation",
+        "discrepancy_detected",
+        "other",
+        null
+      ],
+      "description": "Structured trigger type for automated processing."
+    },
+    "trigger_standing_order_id": {
+      "type": ["string", "null"],
+      "description": "ID of the standing order that was exhausted (if trigger_type is standing_order_exhausted)."
+    },
+    "trigger_invariant_id": {
+      "type": ["string", "null"],
+      "description": "ID of the invariant that was violated (if trigger_type is critical_invariant_violation)."
+    },
+    "domain_pack_id": {
+      "type": ["string", "null"],
+      "description": "Domain pack active at the time of escalation."
+    },
+    "domain_pack_version": {
+      "type": ["string", "null"],
+      "description": "Version of the domain pack at the time of escalation."
+    },
+    "evidence_summary": {
+      "type": "object",
+      "description": "Structured evidence summary at the time of escalation. No transcript content.",
+      "additionalProperties": false,
+      "properties": {
+        "session_turns": { "type": "integer", "minimum": 0 },
+        "current_challenge": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "zpd_band": {
+          "type": ["object", "null"],
+          "properties": {
+            "min_challenge": { "type": "number" },
+            "max_challenge": { "type": "number" }
+          }
+        },
+        "outside_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "consecutive_outside": { "type": ["integer", "null"], "minimum": 0 },
+        "consecutive_incorrect": { "type": ["integer", "null"], "minimum": 0 },
+        "hint_count_window": { "type": ["integer", "null"], "minimum": 0 },
+        "frustration_flag": { "type": ["boolean", "null"] },
+        "affect_valence": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+        "standing_order_attempts": { "type": ["object", "null"] }
+      }
+    },
+    "decision_trail_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "description": "Ordered list of SHA-256 hashes of CTL TraceEvent record IDs that led to this escalation."
+    },
+    "proposed_action": {
+      "type": ["string", "null"],
+      "maxLength": 512,
+      "description": "The orchestrator's proposed next action for the Meta Authority to consider."
+    },
+    "resolution_commitment_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "ID of the CommitmentRecord that resolved this escalation (set after resolution)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "resolved", "timed_out"],
+      "description": "Current status of this escalation."
+    },
+    "sla_deadline_utc": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 UTC timestamp by which the Meta Authority must acknowledge this escalation."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional structured metadata. Must not contain PII or transcript content."
+    }
+  }
+}

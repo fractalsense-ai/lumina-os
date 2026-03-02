@@ -1,0 +1,66 @@
+# Student Profile — Alice (Example)
+# Domain: Algebra Level 1 (v0.2.0)
+# Note: This is an example profile for testing and demonstration.
+# All identifiers are fictional.
+# ============================================================
+
+student_id: "a3f8c2e1b4d7f9a0c5e2b8d1a6f3c7e4"
+domain_id: "domain/edu/algebra-level-1/v1"
+display_name: "Alice"
+
+# ── Preferences (IMMERSION ONLY — never affects grading) ────
+preferences:
+  interests:
+    - space
+    - astronomy
+    - cooking
+  dislikes:
+    - sports_themes
+  preferred_explanation_style: step_by_step
+  language: en
+
+# ── Learning State ───────────────────────────────────────────
+learning_state:
+  affect:
+    salience: 0.7     # Generally engaged
+    valence: 0.2      # Slightly positive
+    arousal: 0.6      # Moderately activated
+
+  mastery:
+    solve_one_variable: 0.52   # Developing — correct with some support
+    check_equivalence: 0.45    # Early stage — still making equivalence errors
+    show_work_steps: 0.60      # Reasonably consistent at showing steps
+    verify_solution: 0.38      # Weak — often skips verification
+
+  zpd_band:
+    min_challenge: 0.3
+    max_challenge: 0.7
+
+  recent_window:
+    window_turns: 10
+    attempts: 4
+    consecutive_incorrect: 0
+    hint_count: 2
+    outside_pct: 0.2          # 2 of 10 turns outside ZPD — minor
+    consecutive_outside: 0
+    outside_flags: [false, false, true, false, false, false, false, false, true, false]
+
+  challenge: 0.55             # Current task is in-band
+  uncertainty: 0.4            # Moderate uncertainty
+
+  updated_utc: "2026-03-01T15:30:00Z"
+
+# ── Session History ──────────────────────────────────────────
+session_history:
+  total_sessions: 3
+  last_session_utc: "2026-03-01T15:30:00Z"
+  total_turns: 31
+
+# ── Consent ──────────────────────────────────────────────────
+consent:
+  magic_circle_accepted: true
+  consent_timestamp_utc: "2026-02-20T09:00:00Z"
+  consent_version: "1.0.0"
+  guardian_consent: true   # Alice is 12; parental consent obtained
+
+updated_utc: "2026-03-01T15:30:00Z"
