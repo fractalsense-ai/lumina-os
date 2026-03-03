@@ -1,6 +1,6 @@
 # Core Principles — Project Lumina
 
-**Version:** 1.1.0  
+**Version:** 2.0.0  
 **Status:** Active  
 **Last updated:** 2026-03-03
 
@@ -10,15 +10,15 @@
 
 Project Lumina principles are organized in two tiers:
 
-**Universal Key Principles (Core Engine)** — these non-negotiables govern every Project Lumina interaction, regardless of domain. They cannot be overridden by any Domain Authority, Meta Authority, domain pack, or configuration. Any implementation that violates them is non-conformant and must not be deployed.
+**Part I — Universal Core Engine Principles (1–7)** — these non-negotiables govern every Project Lumina interaction, regardless of domain. They cannot be overridden by any Domain Authority, Meta Authority, domain pack, or configuration. Any implementation that violates them is non-conformant and must not be deployed.
 
-**Domain-Specific Principles (Context-Dependent)** — these principles apply strictly to human-facing, learner-facing, or otherwise specialized domains **where configured in the `domain-physics.yaml`**. When a domain-specific principle IS active for a given domain, it is enforced with the same rigor as a universal principle — a Domain Authority cannot selectively disable it within a domain that has it enabled.
+**Part II — Domain-Specific Principles (8–10)** — these principles apply strictly to domains where configured in the `domain-physics.yaml`. When a domain-specific principle IS active for a given domain, it is enforced with the same rigor as a universal principle — a Domain Authority cannot selectively disable it within a domain that has it enabled.
 
-The distinction matters because the core engine is domain-agnostic: it must serve an agriculture pack monitoring soil sensors just as well as an education pack tutoring a student. Principles that are irrelevant to machine-facing domains (consent screens, learner scaffolding) must not be imposed globally.
+The distinction matters because the core engine is domain-agnostic: it must serve an agriculture pack monitoring soil sensors just as well as an education pack tutoring a student. Principles that are irrelevant to machine-facing domains (consent screens, subject scaffolding) must not be imposed globally.
 
 ---
 
-## Universal Key Principles (Core Engine)
+## Part I — Universal Core Engine Principles
 
 The following principles apply to **every** Project Lumina interaction, regardless of domain.
 
@@ -39,7 +39,7 @@ Expanding scope without a justified escalation is a violation of this principle.
 
 ## Principle 2: Measurement, Not Surveillance
 
-**The system measures progress. It does not monitor the person.**
+**The system measures progress. It does not monitor the entity.**
 
 - No transcripts are stored at rest
 - Evidence is structured telemetry: correctness, hint usage, response latency, etc.
@@ -51,7 +51,17 @@ The distinction: a surveillance system would record what was said and build a pr
 
 ---
 
-## Principle 3: Append-Only Accountability
+## Principle 3: Domain Authority Is the Authority
+
+**The AI assists; it does not replace the human expert.**
+
+The Domain Authority (teacher, doctor, coach, agronomist, etc.) defines what is correct, what is acceptable, and what the system may do. The AI orchestrator operates within those boundaries — it does not override them, expand them, or reinterpret them.
+
+If the AI cannot resolve a situation within the Domain Authority's instructions, it escalates. It does not improvise.
+
+---
+
+## Principle 4: Append-Only Accountability
 
 **The ledger is never modified. Only extended.**
 
@@ -61,16 +71,6 @@ This ensures that:
 - Audit trails are trustworthy
 - Escalation history is preserved
 - Compromised records are detectable via hash-chain verification
-
----
-
-## Principle 4: Domain Authority Is the Authority
-
-**The AI assists; it does not replace the human expert.**
-
-The Domain Authority (teacher, doctor, coach, agronomist, etc.) defines what is correct, what is acceptable, and what the system may do. The AI orchestrator operates within those boundaries — it does not override them, expand them, or reinterpret them.
-
-If the AI cannot resolve a situation within the Domain Authority's instructions, it escalates. It does not improvise.
 
 ---
 
@@ -88,31 +88,7 @@ Every scope expansion requires an escalation record and Meta Authority approval.
 
 ---
 
-### Principle 6: Interests Affect Generation, Never Grading
-
-**Preferences are for immersion. They must not influence assessment.**
-
-An entity whose profile lists "space" as an interest may receive problems with space-themed contexts (rocket fuel calculations, orbital distances). This is appropriate — it improves engagement.
-
-Preferences must never:
-- Influence mastery scoring
-- Change the difficulty level of assessment tasks
-- Affect which skills or criteria are tested
-- Influence escalation or standing order thresholds
-
-The same equivalence check applies regardless of whether the example involves rockets or apples.
-
----
-
-## Part II — Domain-Specific Principles (Context-Dependent)
-
-These principles are activated by domain pack configuration. When active, they are enforced as non-negotiables within that domain.
-
----
-
-### Principle 8: Consent and Boundaries First
-
-**Activates when:** `requires_consent: true` is set in the domain pack.
+## Principle 6: Pseudonymity by Default
 
 **The AI layer does not know who the entity is.**
 
@@ -122,17 +98,27 @@ The AI orchestrator must function correctly without knowing the real name, conta
 
 ---
 
-## Domain-Specific Principles (Context-Dependent)
+## Principle 7: Minimal Probing
 
-The following principles apply **only when activated by the domain pack's configuration**. They are irrelevant to machine-facing or sensor-monitoring domains but are critical for human-facing or learner-facing ones. When a domain pack enables them, they are non-negotiable within that domain.
+**One probe per drift detection. Do not interrogate.**
+
+When drift is detected, the orchestrator may issue exactly one probe (a clarifying question or check-in). It must not issue a series of probing questions, interview the subject about their state, or make inferences from conversational cues.
+
+Evidence is structural (task performance data), not conversational. The system learns from what the subject does, not from what they say about themselves.
 
 ---
 
-## Principle 6: Consent and Boundaries First
+## Part II — Domain-Specific Principles (Context-Dependent)
+
+The following principles apply **only when activated by the domain pack's configuration**. They are irrelevant to machine-facing or sensor-monitoring domains but are critical for human-facing or subject-facing ones. When a domain pack enables them, they are non-negotiable within that domain.
+
+---
+
+## Principle 8: Consent and Boundaries First
 
 **The magic circle must be established before any session begins.**
 
-*Applies when the domain pack declares `requires_consent: true` or equivalent.*
+**Activates when:** `requires_consent: true` is set in the domain pack.
 
 A human participant (or their guardian, if a minor) must accept the consent contract before the first turn of a session. The consent contract specifies:
 - What the system will and will not do
@@ -146,23 +132,29 @@ See [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md) for the consent c
 
 ---
 
-## Principle 7: Minimal Probing
+## Principle 9: Interests Affect Generation, Never Grading
 
-**One probe per drift detection. Do not interrogate.**
+**Preferences are for immersion. They must not influence assessment.**
 
-*Applies to learner-facing domains.*
+**Activates in:** domains where subject profiles include preference data.
 
-When ZPD drift is detected, the orchestrator may issue exactly one probe (a clarifying question or check-in). It must not issue a series of probing questions, interview the learner about their feelings, or make inferences from conversational cues.
+An entity whose profile lists "space" as an interest may receive tasks with space-themed contexts (rocket fuel calculations, orbital distances). This is appropriate — it improves engagement.
 
-Evidence is structural (task performance data), not conversational. The system learns from what the learner does, not from what they say about themselves.
+Preferences must never:
+- Influence mastery scoring
+- Change the difficulty level of assessment tasks
+- Affect which skills or criteria are tested
+- Influence escalation or standing order thresholds
+
+The same equivalence check applies regardless of whether the example involves rockets or apples.
 
 ---
 
-## Principle 8: Fade Support as Self-Correction Grows
+## Principle 10: Fade Support as Self-Correction Grows
 
 **Scaffolding reduces as mastery increases.**
 
-*Applies to domains with mastery tracking / ZPD monitoring.*
+**Activates in:** domains with mastery tracking / ZPD monitoring.
 
 The system's goal is to become less necessary over time. As mastery grows, the orchestrator should:
 - Reduce hint frequency
@@ -170,7 +162,7 @@ The system's goal is to become less necessary over time. As mastery grows, the o
 - Decrease probe frequency
 - Increase the threshold for standing order triggers
 
-A system that maximizes engagement by keeping learners dependent is not functioning correctly.
+A system that maximizes engagement by keeping subjects dependent is not functioning correctly.
 
 ---
 
