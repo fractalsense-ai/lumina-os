@@ -10,7 +10,7 @@
 
 This document specifies the deterministic heuristics used to maintain the compressed learner state. All estimators are deterministic — they use no ML models. They take structured evidence as input and produce updated state values.
 
-The reference implementation is in [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
+The reference implementation is in [`../../reference-implementations/zpd-monitor-v0.2.py`](../../reference-implementations/zpd-monitor-v0.2.py).
 
 ---
 

@@ -10,7 +10,7 @@
 
 The **ZPD Monitor** is the core state-management component of the Project Lumina Action layer. It maintains the compressed learner state, detects Zone of Proximal Development drift, and produces a decision tier for each turn.
 
-The reference implementation is [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
+The reference implementation is [`../../reference-implementations/zpd-monitor-v0.2.py`](../../reference-implementations/zpd-monitor-v0.2.py).
 
 ---
 
@@ -227,6 +227,6 @@ After each `zpd_monitor_step`:
 ## References
 
 - [`compressed-state-estimators.md`](compressed-state-estimators.md) — detailed estimator formulas
-- [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py) — Python implementation
-- [`../reference-implementations/zpd-monitor-demo.py`](../reference-implementations/zpd-monitor-demo.py) — worked demo
-- [`../standards/compressed-state-schema-v1.json`](../standards/compressed-state-schema-v1.json) — state schema
+- [`../../reference-implementations/zpd-monitor-v0.2.py`](../../reference-implementations/zpd-monitor-v0.2.py) — Python implementation
+- [`../../reference-implementations/zpd-monitor-demo.py`](../../reference-implementations/zpd-monitor-demo.py) — worked demo
+- [`../../standards/compressed-state-schema-v1.json`](../../standards/compressed-state-schema-v1.json) — state schema

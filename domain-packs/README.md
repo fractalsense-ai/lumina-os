@@ -24,6 +24,11 @@ See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) f
 domain-packs/
 ├── README.md                   ← this file
 ├── education/
+│   ├── sensors/                ← education-domain sensor array (ZPD, affect, fatigue)
+│   │   ├── README.md
+│   │   ├── compressed-state-estimators.md
+│   │   ├── zpd-monitor-spec-v1.md
+│   │   └── fatigue-estimation-spec-v1.md
 │   └── algebra-level-1/        ← complete worked example
 │       ├── domain-physics.yaml    (source — human-authored)
 │       ├── domain-physics.json    (derived — machine-authoritative)

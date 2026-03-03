@@ -91,6 +91,8 @@ Any system implementing learner state tracking must represent state using the co
 
 See [`compressed-state-schema-v1.json`](compressed-state-schema-v1.json) for the JSON Schema.
 
+> **Domain Sensor Arrays:** The compressed state schema defines a universal structure, but the sensors that populate it are domain-specific. Each domain pack must define its own sensor array in a `sensors/` directory. See [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md) for the full sensor array specification.
+
 ---
 
 ## 4. Naming and Terminology

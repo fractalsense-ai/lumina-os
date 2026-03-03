@@ -2,8 +2,8 @@
 zpd-monitor-v0.2.py — Project Lumina ZPD Monitor Reference Implementation
 
 Version: 0.2.0
-Conforms to: state-management/zpd-monitor-spec-v1.md
-             state-management/compressed-state-estimators.md
+Conforms to: domain-packs/education/sensors/zpd-monitor-spec-v1.md
+             domain-packs/education/sensors/compressed-state-estimators.md
              standards/compressed-state-schema-v1.json
 
 Description:

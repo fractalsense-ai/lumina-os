@@ -10,19 +10,31 @@ Project Lumina builds AI orchestration systems that are **domain-bounded**, **co
 
 ---
 
-## The D.S.A. Framework
+## The D.S.A. Engine & Traceable Accountability
 
-All Project Lumina systems are structured around three pillars:
+Project Lumina operates on **Dynamic Prompt Contracts** — every AI interaction is strictly bound by the D.S.A. Framework. Rather than issuing a generic prompt, the orchestrator assembles a contract from three pillars, and the AI may only act within what that contract authorizes.
 
 | Pillar | Name | Description |
 |--------|------|-------------|
-| **D** | **Domain** | Immutable ruleset — invariants, standing orders, artifacts, escalation triggers |
-| **S** | **State** | Mutable learner/actor profile — affect (SVA), mastery, ZPD band, cognitive load |
-| **A** | **Action** | Orchestrator — drift detection, minimal probes, grounded responses, escalation |
+| **D** | **Domain (The Rules)** | The immutable ruleset authored by a human Domain Authority (e.g., a teacher, doctor, or coach). Defines strict invariants, standing orders, artifacts, and escalation triggers. |
+| **S** | **State (The Context)** | The mutable, mathematically compressed profile of the entity being observed at the exact time of the request. Includes current affect, mastery, challenge band, and cognitive load. |
+| **A** | **Action (The Boundary)** | The specific, highly constrained task the orchestrator is permitted to execute, based exclusively on the active Domain and State. The AI may only do what the Domain authorizes. |
 
 The Domain is authored by the **Domain Authority** (the human expert: teacher, doctor, coach). The State is updated incrementally from structured evidence. The Action layer is bounded: it may only do what the Domain authorizes.
 
 See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full specification.
+
+### Eliminating Hallucinations via the Casual Trace Ledger (CTL)
+
+Because the AI is handed a strict D.S.A. contract rather than a generic prompt, deviations become **structurally traceable**. The contract defines exactly what the AI was authorized to do — any output outside those bounds is an identifiable violation, not an ambiguous mistake.
+
+The **CTL** is the append-only, cryptographic accountability layer that makes this traceability permanent:
+
+- **Diagnosis, Not Surveillance** — the ledger never stores raw chat transcripts or PII at rest. It stores only hashes and structured decision telemetry.
+- **Trace Events** — every decision is logged as a `TraceEvent` capturing the exact `event_type`, the structured `evidence_summary`, and the specific `decision`.
+- **Hard Escalations** — if the AI violates a critical invariant or cannot stabilize the session, it halts and generates an `EscalationRecord` with the exact `trigger` and `decision_trail_hashes`.
+
+See [`standards/casual-trace-ledger-v1.md`](standards/casual-trace-ledger-v1.md) and [`ledger/`](ledger/) for schemas.
 
 ---
 
@@ -50,19 +62,6 @@ See [`GOVERNANCE.md`](GOVERNANCE.md) for governance policies and [`governance/`]
 
 ---
 
-## Casual Trace Ledger (CTL)
-
-The CTL is the append-only accountability layer:
-
-- **No transcripts at rest** — stores hashes and structured decision telemetry, not conversation content
-- **Diagnosis, not accusation** — records what happened and what the system decided, not raw PII
-- Record types: `CommitmentRecord`, `TraceEvent`, `ToolCallRecord`, `OutcomeRecord`, `EscalationRecord`
-- Ledger entries are hash-chained; tampering is detectable
-
-See [`standards/casual-trace-ledger-v1.md`](standards/casual-trace-ledger-v1.md) and [`ledger/`](ledger/) for schemas.
-
----
-
 ## Key Principles
 
 1. **Consent and boundaries first** — the magic circle must be established before any session begins
@@ -85,10 +84,11 @@ project-lumina/
 ├── README.md                          ← this file
 ├── GOVERNANCE.md                      ← fractal authority + nested governance policy
 ├── LICENSE
-├── standards/                         ← meta-specs all domains must conform to
+├── standards/                         ← universal engine specs (all domains)
 │   ├── lumina-core-v1.md
 │   ├── casual-trace-ledger-v1.md
 │   ├── domain-physics-schema-v1.json
+│   ├── domain-sensor-array-v1.md      ← sensor array contract
 │   ├── student-profile-schema-v1.json
 │   ├── compressed-state-schema-v1.json
 │   └── tool-adapter-schema-v1.json
@@ -111,19 +111,20 @@ project-lumina/
 ├── retrieval/                         ← RAG layer contracts and schemas
 │   ├── rag-contracts.md
 │   └── retrieval-index-schema-v1.json
-├── state-management/                  ← compressed state, ZPD, fatigue specs
-│   ├── compressed-state-estimators.md
-│   ├── zpd-monitor-spec-v1.md
-│   └── fatigue-estimation-spec-v1.md
 ├── ledger/                            ← CTL JSON schemas
 │   ├── casual-trace-ledger-schema-v1.json
 │   ├── commitment-record-schema.json
 │   ├── trace-event-schema.json
 │   └── escalation-record-schema.json
-├── domain-packs/                      ← authored domain packs (YAML → JSON)
+├── domain-packs/                      ← domain-specific everything
 │   ├── README.md
 │   ├── education/
-│   │   └── algebra-level-1/
+│   │   ├── sensors/                   ← education-domain sensor array (ZPD, affect, fatigue)
+│   │   │   ├── README.md
+│   │   │   ├── compressed-state-estimators.md
+│   │   │   ├── zpd-monitor-spec-v1.md
+│   │   │   └── fatigue-estimation-spec-v1.md
+│   │   └── algebra-level-1/           ← specific domain pack
 │   │       ├── domain-physics.yaml
 │   │       ├── domain-physics.json
 │   │       ├── tool-adapters/
@@ -171,4 +172,4 @@ All domain packs and implementations must conform to:
 
 ---
 
-*Last updated: 2026-03-02*
+*Last updated: 2026-03-03*
