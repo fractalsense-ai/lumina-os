@@ -42,7 +42,8 @@ A conformant `domain-physics.yaml` must declare:
 - `standing_orders`: list of at least one standing order
 - `escalation_triggers`: at least one trigger referencing a standing order
 - `artifacts`: list of recognized mastery artifacts (may be empty for v0 packs)
-- `zpd_config`: ZPD band and drift thresholds (required for learner-facing domains with ZPD monitoring; omit for domains without ZPD concepts)
+- `zpd_config`: ZPD band and drift thresholds (required for learner-facing domains; omit for non-learner domains)
+- `requires_consent`: consent requirement flag (required for human-facing domains that must enforce the magic-circle consent principle; omit for machine-facing domains)
 
 ### 1.2 Invariant Severity Levels
 
@@ -147,8 +148,8 @@ Before publishing a domain pack or implementation:
 - [ ] No transcript content is stored in the CTL
 - [ ] All identifiers are pseudonymous
 - [ ] Terminology conforms to Section 4
-- [ ] If `requires_consent: true`, a consent contract is implemented before sessions begin (Principle 8)
-- [ ] If `zpd_config` is present, minimal probing is enforced (Principle 9)
+- [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
+- [ ] If the domain is learner-facing, `zpd_config` is present and drift thresholds are set
 
 ---
 
