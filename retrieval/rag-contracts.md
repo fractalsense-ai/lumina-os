@@ -136,4 +136,4 @@ If grounding fails (required content cannot be retrieved and verified):
 - [`retrieval-index-schema-v1.json`](retrieval-index-schema-v1.json) — retrieval index schema
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements (Section 5)
 - [`../specs/memory-spec-v1.md`](../specs/memory-spec-v1.md) — memory layer overview
-- [`../standards/casual-trace-ledger-v1.md`](../standards/casual-trace-ledger-v1.md) — CTL record types
+- [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) — CTL record types

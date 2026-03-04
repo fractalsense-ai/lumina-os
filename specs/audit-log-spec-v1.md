@@ -8,7 +8,7 @@
 
 ## Overview
 
-The **audit log** is the human-readable view of the Casual Trace Ledger (CTL). While the CTL is a machine-readable append-only record store, the audit log is the structured report produced for governance review, compliance audits, and discrepancy resolution.
+The **audit log** is the human-readable view of the Causal Trace Ledger (CTL). While the CTL is a machine-readable append-only record store, the audit log is the structured report produced for governance review, compliance audits, and discrepancy resolution.
 
 This document specifies what the audit log contains, who may request it, and how it is generated.
 

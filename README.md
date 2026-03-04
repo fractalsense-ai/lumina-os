@@ -6,7 +6,7 @@
 
 ## Vision
 
-Project Lumina builds AI orchestration systems that are **domain-bounded**, **measurement-not-surveillance**, and **accountable at every level**. Every interaction is governed by an explicit Domain Physics ruleset, every decision is traceable via the Casual Trace Ledger, and every authority level is clearly defined.
+Project Lumina builds AI orchestration systems that are **domain-bounded**, **measurement-not-surveillance**, and **accountable at every level**. Every interaction is governed by an explicit Domain Physics ruleset, every decision is traceable via the Causal Trace Ledger, and every authority level is clearly defined.
 
 ---
 
@@ -24,7 +24,7 @@ The Domain is authored by the **Domain Authority** (the human expert: teacher, d
 
 See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full specification.
 
-### Eliminating Hallucinations via the Casual Trace Ledger (CTL)
+### Eliminating Hallucinations via the Causal Trace Ledger (CTL)
 
 Because the AI is handed a strict D.S.A. contract rather than a generic prompt, deviations become **structurally traceable**. The contract defines exactly what the AI was authorized to do — any output outside those bounds is an identifiable violation, not an ambiguous mistake.
 
@@ -34,7 +34,7 @@ The **CTL** is the append-only, cryptographic accountability layer that makes th
 - **Trace Events** — every decision is logged as a `TraceEvent` capturing the exact `event_type`, the structured `evidence_summary`, and the specific `decision`.
 - **Hard Escalations** — if the AI violates a critical invariant or cannot stabilize the session, it halts and generates an `EscalationRecord` with the exact `trigger` and `decision_trail_hashes`.
 
-See [`standards/casual-trace-ledger-v1.md`](standards/casual-trace-ledger-v1.md) and [`ledger/`](ledger/) for schemas.
+See [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) and [`ledger/`](ledger/) for schemas.
 
 ---
 
@@ -57,7 +57,7 @@ Education is one instantiation of this pattern (Administration → Department He
 Each level:
 - Authors its own **Domain Physics** (YAML → JSON, version-controlled)
 - Retrieves context from the level above via **RAG contracts**
-- Is held accountable via the **Casual Trace Ledger (CTL)**
+- Is held accountable via the **Causal Trace Ledger (CTL)**
 - Can escalate upward when the system cannot stabilize
 
 See [`GOVERNANCE.md`](GOVERNANCE.md) for governance policies and [`governance/`](governance/) for templates and role definitions.
@@ -99,7 +99,7 @@ project-lumina/
 ├── LICENSE
 ├── standards/                         ← universal engine specs (all domains)
 │   ├── lumina-core-v1.md
-│   ├── casual-trace-ledger-v1.md
+│   ├── causal-trace-ledger-v1.md
 │   ├── domain-physics-schema-v1.json
 │   ├── domain-sensor-array-v1.md      ← sensor array contract
 │   ├── student-profile-schema-v1.json
@@ -125,7 +125,7 @@ project-lumina/
 │   ├── rag-contracts.md
 │   └── retrieval-index-schema-v1.json
 ├── ledger/                            ← CTL JSON schemas
-│   ├── casual-trace-ledger-schema-v1.json
+│   ├── causal-trace-ledger-schema-v1.json
 │   ├── commitment-record-schema.json
 │   ├── trace-event-schema.json
 │   └── escalation-record-schema.json
@@ -159,7 +159,7 @@ project-lumina/
 │   └── dsa-orchestrator-demo.py
 └── examples/                          ← worked interaction examples
     ├── README.md
-    ├── casual-learning-trace-example.json
+    ├── causal-learning-trace-example.json
     └── escalation-example-packet.yaml
 ```
 
@@ -181,7 +181,7 @@ project-lumina/
 All domain packs and implementations must conform to:
 - [`standards/lumina-core-v1.md`](standards/lumina-core-v1.md) — top-level conformance spec
 - [`standards/domain-physics-schema-v1.json`](standards/domain-physics-schema-v1.json) — domain pack schema
-- [`standards/casual-trace-ledger-v1.md`](standards/casual-trace-ledger-v1.md) — CTL protocol
+- [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) — CTL protocol
 
 ---
 

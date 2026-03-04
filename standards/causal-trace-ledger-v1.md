@@ -1,4 +1,4 @@
-# Casual Trace Ledger (CTL) — V1 Specification
+# Causal Trace Ledger (CTL) — V1 Specification
 
 **Version:** 1.0.0  
 **Status:** Active  
@@ -8,7 +8,7 @@
 
 ## Overview
 
-The **Casual Trace Ledger (CTL)** is the append-only accountability layer for all Project Lumina sessions. It records what happened and what the system decided — not what was said.
+The **Causal Trace Ledger (CTL)** is the append-only accountability layer for all Project Lumina sessions. It records what happened and what the system decided — not what was said.
 
 **Core constraint:** The CTL does not store transcripts. It stores structured decision telemetry, hashes of content, and pointers to external (encrypted, ephemeral) stores.
 
@@ -228,7 +228,7 @@ CTL records are retained for the duration of the institution's data retention po
 
 ## Related Schemas
 
-- [`../ledger/casual-trace-ledger-schema-v1.json`](../ledger/casual-trace-ledger-schema-v1.json)
+- [`../ledger/causal-trace-ledger-schema-v1.json`](../ledger/causal-trace-ledger-schema-v1.json)
 - [`../ledger/commitment-record-schema.json`](../ledger/commitment-record-schema.json)
 - [`../ledger/trace-event-schema.json`](../ledger/trace-event-schema.json)
 - [`../ledger/escalation-record-schema.json`](../ledger/escalation-record-schema.json)
