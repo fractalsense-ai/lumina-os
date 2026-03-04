@@ -84,7 +84,7 @@ These apply to every Project Lumina interaction, regardless of domain:
 
 ### Domain-Specific Principles (8–10)
 
-These apply only when activated by the domain pack's configuration. When active, they are enforced with the same rigor as universal principles:
+These principles apply only when activated by a specific domain pack's configuration (see the Education Domain Pack below for an example). Once active, the orchestrator enforces them with the exact same rigor as universal principles:
 
 8. **Consent and boundaries first** — the magic circle must be established before any session begins *(active when `requires_consent: true` is declared in the domain pack)*
 9. **Interests affect generation, never grading** — subject preferences improve immersion; they must not influence assessment *(activates in domains where subject profiles include preference data)*
