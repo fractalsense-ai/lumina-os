@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/ledger/casual-trace-ledger-schema-v1.json",
-  "title": "Casual Trace Ledger Schema V1",
+  "$id": "https://projectlumina.org/ledger/causal-trace-ledger-schema-v1.json",
+  "title": "Causal Trace Ledger Schema V1",
   "description": "Top-level schema for a Project Lumina CTL record. Every record written to the ledger must be one of the defined record types.",
   "oneOf": [
     { "$ref": "commitment-record-schema.json" },

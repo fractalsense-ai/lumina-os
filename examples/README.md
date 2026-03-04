@@ -8,7 +8,7 @@ This directory contains worked examples of Project Lumina interaction loops.
 
 | File | Description |
 |------|-------------|
-| `casual-learning-trace-example.json` | CTL records from a real (simulated) 5-turn algebra session |
+| `causal-learning-trace-example.json` | CTL records from a real (simulated) 5-turn algebra session |
 | `escalation-example-packet.yaml` | A complete escalation packet for a major ZPD drift event |
 
 ---

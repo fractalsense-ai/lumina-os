@@ -129,5 +129,5 @@ Reports are derived views of the CTL — they are not independently stored. The 
 ## References
 
 - [`audit-log-spec-v1.md`](audit-log-spec-v1.md) — audit log format
-- [`../standards/casual-trace-ledger-v1.md`](../standards/casual-trace-ledger-v1.md) — CTL specification
+- [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) — CTL specification
 - [`../governance/audit-and-rollback.md`](../governance/audit-and-rollback.md) — rollback procedures

@@ -84,7 +84,7 @@ All reference implementations:
 | `zpd-monitor-v0.2.py` | [`../domain-packs/education/sensors/zpd-monitor-spec-v1.md`](../domain-packs/education/sensors/zpd-monitor-spec-v1.md) |
 | `zpd-monitor-v0.2.py` | [`../domain-packs/education/sensors/compressed-state-estimators.md`](../domain-packs/education/sensors/compressed-state-estimators.md) |
 | `yaml-to-json-converter.py` | [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) |
-| `ctl-commitment-validator.py` | [`../standards/casual-trace-ledger-v1.md`](../standards/casual-trace-ledger-v1.md) |
+| `ctl-commitment-validator.py` | [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) |
 | `dsa-orchestrator.py` | [`../specs/dsa-framework-v1.md`](../specs/dsa-framework-v1.md) |
 | `dsa-orchestrator.py` | [`../specs/orchestrator-system-prompt-v1.md`](../specs/orchestrator-system-prompt-v1.md) |
 | `dsa-orchestrator-demo.py` | [`../specs/dsa-framework-v1.md`](../specs/dsa-framework-v1.md) |

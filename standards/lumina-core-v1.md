@@ -62,7 +62,7 @@ Standing orders define the **bounded automated responses** the orchestrator may 
 
 ---
 
-## 2. Casual Trace Ledger (CTL) Conformance
+## 2. Causal Trace Ledger (CTL) Conformance
 
 Every Lumina system must maintain a CTL-conformant ledger. Requirements:
 
@@ -72,7 +72,7 @@ Every Lumina system must maintain a CTL-conformant ledger. Requirements:
 - **Pseudonymous**: actor identifiers are pseudonymous; real-identity mapping is held externally
 - **Record types**: all systems must support `CommitmentRecord` and `TraceEvent` at minimum
 
-See [`casual-trace-ledger-v1.md`](casual-trace-ledger-v1.md) for the full CTL specification.
+See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL specification.
 
 ---
 
@@ -103,7 +103,7 @@ All Project Lumina documents and code must use the following canonical terminolo
 | Canonical Term | Description | Do NOT use |
 |----------------|-------------|------------|
 | **Project Lumina** | The overall system | "Spotter" |
-| **Casual Trace Ledger (CTL)** | The append-only accountability ledger | "Flight Data Recorder", "FDR" |
+| **Causal Trace Ledger (CTL)** | The append-only accountability ledger | "Flight Data Recorder", "FDR" |
 | **Domain Authority** | The human expert who authors the domain | "Master" |
 | **D.S.A. Framework** | Domain, State, Action | Other acronyms |
 | **Meta Authority** | Domain Authority one level above | "Super-admin" |

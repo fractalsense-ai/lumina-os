@@ -153,7 +153,7 @@ Security event response:
 
 ## References
 
-- [`../standards/casual-trace-ledger-v1.md`](../standards/casual-trace-ledger-v1.md) — CTL specification
+- [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) — CTL specification
 - [`../specs/audit-log-spec-v1.md`](../specs/audit-log-spec-v1.md) — audit log format
 - [`../specs/reports-spec-v1.md`](../specs/reports-spec-v1.md) — report types and discrepancy workflow
 - [`../reference-implementations/ctl-commitment-validator.py`](../reference-implementations/ctl-commitment-validator.py) — chain verification tool

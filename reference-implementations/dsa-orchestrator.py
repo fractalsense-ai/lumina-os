@@ -3,7 +3,7 @@ dsa-orchestrator.py — Project Lumina D.S.A. Orchestrator Reference Implementat
 
 Version: 0.1.0
 Conforms to: specs/dsa-framework-v1.md
-             standards/casual-trace-ledger-v1.md
+             standards/causal-trace-ledger-v1.md
 
 Implements the Action layer of the D.S.A. framework, connecting:
     Domain Physics → ZPD Monitor → CTL → Prompt Contract
@@ -17,7 +17,7 @@ The orchestrator:
        c. Resolves the final action (invariant failures trump ZPD drift).
        d. Builds a prompt_contract JSON object conforming to the domain schema.
        e. Appends a hash-chained TraceEvent (and, when needed, an
-          EscalationRecord) to the Casual Trace Ledger (CTL).
+          EscalationRecord) to the Causal Trace Ledger (CTL).
   4. Opens the session with a CommitmentRecord in the CTL.
 
 Design constraints:
