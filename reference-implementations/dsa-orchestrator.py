@@ -42,7 +42,7 @@ Design constraints:
   - Standard library only (no external dependencies).
   - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
     implemented in ctl-commitment-validator.py.
-  - No domain-specific sensor (e.g. ZPD monitor) is imported or required by
+  - No domain-specific sensor (e.g. a domain sensor) is imported or required by
     the engine.  Domain integrations wire up their sensors externally and pass
     them in via ``sensor_step_fn`` / ``initial_state``.
 
@@ -53,7 +53,7 @@ Usage:
     profile = load_yaml("domain-packs/education/algebra-level-1/example-student-alice.yaml")
     # For a domain with no sensor:
     orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
-    # For the education domain — wire up the ZPD monitor externally:
+    # For the education domain example — wire up the ZPD monitor externally:
     orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
                            sensor_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
     contract, action = orch.process_turn(task_spec, evidence)
@@ -206,12 +206,9 @@ _ACTION_TO_PROMPT_TYPE: dict[str | None, str] = {
     "request_more_steps": "more_steps_request",
     "request_verification_retry": "verification_request",
     "request_method_justification": "method_justification_request",
-    # Education-domain actions (registered here for convenience; domain-specific
-    # actions not in this mapping pass through as their own prompt_type string,
-    # so domain packs can extend the vocabulary without modifying this engine).
-    "zpd_scaffold": "scaffold",
-    "zpd_intervene_or_escalate": "probe",
-    "escalate": "probe",
+    # Domain-specific actions not in this mapping pass through as their own
+    # prompt_type string, so domain packs can extend the vocabulary without
+    # modifying this engine.
 }
 
 
@@ -330,7 +327,7 @@ class DSAOrchestrator:
         self,
         task_spec: dict[str, Any],
         invariant_results: list[dict[str, Any]],
-        zpd_decision: dict[str, Any],
+        sensor_decision: dict[str, Any],
         action: str | None,
         prompt_contract: dict[str, Any],
     ) -> None:
@@ -346,9 +343,9 @@ class DSAOrchestrator:
             "actor_role": "subject",
             "decision": action,
             "decision_rationale": {
-                "zpd_tier": zpd_decision.get("tier"),
-                "drift_pct": zpd_decision.get("drift_pct"),
-                "frustration": zpd_decision.get("frustration"),
+                "sensor_tier": sensor_decision.get("tier"),
+                "drift_pct": sensor_decision.get("drift_pct"),
+                "frustration": sensor_decision.get("frustration"),
                 "invariant_failures": [
                     r["id"] for r in invariant_results if not r["passed"]
                 ],
@@ -362,7 +359,7 @@ class DSAOrchestrator:
     def _write_escalation_record(
         self,
         task_spec: dict[str, Any],
-        zpd_decision: dict[str, Any],
+        sensor_decision: dict[str, Any],
         trigger: str,
     ) -> None:
         """Append an EscalationRecord to the CTL."""
@@ -377,10 +374,10 @@ class DSAOrchestrator:
             "status": "open",
             "trigger": trigger,
             "task_id": task_spec.get("task_id", ""),
-            "zpd_decision": {
-                "tier": zpd_decision.get("tier"),
-                "frustration": zpd_decision.get("frustration"),
-                "drift_pct": zpd_decision.get("drift_pct"),
+            "sensor_decision": {
+                "tier": sensor_decision.get("tier"),
+                "frustration": sensor_decision.get("frustration"),
+                "drift_pct": sensor_decision.get("drift_pct"),
             },
             "target_role": "domain_authority",
             "sla_minutes": 30,
@@ -415,7 +412,7 @@ class DSAOrchestrator:
         for inv in self.domain.get("invariants", []):
             inv_id: str = inv["id"]
 
-            # Skip invariants delegated to another subsystem (e.g. ZPD monitor)
+            # Skip invariants delegated to another subsystem (e.g. domain sensor)
             if inv.get("handled_by"):
                 continue
 
@@ -452,7 +449,7 @@ class DSAOrchestrator:
     def _resolve_action(
         self,
         invariant_results: list[dict[str, Any]],
-        zpd_decision: dict[str, Any],
+        sensor_decision: dict[str, Any],
     ) -> tuple[str | None, bool]:
         """
         Determine the final action for this turn.
@@ -460,9 +457,9 @@ class DSAOrchestrator:
         Priority order:
           1. Critical invariant failure → its standing_order_on_violation.
           2. Warning invariant failure  → its standing_order_on_violation.
-          3. No invariant failure       → ZPD monitor's decision["action"].
+          3. No invariant failure       → domain sensor's decision["action"].
 
-        Additionally, if the ZPD decision is zpd_intervene_or_escalate AND
+        Additionally, if the sensor decision action implies escalation AND
         frustration is True, the second return value is True (escalate).
 
         Returns:
@@ -478,9 +475,12 @@ class DSAOrchestrator:
             if not result["passed"] and result["severity"] == "warning":
                 return result["standing_order_on_violation"], False
 
-        # Fall through to ZPD monitor
-        action = zpd_decision.get("action")
-        frustration = bool(zpd_decision.get("frustration", False))
+        # Fall through to domain sensor decision
+        action = sensor_decision.get("action")
+        frustration = bool(sensor_decision.get("frustration", False))
+        # The escalation check compares against the domain-specific action string
+        # emitted by the sensor; this is intentional — the engine defers to the
+        # sensor's vocabulary and does not rewrite domain-specific action names.
         should_escalate = (
             action == "zpd_intervene_or_escalate" and frustration
         )
@@ -490,7 +490,7 @@ class DSAOrchestrator:
         self,
         task_spec: dict[str, Any],
         action: str | None,
-        zpd_decision: dict[str, Any],
+        sensor_decision: dict[str, Any],
         standing_order_trigger: str | None,
     ) -> dict[str, Any]:
         """
@@ -513,7 +513,7 @@ class DSAOrchestrator:
             "domain_pack_version": self.domain.get("version", ""),
             "task_id": task_spec.get("task_id", ""),
             "task_nominal_difficulty": float(
-                task_spec.get("nominal_difficulty", zpd_decision.get("challenge", 0.5))
+                task_spec.get("nominal_difficulty", sensor_decision.get("challenge", 0.5))
             ),
             "skills_targeted": list(task_spec.get("skills_required", [])),
             "theme": theme,
@@ -549,7 +549,7 @@ class DSAOrchestrator:
                        silently skipped (no false negatives).
                        Sensor-specific evidence keys are passed through unchanged to
                        ``sensor_step_fn`` when one is registered.
-                       For example, for the algebra-level-1 pack with the ZPD monitor
+                       For example, for the algebra-level-1 education domain pack
                        the expected keys include:
                            correctness             — "correct"/"incorrect"/"partial"
                            hint_used               — bool
@@ -572,7 +572,7 @@ class DSAOrchestrator:
         # 1. Evaluate non-delegated invariants
         invariant_results = self._evaluate_invariants(evidence)
 
-        # 2. Step any registered domain sensor (e.g. ZPD monitor for education).
+        # 2. Step any registered domain sensor.
         #    If no sensor is registered the decision dict is empty and the
         #    orchestrator falls back to invariant-only logic.
         if self._sensor_step_fn is not None:
@@ -613,7 +613,7 @@ class DSAOrchestrator:
             self._write_escalation_record(
                 task_spec,
                 sensor_decision,
-                "zpd_intervene_or_escalate_with_frustration",
+                "sensor_intervene_or_escalate_with_frustration",
             )
 
         resolved_action = action if action is not None else "task_presentation"
