@@ -75,7 +75,7 @@ output_schema:
 authorization:
   who_may_call:
     - orchestrator
-  requires_student_consent: false
+  requires_entity_consent: false
   max_calls_per_session: 100
   logged_in_ctl: true
 

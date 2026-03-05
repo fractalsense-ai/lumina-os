@@ -119,7 +119,7 @@
         },
         "handled_by": {
           "type": "string",
-          "description": "ID of the subsystem that evaluates this invariant (e.g. 'zpd_monitor'). When present, the orchestrator skips its own check evaluation and defers entirely to the named subsystem. Enables domain-agnostic invariant delegation without hardcoding invariant IDs in the engine."
+          "description": "ID of the subsystem that evaluates this invariant (e.g. 'zpd_monitor' for education, 'soil_health_monitor' for agriculture). When present, the orchestrator skips its own check evaluation and defers entirely to the named subsystem. Enables domain-agnostic invariant delegation without hardcoding invariant IDs in the engine."
         },
         "standing_order_on_violation": {
           "type": "string",
@@ -142,7 +142,7 @@
         },
         "action": {
           "type": "string",
-          "description": "The automated action taken (e.g., zpd_scaffold, request_more_steps)"
+          "description": "The automated action taken (e.g., request_more_steps, reduce_challenge). Domain-specific action names such as zpd_scaffold are defined by the domain pack and passed through as-is by the engine."
         },
         "trigger_condition": {
           "type": "string",

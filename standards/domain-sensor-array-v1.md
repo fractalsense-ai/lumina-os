@@ -66,7 +66,7 @@ The compressed state schema defines the *fields* that may be populated. Which fi
 | `valence` | Emotional tone toward task | N/A (not applicable) | Patient affect |
 | `arousal` | Activation level | N/A | Physiological activation |
 | `mastery` | Per-skill mastery | Per-crop/equipment proficiency | Per-protocol proficiency |
-| `challenge` | Task difficulty vs. ZPD | Task complexity vs. operator skill | Case complexity vs. clinician level |
+| `challenge` | Task difficulty vs. operating band | Task complexity vs. operator skill | Case complexity vs. clinician level |
 | `uncertainty` | Orchestrator uncertainty | Prediction model uncertainty | Diagnostic uncertainty |
 
 Domains that do not use a field leave it at its default value and do not configure standing orders that respond to it.

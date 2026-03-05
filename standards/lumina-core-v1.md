@@ -22,15 +22,15 @@ Every domain pack must include the following artifacts:
 |----------|----------|--------|
 | `domain-physics.yaml` | Yes | [`domain-physics-schema-v1.json`](domain-physics-schema-v1.json) |
 | `domain-physics.json` | Yes (derived) | Same schema |
-| `student-profile-template.yaml` | Yes | Domain-specific subject profile schema in `schemas/` (see note below) |
+| `entity-profile-template.yaml` | Yes | Domain-specific subject profile schema in `schemas/` (see note below) |
 | `CHANGELOG.md` | Yes | Semver entries |
 | `prompt-contract-schema.json` | Yes | Extends [`prompt-contract-schema-v1.json`](prompt-contract-schema-v1.json) — domain-specific prompt constraints must extend the universal base schema |
 
 Optional but recommended:
 - `tool-adapters/*.yaml` — one per tool, conforming to [`tool-adapter-schema-v1.json`](tool-adapter-schema-v1.json)
-- `example-student-*.yaml` — example profiles for testing
+- `example-entity-*.yaml` — example profiles for testing
 
-> **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`domain-packs/education/schemas/student-profile-schema-v1.json`](../domain-packs/education/schemas/student-profile-schema-v1.json) for education). The `student-profile-template.yaml` must validate against that domain-specific schema.
+> **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`domain-packs/education/schemas/student-profile-schema-v1.json`](../domain-packs/education/schemas/student-profile-schema-v1.json) for education). The entity profile template is named according to the domain's own conventions (e.g., `student-profile-template.yaml` for education, `operator-profile-template.yaml` for agriculture) and must validate against that domain-specific schema.
 
 ### 1.1 Domain Physics Requirements
 
@@ -44,7 +44,7 @@ A conformant `domain-physics.yaml` must declare:
 - `standing_orders`: list of at least one standing order
 - `escalation_triggers`: at least one trigger referencing a standing order
 - `artifacts`: list of recognized mastery artifacts (may be empty for v0 packs)
-- `subsystem_configs`: optional map of domain-specific subsystem parameter blocks, keyed by subsystem ID (e.g. `zpd_monitor` for learner-facing education domains). Each value is a free-form object understood only by that subsystem. Omit for domains with no configurable subsystems.
+- `subsystem_configs`: optional map of domain-specific subsystem parameter blocks, keyed by subsystem ID (e.g. `zpd_monitor` for education, `soil_health_monitor` for agriculture). Each value is a free-form object understood only by that subsystem. Omit for domains with no configurable subsystems.
 - `requires_consent`: consent requirement flag (required for human-facing domains that must enforce the magic-circle consent principle; omit for machine-facing domains)
 
 ### 1.2 Invariant Severity Levels
@@ -58,7 +58,7 @@ A conformant `domain-physics.yaml` must declare:
 
 Standing orders define the **bounded automated responses** the orchestrator may take without human escalation. Each standing order must declare:
 - `trigger_condition`: which invariant or drift condition activates it
-- `action`: the specific automated action (e.g., `zpd_scaffold`, `request_more_steps`)
+- `action`: the specific automated action (e.g., `request_more_steps`, `reduce_challenge`)
 - `max_attempts`: how many times this order may be applied before escalation
 - `escalation_on_exhaust`: whether to escalate when `max_attempts` is reached
 
@@ -89,7 +89,7 @@ A domain's subject state schema must conform to the following structural require
 - All fields must be populated by deterministic sensors (see [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md))
 - Schema changes that add required fields or alter field semantics require a version bump
 
-> **Education domain example:** The education domain's compressed learner state schema is at [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and a challenge band — all concepts specific to educational assessment.
+> **Education domain example:** The education domain's compressed learner state schema is at [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and operating-band thresholds — all concepts specific to educational assessment.
 
 See [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md) for the sensor array specification that populates the state.
 
@@ -108,7 +108,6 @@ All Project Lumina documents and code must use the following canonical terminolo
 | **Meta Authority** | Domain Authority one level above | "Super-admin" |
 | **Domain Physics** | The authored ruleset (YAML) | "Rules file" |
 | **Standing Order** | A bounded automated response | "Auto-response", "rule" |
-| **Challenge Band** | Optimal challenge range for the subject (min/max bounds) | "Difficulty range", "ZPD band" |
 
 ---
 
@@ -148,7 +147,7 @@ Before publishing a domain pack or implementation:
 - [ ] All identifiers are pseudonymous
 - [ ] Terminology conforms to Section 4
 - [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
-- [ ] If the domain is learner-facing, `subsystem_configs.zpd_monitor` (or equivalent subsystem config) is present and drift thresholds are set
+- [ ] If the domain uses sensor subsystems, the relevant `subsystem_configs` block(s) are present with required thresholds
 
 ---
 

@@ -29,7 +29,7 @@ A Domain Authority may:
 3. **Define Standing Orders** — specify the bounded automated responses within their domain
 4. **Define Escalation Triggers** — specify when the system must escalate to them or above
 5. **Define Artifacts** — specify domain achievement milestones and challenge structures
-6. **Set ZPD Parameters** — configure the Zone of Proximal Development band and drift thresholds (learner-facing domains only)
+6. **Set Subsystem Parameters** — configure domain-specific sensor parameters and drift thresholds (e.g., ZPD band for education, soil-health thresholds for agriculture)
 7. **Review CTL Records** — access audit logs for sessions in their domain
 8. **Receive Escalations** — receive and resolve escalation packets from their sessions
 9. **Authorize Tool Adapters** — approve which external tools may be used in their sessions

@@ -52,20 +52,20 @@
     },
     "authorization": {
       "type": "object",
-      "required": ["who_may_call", "requires_student_consent"],
+      "required": ["who_may_call", "requires_entity_consent"],
       "additionalProperties": false,
       "properties": {
         "who_may_call": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["orchestrator", "student", "domain_authority"]
+            "enum": ["orchestrator", "entity", "domain_authority"]
           },
-          "description": "Roles authorized to invoke this tool"
+          "description": "Roles authorized to invoke this tool. Use 'entity' for the domain subject (student, patient, operator, etc.) — the domain's conversational_interface_overrides handle the domain-specific vocabulary."
         },
-        "requires_student_consent": {
+        "requires_entity_consent": {
           "type": "boolean",
-          "description": "Whether a specific student consent is required before calling this tool"
+          "description": "Whether explicit entity consent is required before calling this tool"
         },
         "max_calls_per_session": {
           "type": ["integer", "null"],
@@ -82,7 +82,7 @@
       "properties": {
         "on_failure": {
           "type": "string",
-          "enum": ["escalate", "fallback_to_standing_order", "notify_student", "ignore"],
+          "enum": ["escalate", "fallback_to_standing_order", "notify_entity", "ignore"],
           "description": "What the orchestrator does when the tool call fails"
         },
         "fallback_standing_order_id": {

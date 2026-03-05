@@ -116,8 +116,8 @@ Every version must have a CHANGELOG entry. Format:
 ```markdown
 ## v0.2.0 — 2026-03-02
 ### Added
-- ZPD configuration with drift thresholds
-- `zpd_drift_minor` and `zpd_drift_major` warning invariants
+- ZPD configuration with drift thresholds (education domain example)
+- `zpd_drift_minor` and `zpd_drift_major` warning invariants (education domain example)
 ### Changed
 - `show_work_minimum` max_attempts increased from 2 to 3
 ```
@@ -132,8 +132,8 @@ domain-packs/{org}/{subject-level}/
 ├── domain-physics.json          ← derived JSON (machine-authoritative)
 ├── tool-adapters/
 │   └── {tool-name}-adapter-v{N}.yaml
-├── student-profile-template.yaml
-├── example-student-{name}.yaml  ← optional test profiles
+├── entity-profile-template.yaml ← filename follows domain naming conventions
+├── example-entity-{name}.yaml   ← optional test profiles
 ├── prompt-contract-schema.json
 └── CHANGELOG.md
 ```

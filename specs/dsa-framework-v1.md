@@ -13,7 +13,7 @@ The **D.S.A. Framework** is the structural foundation of all Project Lumina orch
 | Pillar | Name | Mutability | Owner |
 |--------|------|------------|-------|
 | **D** | **Domain** | Immutable per session | Domain Authority (human) |
-| **S** | **State** | Mutable, updated from evidence | Orchestrator + Student |
+| **S** | **State** | Mutable, updated from evidence | Orchestrator + Entity |
 | **A** | **Action** | Bounded by Domain | Orchestrator |
 
 ---
@@ -33,10 +33,10 @@ The Domain is the **immutable ruleset** for a session. It is authored by the Dom
 - Defined in advance by the Domain Authority
 - Have explicit `max_attempts` limits
 - Must escalate when exhausted (`escalation_on_exhaust: true`)
-- Examples: `zpd_scaffold`, `request_more_steps`, `zpd_intervene_or_escalate`
+- Examples (education domain): `zpd_scaffold`, `request_more_steps`, `zpd_intervene_or_escalate`
 
 **Escalation Triggers** — conditions causing the system to pass control to the Meta Authority:
-- Named conditions (e.g., `major_zpd_drift_unresolved`)
+- Named conditions (e.g., `major_zpd_drift_unresolved` in the education domain)
 - Target role (who receives the escalation)
 - SLA for acknowledgement
 
@@ -44,10 +44,10 @@ The Domain is the **immutable ruleset** for a session. It is authored by the Dom
 - Defined by unlock conditions and mastery thresholds
 - Used for assessment, not surveillance
 
-**ZPD Configuration** — Zone of Proximal Development parameters:
-- `min_challenge`, `max_challenge` — the ZPD band
-- `drift_window_turns` — rolling window for drift detection
+**Subsystem Configuration** — domain-specific sensor parameters, keyed by subsystem ID in `subsystem_configs`:
+- Parameters are defined per-domain (e.g., `min_challenge`, `max_challenge`, `drift_window_turns` for the education domain's ZPD monitor; equivalent fields for other domain sensors)
 - `minor_drift_threshold`, `major_drift_threshold` — fraction of window triggering minor/major drift
+- The engine treats subsystem configuration as opaque; each domain sensor interprets its own parameters
 
 ### Domain Pack Format
 
@@ -59,9 +59,11 @@ The domain pack's current hash must be committed to the CTL as a `CommitmentReco
 
 ## S — State
 
-The State is the **mutable learner profile** — a compressed representation of what the orchestrator currently believes about the learner. It is updated incrementally from structured evidence after each interaction turn.
+The State is the **mutable entity profile** — a compressed representation of what the orchestrator currently believes about the entity being served. It is updated incrementally from structured evidence after each interaction turn. The specific state fields are defined by each domain's subject state schema; the engine treats sensor state as opaque.
 
 ### State Components
+
+The state fields populated in any given session depend entirely on the domain's subject state schema. The following are the components defined in the **education domain** (provided as an illustrative example):
 
 **Affect (SVA triad):**
 - `salience` (0..1) — engagement and focus
@@ -72,9 +74,10 @@ The State is the **mutable learner profile** — a compressed representation of 
 - Per-skill mastery estimates (0..1 per skill defined in the Domain)
 - Updated from evidence: correctness, hint usage, response patterns
 
-**ZPD Band:**
-- `min_challenge`, `max_challenge` — the learner's current Zone of Proximal Development
+**Operating Band (education: ZPD Band):**
+- `min_challenge`, `max_challenge` — the entity's current optimal operating range, as defined by the domain sensor (e.g., Zone of Proximal Development in education)
 - Compared against the challenge level of the current task to detect drift
+- This field is populated and interpreted by the domain sensor; the engine does not read it directly
 
 **Recent Window:**
 - Rolling window of `window_turns` turns
@@ -84,6 +87,8 @@ The State is the **mutable learner profile** — a compressed representation of 
 **Challenge and Uncertainty:**
 - `challenge` (0..1) — estimated difficulty of current task
 - `uncertainty` (0..1) — orchestrator's confidence in the state estimate
+
+Additional state fields may be defined by the domain's subject state schema and populated by its sensor array.
 
 ### Evidence Inputs
 
@@ -104,7 +109,7 @@ Evidence summaries are provided by the Domain's tool adapters or by the orchestr
 
 ### State Storage
 
-- The compressed state is stored in the student profile (YAML)
+- The compressed state is stored in the entity profile (YAML)
 - A hash of the state is committed to the CTL as part of each `TraceEvent`
 - The full state object is not stored in the CTL (only its hash)
 
@@ -140,9 +145,9 @@ The orchestrator's decisions follow a tiered response model:
 
 | Tier | Condition | Response |
 |------|-----------|----------|
-| `ok` | Within ZPD, no invariant violations | Continue normally |
-| `minor` | Minor ZPD drift or warning invariant | Apply `zpd_scaffold` standing order |
-| `major` | Major ZPD drift or critical invariant | Apply `zpd_intervene_or_escalate` |
+| `ok` | Within operating band, no invariant violations | Continue normally |
+| `minor` | Minor sensor drift or warning invariant | Apply the standing order defined for this tier |
+| `major` | Major sensor drift or critical invariant | Apply the standing order defined for this tier |
 | `escalate` | Standing orders exhausted, system cannot stabilize | Assemble `EscalationRecord`, freeze, notify Meta Authority |
 
 ### Grounding Contract
@@ -157,11 +162,11 @@ One turn of a D.S.A. session:
 
 ```
 1. [Domain] Domain Physics loaded and hash-verified
-2. [State] Student profile loaded; compressed state available
-3. [Action] Task presented to student (within ZPD band)
-4. [Student] Student responds
+2. [State] Entity profile loaded; compressed state available
+3. [Action] Task presented to entity (within operating bounds)
+4. [Entity] Entity responds
 5. [Action] Evidence summary extracted (tool adapters)
-6. [State] State updated: affect, mastery, ZPD window
+6. [State] State updated via domain sensor
 7. [Domain] Invariant checks run against updated state + evidence
 8. [Action] Decision tier calculated: ok / minor / major / escalate
 9. [Action] Standing order applied if needed

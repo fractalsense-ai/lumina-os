@@ -12,7 +12,7 @@ A domain pack is the **D (Domain)** pillar of the D.S.A. Framework. It defines:
 - **Standing Orders** — bounded automated responses the orchestrator may take
 - **Escalation Triggers** — when to pass control to the Meta Authority
 - **Artifacts** — mastery milestones the learner can earn
-- **ZPD Configuration** — Zone of Proximal Development band and drift thresholds
+- **Subsystem Configuration** — domain-specific sensor parameters and drift thresholds (e.g., ZPD band for education, soil moisture band for agriculture)
 
 See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) for the full authoring specification.
 
@@ -65,9 +65,9 @@ python ../reference-implementations/yaml-to-json-converter.py \
   --schema ../standards/domain-physics-schema-v1.json
 ```
 
-### 4. Write the student profile template
+### 4. Write the entity profile template
 
-Use `student-profile-template.yaml` from `algebra-level-1` as a base. The template defines the initial state for new students.
+Use `student-profile-template.yaml` from `algebra-level-1` as a base (or the equivalent template for your domain — the filename follows your domain's own naming conventions). The template defines the initial state for new entities.
 
 ### 5. Write tool adapters (if needed)
 

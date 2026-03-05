@@ -88,7 +88,7 @@ These principles apply only when activated by a specific domain pack's configura
 
 8. **Consent and boundaries first** — the magic circle must be established before any session begins *(active when `requires_consent: true` is declared in the domain pack)*
 9. **Interests affect generation, never grading** — subject preferences improve immersion; they must not influence assessment *(activates in domains where subject profiles include preference data)*
-10. **Fade support as self-correction grows** — scaffolding reduces as mastery increases *(applies to domains with mastery tracking / ZPD monitoring)*
+10. **Fade support as self-correction grows** — scaffolding reduces as mastery increases *(applies to domains with mastery tracking / drift monitoring)*
 
 ---
 
@@ -176,7 +176,7 @@ project-lumina/
 1. Read [`specs/principles-v1.md`](specs/principles-v1.md) — understand the non-negotiables
 2. Read [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — understand the framework
 3. Browse [`domain-packs/education/algebra-level-1/`](domain-packs/education/algebra-level-1/) — a complete worked domain
-4. Run [`domain-packs/education/reference-implementations/zpd-monitor-demo.py`](domain-packs/education/reference-implementations/zpd-monitor-demo.py) — see the ZPD monitor in action
+4. Run [`domain-packs/education/reference-implementations/zpd-monitor-demo.py`](domain-packs/education/reference-implementations/zpd-monitor-demo.py) — see the education domain's ZPD monitor in action
 5. Run [`reference-implementations/dsa-orchestrator-demo.py`](reference-implementations/dsa-orchestrator-demo.py) — see the full D.S.A. orchestrator loop in action
 6. Read [`examples/README.md`](examples/README.md) — walk through a full interaction loop
 

@@ -154,11 +154,11 @@ The same equivalence check applies regardless of whether the example involves ro
 
 **Scaffolding reduces as mastery increases.**
 
-**Activates in:** domains with mastery tracking / ZPD monitoring.
+**Activates in:** domains with mastery tracking / drift monitoring.
 
 The system's goal is to become less necessary over time. As mastery grows, the orchestrator should:
 - Reduce hint frequency
-- Increase task challenge toward the upper ZPD bound
+- Increase task challenge toward the upper operating bound
 - Decrease probe frequency
 - Increase the threshold for standing order triggers
 
