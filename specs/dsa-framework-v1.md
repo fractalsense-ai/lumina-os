@@ -1,8 +1,8 @@
 # D.S.A. Framework — V1 Specification
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
@@ -33,10 +33,10 @@ The Domain is the **immutable ruleset** for a session. It is authored by the Dom
 - Defined in advance by the Domain Authority
 - Have explicit `max_attempts` limits
 - Must escalate when exhausted (`escalation_on_exhaust: true`)
-- Examples (education domain): `zpd_scaffold`, `request_more_steps`, `zpd_intervene_or_escalate`
+- Examples (education domain): `zpd_scaffold`, `request_more_steps`, `zpd_intervene_or_escalate` (other domains define their own action vocabularies)
 
 **Escalation Triggers** — conditions causing the system to pass control to the Meta Authority:
-- Named conditions (e.g., `major_zpd_drift_unresolved` in the education domain)
+- Named conditions (e.g., `major_zpd_drift_unresolved` in the education domain; `soil_moisture_critical` in agriculture)
 - Target role (who receives the escalation)
 - SLA for acknowledgement
 
@@ -92,7 +92,7 @@ Additional state fields may be defined by the domain's subject state schema and 
 
 ### Evidence Inputs
 
-State is never inferred from conversation content. Evidence is a structured summary:
+State is never inferred from conversation content. Evidence is a structured summary. The fields included are domain-specific — the following example is from the education domain:
 
 ```json
 {
@@ -105,7 +105,7 @@ State is never inferred from conversation content. Evidence is a structured summ
 }
 ```
 
-Evidence summaries are provided by the Domain's tool adapters or by the orchestrator's observation layer, not by reading raw text.
+Other domains define their own evidence schemas (e.g., an agriculture domain may include `soil_moisture_reading`, `irrigation_applied`; a medical domain may include `vital_sign_delta`, `protocol_adherence`).
 
 ### State Storage
 

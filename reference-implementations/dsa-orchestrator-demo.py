@@ -608,8 +608,8 @@ def run_demo() -> None:
         inv_results_display = orch.last_invariant_results
         zpd_decision = orch.last_sensor_decision
 
-        # Detect drift/escalation events
-        if resolved_action in ("zpd_scaffold", "zpd_intervene_or_escalate"):
+        # Detect drift/escalation events (check sensor decision tier, not action name)
+        if zpd_decision.get("tier") in ("minor", "major"):
             total_drift_events += 1
         escalation_records = [
             r for r in orch.ctl_records

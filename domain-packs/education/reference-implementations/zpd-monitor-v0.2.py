@@ -365,6 +365,7 @@ def _detect_drift(
         return {
             "tier": "major",
             "action": "zpd_intervene_or_escalate",
+            "should_escalate": True,
             "frustration": frustration,
             "drift_pct": window.outside_pct,
             "reason": "major_zpd_drift_or_frustration",

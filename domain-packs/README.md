@@ -11,7 +11,7 @@ A domain pack is the **D (Domain)** pillar of the D.S.A. Framework. It defines:
 - **Invariants** — conditions that must always hold (critical or warning severity)
 - **Standing Orders** — bounded automated responses the orchestrator may take
 - **Escalation Triggers** — when to pass control to the Meta Authority
-- **Artifacts** — mastery milestones the learner can earn
+- **Artifacts** — milestones that can be earned in this domain
 - **Subsystem Configuration** — domain-specific sensor parameters and drift thresholds (e.g., ZPD band for education, soil moisture band for agriculture)
 
 See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) for the full authoring specification.

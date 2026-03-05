@@ -477,13 +477,11 @@ class DSAOrchestrator:
 
         # Fall through to domain sensor decision
         action = sensor_decision.get("action")
-        frustration = bool(sensor_decision.get("frustration", False))
-        # The escalation check compares against the domain-specific action string
-        # emitted by the sensor; this is intentional — the engine defers to the
-        # sensor's vocabulary and does not rewrite domain-specific action names.
-        should_escalate = (
-            action == "zpd_intervene_or_escalate" and frustration
-        )
+        # The engine checks an explicit boolean field set by the domain sensor.
+        # This keeps the core engine domain-agnostic — each domain pack's sensor
+        # is responsible for setting "should_escalate": True when escalation is
+        # warranted (e.g., the education ZPD monitor sets this on major drift).
+        should_escalate = bool(sensor_decision.get("should_escalate", False))
         return action, should_escalate
 
     def _build_prompt_contract(

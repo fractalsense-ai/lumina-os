@@ -101,7 +101,7 @@ Escalation occurs when the AI orchestrator cannot stabilize a session within its
 
 ### Escalation Steps
 
-1. **Detection** — the orchestrator detects that ZPD drift is major, a critical invariant is repeatedly violated, or a standing order is exhausted
+1. **Detection** — the orchestrator detects that sensor drift is major, a critical invariant is repeatedly violated, or a standing order is exhausted
 2. **Freeze** — the orchestrator halts autonomous action within this session scope
 3. **Packet Assembly** — an `EscalationRecord` is assembled: structured summary, evidence hashes, decision trail from CTL, proposed next action
 4. **CTL Record** — the `EscalationRecord` is appended to the CTL (append-only; escalation cannot be deleted)

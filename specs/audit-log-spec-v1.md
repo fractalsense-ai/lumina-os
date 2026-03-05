@@ -1,8 +1,8 @@
 # Audit Log Specification — V1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
@@ -36,11 +36,11 @@ An audit log report for a session contains:
 Session Audit Log
 =================
 Session ID:     <uuid>
-Student ID:     <pseudonymous-token>
+Entity ID:      <pseudonymous-token>
 Domain Pack:    algebra-level-1 v0.2.0
 Domain Authority: <pseudonymous-token>
-Session Open:   2026-03-02T10:00:00Z
-Session Close:  2026-03-02T10:45:22Z
+Session Open:   2026-03-05T10:00:00Z
+Session Close:  2026-03-05T10:45:22Z
 Total Turns:    18
 
 Consent Record
@@ -65,7 +65,7 @@ Standing Order Log
 ------------------
 Turn  7: request_more_steps applied (attempt 1/3)
 
-ZPD Drift Log
+ZPD Drift Log *(education domain — sensor drift log)*
 -------------
 Turn 11: challenge=0.78, challenge_band=[0.3, 0.7] → OUTSIDE (above)
 Turn 12: challenge=0.75, challenge_band=[0.3, 0.7] → OUTSIDE (above)
@@ -96,7 +96,7 @@ Chain intact: YES
 ### What the Audit Log Does NOT Contain
 
 - Conversation content
-- Verbatim student responses
+- Verbatim entity/subject responses
 - Any information beyond structured telemetry
 
 ---
@@ -105,9 +105,9 @@ Chain intact: YES
 
 | Role | Scope |
 |------|-------|
-| Student | Their own sessions only; structured summary format |
-| Teacher (Domain Authority) | All sessions in their domain |
-| Department Head (Meta Authority) | All sessions in their department |
+| Subject/Target (e.g., student, patient, operator) | Their own sessions only; structured summary format |
+| Micro Authority / Domain Authority (e.g., teacher, clinician) | All sessions in their domain |
+| Meta Authority (e.g., department head, supervising officer) | All sessions in their scope |
 | Administration | All sessions institution-wide |
 
 Audit requests outside the requestor's scope must be rejected and the rejection recorded as a `TraceEvent` in the CTL.

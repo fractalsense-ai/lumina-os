@@ -1,8 +1,8 @@
 # Evaluation Harness — V1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
@@ -24,8 +24,8 @@ These tests verify that no conversation content is written to any persistent sto
 - Assert: No CTL record contains any field that matches any of the simulated response strings
 - Pass criterion: All assertions pass
 
-**TC-TNS-002: Student profile update contains no conversation**
-- Trigger: Run a session, update the student profile
+**TC-TNS-002: Entity profile update contains no conversation**
+- Trigger: Run a session, update the entity profile
 - Assert: The updated profile YAML/JSON contains no fields whose values are conversation strings
 - Pass criterion: All assertions pass
 
@@ -57,9 +57,9 @@ These tests verify that no conversation content is written to any persistent sto
 - Pass criterion: Tamper detected
 
 **TC-CTL-004: Pseudonymous IDs only**
-- Trigger: Write a session with a known real-name student
+- Trigger: Write a session with a known real-name entity/subject
 - Assert: No field in any CTL record contains the real name
-- Assert: All actor/student ID fields are pseudonymous tokens (format: `[a-f0-9]{32}`)
+- Assert: All actor/entity ID fields are pseudonymous tokens (format: `[a-f0-9]{32}`)
 - Pass criterion: All assertions pass
 
 ---
@@ -94,19 +94,21 @@ These tests verify that no conversation content is written to any persistent sto
 - Assert: Mastery deltas are identical for identical task performance
 - Pass criterion: Deltas are equal (within floating point tolerance)
 
-**TC-PREF-002: Preferences do not affect ZPD band**
+**TC-PREF-002: Preferences do not affect operating band**
 - Trigger: Run two otherwise-identical sessions with different preferences
-- Assert: ZPD band calculations are identical
-- Pass criterion: ZPD bands are equal
+- Assert: Operating band calculations are identical
+- Pass criterion: Operating bands are equal
 
 **TC-PREF-003: Preferences do not affect standing order thresholds**
-- Trigger: Configure a student with preferences, trigger standing orders
-- Assert: Standing order trigger thresholds are the same as for a student with no preferences
+- Trigger: Configure an entity/subject with preferences, trigger standing orders
+- Assert: Standing order trigger thresholds are the same as for an entity with no preferences
 - Pass criterion: Thresholds are equal
 
 ---
 
-### Category 5: ZPD Monitor Correctness
+### Category 5: Domain Sensor Correctness
+
+> **Note:** This category tests the correctness of a domain's sensor array. The test cases below are written for the **education domain's ZPD monitor** as a worked example. Other domains implement equivalent tests for their own sensors (e.g., an agriculture domain would test soil-moisture band detection; a medical domain would test vital-sign threshold detection). Test case IDs (`TC-ZPD-*`) reflect the education domain's naming convention.
 
 **TC-ZPD-001: Minor drift detection**
 - Trigger: Inject 3 of 10 turns with `outside_pct` ≥ `minor_drift_threshold`
@@ -167,4 +169,4 @@ Conformance must be re-verified after:
 - Any change to the CTL write path
 - Any change to the state update functions
 - Any change to the evidence extraction layer
-- Any change to the student profile update logic
+- Any change to the entity profile update logic

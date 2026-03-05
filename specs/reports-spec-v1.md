@@ -1,8 +1,8 @@
 # Reports Specification — V1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
@@ -22,25 +22,25 @@ Generated once per day per Domain Authority. Summarizes all sessions in their do
 - Number of sessions completed
 - Number of sessions escalated
 - Number of artifacts awarded
-- Aggregate mastery deltas per skill (average across students)
+- Aggregate mastery deltas per skill (average across entities)
 - Number of standing order triggers per invariant
-- Number of ZPD drift events (minor and major)
+- Number of sensor drift events (minor and major)
 - Any escalations pending resolution
 
 **Format:** Structured JSON, rendered as human-readable summary on request.
 
 **Audience:** Domain Authority (teacher), available to Meta Authority on request.
 
-**Privacy:** All student identifiers are pseudonymous. No individual student data is surfaced in the daily log — only aggregates.
+**Privacy:** All entity identifiers are pseudonymous. No individual entity data is surfaced in the daily log — only aggregates.
 
-### 2. Student Progress Report
+### 2. Entity Progress Report
 
-Generated on demand for a specific student, by a Domain Authority or Meta Authority with appropriate scope.
+Generated on demand for a specific entity, by a Domain Authority or Meta Authority with appropriate scope.
 
 **Contents:**
 - Current mastery per skill (0..1)
 - Artifacts earned (with date)
-- ZPD band (current)
+- Operating band (current)
 - Session count and total turns
 - Trend: mastery trajectory over last N sessions (direction only: improving, stable, declining)
 - Standing order trigger count (how often scaffolding was needed)
@@ -69,7 +69,7 @@ Generated on demand for a Domain Authority. Reviews how their domain pack is per
 - Invariant trigger rate per invariant (critical and warning)
 - Standing order exhaustion rate (how often max_attempts was reached)
 - Escalation rate
-- Average session ZPD drift rate
+- Average session sensor drift rate
 - Artifact unlock rate
 - Recommendations flagged (e.g., "invariant `show_work_minimum` triggers in >50% of sessions — consider reviewing its threshold")
 
@@ -79,7 +79,7 @@ Generated on demand for a Domain Authority. Reviews how their domain pack is per
 
 A discrepancy is any situation where:
 - A CTL record hash chain is broken
-- A student profile hash does not match the CTL commitment
+- An entity profile hash does not match the CTL commitment
 - An escalation outcome does not match the CommitmentRecord
 - A domain pack hash at session time does not match the committed hash
 

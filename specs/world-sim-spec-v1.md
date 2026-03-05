@@ -1,8 +1,8 @@
 # World Simulation Specification — V1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
@@ -19,9 +19,11 @@ The world simulation serves two goals:
 2. **Grounding** — domain concepts are anchored to concrete situations
 
 Examples:
-- Algebra problems as "calculating supplies for a space mission"
-- Chemistry as "running a lab at a research station"
-- History as "advising a historical figure"
+- Algebra problems as "calculating supplies for a space mission" *(education domain)*
+- Chemistry as "running a lab at a research station" *(education domain)*
+- History as "advising a historical figure" *(education domain)*
+- Monitoring crop health as "managing a virtual farm" *(agriculture domain)*
+- Treatment protocol selection as "running a field hospital" *(medical domain)*
 
 The narrative is cosmetic. The mathematical or conceptual content is unchanged. Equivalence checks, invariant rules, and mastery thresholds are the same regardless of theme.
 
@@ -34,7 +36,7 @@ A world simulation is defined by parameters in the domain pack or session config
 ```yaml
 world_sim:
   enabled: true
-  theme: "space_exploration"  # matches student interest if available
+  theme: "space_exploration"  # matches entity preferences if available
   setting_description: "You are the mission mathematician aboard the Helios research vessel."
   artifact_framing: "mission_badge"  # how artifacts are presented in-world
   task_framing: "mission_briefing"   # how tasks are presented in-world
@@ -43,10 +45,10 @@ world_sim:
 
 ### Theme Selection
 
-If the student has listed interests in their profile, the world simulation theme may be selected to match. Selection rules:
-- Use a theme that maps to an interest if one is available
+If the entity profile includes preferences, the world simulation theme may be selected to match. Selection rules:
+- Use a theme that maps to a preference if one is available
 - Fall back to the domain pack's default theme
-- Never select a theme the student has listed as a dislike
+- Never select a theme the entity has listed as a dislike
 - Theme selection is recorded in the session-open `CommitmentRecord`
 
 ---
@@ -68,7 +70,7 @@ The AI may use in-world language to communicate invariant violations, but the un
 The world simulation is bounded:
 - The narrative may not introduce domain content not in the Domain Physics
 - The AI may not invent rules, exceptions, or workarounds within the narrative framing
-- If the student asks the AI to play a character who would "know the answer," the AI must maintain the boundary: "Even in this story, I can only help you work through the steps — I can't just give you the answer."
+- If the entity asks the AI to play a character who would "know the answer," the AI must maintain the boundary: "Even in this story, I can only help you work through the steps — I can't just give you the answer."
 - The exit clause always works: saying "exit session" (or the in-world equivalent) always ends the session cleanly
 
 ---
@@ -78,7 +80,7 @@ The world simulation is bounded:
 The magic circle consent must occur before the world simulation begins. The consent must explicitly mention:
 - That the session will use a fictional narrative
 - What the in-world exit phrase is
-- That the narrative is a learning context, not entertainment
+- That the narrative is a session context, not entertainment
 
 The narrative frame does not reduce or modify any consent obligations.
 
@@ -100,3 +102,4 @@ Mastery artifacts may be presented within the world simulation context. Examples
 - Session transcripts are still not stored — the narrative content is ephemeral
 - World parameters are advisory for the orchestrator; they do not override Domain Physics
 - Not all domains require world simulation; it is opt-in via domain pack configuration
+- Outcome scores and assessments are domain-specific; the world simulation does not alter how the domain sensor evaluates performance

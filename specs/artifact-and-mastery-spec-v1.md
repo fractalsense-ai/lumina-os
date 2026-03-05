@@ -1,16 +1,16 @@
 # Artifact and Mastery Specification — V1
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-05
 
 ---
 
 ## Overview
 
-**Artifacts** are mastery recognition items earned by learners when they demonstrate sustained competence in a defined skill set. They serve as clear, verifiable milestones rather than opaque "scores."
+**Artifacts** are mastery recognition items earned by entities when they demonstrate sustained competence in a defined skill set. They serve as clear, verifiable milestones rather than opaque "scores."
 
-**Boss challenges** are high-stakes assessment tasks that gate artifact award — the learner must demonstrate mastery under conditions that test the skill comprehensively.
+**Boss challenges** are high-stakes assessment tasks that gate artifact award — the entity must demonstrate mastery under conditions that test the skill comprehensively.
 
 ---
 
@@ -37,16 +37,16 @@ artifacts:
 
 1. **Threshold check**: All `skills_required` must have mastery ≥ `mastery_threshold`
 2. **Boss challenge**: A boss challenge task is presented (see below)
-3. **Boss pass**: The learner must pass the boss challenge
+3. **Boss pass**: The entity must pass the boss challenge
 4. **OutcomeRecord**: An `OutcomeRecord` is appended to the CTL with `artifact_earned: <artifact_id>`
-5. **Profile update**: The artifact is recorded in the student profile
+5. **Profile update**: The artifact is recorded in the entity profile
 
 Artifacts may not be awarded without the boss challenge, even if mastery thresholds are met.
 
 ### Artifact Integrity
 
 - Artifacts are non-revocable once awarded (the CTL is append-only)
-- A learner may re-attempt a boss challenge if they fail; each attempt is a separate `OutcomeRecord`
+- An entity may re-attempt a boss challenge if they fail; each attempt is a separate `OutcomeRecord`
 - Mastery estimates may decrease over time (decay), but awarded artifacts are permanent records of demonstrated mastery at the time of award
 
 ---
@@ -65,6 +65,8 @@ A boss challenge is a focused assessment task designed to confirm that mastery i
 
 ### Boss Challenge Task Structure
 
+> **Education domain example.** The following YAML shows an algebra boss challenge from the education domain. Other domains define equivalent boss challenge structures for their own skill assessments (e.g., an agriculture domain might gate a "Crop Rotation Certification" artifact on a field-planning assessment task).
+
 ```yaml
 boss_challenge:
   id: "boss_linear_equations_v1"
@@ -74,7 +76,7 @@ boss_challenge:
     - check_equivalence
     - show_work_steps
   task_description: >
-    A multi-step problem requiring the student to solve for x in a two-step
+    A multi-step problem requiring the entity to solve for x in a two-step
     equation and verify their solution.
   grading:
     - check: verify_algebraic_equivalence
@@ -115,14 +117,14 @@ Mastery is expressed as a float 0..1 per skill:
 
 ### Mastery Update Rules
 
-Mastery is updated by the ZPD monitor after each task:
+Mastery is updated by the domain sensor after each task (in the education domain, this is the ZPD monitor):
 
 - **Correct + no hint**: mastery increases (larger increase if no hint)
 - **Correct + hint used**: mastery increases modestly
 - **Incorrect**: mastery decreases (larger decrease if repeated error)
 - **Abandoned**: mastery unchanged
 
-The exact update function is in [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py).
+The exact update function for the education domain is in [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py).
 
 ### Mastery Decay
 
@@ -135,7 +137,7 @@ mastery_decay:
   minimum_retained: 0.4     # mastery never decays below this
 ```
 
-Decay is applied when the student profile is loaded for a new session.
+Decay is applied when the entity profile is loaded for a new session.
 
 ---
 
@@ -145,7 +147,7 @@ These two principles govern all assessment:
 
 1. **Mastery is measured from task performance, not behavioral inference.** The system looks at whether the learner solved the problem correctly, how many steps they showed, whether they needed a hint — not at how they phrased things, their tone, or other conversational signals.
 
-2. **Preferences do not affect assessment.** A student's stated interests are used for example theming only. The same mathematical equivalence check applies to a rocket-themed problem and an apple-themed problem.
+2. **Preferences do not affect assessment.** An entity's stated interests are used for example theming only. The same mathematical equivalence check applies to a rocket-themed problem and an apple-themed problem.
 
 ---
 

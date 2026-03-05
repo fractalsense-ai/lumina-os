@@ -37,6 +37,7 @@ Where decision contains:
 {
     "tier": "ok" | "minor" | "major",
     "action": None | "zpd_scaffold" | "zpd_intervene_or_escalate",
+    "should_escalate": bool,  # True on major tier; engine checks this field
     "frustration": bool,
     "challenge": float,
     "outside_band": bool,
@@ -143,6 +144,7 @@ def detect_drift(window: RecentWindow, frustration: bool, params: dict) -> dict:
         return {
             "tier": "major",
             "action": "zpd_intervene_or_escalate",
+            "should_escalate": True,
             "frustration": frustration,
             "drift_pct": window.outside_pct,
             "reason": "major_zpd_drift_or_frustration"
