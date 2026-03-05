@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/prompt-contract-schema-v1.json",
+  "title": "Project Lumina — Universal Prompt Contract Schema",
+  "description": "Base schema that all Project Lumina prompt contracts must conform to. Domain packs extend this schema with domain-specific fields (e.g., hint_level, skills_targeted). A domain-specific prompt-contract-schema.json that adds required fields and constrains prompt_type to a domain-defined enum is a valid extension of this base.",
+  "type": "object",
+  "required": ["prompt_type", "domain_pack_id", "domain_pack_version", "task_id"],
+  "properties": {
+    "prompt_type": {
+      "type": "string",
+      "description": "The type of prompt being issued. Valid values are defined by the active domain pack."
+    },
+    "domain_pack_id": {
+      "type": "string",
+      "description": "Globally unique identifier of the domain pack that produced this contract (format: domain/{org}/{name}/v{major})"
+    },
+    "domain_pack_version": {
+      "type": "string",
+      "description": "Semver version of the domain pack active when this prompt was generated"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Identifier for the current task within the domain"
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "artifact_version": { "type": "string" },
+          "hash_verified": { "type": "boolean" }
+        }
+      },
+      "description": "Retrieved artifacts cited in this prompt (grounding contract). Domain packs may require this field."
+    },
+    "grounded": {
+      "type": "boolean",
+      "description": "Whether all claims in this prompt are grounded in cited artifacts"
+    },
+    "theme": {
+      "type": ["string", "null"],
+      "description": "World simulation theme applied to this prompt (immersion only — must not influence domain content or difficulty)"
+    }
+  }
+}

@@ -24,7 +24,7 @@ Every domain pack must include the following artifacts:
 | `domain-physics.json` | Yes (derived) | Same schema |
 | `student-profile-template.yaml` | Yes | [`student-profile-schema-v1.json`](student-profile-schema-v1.json) — the education-domain instantiation of the general subject profile pattern; other domains should provide a domain-appropriate profile |
 | `CHANGELOG.md` | Yes | Semver entries |
-| `prompt-contract-schema.json` | Yes | Domain-specific prompt constraints |
+| `prompt-contract-schema.json` | Yes | Extends [`prompt-contract-schema-v1.json`](prompt-contract-schema-v1.json) — domain-specific prompt constraints must extend the universal base schema |
 
 Optional but recommended:
 - `tool-adapters/*.yaml` — one per tool, conforming to [`tool-adapter-schema-v1.json`](tool-adapter-schema-v1.json)
