@@ -626,8 +626,8 @@ def run_demo() -> None:
         else:
             print("  Evidence used: (no domain-invariant fields in evidence)")
 
-        # ── Print ZPD decision ────────────────────────────────
-        print(f"\n  ZPD MONITOR:")
+        # ── Print domain sensor decision ──────────────────────
+        print(f"\n  DOMAIN SENSOR (ZPD Monitor):")
         tier = zpd_decision.get("tier", "ok")
         tier_icon = {"ok": "✓ ok", "minor": "⚠ MINOR", "major": "⚡ MAJOR"}.get(tier, tier)
         rw = orch.state.recent_window
@@ -726,7 +726,7 @@ def run_demo() -> None:
           f"S={orch.state.affect.salience:.2f} "
           f"V={orch.state.affect.valence:+.2f} "
           f"A={orch.state.affect.arousal:.2f}")
-    print(f"  ZPD window  : outside_pct={orch.state.recent_window.outside_pct:.2f}  "
+    print(f"  Challenge window: outside_pct={orch.state.recent_window.outside_pct:.2f}  "
           f"consecutive_outside={orch.state.recent_window.consecutive_outside}")
     _sep("═")
 
