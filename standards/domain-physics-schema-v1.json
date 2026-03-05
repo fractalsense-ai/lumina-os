@@ -90,8 +90,14 @@
   "$defs": {
     "invariant": {
       "type": "object",
-      "required": ["id", "description", "severity", "check"],
+      "required": ["id", "description", "severity"],
       "additionalProperties": false,
+      "if": {
+        "not": { "required": ["handled_by"] }
+      },
+      "then": {
+        "required": ["check"]
+      },
       "properties": {
         "id": {
           "type": "string",
@@ -108,7 +114,11 @@
         },
         "check": {
           "type": "string",
-          "description": "Description or reference of how this invariant is checked"
+          "description": "Predicate expression evaluated by the orchestrator (e.g. 'step_count >= 3'). Required when handled_by is absent; optional (informational) when handled_by is set."
+        },
+        "handled_by": {
+          "type": "string",
+          "description": "ID of the subsystem that evaluates this invariant (e.g. 'zpd_monitor'). When present, the orchestrator skips its own check evaluation and defers entirely to the named subsystem. Enables domain-agnostic invariant delegation without hardcoding invariant IDs in the engine."
         },
         "standing_order_on_violation": {
           "type": "string",
