@@ -42,7 +42,7 @@ A conformant `domain-physics.yaml` must declare:
 - `standing_orders`: list of at least one standing order
 - `escalation_triggers`: at least one trigger referencing a standing order
 - `artifacts`: list of recognized mastery artifacts (may be empty for v0 packs)
-- `zpd_config`: ZPD band and drift thresholds (required for learner-facing domains; omit for non-learner domains)
+- `subsystem_configs`: optional map of domain-specific subsystem parameter blocks, keyed by subsystem ID (e.g. `zpd_monitor` for learner-facing education domains). Each value is a free-form object understood only by that subsystem. Omit for domains with no configurable subsystems.
 - `requires_consent`: consent requirement flag (required for human-facing domains that must enforce the magic-circle consent principle; omit for machine-facing domains)
 
 ### 1.2 Invariant Severity Levels
@@ -149,7 +149,7 @@ Before publishing a domain pack or implementation:
 - [ ] All identifiers are pseudonymous
 - [ ] Terminology conforms to Section 4
 - [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
-- [ ] If the domain is learner-facing, `zpd_config` is present and drift thresholds are set
+- [ ] If the domain is learner-facing, `subsystem_configs.zpd_monitor` (or equivalent subsystem config) is present and drift thresholds are set
 
 ---
 

@@ -4,6 +4,16 @@ All notable changes to this domain pack will be documented here.
 
 ---
 
+## v0.3.0 — 2026-03-05
+
+### Changed
+- Renamed top-level `zpd_config` to `subsystem_configs.zpd_monitor` to align with the
+  updated universal domain-physics-schema-v1 which now uses a generic `subsystem_configs`
+  map instead of the education-specific `zpd_config` field. All parameter values are
+  unchanged.
+
+---
+
 ## v0.2.0 — 2026-03-02
 
 ### Added

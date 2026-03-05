@@ -19,7 +19,7 @@ A Domain Profile:
 2. **Defines what the system may do** — standing orders bound the orchestrator's automated responses
 3. **Defines when to escalate** — escalation triggers specify when human intervention is needed
 4. **Defines what mastery means** — artifacts specify achievable outcomes
-5. **Sets the ZPD parameters** — challenge band and drift thresholds
+5. **Sets subsystem parameters** — `subsystem_configs` provides domain-specific configuration for subsystems such as the ZPD monitor (education) or a soil-health monitor (agriculture)
 
 A Domain Profile does not define conversation scripts, specific problem sets, or lesson plans. Those are content, not structure. The profile governs the structure.
 
@@ -74,13 +74,14 @@ artifacts:
     skills_required:
       - solve_one_variable
 
-zpd_config:
-  min_challenge: 0.3
-  max_challenge: 0.7
-  drift_window_turns: 10
-  minor_drift_threshold: 0.3
-  major_drift_threshold: 0.5
-  persistence_required: 3
+subsystem_configs:
+  zpd_monitor:
+    min_challenge: 0.3
+    max_challenge: 0.7
+    drift_window_turns: 10
+    minor_drift_threshold: 0.3
+    major_drift_threshold: 0.5
+    persistence_required: 3
 ```
 
 ### Step 2: Validate and Convert
@@ -176,9 +177,13 @@ This mechanism is **domain-agnostic**: the orchestrator never needs to know inva
 
 ---
 
-## ZPD Configuration Guidelines
+## Subsystem Configuration Guidelines
 
-The ZPD band should be set based on the Domain Authority's pedagogical judgment:
+Domain-specific subsystems (such as the ZPD monitor in education domains, or a soil-health monitor in agriculture domains) declare their parameters under `subsystem_configs`, keyed by subsystem ID. This keeps domain-specific vocabulary out of the universal schema.
+
+**Education example — ZPD monitor configuration:**
+
+The `subsystem_configs.zpd_monitor` block should be set based on the Domain Authority's pedagogical judgment:
 
 - **Too narrow**: frequent drift, too many interventions
 - **Too wide**: drift goes undetected, learner struggles or disengages
@@ -190,6 +195,8 @@ Typical starting values:
 - `minor_drift_threshold: 0.3` (3 of 10 turns outside ZPD → minor)
 - `major_drift_threshold: 0.5` (5 of 10 turns outside ZPD → major)
 - `persistence_required: 3`
+
+Other domains should define their own subsystem config blocks under `subsystem_configs` using keys and parameter names appropriate to their domain (e.g. `subsystem_configs.soil_health_monitor`).
 
 ---
 

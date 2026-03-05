@@ -1,6 +1,6 @@
 {
   "id": "domain/edu/algebra-level-1/v1",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "domain_authority": {
     "name": "Lead Algebra Teacher",
     "role": "Teacher",
@@ -140,13 +140,15 @@
       ]
     }
   ],
-  "zpd_config": {
-    "min_challenge": 0.3,
-    "max_challenge": 0.7,
-    "drift_window_turns": 10,
-    "minor_drift_threshold": 0.3,
-    "major_drift_threshold": 0.5,
-    "persistence_required": 3
+  "subsystem_configs": {
+    "zpd_monitor": {
+      "min_challenge": 0.3,
+      "max_challenge": 0.7,
+      "drift_window_turns": 10,
+      "minor_drift_threshold": 0.3,
+      "major_drift_threshold": 0.5,
+      "persistence_required": 3
+    }
   },
   "evidence_summary_types": [
     "step_diff_summary",

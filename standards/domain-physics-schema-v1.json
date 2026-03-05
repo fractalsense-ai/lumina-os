@@ -72,9 +72,10 @@
       "items": { "$ref": "#/$defs/artifact" },
       "description": "Domain artifacts (achievements, milestones) that can be earned in this domain"
     },
-    "zpd_config": {
-      "$ref": "#/$defs/zpd_config",
-      "description": "Zone of Proximal Development configuration (required for learner-facing domains with ZPD monitoring; omit for domains without ZPD concepts)"
+    "subsystem_configs": {
+      "type": "object",
+      "additionalProperties": { "type": "object" },
+      "description": "Optional subsystem configuration blocks, keyed by subsystem ID. Each value is a free-form object of parameters specific to that subsystem (e.g. {\"zpd_monitor\": {\"min_challenge\": 0.3, ...}} for education, or {\"soil_health_monitor\": {...}} for agriculture). Omit entirely for domains that use no configurable subsystems."
     },
     "evidence_summary_types": {
       "type": "array",
@@ -206,47 +207,6 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Skill IDs that must meet the mastery threshold"
-        }
-      }
-    },
-    "zpd_config": {
-      "type": "object",
-      "required": ["min_challenge", "max_challenge", "drift_window_turns", "minor_drift_threshold", "major_drift_threshold"],
-      "additionalProperties": false,
-      "properties": {
-        "min_challenge": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Lower bound of the ZPD band (0..1)"
-        },
-        "max_challenge": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Upper bound of the ZPD band (0..1)"
-        },
-        "drift_window_turns": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Rolling window size (in turns) for drift calculation"
-        },
-        "minor_drift_threshold": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Fraction of window turns outside ZPD that triggers minor drift (0..1)"
-        },
-        "major_drift_threshold": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Fraction of window turns outside ZPD that triggers major drift (0..1)"
-        },
-        "persistence_required": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Consecutive turns outside ZPD required before drift is flagged"
         }
       }
     }
