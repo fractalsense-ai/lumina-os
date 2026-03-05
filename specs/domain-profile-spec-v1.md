@@ -146,12 +146,33 @@ domain-packs/{org}/{subject-level}/
 - Make critical invariants correspond to observable, verifiable properties
 - Pair every critical invariant with a standing order
 - Set `max_attempts` conservatively — err on the side of escalating sooner
+- Use `handled_by` to delegate invariants that are evaluated by a domain-specific subsystem (see below)
 
 **DON'T:**
 - Write invariants that require the system to infer intent or emotion
 - Create invariants that have no corresponding standing order
 - Set `max_attempts` so high that the system loops forever before escalating
 - Use conversation content as the basis for invariant checks
+
+### Delegating Invariants with `handled_by`
+
+Some invariants are evaluated by a domain-specific subsystem rather than by the orchestrator's built-in `check` expression evaluator. Set `handled_by` to the subsystem ID to delegate evaluation:
+
+```yaml
+- id: zpd_drift_minor
+  description: "Challenge level drifted outside band in >= 30% of recent window turns"
+  severity: warning
+  check: "outside_pct >= 0.3"   # optional — informational documentation
+  handled_by: zpd_monitor        # orchestrator skips its own check; subsystem decides
+  standing_order_on_violation: zpd_scaffold
+```
+
+When `handled_by` is present:
+- The orchestrator skips evaluating the `check` expression for this invariant.
+- The named subsystem is responsible for detecting the condition and returning a decision.
+- The `check` field is optional but recommended as human-readable documentation.
+
+This mechanism is **domain-agnostic**: the orchestrator never needs to know invariant IDs by name. An agriculture domain can define `soil_moisture_drift_minor` with `handled_by: soil_health_monitor` using the same pattern, and the engine will delegate it correctly without any engine-level changes.
 
 ---
 
