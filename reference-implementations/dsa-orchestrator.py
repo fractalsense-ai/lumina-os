@@ -438,7 +438,7 @@ class DSAOrchestrator:
 
         # Diagnostics for the most recently processed turn (read-only for callers)
         self.last_invariant_results: list[dict[str, Any]] = []
-        self.last_zpd_decision: dict[str, Any] = {}
+        self.last_sensor_decision: dict[str, Any] = {}
 
         # Sensor state: managed externally; the engine treats it as opaque.
         self.state = initial_state
@@ -740,18 +740,18 @@ class DSAOrchestrator:
         #    If no sensor is registered the decision dict is empty and the
         #    orchestrator falls back to invariant-only logic.
         if self._sensor_step_fn is not None:
-            self.state, zpd_decision = self._sensor_step_fn(
+            self.state, sensor_decision = self._sensor_step_fn(
                 self.state, task_spec, evidence
             )
         else:
-            zpd_decision: dict[str, Any] = {}
+            sensor_decision: dict[str, Any] = {}
 
         # Store diagnostics for the caller
         self.last_invariant_results = invariant_results
-        self.last_zpd_decision = zpd_decision
+        self.last_sensor_decision = sensor_decision
 
         # 3. Resolve action
-        action, should_escalate = self._resolve_action(invariant_results, zpd_decision)
+        action, should_escalate = self._resolve_action(invariant_results, sensor_decision)
 
         # Determine the standing order trigger label for the contract
         standing_order_trigger: str | None = None
@@ -764,19 +764,19 @@ class DSAOrchestrator:
 
         # 4. Build prompt contract
         prompt_contract = self._build_prompt_contract(
-            task_spec, action, zpd_decision, standing_order_trigger
+            task_spec, action, sensor_decision, standing_order_trigger
         )
 
         # 5. Append TraceEvent to CTL
         self._write_trace_event(
-            task_spec, invariant_results, zpd_decision, action, prompt_contract
+            task_spec, invariant_results, sensor_decision, action, prompt_contract
         )
 
         # 6. Append EscalationRecord if warranted
         if should_escalate:
             self._write_escalation_record(
                 task_spec,
-                zpd_decision,
+                sensor_decision,
                 "zpd_intervene_or_escalate_with_frustration",
             )
 

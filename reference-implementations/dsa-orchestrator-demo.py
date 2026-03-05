@@ -595,7 +595,7 @@ def run_demo() -> None:
 
         # Retrieve diagnostics stored by the orchestrator
         inv_results_display = orch.last_invariant_results
-        zpd_decision = orch.last_zpd_decision
+        zpd_decision = orch.last_sensor_decision
 
         # Detect drift/escalation events
         if resolved_action in ("zpd_scaffold", "zpd_intervene_or_escalate"):
