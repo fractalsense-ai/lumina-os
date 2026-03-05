@@ -6,17 +6,18 @@ Conforms to: specs/dsa-framework-v1.md
              standards/causal-trace-ledger-v1.md
 
 Implements the Action layer of the D.S.A. framework, connecting:
-    Domain Physics → ZPD Monitor → CTL → Prompt Contract
+    Domain Physics → (optional domain sensor) → CTL → Prompt Contract
 
 The orchestrator:
   1. Loads Domain Physics (JSON) defining invariants and standing orders.
-  2. Holds the current LearningState (initialised from student profile).
+  2. Holds the current sensor state (initialised by the caller, or None).
   3. For every session turn:
-       a. Evaluates non-ZPD invariants against structured evidence by
+       a. Evaluates non-delegated invariants against structured evidence by
           interpreting the ``check`` expression declared in each invariant
           definition.  No domain-specific logic is baked into the engine.
-       b. Steps the ZPD Monitor to obtain the updated state and a drift decision.
-       c. Resolves the final action (invariant failures trump ZPD drift).
+       b. Steps any registered domain sensor to obtain an updated state and
+          a decision dict.  If no sensor is registered the decision is empty.
+       c. Resolves the final action (invariant failures trump sensor drift).
        d. Builds a prompt_contract JSON object conforming to the domain schema.
        e. Appends a hash-chained TraceEvent (and, when needed, an
           EscalationRecord) to the Causal Trace Ledger (CTL).
@@ -31,57 +32,41 @@ Invariant evaluation (domain-pack-driven):
     ``<field> != <literal>``     — inequality check
     ``<field> >= <number>``      — numeric comparison  (also >, <, <=)
 
-  Invariants marked with ``"handled_by": "zpd_monitor"`` are skipped here
-  and delegated entirely to the ZPD monitor.
+  Invariants marked with ``"handled_by": "<subsystem>"`` are skipped here
+  and delegated entirely to the registered domain sensor (or ignored when no
+  sensor is registered).  This mechanism is domain-agnostic: an agriculture
+  domain can define ``soil_moisture_drift_minor`` with
+  ``handled_by: soil_health_monitor`` using the same pattern.
 
 Design constraints:
   - Standard library only (no external dependencies).
-  - ZPD monitor is imported via importlib.util because its filename contains
-    hyphens that make it an invalid Python module identifier.
   - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
     implemented in ctl-commitment-validator.py.
+  - No domain-specific sensor (e.g. ZPD monitor) is imported or required by
+    the engine.  Domain integrations wire up their sensors externally and pass
+    them in via ``sensor_step_fn`` / ``initial_state``.
 
 Usage:
     from dsa_orchestrator import DSAOrchestrator, load_domain_physics, load_student_profile_yaml
     domain = load_domain_physics("domain-packs/education/algebra-level-1/domain-physics.json")
     profile = load_student_profile_yaml("domain-packs/education/algebra-level-1/example-student-alice.yaml")
+    # For a domain with no sensor:
     orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
+    # For the education domain — wire up the ZPD monitor externally:
+    orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
+                           sensor_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
     contract, action = orch.process_turn(task_spec, evidence)
 """
 
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 import logging
-import os
-import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
-
-# ─────────────────────────────────────────────────────────────
-# Import ZPD Monitor via importlib
-# (filename has hyphens — cannot use a regular import statement)
-# This is the same pattern used in zpd-monitor-demo.py lines 22-36.
-# ─────────────────────────────────────────────────────────────
-
-_zpd_spec = importlib.util.spec_from_file_location(
-    "zpd_monitor",
-    os.path.join(os.path.dirname(__file__), "zpd-monitor-v0.2.py"),
-)
-_zpd_mod = importlib.util.module_from_spec(_zpd_spec)  # type: ignore[arg-type]
-sys.modules["zpd_monitor"] = _zpd_mod
-_zpd_spec.loader.exec_module(_zpd_mod)  # type: ignore[union-attr]
-
-AffectState = _zpd_mod.AffectState
-RecentWindow = _zpd_mod.RecentWindow
-LearningState = _zpd_mod.LearningState
-zpd_monitor_step = _zpd_mod.zpd_monitor_step
-DEFAULT_PARAMS = _zpd_mod.DEFAULT_PARAMS
+from typing import Any, Callable
 
 
 # ─────────────────────────────────────────────────────────────
@@ -404,13 +389,14 @@ class DSAOrchestrator:
     """
     D.S.A. Action layer orchestrator.
 
-    Connects Domain Physics → ZPD Monitor → CTL → Prompt Contract for a
-    single student session.
+    Connects Domain Physics → (optional domain sensor) → CTL → Prompt Contract
+    for a single session.
 
     Attributes:
         domain      Domain physics dict loaded from JSON.
         profile     Student profile dict loaded from YAML (or equivalent).
-        state       Current LearningState; updated each turn.
+        state       Current sensor state supplied by the caller; updated each
+                    turn when a ``sensor_step_fn`` is registered.
         session_id  UUID string identifying this session in the CTL.
     """
 
@@ -420,20 +406,42 @@ class DSAOrchestrator:
         student_profile: dict[str, Any],
         ledger_path: str | Path,
         session_id: str | None = None,
+        sensor_step_fn: Callable[..., tuple[Any, dict[str, Any]]] | None = None,
+        initial_state: Any | None = None,
     ) -> None:
+        """
+        Initialise the orchestrator.
+
+        Args:
+            domain_physics:  Domain physics dict (from ``load_domain_physics``).
+            student_profile: Student profile dict (from ``load_student_profile_yaml``
+                             or equivalent).
+            ledger_path:     Path to the JSONL CTL ledger file.
+            session_id:      Optional session UUID; generated if omitted.
+            sensor_step_fn:  Optional domain sensor callable with signature
+                             ``(state, task_spec, evidence) -> (new_state, decision_dict)``.
+                             Pass ``None`` (default) for domain packs that declare
+                             no sensor subsystem.
+            initial_state:   Initial sensor state to pass to ``sensor_step_fn`` on
+                             the first turn.  Ignored when ``sensor_step_fn`` is
+                             ``None``.  For the education domain this is a
+                             ``LearningState`` object built by the caller from the
+                             student profile.
+        """
         self.domain = domain_physics
         self.profile = student_profile
         self.ledger_path = Path(ledger_path)
         self.session_id = session_id or str(uuid.uuid4())
         self._prev_hash: str = "genesis"
         self._records: list[dict[str, Any]] = []
+        self._sensor_step_fn = sensor_step_fn
 
         # Diagnostics for the most recently processed turn (read-only for callers)
         self.last_invariant_results: list[dict[str, Any]] = []
         self.last_zpd_decision: dict[str, Any] = {}
 
-        # Initialise learner state from student profile
-        self.state = self._build_learning_state()
+        # Sensor state: managed externally; the engine treats it as opaque.
+        self.state = initial_state
 
         # Write the session-open CommitmentRecord
         self._write_commitment_record()
@@ -444,40 +452,6 @@ class DSAOrchestrator:
     def ctl_records(self) -> list[dict[str, Any]]:
         """Read-only view of all CTL records written in this session."""
         return list(self._records)
-
-
-    def _build_learning_state(self) -> LearningState:
-        """Construct a LearningState from the loaded student profile dict."""
-        ls = self.profile.get("learning_state", {})
-        affect_data = ls.get("affect", {})
-        mastery_data = ls.get("mastery", {})
-        zpd_data = ls.get("zpd_band", {})
-        rw_data = ls.get("recent_window", {})
-
-        return LearningState(
-            affect=AffectState(
-                salience=float(affect_data.get("salience", 0.5)),
-                valence=float(affect_data.get("valence", 0.0)),
-                arousal=float(affect_data.get("arousal", 0.5)),
-            ),
-            mastery={k: float(v) for k, v in mastery_data.items()},
-            zpd_band={
-                "min_challenge": float(zpd_data.get("min_challenge", 0.3)),
-                "max_challenge": float(zpd_data.get("max_challenge", 0.7)),
-            },
-            recent_window=RecentWindow(
-                window_turns=int(rw_data.get("window_turns", 10)),
-                attempts=int(rw_data.get("attempts", 0)),
-                consecutive_incorrect=int(rw_data.get("consecutive_incorrect", 0)),
-                hint_count=int(rw_data.get("hint_count", 0)),
-                outside_pct=float(rw_data.get("outside_pct", 0.0)),
-                consecutive_outside=int(rw_data.get("consecutive_outside", 0)),
-                outside_flags=list(rw_data.get("outside_flags", [])),
-                hint_flags=list(rw_data.get("hint_flags", [])),
-            ),
-            challenge=float(ls.get("challenge", 0.5)),
-            uncertainty=float(ls.get("uncertainty", 0.5)),
-        )
 
     # ── CTL record writers ────────────────────────────────────
 
@@ -733,17 +707,20 @@ class DSAOrchestrator:
                            nominal_difficulty — float 0..1
                            skills_required    — list of skill ID strings
             evidence:  Structured evidence summary for this turn.
-                       ZPD monitor keys (required):
+                       Domain-invariant evidence keys are defined by the ``check``
+                       expressions in the loaded domain-pack.  Missing fields are
+                       silently skipped (no false negatives).
+                       Sensor-specific evidence keys (e.g. for the ZPD monitor in
+                       the education domain) are passed through unchanged to
+                       ``sensor_step_fn`` when one is registered.
+                       For the algebra-level-1 pack with the ZPD monitor the
+                       expected keys include:
                            correctness             — "correct"/"incorrect"/"partial"
                            hint_used               — bool
                            response_latency_sec    — float
                            frustration_marker_count — int
                            repeated_error          — bool
                            off_task_ratio          — float
-                       Domain-invariant evidence keys are defined by the ``check``
-                       expressions in the loaded domain-pack.  Missing fields are
-                       silently skipped (no false negatives).
-                       For the algebra-level-1 pack the expected keys are:
                            equivalence_preserved   — bool
                            illegal_operations      — list (empty = no violations)
                            substitution_check      — bool
@@ -756,11 +733,18 @@ class DSAOrchestrator:
             resolved_action is the string action taken (e.g. "request_more_steps")
             or "task_presentation" when no corrective action is needed.
         """
-        # 1. Evaluate non-ZPD invariants
+        # 1. Evaluate non-delegated invariants
         invariant_results = self._evaluate_invariants(evidence)
 
-        # 2. Step the ZPD monitor
-        self.state, zpd_decision = zpd_monitor_step(self.state, task_spec, evidence)
+        # 2. Step any registered domain sensor (e.g. ZPD monitor for education).
+        #    If no sensor is registered the decision dict is empty and the
+        #    orchestrator falls back to invariant-only logic.
+        if self._sensor_step_fn is not None:
+            self.state, zpd_decision = self._sensor_step_fn(
+                self.state, task_spec, evidence
+            )
+        else:
+            zpd_decision: dict[str, Any] = {}
 
         # Store diagnostics for the caller
         self.last_invariant_results = invariant_results

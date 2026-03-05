@@ -49,6 +49,23 @@ load_domain_physics = _orch_mod.load_domain_physics
 load_student_profile_yaml = _orch_mod.load_student_profile_yaml
 hash_record = _orch_mod.hash_record
 
+# Import the education-domain ZPD monitor.
+# The engine no longer loads this automatically; the education integration layer
+# (i.e. this demo) wires it up explicitly and passes it to DSAOrchestrator.
+# A non-education domain pack (e.g. agriculture) would simply omit these lines.
+_zpd_spec = _ilu.spec_from_file_location(
+    "zpd_monitor",
+    os.path.join(os.path.dirname(__file__), "zpd-monitor-v0.2.py"),
+)
+_zpd_mod = _ilu.module_from_spec(_zpd_spec)  # type: ignore[arg-type]
+sys.modules["zpd_monitor"] = _zpd_mod
+_zpd_spec.loader.exec_module(_zpd_mod)  # type: ignore[union-attr]
+
+AffectState = _zpd_mod.AffectState
+RecentWindow = _zpd_mod.RecentWindow
+LearningState = _zpd_mod.LearningState
+zpd_monitor_step = _zpd_mod.zpd_monitor_step
+
 # Also grab the CTL chain verifier from ctl-commitment-validator.py
 _ctl_spec = _ilu.spec_from_file_location(
     "ctl_validator",
@@ -125,6 +142,48 @@ _ALICE_PROFILE_FALLBACK: dict[str, Any] = {
     },
     "updated_utc": "2026-03-01T15:30:00Z",
 }
+
+
+# ─────────────────────────────────────────────────────────────
+# Education-domain state builder
+#
+# Constructs a ZPD LearningState from a loaded student profile dict.
+# This lives here (not in the engine) because LearningState is an
+# education-domain type — the engine is domain-agnostic.
+# ─────────────────────────────────────────────────────────────
+
+def _build_learning_state_from_profile(profile: dict[str, Any]) -> "LearningState":
+    """Build a ZPD LearningState from a loaded student profile dict."""
+    ls = profile.get("learning_state", {})
+    affect_data = ls.get("affect", {})
+    mastery_data = ls.get("mastery", {})
+    zpd_data = ls.get("zpd_band", {})
+    rw_data = ls.get("recent_window", {})
+
+    return LearningState(
+        affect=AffectState(
+            salience=float(affect_data.get("salience", 0.5)),
+            valence=float(affect_data.get("valence", 0.0)),
+            arousal=float(affect_data.get("arousal", 0.5)),
+        ),
+        mastery={k: float(v) for k, v in mastery_data.items()},
+        zpd_band={
+            "min_challenge": float(zpd_data.get("min_challenge", 0.3)),
+            "max_challenge": float(zpd_data.get("max_challenge", 0.7)),
+        },
+        recent_window=RecentWindow(
+            window_turns=int(rw_data.get("window_turns", 10)),
+            attempts=int(rw_data.get("attempts", 0)),
+            consecutive_incorrect=int(rw_data.get("consecutive_incorrect", 0)),
+            hint_count=int(rw_data.get("hint_count", 0)),
+            outside_pct=float(rw_data.get("outside_pct", 0.0)),
+            consecutive_outside=int(rw_data.get("consecutive_outside", 0)),
+            outside_flags=list(rw_data.get("outside_flags", [])),
+            hint_flags=list(rw_data.get("hint_flags", [])),
+        ),
+        challenge=float(ls.get("challenge", 0.5)),
+        uncertainty=float(ls.get("uncertainty", 0.5)),
+    )
 
 
 # ─────────────────────────────────────────────────────────────
@@ -492,12 +551,18 @@ def run_demo() -> None:
     print(f"\nCTL ledger: {ledger_path}\n")
 
     # ── Create orchestrator (writes CommitmentRecord) ─────────
+    # Wire up the education-domain ZPD monitor explicitly.
+    # A non-education domain (e.g. agriculture) would omit sensor_step_fn
+    # and initial_state, and the engine would skip the sensor step entirely.
     session_id = str(uuid.uuid4())
+    initial_state = _build_learning_state_from_profile(profile)
     orch = DSAOrchestrator(
         domain_physics=domain,
         student_profile=profile,
         ledger_path=ledger_path,
         session_id=session_id,
+        sensor_step_fn=zpd_monitor_step,
+        initial_state=initial_state,
     )
 
     _sep()
