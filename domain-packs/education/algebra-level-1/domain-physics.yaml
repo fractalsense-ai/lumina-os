@@ -32,7 +32,7 @@ invariants:
       Both sides of an equation must remain algebraically equal after
       every transformation step. A step that breaks equivalence is invalid.
     severity: critical
-    check: "verify_algebraic_equivalence(step_before, step_after)"
+    check: "equivalence_preserved"
     standing_order_on_violation: request_more_steps
 
   - id: no_illegal_operations
@@ -40,7 +40,7 @@ invariants:
       The student may not divide by zero, take a square root of a negative
       (in real-number context), or apply undefined operations.
     severity: critical
-    check: "illegal_ops_summary.illegal_operations == []"
+    check: "illegal_operations == []"
     standing_order_on_violation: request_more_steps
 
   - id: solution_verifies
@@ -48,7 +48,7 @@ invariants:
       The proposed solution value must satisfy the original equation
       when substituted back in.
     severity: critical
-    check: "verification_summary.substitution_check == true"
+    check: "substitution_check"
     standing_order_on_violation: request_verification_retry
 
   # === WARNING INVARIANTS ===
@@ -59,7 +59,7 @@ invariants:
       for Domain Authority review. The student should be aware that
       standard methods are preferred for this course.
     severity: warning
-    check: "method_summary.method_recognized == true"
+    check: "method_recognized"
     standing_order_on_violation: request_method_justification
     signal_type: NOVEL_PATTERN
 
@@ -68,7 +68,7 @@ invariants:
       Solutions must show at least three distinct transformation steps.
       A single-step jump from problem to answer is not acceptable.
     severity: warning
-    check: "step_count_summary.step_count >= 3"
+    check: "step_count >= 3"
     standing_order_on_violation: request_more_steps
 
   - id: zpd_drift_minor
@@ -76,15 +76,19 @@ invariants:
       The student's challenge level has drifted outside the ZPD band
       in >= 30% of the recent window turns.
     severity: warning
-    check: "zpd_summary.outside_pct >= 0.3"
+    check: "outside_pct >= 0.3"
+    handled_by: zpd_monitor
     standing_order_on_violation: zpd_scaffold
 
   - id: zpd_drift_major
     description: >
       The student's challenge level has drifted outside the ZPD band
       in >= 50% of the recent window turns, or for 3+ consecutive turns.
+      Both conditions are evaluated internally by the ZPD monitor; the
+      check field here is informational.
     severity: warning
-    check: "zpd_summary.outside_pct >= 0.5 or zpd_summary.consecutive_outside >= 3"
+    check: "outside_pct >= 0.5"
+    handled_by: zpd_monitor
     standing_order_on_violation: zpd_intervene_or_escalate
 
 # ── Standing Orders ──────────────────────────────────────────

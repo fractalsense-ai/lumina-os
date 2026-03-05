@@ -1,7 +1,7 @@
 """
 dsa-orchestrator.py — Project Lumina D.S.A. Orchestrator Reference Implementation
 
-Version: 0.1.0
+Version: 0.2.0
 Conforms to: specs/dsa-framework-v1.md
              standards/causal-trace-ledger-v1.md
 
@@ -12,13 +12,27 @@ The orchestrator:
   1. Loads Domain Physics (JSON) defining invariants and standing orders.
   2. Holds the current LearningState (initialised from student profile).
   3. For every session turn:
-       a. Evaluates the 5 non-ZPD invariants against structured evidence.
+       a. Evaluates non-ZPD invariants against structured evidence by
+          interpreting the ``check`` expression declared in each invariant
+          definition.  No domain-specific logic is baked into the engine.
        b. Steps the ZPD Monitor to obtain the updated state and a drift decision.
        c. Resolves the final action (invariant failures trump ZPD drift).
        d. Builds a prompt_contract JSON object conforming to the domain schema.
        e. Appends a hash-chained TraceEvent (and, when needed, an
           EscalationRecord) to the Causal Trace Ledger (CTL).
   4. Opens the session with a CommitmentRecord in the CTL.
+
+Invariant evaluation (domain-pack-driven):
+  Each invariant in the domain-pack may carry a ``check`` field whose value
+  is a simple predicate expression referencing flat evidence-dict keys:
+
+    ``<field>``                  — truthy check on evidence[field]
+    ``<field> == <literal>``     — equality check  (supports [] / true / false)
+    ``<field> != <literal>``     — inequality check
+    ``<field> >= <number>``      — numeric comparison  (also >, <, <=)
+
+  Invariants marked with ``"handled_by": "zpd_monitor"`` are skipped here
+  and delegated entirely to the ZPD monitor.
 
 Design constraints:
   - Standard library only (no external dependencies).
@@ -276,47 +290,95 @@ def load_domain_physics(path: str | Path) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────
-# Invariant Evaluator Registry
+# Domain-pack-driven invariant check evaluator
 #
-# Maps each non-ZPD invariant id to the evidence field name and a
-# check function.  The check function receives the raw evidence value
-# and returns True if the invariant PASSES (i.e. is satisfied).
+# Evaluates the ``check`` predicate declared in each domain-pack invariant
+# definition against the flat evidence dict passed in by the caller.
+#
+# Supported expression forms:
+#   <field>                  – truthy check on evidence[field]
+#   <field> == <literal>     – equality   ([] / true / false / number / string)
+#   <field> != <literal>     – inequality
+#   <field> >= <number>      – numeric GTE (also >, <, <=)
+#
+# Returns True  — invariant passes.
+#         False — invariant fails.
+#         None  — required evidence field is absent; caller should skip.
 # ─────────────────────────────────────────────────────────────
 
-def _check_equivalence_preserved(v: Any) -> bool:
-    return bool(v)
-
-
-def _check_no_illegal_operations(v: Any) -> bool:
-    return v == [] or v is None
-
-
-def _check_solution_verifies(v: Any) -> bool:
-    return bool(v)
-
-
-def _check_standard_method_preferred(v: Any) -> bool:
-    return bool(v)
-
-
-def _check_show_work_minimum(v: Any) -> bool:
-    try:
-        return int(v) >= 3
-    except (TypeError, ValueError):
+def _parse_check_literal(raw: str) -> Any:
+    """Parse the right-hand side literal of a check expression."""
+    raw = raw.strip()
+    if raw == "[]":
+        return []
+    if raw.lower() == "true":
+        return True
+    if raw.lower() == "false":
         return False
+    try:
+        return int(raw)
+    except ValueError:
+        pass
+    try:
+        return float(raw)
+    except ValueError:
+        pass
+    log.debug("Check literal %r treated as plain string", raw)
+    return raw
 
 
-# invariant_id → (evidence_field_name, check_fn)
-_INVARIANT_EVALUATORS: dict[str, tuple[str, Any]] = {
-    "equivalence_preserved": ("equivalence_preserved", _check_equivalence_preserved),
-    "no_illegal_operations": ("illegal_operations", _check_no_illegal_operations),
-    "solution_verifies": ("substitution_check", _check_solution_verifies),
-    "standard_method_preferred": ("method_recognized", _check_standard_method_preferred),
-    "show_work_minimum": ("step_count", _check_show_work_minimum),
-}
+def _evaluate_check_expr(check_expr: str, evidence: dict[str, Any]) -> bool | None:
+    """
+    Evaluate a domain-pack ``check`` expression against the evidence dict.
 
-# ZPD invariants are delegated entirely to the ZPD monitor
-_ZPD_INVARIANT_IDS = {"zpd_drift_minor", "zpd_drift_major"}
+    The expression must reference a flat evidence-dict key directly.
+    Supported forms::
+
+        equivalence_preserved          # truthy
+        illegal_operations == []       # equality with empty list
+        substitution_check             # truthy
+        method_recognized              # truthy
+        step_count >= 3                # numeric comparison
+
+    Expressions are tokenised by whitespace into at most three parts
+    (field, operator, right-hand-side literal).  String literals that
+    contain spaces are therefore **not** supported as right-hand-side values.
+
+    Returns True if the invariant passes, False if it fails, or None when
+    the referenced evidence field is absent (caller skips the invariant).
+    """
+    tokens = check_expr.strip().split(None, 2)
+
+    if len(tokens) == 1:
+        # Bare field name — truthy check
+        field = tokens[0]
+        if field not in evidence:
+            return None
+        return bool(evidence[field])
+
+    if len(tokens) == 3:
+        field, op, raw_val = tokens
+        if field not in evidence:
+            return None
+        ev_val = evidence[field]
+        rhs = _parse_check_literal(raw_val)
+        if op == "==":
+            return ev_val == rhs
+        if op == "!=":
+            return ev_val != rhs
+        if op == ">=":
+            return ev_val >= rhs
+        if op == "<=":
+            return ev_val <= rhs
+        if op == ">":
+            return ev_val > rhs
+        if op == "<":
+            return ev_val < rhs
+        log.warning("Unknown operator %r in check expression %r", op, check_expr)
+        return None
+
+    log.warning("Cannot parse check expression %r — skipping invariant", check_expr)
+    return None
 
 
 # ─────────────────────────────────────────────────────────────
@@ -524,47 +586,54 @@ class DSAOrchestrator:
         self, evidence: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """
-        Evaluate all non-ZPD invariants from the domain physics against the
-        structured evidence dict.
+        Evaluate all domain-pack invariants against the structured evidence dict.
+
+        Invariants marked with ``"handled_by": "zpd_monitor"`` are skipped here
+        and delegated entirely to the ZPD monitor.
+
+        Each remaining invariant is evaluated by parsing its ``check`` field —
+        a simple predicate expression whose operand is a flat key in the evidence
+        dict (see ``_evaluate_check_expr`` for supported syntax).
 
         Returns a list of result dicts:
             {id, severity, passed, standing_order_on_violation, signal_type}
 
-        Invariants whose required evidence field is absent are skipped with a
-        log message (no false negatives from missing data).
+        Invariants whose ``check`` field is absent or whose evidence field is
+        missing from the supplied dict are skipped with a log message (no false
+        negatives from missing data).
         """
         results: list[dict[str, Any]] = []
         for inv in self.domain.get("invariants", []):
             inv_id: str = inv["id"]
-            if inv_id in _ZPD_INVARIANT_IDS:
-                continue  # Delegated to ZPD monitor
 
-            evaluator = _INVARIANT_EVALUATORS.get(inv_id)
-            if evaluator is None:
-                log.debug("No evaluator for invariant %r — skipping", inv_id)
+            # Skip invariants delegated to another subsystem (e.g. ZPD monitor)
+            if inv.get("handled_by"):
                 continue
 
-            field_name, check_fn = evaluator
-            if field_name not in evidence:
-                log.debug(
-                    "Missing evidence field %r for invariant %r — skipping",
-                    field_name,
-                    inv_id,
-                )
+            check_expr: str | None = inv.get("check")
+            if not check_expr:
+                log.debug("No check expression for invariant %r — skipping", inv_id)
                 continue
 
-            value = evidence[field_name]
             try:
-                passed = bool(check_fn(value))
+                result = _evaluate_check_expr(check_expr, evidence)
             except Exception as exc:
                 log.warning("Invariant %r check raised %r — skipping", inv_id, exc)
+                continue
+
+            if result is None:
+                log.debug(
+                    "Missing evidence for invariant %r (check=%r) — skipping",
+                    inv_id,
+                    check_expr,
+                )
                 continue
 
             results.append(
                 {
                     "id": inv_id,
                     "severity": inv.get("severity", "warning"),
-                    "passed": passed,
+                    "passed": result,
                     "standing_order_on_violation": inv.get("standing_order_on_violation"),
                     "signal_type": inv.get("signal_type"),
                 }
@@ -663,8 +732,6 @@ class DSAOrchestrator:
                            task_id            — unique identifier string
                            nominal_difficulty — float 0..1
                            skills_required    — list of skill ID strings
-                       Domain-specific evidence fields evaluated by the
-                       invariant registry may also be present.
             evidence:  Structured evidence summary for this turn.
                        ZPD monitor keys (required):
                            correctness             — "correct"/"incorrect"/"partial"
@@ -673,7 +740,10 @@ class DSAOrchestrator:
                            frustration_marker_count — int
                            repeated_error          — bool
                            off_task_ratio          — float
-                       Invariant evidence keys (optional; missing → skip):
+                       Domain-invariant evidence keys are defined by the ``check``
+                       expressions in the loaded domain-pack.  Missing fields are
+                       silently skipped (no false negatives).
+                       For the algebra-level-1 pack the expected keys are:
                            equivalence_preserved   — bool
                            illegal_operations      — list (empty = no violations)
                            substitution_check      — bool
