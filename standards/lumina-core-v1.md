@@ -22,13 +22,15 @@ Every domain pack must include the following artifacts:
 |----------|----------|--------|
 | `domain-physics.yaml` | Yes | [`domain-physics-schema-v1.json`](domain-physics-schema-v1.json) |
 | `domain-physics.json` | Yes (derived) | Same schema |
-| `student-profile-template.yaml` | Yes | [`student-profile-schema-v1.json`](student-profile-schema-v1.json) — the education-domain instantiation of the general subject profile pattern; other domains should provide a domain-appropriate profile |
+| `student-profile-template.yaml` | Yes | Domain-specific subject profile schema in `schemas/` (see note below) |
 | `CHANGELOG.md` | Yes | Semver entries |
 | `prompt-contract-schema.json` | Yes | Extends [`prompt-contract-schema-v1.json`](prompt-contract-schema-v1.json) — domain-specific prompt constraints must extend the universal base schema |
 
 Optional but recommended:
 - `tool-adapters/*.yaml` — one per tool, conforming to [`tool-adapter-schema-v1.json`](tool-adapter-schema-v1.json)
 - `example-student-*.yaml` — example profiles for testing
+
+> **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`domain-packs/education/schemas/student-profile-schema-v1.json`](../domain-packs/education/schemas/student-profile-schema-v1.json) for education). The `student-profile-template.yaml` must validate against that domain-specific schema.
 
 ### 1.1 Domain Physics Requirements
 
@@ -78,21 +80,18 @@ See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL sp
 
 ## 3. Compressed State Conformance
 
-For domains that implement subject state tracking, state must be represented using the compressed state schema. The schema is domain-agnostic; the sensors that populate it are defined per domain in the domain pack's `sensors/` directory.
+For domains that implement subject state tracking, each domain pack defines its own **subject state schema** in its `schemas/` directory. The D.S.A. engine is agnostic to the specific fields; domain sensor arrays populate whatever fields the domain schema defines.
 
-> **Note:** The fields below reflect the education-domain instantiation. Other domains use the same schema structure but populate fields via their own domain sensor arrays (e.g., an agriculture domain might use different signal sources for `salience` and `mastery`). See [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md) for the sensor array specification.
+A domain's subject state schema must conform to the following structural requirements:
 
-| Field | Type | Range | Description |
-|-------|------|-------|-------------|
-| `salience` | float | 0..1 | How engaged/focused the subject is |
-| `valence` | float | -1..1 | Emotional tone (-1 = negative, +1 = positive) |
-| `arousal` | float | 0..1 | Activation level (0 = flat, 1 = highly activated) |
-| `mastery` | dict[skill→float] | 0..1 per skill | Current mastery estimate per skill |
-| `challenge` | float | 0..1 | Estimated challenge level of current task |
-| `uncertainty` | float | 0..1 | Orchestrator's uncertainty about subject state |
-| `challenge_band` | dict | min/max challenge | Optimal challenge range for the subject (min/max bounds). In education contexts this corresponds to the Zone of Proximal Development (ZPD). |
+- Stored as a versioned JSON Schema file in `domain-pack/schemas/`
+- Fields must be numeric (float or integer) or simple structured objects — no free text
+- All fields must be populated by deterministic sensors (see [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md))
+- Schema changes that add required fields or alter field semantics require a version bump
 
-See [`compressed-state-schema-v1.json`](compressed-state-schema-v1.json) for the JSON Schema.
+> **Education domain example:** The education domain's compressed learner state schema is at [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and a challenge band — all concepts specific to educational assessment.
+
+See [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md) for the sensor array specification that populates the state.
 
 ---
 
@@ -120,7 +119,7 @@ Systems using retrieval-augmented generation must conform to the grounding contr
 - Cite retrieved artifacts by ID and version in every response that uses retrieved content
 - If required context cannot be retrieved, escalate rather than hallucinate
 - Retrieval scope is bounded by the current Domain Physics — do not retrieve beyond authorized scope
-- No retrieval of PII beyond what is declared in the student profile schema
+- No retrieval of PII beyond what is declared in the domain's subject profile schema
 
 See [`../retrieval/rag-contracts.md`](../retrieval/rag-contracts.md) for the full RAG contract.
 
@@ -142,7 +141,7 @@ Before publishing a domain pack or implementation:
 - [ ] Domain Physics YAML validates against `domain-physics-schema-v1.json`
 - [ ] At least one `critical` invariant is defined
 - [ ] All standing orders have `max_attempts` and `escalation_on_exhaust` set
-- [ ] Subject profile template validates against the appropriate profile schema for the domain
+- [ ] Subject profile template validates against the domain pack's subject profile schema (in `schemas/`)
 - [ ] CHANGELOG.md is present and up to date
 - [ ] CTL integration is append-only and hash-chained
 - [ ] No transcript content is stored in the CTL

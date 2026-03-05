@@ -155,7 +155,7 @@ python -m pytest reference-implementations/ -k "test_harness" -v
 python -m pytest reference-implementations/ -k "test_harness_transcript" -v
 ```
 
-The reference implementation includes test stubs that implement these test cases against the `zpd-monitor-v0.2.py` and `ctl-commitment-validator.py` modules.
+The reference implementation includes test stubs that implement these test cases against the `domain-packs/education/reference-implementations/zpd-monitor-v0.2.py` and `reference-implementations/ctl-commitment-validator.py` modules.
 
 ---
 

@@ -55,7 +55,8 @@ hash_record = _orch_mod.hash_record
 # A non-education domain pack (e.g. agriculture) would simply omit these lines.
 _zpd_spec = _ilu.spec_from_file_location(
     "zpd_monitor",
-    os.path.join(os.path.dirname(__file__), "zpd-monitor-v0.2.py"),
+    os.path.join(os.path.dirname(__file__),
+                 "../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py"),
 )
 _zpd_mod = _ilu.module_from_spec(_zpd_spec)  # type: ignore[arg-type]
 sys.modules["zpd_monitor"] = _zpd_mod

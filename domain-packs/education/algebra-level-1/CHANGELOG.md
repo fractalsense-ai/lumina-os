@@ -8,8 +8,8 @@ All notable changes to this domain pack will be documented here.
 
 ### Changed
 - Renamed `learning_state.zpd_band` → `learning_state.challenge_band` in student profiles
-  to align with the updated universal `compressed-state-schema-v1.json` and
-  `student-profile-schema-v1.json`, which now use the domain-neutral field name
+  to align with the updated education domain `domain-packs/education/schemas/compressed-state-schema-v1.json` and
+  `domain-packs/education/schemas/student-profile-schema-v1.json`, which now use the domain-neutral field name
   `challenge_band`. In education contexts this field corresponds to the Zone of Proximal
   Development (ZPD). No parameter values are changed.
 

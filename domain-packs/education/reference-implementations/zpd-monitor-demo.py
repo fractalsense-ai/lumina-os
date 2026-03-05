@@ -9,7 +9,7 @@ Runs a simulated 20-turn algebra session showing:
   - Mastery progression
 
 Run:
-    python reference-implementations/zpd-monitor-demo.py
+    python domain-packs/education/reference-implementations/zpd-monitor-demo.py
 """
 
 import sys

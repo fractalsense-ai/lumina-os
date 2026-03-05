@@ -2,9 +2,10 @@
 zpd-monitor-v0.2.py — Project Lumina ZPD Monitor Reference Implementation
 
 Version: 0.2.0
-Conforms to: domain-packs/education/sensors/zpd-monitor-spec-v1.md
-             domain-packs/education/sensors/compressed-state-estimators.md
-             standards/compressed-state-schema-v1.json
+Conforms to (paths relative to repository root):
+  domain-packs/education/sensors/zpd-monitor-spec-v1.md
+  domain-packs/education/sensors/compressed-state-estimators.md
+  domain-packs/education/schemas/compressed-state-schema-v1.json
 
 Description:
     Deterministic (no ML) implementation of the Zone of Proximal Development

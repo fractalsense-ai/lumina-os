@@ -122,7 +122,7 @@ Mastery is updated by the ZPD monitor after each task:
 - **Incorrect**: mastery decreases (larger decrease if repeated error)
 - **Abandoned**: mastery unchanged
 
-The exact update function is in [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
+The exact update function is in [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py).
 
 ### Mastery Decay
 
@@ -152,5 +152,5 @@ These two principles govern all assessment:
 ## References
 
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — artifact schema
-- [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py) — mastery update implementation
+- [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py) — mastery update implementation
 - [`../domain-packs/education/algebra-level-1/domain-physics.yaml`](../domain-packs/education/algebra-level-1/domain-physics.yaml) — worked example

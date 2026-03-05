@@ -16,7 +16,7 @@ This document defines the contract that all domain sensor arrays must conform to
 
 ## Why Sensor Arrays Are Domain-Specific
 
-The **State** pillar of the D.S.A. Framework is a compressed, mathematically structured profile of the entity being observed. The *structure* of that profile is universal (defined by `compressed-state-schema-v1.json`), but the *sensors that populate it* depend entirely on the domain.
+The **State** pillar of the D.S.A. Framework is a compressed, mathematically structured profile of the entity being observed. Each domain pack defines its own subject state schema in its `schemas/` directory; the *sensors that populate it* depend entirely on the domain.
 
 | Domain | Example Sensors |
 |--------|----------------|
@@ -44,9 +44,9 @@ Given the same inputs, a sensor must produce the same output. No probabilistic o
 
 Sensor update rules must be expressible in plain arithmetic or simple conditionals that the Domain Authority can read, understand, and audit. Opacity is a governance risk.
 
-### 4. Compressed State Conformance
+### 4. Subject State Schema Conformance
 
-Sensor outputs must map to fields defined in [`compressed-state-schema-v1.json`](compressed-state-schema-v1.json). Domains may leave fields unpopulated if they are not applicable, but must not define fields outside the schema without a schema version bump.
+Sensor outputs must map to fields defined in the domain's own subject state schema, located in the domain pack's `schemas/` directory (e.g., [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) for the education domain). Domains may leave fields unpopulated if they are not applicable, but must not define fields outside their schema without a schema version bump.
 
 ### 5. Sensor Array Directory
 
@@ -91,6 +91,6 @@ A sensor update that changes thresholds or update rules is a **Minor** version b
 
 ## References
 
-- [`compressed-state-schema-v1.json`](compressed-state-schema-v1.json) — universal compressed state schema
+- [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example instantiation)
 - [`../domain-packs/education/sensors/README.md`](../domain-packs/education/sensors/README.md) — education domain sensor array
 - [`lumina-core-v1.md`](lumina-core-v1.md) — core conformance spec (Section 3: Compressed State Conformance)

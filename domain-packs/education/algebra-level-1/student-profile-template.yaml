@@ -1,5 +1,5 @@
 # Student Profile Template — Algebra Level 1
-# Conforms to: student-profile-schema-v1.json
+# Conforms to: domain-packs/education/schemas/student-profile-schema-v1.json
 # ============================================================
 # Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
 # with the student's assigned pseudonymous token.

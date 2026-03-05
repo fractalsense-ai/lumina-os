@@ -1,6 +1,6 @@
 # Reference Implementations — Project Lumina
 
-This directory contains Python reference implementations of core Project Lumina components.
+This directory contains Python reference implementations of the **core D.S.A. engine** components. Education-domain-specific implementations (ZPD monitor) live in [`../domain-packs/education/reference-implementations/`](../domain-packs/education/reference-implementations/).
 
 ---
 
@@ -8,12 +8,10 @@ This directory contains Python reference implementations of core Project Lumina 
 
 | File | Description |
 |------|-------------|
-| `zpd-monitor-v0.2.py` | ZPD monitor: compressed state + affect + ZPD drift detection |
-| `zpd-monitor-demo.py` | Worked demo of the ZPD monitor running a simulated session |
 | `yaml-to-json-converter.py` | Converts and validates domain pack YAML → JSON |
 | `ctl-commitment-validator.py` | CTL hash chain validator and commitment recorder |
-| `dsa-orchestrator.py` | D.S.A. orchestrator: invariant evaluation + ZPD monitor + CTL + prompt contract |
-| `dsa-orchestrator-demo.py` | End-to-end demo of the full D.S.A. Action loop (10-turn scripted session) |
+| `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract |
+| `dsa-orchestrator-demo.py` | End-to-end demo of the full D.S.A. Action loop wired to the education domain (10-turn scripted session) |
 
 ---
 
@@ -29,10 +27,10 @@ python --version  # Requires 3.10+
 
 ## Quick Start
 
-### Run the ZPD monitor demo
+### Run the ZPD monitor demo (education domain)
 
 ```bash
-python reference-implementations/zpd-monitor-demo.py
+python domain-packs/education/reference-implementations/zpd-monitor-demo.py
 ```
 
 ### Run the D.S.A. orchestrator demo (full loop)
@@ -72,7 +70,7 @@ python reference-implementations/ctl-commitment-validator.py \
 All reference implementations:
 - Use **deterministic heuristics only** — no ML, no probabilistic models
 - Use **only Python standard library** — no external dependencies
-- Are **readable by a Domain Authority** — the logic should be transparent enough that a teacher can understand why the system made a decision
+- Are **readable by a Domain Authority** — the logic should be transparent enough that a domain expert can understand why the system made a decision
 - Are **not production code** — they are reference implementations for understanding and testing
 
 ---
@@ -81,10 +79,10 @@ All reference implementations:
 
 | Implementation | Spec |
 |---------------|------|
-| `zpd-monitor-v0.2.py` | [`../domain-packs/education/sensors/zpd-monitor-spec-v1.md`](../domain-packs/education/sensors/zpd-monitor-spec-v1.md) |
-| `zpd-monitor-v0.2.py` | [`../domain-packs/education/sensors/compressed-state-estimators.md`](../domain-packs/education/sensors/compressed-state-estimators.md) |
 | `yaml-to-json-converter.py` | [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) |
 | `ctl-commitment-validator.py` | [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) |
 | `dsa-orchestrator.py` | [`../specs/dsa-framework-v1.md`](../specs/dsa-framework-v1.md) |
 | `dsa-orchestrator.py` | [`../specs/orchestrator-system-prompt-v1.md`](../specs/orchestrator-system-prompt-v1.md) |
 | `dsa-orchestrator-demo.py` | [`../specs/dsa-framework-v1.md`](../specs/dsa-framework-v1.md) |
+
+See [`../domain-packs/education/reference-implementations/README.md`](../domain-packs/education/reference-implementations/README.md) for education-domain-specific implementations.

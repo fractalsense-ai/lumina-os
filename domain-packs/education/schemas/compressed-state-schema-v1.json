@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/standards/compressed-state-schema-v1.json",
-  "title": "Compressed State Schema V1",
-  "description": "JSON Schema for the compressed learner state used by the ZPD monitor and state estimators in Project Lumina.",
+  "$id": "https://projectlumina.org/domain-packs/education/schemas/compressed-state-schema-v1.json",
+  "title": "Education Domain — Compressed State Schema V1",
+  "description": "JSON Schema for the compressed learner state used by the education-domain ZPD monitor and state estimators in Project Lumina.",
   "type": "object",
   "required": [
     "affect",
