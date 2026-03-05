@@ -182,5 +182,5 @@ See [`../examples/README.md`](../examples/README.md) for a complete walkthrough 
 
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — Domain schema
-- [`../standards/compressed-state-schema-v1.json`](../standards/compressed-state-schema-v1.json) — State schema
-- [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py) — reference Action implementation
+- [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) — Education domain subject state schema (example)
+- [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py) — education domain sensor reference implementation

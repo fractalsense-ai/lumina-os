@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/standards/student-profile-schema-v1.json",
-  "title": "Student Profile Schema V1",
+  "$id": "https://projectlumina.org/domain-packs/education/schemas/student-profile-schema-v1.json",
+  "title": "Education Domain — Student Profile Schema V1",
   "description": "JSON Schema for Project Lumina student profiles. Preferences are used for immersion only and must never influence grading or mastery assessment.",
   "type": "object",
   "required": [
@@ -77,7 +77,7 @@
     },
     "learning_state": {
       "type": "object",
-      "required": ["affect", "mastery", "zpd_band", "recent_window"],
+      "required": ["affect", "mastery", "challenge_band", "recent_window"],
       "additionalProperties": false,
       "properties": {
         "affect": {
@@ -92,7 +92,7 @@
           },
           "description": "Per-skill mastery estimates (0..1)"
         },
-        "zpd_band": {
+        "challenge_band": {
           "type": "object",
           "required": ["min_challenge", "max_challenge"],
           "additionalProperties": false,

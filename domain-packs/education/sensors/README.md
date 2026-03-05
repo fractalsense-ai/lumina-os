@@ -43,12 +43,12 @@ Each sensor in this array must:
 1. Accept **structured evidence** as input — never raw conversation content
 2. Produce **deterministic output** given the same inputs
 3. Be **readable by the Domain Authority** — no black-box logic
-4. Feed its output into the **compressed state schema** (`standards/compressed-state-schema-v1.json`)
+4. Feed its output into the **education domain subject state schema** (`domain-packs/education/schemas/compressed-state-schema-v1.json`)
 
 ---
 
 ## References
 
 - [`../../../standards/domain-sensor-array-v1.md`](../../../standards/domain-sensor-array-v1.md) — universal sensor array spec
-- [`../../../standards/compressed-state-schema-v1.json`](../../../standards/compressed-state-schema-v1.json) — compressed state schema
-- [`../../../reference-implementations/zpd-monitor-v0.2.py`](../../../reference-implementations/zpd-monitor-v0.2.py) — Python reference implementation
+- [`../schemas/compressed-state-schema-v1.json`](../schemas/compressed-state-schema-v1.json) — education domain subject state schema
+- [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py) — Python reference implementation

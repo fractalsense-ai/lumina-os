@@ -10,7 +10,7 @@
 
 The **ZPD Monitor** is the core state-management component of the Project Lumina Action layer. It maintains the compressed learner state, detects Zone of Proximal Development drift, and produces a decision tier for each turn.
 
-The reference implementation is [`../../reference-implementations/zpd-monitor-v0.2.py`](../../reference-implementations/zpd-monitor-v0.2.py).
+The reference implementation is [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
 
 ---
 
@@ -70,7 +70,7 @@ class RecentWindow:
 class LearningState:
     affect: AffectState
     mastery: Dict[str, float]
-    zpd_band: Dict[str, float]   # {"min_challenge": float, "max_challenge": float}
+    challenge_band: Dict[str, float]   # {"min_challenge": float, "max_challenge": float}
     recent_window: RecentWindow
     challenge: float = 0.5
     uncertainty: float = 0.5
@@ -107,8 +107,8 @@ def zpd_monitor_step(
 
     # 5. Update ZPD window
     outside_band = (
-        new_challenge < state.zpd_band["min_challenge"]
-        or new_challenge > state.zpd_band["max_challenge"]
+        new_challenge < state.challenge_band["min_challenge"]
+        or new_challenge > state.challenge_band["max_challenge"]
     )
     new_window = update_zpd_window(state.recent_window, outside_band)
 
@@ -122,7 +122,7 @@ def zpd_monitor_step(
     new_state = LearningState(
         affect=new_affect,
         mastery=new_mastery,
-        zpd_band=state.zpd_band,
+        challenge_band=state.challenge_band,
         recent_window=new_window,
         challenge=new_challenge,
         uncertainty=new_uncertainty
@@ -227,6 +227,6 @@ After each `zpd_monitor_step`:
 ## References
 
 - [`compressed-state-estimators.md`](compressed-state-estimators.md) — detailed estimator formulas
-- [`../../reference-implementations/zpd-monitor-v0.2.py`](../../reference-implementations/zpd-monitor-v0.2.py) — Python implementation
-- [`../../reference-implementations/zpd-monitor-demo.py`](../../reference-implementations/zpd-monitor-demo.py) — worked demo
-- [`../../standards/compressed-state-schema-v1.json`](../../standards/compressed-state-schema-v1.json) — state schema
+- [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py) — Python implementation
+- [`../reference-implementations/zpd-monitor-demo.py`](../reference-implementations/zpd-monitor-demo.py) — worked demo
+- [`../schemas/compressed-state-schema-v1.json`](../schemas/compressed-state-schema-v1.json) — state schema

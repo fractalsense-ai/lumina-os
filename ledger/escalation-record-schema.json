@@ -97,7 +97,7 @@
       "properties": {
         "session_turns": { "type": "integer", "minimum": 0 },
         "current_challenge": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "zpd_band": {
+        "challenge_band": {
           "type": ["object", "null"],
           "properties": {
             "min_challenge": { "type": "number" },

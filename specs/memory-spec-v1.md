@@ -39,7 +39,7 @@ Student memory is the student profile. It persists between sessions and is updat
 learning_state:
   affect:                     # affect state from last session end
   mastery:                    # per-skill mastery estimates
-  zpd_band:                   # current ZPD band
+  challenge_band:              # optimal challenge band (min/max bounds)
   recent_window:              # rolling window state (resets each session)
   challenge: 0.5
   uncertainty: 0.5

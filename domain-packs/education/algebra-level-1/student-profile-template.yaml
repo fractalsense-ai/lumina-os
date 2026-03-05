@@ -1,5 +1,5 @@
 # Student Profile Template — Algebra Level 1
-# Conforms to: student-profile-schema-v1.json
+# Conforms to: domain-packs/education/schemas/student-profile-schema-v1.json
 # ============================================================
 # Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
 # with the student's assigned pseudonymous token.
@@ -29,7 +29,7 @@ learning_state:
     show_work_steps: 0.0
     verify_solution: 0.0
 
-  zpd_band:
+  challenge_band:
     min_challenge: 0.3
     max_challenge: 0.7
 
@@ -42,7 +42,7 @@ learning_state:
     consecutive_outside: 0
     outside_flags: []
 
-  challenge: 0.3   # Start at the low end of the ZPD band
+  challenge: 0.3   # Start at the low end of the challenge band
   uncertainty: 0.8  # High initial uncertainty — we don't know the student yet
 
   updated_utc: null

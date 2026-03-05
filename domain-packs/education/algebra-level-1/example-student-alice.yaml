@@ -32,7 +32,7 @@ learning_state:
     show_work_steps: 0.60      # Reasonably consistent at showing steps
     verify_solution: 0.38      # Weak — often skips verification
 
-  zpd_band:
+  challenge_band:
     min_challenge: 0.3
     max_challenge: 0.7
 
@@ -41,7 +41,7 @@ learning_state:
     attempts: 4
     consecutive_incorrect: 0
     hint_count: 2
-    outside_pct: 0.2          # 2 of 10 turns outside ZPD — minor
+    outside_pct: 0.2          # 2 of 10 turns outside challenge band — minor
     consecutive_outside: 0
     outside_flags: [false, false, true, false, false, false, false, false, true, false]
 

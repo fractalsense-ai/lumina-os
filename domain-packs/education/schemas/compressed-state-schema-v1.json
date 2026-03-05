@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/standards/compressed-state-schema-v1.json",
-  "title": "Compressed State Schema V1",
-  "description": "JSON Schema for the compressed learner state used by the ZPD monitor and state estimators in Project Lumina.",
+  "$id": "https://projectlumina.org/domain-packs/education/schemas/compressed-state-schema-v1.json",
+  "title": "Education Domain — Compressed State Schema V1",
+  "description": "JSON Schema for the compressed learner state used by the education-domain ZPD monitor and state estimators in Project Lumina.",
   "type": "object",
   "required": [
     "affect",
     "mastery",
-    "zpd_band",
+    "challenge_band",
     "recent_window",
     "challenge",
     "uncertainty"
@@ -48,7 +48,7 @@
       },
       "description": "Per-skill mastery estimates. Keys are skill IDs defined in the domain pack. Values are 0..1."
     },
-    "zpd_band": {
+    "challenge_band": {
       "type": "object",
       "required": ["min_challenge", "max_challenge"],
       "additionalProperties": false,
@@ -57,13 +57,13 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Lower bound of the ZPD band. Challenge below this is too easy."
+          "description": "Lower bound of the optimal challenge band. Challenge below this is too easy."
         },
         "max_challenge": {
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Upper bound of the ZPD band. Challenge above this is too hard."
+          "description": "Upper bound of the optimal challenge band. Challenge above this is too hard."
         }
       }
     },
@@ -114,7 +114,7 @@
       "type": "number",
       "minimum": 0.0,
       "maximum": 1.0,
-      "description": "Estimated challenge level of the current task (0..1). Compared to zpd_band to detect drift."
+      "description": "Estimated challenge level of the current task (0..1). Compared to challenge_band to detect drift."
     },
     "uncertainty": {
       "type": "number",

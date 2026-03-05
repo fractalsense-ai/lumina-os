@@ -104,8 +104,7 @@ project-lumina/
 │   ├── causal-trace-ledger-v1.md
 │   ├── domain-physics-schema-v1.json
 │   ├── domain-sensor-array-v1.md      ← sensor array contract
-│   ├── student-profile-schema-v1.json
-│   ├── compressed-state-schema-v1.json
+│   ├── prompt-contract-schema-v1.json
 │   └── tool-adapter-schema-v1.json
 ├── specs/                             ← detailed architecture specifications
 │   ├── dsa-framework-v1.md
@@ -134,11 +133,18 @@ project-lumina/
 ├── domain-packs/                      ← domain-specific everything
 │   ├── README.md
 │   ├── education/
+│   │   ├── schemas/                   ← education-domain JSON schemas
+│   │   │   ├── compressed-state-schema-v1.json
+│   │   │   └── student-profile-schema-v1.json
 │   │   ├── sensors/                   ← education-domain sensor array (ZPD, affect, fatigue)
 │   │   │   ├── README.md
 │   │   │   ├── compressed-state-estimators.md
 │   │   │   ├── zpd-monitor-spec-v1.md
 │   │   │   └── fatigue-estimation-spec-v1.md
+│   │   ├── reference-implementations/ ← education-domain Python reference code
+│   │   │   ├── README.md
+│   │   │   ├── zpd-monitor-v0.2.py
+│   │   │   └── zpd-monitor-demo.py
 │   │   └── algebra-level-1/           ← specific domain pack
 │   │       ├── domain-physics.yaml
 │   │       ├── domain-physics.json
@@ -151,10 +157,8 @@ project-lumina/
 │   │       └── CHANGELOG.md
 │   └── agriculture/
 │       └── README.md
-├── reference-implementations/         ← Python reference code
+├── reference-implementations/         ← core D.S.A. engine Python reference code
 │   ├── README.md
-│   ├── zpd-monitor-v0.2.py
-│   ├── zpd-monitor-demo.py
 │   ├── yaml-to-json-converter.py
 │   ├── ctl-commitment-validator.py
 │   ├── dsa-orchestrator.py
@@ -172,7 +176,7 @@ project-lumina/
 1. Read [`specs/principles-v1.md`](specs/principles-v1.md) — understand the non-negotiables
 2. Read [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — understand the framework
 3. Browse [`domain-packs/education/algebra-level-1/`](domain-packs/education/algebra-level-1/) — a complete worked domain
-4. Run [`reference-implementations/zpd-monitor-demo.py`](reference-implementations/zpd-monitor-demo.py) — see the ZPD monitor in action
+4. Run [`domain-packs/education/reference-implementations/zpd-monitor-demo.py`](domain-packs/education/reference-implementations/zpd-monitor-demo.py) — see the ZPD monitor in action
 5. Run [`reference-implementations/dsa-orchestrator-demo.py`](reference-implementations/dsa-orchestrator-demo.py) — see the full D.S.A. orchestrator loop in action
 6. Read [`examples/README.md`](examples/README.md) — walk through a full interaction loop
 
