@@ -46,8 +46,8 @@ domain_pack_version: "0.2.0"
 # (Structured telemetry only — no transcript content)
 evidence_summary:
   session_turns: 14
-  current_challenge: 0.82    # well above upper ZPD bound of 0.70
-  zpd_band:
+  current_challenge: 0.82    # well above upper challenge band bound of 0.70
+  challenge_band:
     min_challenge: 0.30
     max_challenge: 0.70
   outside_pct: 0.60          # 60% of last 10 turns outside ZPD

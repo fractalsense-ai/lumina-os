@@ -154,7 +154,7 @@ def run_demo() -> None:
             "show_work_steps": 0.60,
             "verify_solution": 0.38,
         },
-        zpd_band={"min_challenge": 0.3, "max_challenge": 0.7},
+        challenge_band={"min_challenge": 0.3, "max_challenge": 0.7},
         recent_window=RecentWindow(window_turns=10),
         challenge=0.55,
         uncertainty=0.4,
@@ -165,7 +165,7 @@ def run_demo() -> None:
           f"equiv={state.mastery['check_equivalence']:.2f}  "
           f"steps={state.mastery['show_work_steps']:.2f}  "
           f"verify={state.mastery['verify_solution']:.2f}")
-    print(f"  ZPD band:    [{state.zpd_band['min_challenge']:.1f}, {state.zpd_band['max_challenge']:.1f}]")
+    print(f"  Challenge band: [{state.challenge_band['min_challenge']:.1f}, {state.challenge_band['max_challenge']:.1f}]")
     print(f"  Affect:      S={state.affect.salience:.2f} V={state.affect.valence:+.2f} A={state.affect.arousal:.2f}")
     print()
 

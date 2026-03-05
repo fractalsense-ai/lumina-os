@@ -77,7 +77,7 @@
     },
     "learning_state": {
       "type": "object",
-      "required": ["affect", "mastery", "zpd_band", "recent_window"],
+      "required": ["affect", "mastery", "challenge_band", "recent_window"],
       "additionalProperties": false,
       "properties": {
         "affect": {
@@ -92,7 +92,7 @@
           },
           "description": "Per-skill mastery estimates (0..1)"
         },
-        "zpd_band": {
+        "challenge_band": {
           "type": "object",
           "required": ["min_challenge", "max_challenge"],
           "additionalProperties": false,

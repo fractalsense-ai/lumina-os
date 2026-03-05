@@ -67,9 +67,9 @@ Turn  7: request_more_steps applied (attempt 1/3)
 
 ZPD Drift Log
 -------------
-Turn 11: challenge=0.78, zpd_band=[0.3, 0.7] → OUTSIDE (above)
-Turn 12: challenge=0.75, zpd_band=[0.3, 0.7] → OUTSIDE (above)
-Turn 13: challenge=0.72, zpd_band=[0.3, 0.7] → OUTSIDE (above)
+Turn 11: challenge=0.78, challenge_band=[0.3, 0.7] → OUTSIDE (above)
+Turn 12: challenge=0.75, challenge_band=[0.3, 0.7] → OUTSIDE (above)
+Turn 13: challenge=0.72, challenge_band=[0.3, 0.7] → OUTSIDE (above)
 Turn 13: Minor drift detected (3/10 turns outside) → zpd_scaffold applied
 
 Outcome Records

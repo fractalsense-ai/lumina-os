@@ -24,8 +24,8 @@ The reference implementation is in [`../../reference-implementations/zpd-monitor
 | `mastery[skill]` | float | 0..1 | Per-skill mastery estimate |
 | `challenge` | float | 0..1 | Estimated task challenge level |
 | `uncertainty` | float | 0..1 | Orchestrator uncertainty about state |
-| `zpd_band.min` | float | 0..1 | Lower ZPD bound |
-| `zpd_band.max` | float | 0..1 | Upper ZPD bound |
+| `challenge_band.min` | float | 0..1 | Lower bound of the optimal challenge band (ZPD lower bound in education) |
+| `challenge_band.max` | float | 0..1 | Upper bound of the optimal challenge band (ZPD upper bound in education) |
 | `window.outside_pct` | float | 0..1 | Fraction of window turns outside ZPD |
 | `window.consecutive_outside` | int | ≥0 | Consecutive turns outside ZPD |
 | `window.consecutive_incorrect` | int | ≥0 | Consecutive incorrect responses |
@@ -163,7 +163,7 @@ Mastery is clamped to [0, 1]. Skills not exercised in the current task are uncha
 The rolling window tracks per-turn outside-ZPD flags:
 
 ```
-outside_band = challenge < zpd_band.min OR challenge > zpd_band.max
+outside_band = challenge < challenge_band.min OR challenge > challenge_band.max
 outside_flags = ([outside_band] + prev_flags)[:window_turns]
 outside_pct = sum(outside_flags) / window_turns
 consecutive_outside = (

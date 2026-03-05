@@ -70,7 +70,7 @@ class RecentWindow:
 class LearningState:
     affect: AffectState
     mastery: Dict[str, float]
-    zpd_band: Dict[str, float]   # {"min_challenge": float, "max_challenge": float}
+    challenge_band: Dict[str, float]   # {"min_challenge": float, "max_challenge": float}
     recent_window: RecentWindow
     challenge: float = 0.5
     uncertainty: float = 0.5
@@ -107,8 +107,8 @@ def zpd_monitor_step(
 
     # 5. Update ZPD window
     outside_band = (
-        new_challenge < state.zpd_band["min_challenge"]
-        or new_challenge > state.zpd_band["max_challenge"]
+        new_challenge < state.challenge_band["min_challenge"]
+        or new_challenge > state.challenge_band["max_challenge"]
     )
     new_window = update_zpd_window(state.recent_window, outside_band)
 
@@ -122,7 +122,7 @@ def zpd_monitor_step(
     new_state = LearningState(
         affect=new_affect,
         mastery=new_mastery,
-        zpd_band=state.zpd_band,
+        challenge_band=state.challenge_band,
         recent_window=new_window,
         challenge=new_challenge,
         uncertainty=new_uncertainty

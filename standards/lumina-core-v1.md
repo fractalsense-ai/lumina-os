@@ -90,7 +90,7 @@ For domains that implement subject state tracking, state must be represented usi
 | `mastery` | dict[skill→float] | 0..1 per skill | Current mastery estimate per skill |
 | `challenge` | float | 0..1 | Estimated challenge level of current task |
 | `uncertainty` | float | 0..1 | Orchestrator's uncertainty about subject state |
-| `zpd_band` | dict | min/max challenge | Zone of Proximal Development band (learner-facing domains only) |
+| `challenge_band` | dict | min/max challenge | Optimal challenge range for the subject (min/max bounds). In education contexts this corresponds to the Zone of Proximal Development (ZPD). |
 
 See [`compressed-state-schema-v1.json`](compressed-state-schema-v1.json) for the JSON Schema.
 
@@ -109,7 +109,7 @@ All Project Lumina documents and code must use the following canonical terminolo
 | **Meta Authority** | Domain Authority one level above | "Super-admin" |
 | **Domain Physics** | The authored ruleset (YAML) | "Rules file" |
 | **Standing Order** | A bounded automated response | "Auto-response", "rule" |
-| **ZPD Band** | Zone of Proximal Development range | "Difficulty range" |
+| **Challenge Band** | Optimal challenge range for the subject (min/max bounds) | "Difficulty range", "ZPD band" |
 
 ---
 

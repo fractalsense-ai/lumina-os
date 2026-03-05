@@ -67,7 +67,7 @@ class LearningState:
     """Compressed learner state: affect + mastery + ZPD window."""
     affect: AffectState
     mastery: dict[str, float]              # skill_id → 0..1
-    zpd_band: dict[str, float]             # min_challenge, max_challenge
+    challenge_band: dict[str, float]           # min_challenge, max_challenge
     recent_window: RecentWindow
     challenge: float = 0.5                # 0..1
     uncertainty: float = 0.5              # 0..1
@@ -430,9 +430,9 @@ def zpd_monitor_step(
     # 4. Update uncertainty
     new_uncertainty = estimate_uncertainty(state.uncertainty, evidence)
 
-    # 5. Determine if challenge is outside ZPD band
-    zpd_min = float(state.zpd_band.get("min_challenge", 0.3))
-    zpd_max = float(state.zpd_band.get("max_challenge", 0.7))
+    # 5. Determine if challenge is outside the challenge band
+    zpd_min = float(state.challenge_band.get("min_challenge", 0.3))
+    zpd_max = float(state.challenge_band.get("max_challenge", 0.7))
     outside_band = new_challenge < zpd_min or new_challenge > zpd_max
 
     # 6. Update ZPD rolling window
@@ -450,7 +450,7 @@ def zpd_monitor_step(
     new_state = LearningState(
         affect=new_affect,
         mastery=new_mastery,
-        zpd_band=state.zpd_band,
+        challenge_band=state.challenge_band,
         recent_window=new_window,
         challenge=new_challenge,
         uncertainty=new_uncertainty,

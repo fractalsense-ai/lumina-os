@@ -115,7 +115,7 @@ _ALICE_PROFILE_FALLBACK: dict[str, Any] = {
             "show_work_steps": 0.60,
             "verify_solution": 0.38,
         },
-        "zpd_band": {"min_challenge": 0.3, "max_challenge": 0.7},
+        "challenge_band": {"min_challenge": 0.3, "max_challenge": 0.7},
         "recent_window": {
             "window_turns": 10,
             "attempts": 4,
@@ -157,7 +157,7 @@ def _build_learning_state_from_profile(profile: dict[str, Any]) -> "LearningStat
     ls = profile.get("learning_state", {})
     affect_data = ls.get("affect", {})
     mastery_data = ls.get("mastery", {})
-    zpd_data = ls.get("zpd_band", {})
+    zpd_data = ls.get("challenge_band", {})
     rw_data = ls.get("recent_window", {})
 
     return LearningState(
@@ -167,7 +167,7 @@ def _build_learning_state_from_profile(profile: dict[str, Any]) -> "LearningStat
             arousal=float(affect_data.get("arousal", 0.5)),
         ),
         mastery={k: float(v) for k, v in mastery_data.items()},
-        zpd_band={
+        challenge_band={
             "min_challenge": float(zpd_data.get("min_challenge", 0.3)),
             "max_challenge": float(zpd_data.get("max_challenge", 0.7)),
         },
