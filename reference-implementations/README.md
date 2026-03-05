@@ -8,6 +8,7 @@ This directory contains Python reference implementations of the **core D.S.A. en
 
 | File | Description |
 |------|-------------|
+| `yaml-loader.py` | Domain-agnostic minimal YAML loader (standard library only) |
 | `yaml-to-json-converter.py` | Converts and validates domain pack YAML → JSON |
 | `ctl-commitment-validator.py` | CTL hash chain validator and commitment recorder |
 | `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract |
@@ -79,6 +80,7 @@ All reference implementations:
 
 | Implementation | Spec |
 |---------------|------|
+| `yaml-loader.py` | (utility — no dedicated spec) |
 | `yaml-to-json-converter.py` | [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) |
 | `ctl-commitment-validator.py` | [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) |
 | `dsa-orchestrator.py` | [`../specs/dsa-framework-v1.md`](../specs/dsa-framework-v1.md) |

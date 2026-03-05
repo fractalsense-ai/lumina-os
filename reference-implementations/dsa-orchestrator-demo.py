@@ -46,8 +46,18 @@ _orch_spec.loader.exec_module(_orch_mod)  # type: ignore[union-attr]
 
 DSAOrchestrator = _orch_mod.DSAOrchestrator
 load_domain_physics = _orch_mod.load_domain_physics
-load_student_profile_yaml = _orch_mod.load_student_profile_yaml
 hash_record = _orch_mod.hash_record
+
+# Import the YAML loader from the shared utility (not from the engine).
+_yaml_spec = _ilu.spec_from_file_location(
+    "yaml_loader",
+    os.path.join(os.path.dirname(__file__), "yaml-loader.py"),
+)
+_yaml_mod = _ilu.module_from_spec(_yaml_spec)  # type: ignore[arg-type]
+sys.modules["yaml_loader"] = _yaml_mod
+_yaml_spec.loader.exec_module(_yaml_mod)  # type: ignore[union-attr]
+
+load_yaml = _yaml_mod.load_yaml
 
 # Import the education-domain ZPD monitor.
 # The engine no longer loads this automatically; the education integration layer
@@ -529,7 +539,7 @@ def run_demo() -> None:
     print(f"\nLoading student profile from:")
     print(f"  {_ALICE_PROFILE_PATH}")
     try:
-        profile = load_student_profile_yaml(_ALICE_PROFILE_PATH)
+        profile = load_yaml(_ALICE_PROFILE_PATH)
         if not profile.get("student_id"):
             raise ValueError("student_id missing — fallback to hard-coded profile")
         print(f"  → Student: {profile.get('display_name', 'Unknown')} "
@@ -559,7 +569,7 @@ def run_demo() -> None:
     initial_state = _build_learning_state_from_profile(profile)
     orch = DSAOrchestrator(
         domain_physics=domain,
-        student_profile=profile,
+        subject_profile=profile,
         ledger_path=ledger_path,
         session_id=session_id,
         sensor_step_fn=zpd_monitor_step,
