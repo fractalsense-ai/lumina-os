@@ -85,7 +85,7 @@ The override block may specify any of the following fields:
 | `target_audience` | Who the Conversational Interface is speaking to | `"teenagers (middle school)"`, `"adult farm operators"`, `"clinical staff"` |
 | `tone_profile` | Tone and communication style directives | `"brief, direct, no slang"`, `"technical, safety-conscious"` |
 | `domain_vocabulary` | Canonical term substitutions for this domain | `{"subject": "student"}`, `{"subject": "operator"}` |
-| `forbidden_disclosures` | Domain-specific things the Conversational Interface must not reveal to the subject | `["mastery level", "grade"]`, `["sensor calibration data"]` |
+| `forbidden_disclosures` | Domain-specific things the Conversational Interface must not reveal to the subject | `["mastery level", "grade"]`, `["domain-lib calibration data"]` |
 
 The Orchestrator formats and appends these fields as a `# DOMAIN CONFIGURATION` block. The Conversational Interface must treat the `# DOMAIN CONFIGURATION` block with the same authority as the core instructions above.
 
@@ -144,7 +144,7 @@ conversational_interface_overrides:
   domain_vocabulary:
     subject: "operator"
   forbidden_disclosures:
-    - "raw sensor calibration data"
+    - "raw domain-lib calibration data"
     - "internal model confidence scores"
 ```
 

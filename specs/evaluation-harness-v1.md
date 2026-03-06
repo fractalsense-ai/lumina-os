@@ -106,36 +106,39 @@ These tests verify that no conversation content is written to any persistent sto
 
 ---
 
-### Category 5: Domain Sensor Correctness
+### Category 5: Domain Lib Correctness
 
-> **Note:** This category tests the correctness of a domain's sensor array. The test cases below are written for the **education domain's ZPD monitor** as a worked example. Other domains implement equivalent tests for their own sensors (e.g., an agriculture domain would test soil-moisture band detection; a medical domain would test vital-sign threshold detection). Test case IDs (`TC-ZPD-*`) reflect the education domain's naming convention.
+> **Note:** This category defines universal domain-lib test patterns. Concrete domain cases (education, agriculture, clinical, etc.) belong in each domain pack's evaluation docs.
 
-**TC-ZPD-001: Minor drift detection**
-- Trigger: Inject 3 of 10 turns with `outside_pct` ≥ `minor_drift_threshold`
-- Assert: Decision is `minor` (zpd_scaffold)
+**TC-SENS-001: Minor drift detection**
+- Trigger: Inject drift signals that exceed `minor_drift_threshold` inside the configured drift window
+- Assert: Decision tier is `minor`
 - Pass criterion: Correct tier
 
-**TC-ZPD-002: Major drift detection**
-- Trigger: Inject 5 of 10 turns with `outside_pct` ≥ `major_drift_threshold`
-- Assert: Decision is `major` (zpd_intervene_or_escalate)
+**TC-SENS-002: Major drift detection**
+- Trigger: Inject drift signals that exceed `major_drift_threshold` inside the configured drift window
+- Assert: Decision tier is `major`
 - Pass criterion: Correct tier
 
-**TC-ZPD-003: No false drift in ZPD band**
-- Trigger: Keep all challenge values within ZPD band for 10 turns
-- Assert: No drift detected, decision is `ok`
+**TC-SENS-003: No false drift inside operating band**
+- Trigger: Keep operating values within the configured domain band for the full drift window
+- Assert: No drift detected; decision tier is `ok`
 - Pass criterion: Decision is `ok`
 
-**TC-ZPD-004: Frustration estimation from evidence**
+**TC-SENS-004: Derived stress/instability flag from evidence**
 - Trigger: Inject evidence with `consecutive_incorrect: 3`, `hint_count: 3`, `frustration_marker_count: 2`
-- Assert: `estimate_frustration_flag()` returns `True`
+- Assert: Domain lib's stress/instability estimator returns `True`
 - Pass criterion: Correct flag
+
+Domain-specific worked examples:
+- [`../domain-packs/education/evaluation-tests.md`](../domain-packs/education/evaluation-tests.md)
 
 ---
 
 ### Category 6: Consent Enforcement
 
 **TC-CON-001: Session blocked without consent**
-- Trigger: Attempt to open a session with no consent record in the student profile
+- Trigger: Attempt to open a session with no consent record in the subject profile
 - Assert: Session open fails
 - Assert: An error record is created (no `CommitmentRecord` for session open)
 - Pass criterion: Session blocked
@@ -157,7 +160,7 @@ python -m pytest reference-implementations/ -k "test_harness" -v
 python -m pytest reference-implementations/ -k "test_harness_transcript" -v
 ```
 
-The reference implementation includes test stubs that implement these test cases against the `domain-packs/education/reference-implementations/zpd-monitor-v0.2.py` and `reference-implementations/ctl-commitment-validator.py` modules.
+The reference implementation includes test stubs that implement these test cases against domain-lib references and `reference-implementations/ctl-commitment-validator.py`. For education-specific examples, see `domain-packs/education/evaluation-tests.md`.
 
 ---
 

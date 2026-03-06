@@ -18,15 +18,15 @@ This document specifies audit procedures and rollback policy for Project Lumina.
 
 | Role | May Audit |
 |------|----------|
-| Student | Their own sessions only |
-| Domain Authority (Teacher) | All sessions in their governed domains |
-| Meta Authority (Dept. Head) | All sessions governed by their subordinate Domain Authorities |
+| Subject/Target | Their own sessions only |
+| Domain Authority | All sessions in their governed domains |
+| Meta Authority | All sessions governed by their subordinate Domain Authorities |
 | Administration | All sessions institution-wide |
 | External Auditor | As defined by Meta Authority policy; scope-limited |
 
 ### Audit Request Process
 
-1. **Request**: The auditor submits an audit request specifying the scope (session ID, date range, domain pack, or student ID)
+1. **Request**: The auditor submits an audit request specifying the scope (session ID, date range, domain pack, or subject ID)
 2. **Authorization check**: The system verifies the requestor's scope against their role
 3. **Generation**: The audit log generator reads from the CTL and produces the report
 4. **CTL record**: A `TraceEvent` with `event_type: audit_requested` is appended to the CTL
@@ -38,14 +38,14 @@ Audit reports contain structured telemetry only:
 - Decision summaries
 - Invariant check results
 - Standing order invocations
-- ZPD drift detections
+- State drift detections
 - Mastery deltas
 - Escalation records
 - Chain integrity check result
 
 Audits do not produce:
 - Conversation transcripts
-- Raw student responses
+- Raw subject responses
 - PII beyond pseudonymous identifiers
 
 ### Audit Frequency
@@ -116,9 +116,9 @@ If a domain pack version has a defect:
 
 Domain pack rollback does **not** retroactively change the outcome of prior sessions. Those sessions operated under the prior version — that is the correct historical record.
 
-### Student Profile Rollback
+### Subject Profile Rollback
 
-In rare cases, a student profile may need to be rolled back (e.g., a bug caused incorrect mastery updates):
+In rare cases, a subject profile may need to be rolled back (e.g., a bug caused incorrect state updates):
 
 1. The Domain Authority (or Meta Authority) identifies the correct prior state
 2. The corrected state is written to the profile

@@ -1,0 +1,10 @@
+subject_id: "agri-subject-001"
+domain_id: "domain/agriculture/operations-level-1/v1"
+display_name: "Field Unit 7"
+
+preferences:
+  language: en
+
+state:
+  signal_index: 0.55
+  uncertainty: 0.2

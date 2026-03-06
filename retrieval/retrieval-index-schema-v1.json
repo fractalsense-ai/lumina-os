@@ -26,7 +26,7 @@
         "tool_adapter",
         "mastery_artifact",
         "boss_challenge_bundle",
-        "student_profile",
+        "subject_profile",
         "ctl_structured_fields",
         "session_summary",
         "evaluation_bundle",
@@ -58,7 +58,7 @@
       "properties": {
         "minimum_role": {
           "type": "string",
-          "enum": ["orchestrator", "student", "domain_authority", "meta_authority", "administration"],
+          "enum": ["orchestrator", "subject", "domain_authority", "meta_authority", "administration"],
           "description": "Minimum role required to retrieve this artifact"
         },
         "domain_restriction": {
@@ -69,9 +69,9 @@
           "type": ["string", "null"],
           "description": "If set, only the named session may retrieve this artifact"
         },
-        "student_restriction": {
+        "subject_restriction": {
           "type": ["string", "null"],
-          "description": "If set, only the named pseudonymous student may retrieve this artifact"
+          "description": "If set, only the named pseudonymous subject may retrieve this artifact"
         }
       }
     },

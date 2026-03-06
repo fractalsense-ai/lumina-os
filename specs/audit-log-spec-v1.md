@@ -65,12 +65,12 @@ Standing Order Log
 ------------------
 Turn  7: request_more_steps applied (attempt 1/3)
 
-ZPD Drift Log *(education domain — sensor drift log)*
+State Drift Log *(domain-defined signal names)*
 -------------
 Turn 11: challenge=0.78, challenge_band=[0.3, 0.7] → OUTSIDE (above)
 Turn 12: challenge=0.75, challenge_band=[0.3, 0.7] → OUTSIDE (above)
 Turn 13: challenge=0.72, challenge_band=[0.3, 0.7] → OUTSIDE (above)
-Turn 13: Minor drift detected (3/10 turns outside) → zpd_scaffold applied
+Turn 13: Minor drift detected (3/10 turns outside) → domain standing order applied
 
 Outcome Records
 ---------------

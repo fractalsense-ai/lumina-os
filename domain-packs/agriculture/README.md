@@ -6,15 +6,22 @@
 
 This directory is reserved for the Agriculture domain pack.
 
+This domain folder will own:
+- domain principles
+- domain rules and invariants
+- domain state model and sensors
+- domain physics and standing-order vocabulary
+
 When authored, it will follow the same structure as [`../education/algebra-level-1/`](../education/algebra-level-1/):
 
 ```
 agriculture/
+├── README.md                    (this file)
 └── crop-planning-level-1/
     ├── domain-physics.yaml
     ├── domain-physics.json
     ├── tool-adapters/
-    ├── student-profile-template.yaml
+    ├── entity-profile-template.yaml
     ├── prompt-contract-schema.json
     └── CHANGELOG.md
 ```

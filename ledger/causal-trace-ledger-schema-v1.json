@@ -35,7 +35,7 @@
         "prev_record_hash": { "type": "string" },
         "timestamp_utc": { "type": "string" },
         "session_id": { "type": "string" },
-        "student_id": { "type": "string" },
+        "subject_id": { "type": "string" },
         "task_id": { "type": "string" },
         "task_version": { "type": "string" },
         "outcome": {

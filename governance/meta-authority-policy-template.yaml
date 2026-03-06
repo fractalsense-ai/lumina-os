@@ -53,7 +53,7 @@ retrieval_scope:
       fields: [event_type, decision, evidence_summary_hash]
       not_fields: [raw_content]
   blocked_retrieval_targets:
-    - type: student_profile
+    - type: subject_profile
       except: own_session
 
 # ── Escalation Receipt Policy ───────────────────────────────
@@ -86,7 +86,7 @@ audit_policy:
 # ── Rollback Policy ─────────────────────────────────────────
 rollback_policy:
   domain_pack_rollback_requires: meta_authority_commitment
-  student_profile_rollback_requires: meta_authority_commitment
+  subject_profile_rollback_requires: meta_authority_commitment
   rollback_records_retained: true
   retroactive_record_modification: never_permitted
 

@@ -19,7 +19,7 @@ A Domain Profile:
 2. **Defines what the system may do** — standing orders bound the orchestrator's automated responses
 3. **Defines when to escalate** — escalation triggers specify when human intervention is needed
 4. **Defines what mastery means** — artifacts specify achievable outcomes
-5. **Sets subsystem parameters** — `subsystem_configs` provides domain-specific configuration for subsystems such as the ZPD monitor (education) or a soil-health monitor (agriculture)
+5. **Sets subsystem parameters** — `subsystem_configs` provides domain-specific configuration for subsystems such as an education drift monitor or a soil-health monitor
 
 A Domain Profile does not define conversation scripts, specific problem sets, or lesson plans. Those are content, not structure. The profile governs the structure.
 
@@ -41,7 +41,7 @@ domain_authority:
 
 meta_authority_id: domain/org/curriculum/v1
 
-description: "Algebra Level 1 for middle school students"
+description: "Algebra Level 1 domain pack"
 
 lumina_core_version: "1.0.0"
 
@@ -58,7 +58,7 @@ standing_orders:
     trigger_condition: equivalence_preserved
     max_attempts: 3
     escalation_on_exhaust: true
-    description: "Ask the student to show their work step by step"
+    description: "Request explicit step-by-step work evidence"
 
 escalation_triggers:
   - id: critical_invariant_unresolvable
@@ -183,10 +183,10 @@ Domain-specific subsystems (such as the ZPD monitor in education domains, or a s
 
 **Education example — ZPD monitor configuration:**
 
-The `subsystem_configs.zpd_monitor` block should be set based on the Domain Authority's pedagogical judgment:
+The `subsystem_configs.zpd_monitor` block should be set based on the Domain Authority's domain-specific judgment:
 
 - **Too narrow**: frequent drift, too many interventions
-- **Too wide**: drift goes undetected, learner struggles or disengages
+- **Too wide**: drift goes undetected, the subject may struggle or disengage
 
 Typical starting values:
 - `min_challenge: 0.25` (25th percentile of current mastery)

@@ -8,7 +8,7 @@
 
 ## Overview
 
-**Artifacts** are mastery recognition items earned by entities when they demonstrate sustained competence in a defined skill set. They serve as clear, verifiable milestones rather than opaque "scores."
+**Artifacts** are domain-defined recognition items earned by entities when they demonstrate sustained competence in a defined skill set. They serve as clear, verifiable milestones rather than opaque scores.
 
 **Boss challenges** are high-stakes assessment tasks that gate artifact award — the entity must demonstrate mastery under conditions that test the skill comprehensively.
 
@@ -22,32 +22,32 @@ An artifact is defined in the Domain Physics with the following fields:
 
 ```yaml
 artifacts:
-  - id: linear_equations_basic
-    name: "Linear Equations — Foundations"
-    description: "Demonstrates ability to solve single-variable linear equations with equivalence preservation."
-    unlock_condition: "mastery >= 0.8 on all required skills, confirmed by boss challenge"
-    mastery_threshold: 0.8
+  - id: core_operation_foundations
+    name: "Core Operation — Foundations"
+    description: "Demonstrates reliable completion of required domain checks under constrained conditions."
+    unlock_condition: "proficiency >= 0.8 on all required capabilities, confirmed by boss challenge"
+    proficiency_threshold: 0.8
     skills_required:
-      - solve_one_variable
-      - check_equivalence
-      - show_work_steps
+      - capability_a
+      - capability_b
+      - capability_c
 ```
 
 ### Artifact Award Process
 
-1. **Threshold check**: All `skills_required` must have mastery ≥ `mastery_threshold`
+1. **Threshold check**: All `skills_required` must have score >= `proficiency_threshold`
 2. **Boss challenge**: A boss challenge task is presented (see below)
 3. **Boss pass**: The entity must pass the boss challenge
 4. **OutcomeRecord**: An `OutcomeRecord` is appended to the CTL with `artifact_earned: <artifact_id>`
 5. **Profile update**: The artifact is recorded in the entity profile
 
-Artifacts may not be awarded without the boss challenge, even if mastery thresholds are met.
+Artifacts may not be awarded without the boss challenge, even if score thresholds are met.
 
 ### Artifact Integrity
 
 - Artifacts are non-revocable once awarded (the CTL is append-only)
 - An entity may re-attempt a boss challenge if they fail; each attempt is a separate `OutcomeRecord`
-- Mastery estimates may decrease over time (decay), but awarded artifacts are permanent records of demonstrated mastery at the time of award
+- Proficiency estimates may decrease over time (decay), but awarded artifacts are permanent records of demonstrated competence at the time of award
 
 ---
 
@@ -58,83 +58,85 @@ Artifacts may not be awarded without the boss challenge, even if mastery thresho
 A boss challenge is a focused assessment task designed to confirm that mastery is genuine, not incidental. Characteristics:
 
 - **Comprehensive**: Tests all skills required for the target artifact in a single coherent task
-- **Novel**: Uses a problem the learner has not seen in the current session
+- **Novel**: Uses a problem the subject has not seen in the current session
 - **No scaffolding**: No hints are available during a boss challenge
 - **Timed**: Response latency is recorded (unusually fast responses may indicate pattern-matching rather than understanding)
 - **Verified**: The outcome is verified by tool adapters, not by AI interpretation alone
 
 ### Boss Challenge Task Structure
 
-> **Education domain example.** The following YAML shows an algebra boss challenge from the education domain. Other domains define equivalent boss challenge structures for their own skill assessments (e.g., an agriculture domain might gate a "Crop Rotation Certification" artifact on a field-planning assessment task).
+The following YAML is a universal template. Domain packs provide concrete instantiations.
 
 ```yaml
 boss_challenge:
-  id: "boss_linear_equations_v1"
-  target_artifact: linear_equations_basic
+  id: "boss_capability_bundle_v1"
+  target_artifact: core_operation_foundations
   skills_assessed:
-    - solve_one_variable
-    - check_equivalence
-    - show_work_steps
+    - capability_a
+    - capability_b
+    - capability_c
   task_description: >
-    A multi-step problem requiring the entity to solve for x in a two-step
-    equation and verify their solution.
+    A constrained scenario requiring the entity to complete a sequence of
+    domain checks and produce verifiable outcomes.
   grading:
-    - check: verify_algebraic_equivalence
+    - check: verify_primary_constraint
       weight: 0.5
-    - check: verify_solution_substitution
+    - check: verify_secondary_constraint
       weight: 0.3
-    - check: step_count_minimum
+    - check: verify_traceability
       weight: 0.2
   pass_threshold: 0.8
   hints_allowed: false
   max_attempts_per_session: 1
 ```
 
+Education-specific worked examples are documented in [`../domain-packs/education/artifact-and-mastery-examples.md`](../domain-packs/education/artifact-and-mastery-examples.md).
+
 ### Boss Challenge Outcome
 
 | Outcome | CTL Record | Next Action |
 |---------|-----------|-------------|
-| Pass (score ≥ pass_threshold) | OutcomeRecord: pass, artifact_earned | Award artifact, update mastery |
+| Pass (score >= pass_threshold) | OutcomeRecord: pass, artifact_earned | Award artifact, update proficiency |
 | Partial (threshold not met) | OutcomeRecord: partial | Continue practice, suggest weak skills |
 | Fail | OutcomeRecord: fail | Continue practice, no escalation unless repeated failure |
-| Abandoned | OutcomeRecord: abandoned | No penalty; learner may retry in future session |
+| Abandoned | OutcomeRecord: abandoned | No penalty; subject may retry in future session |
 
 ---
 
-## Mastery Estimation
+## Proficiency Estimation (Mastery in Domain Terms)
 
-### Mastery Scale
+### Proficiency Scale
 
-Mastery is expressed as a float 0..1 per skill:
+Proficiency is expressed as a float 0..1 per skill or capability:
 
 | Range | Interpretation |
 |-------|---------------|
-| 0.0 – 0.2 | No demonstrated mastery |
+| 0.0 – 0.2 | No demonstrated proficiency |
 | 0.2 – 0.4 | Early exposure, significant errors |
 | 0.4 – 0.6 | Developing; correct with support |
 | 0.6 – 0.8 | Proficient; mostly correct, minor errors |
-| 0.8 – 1.0 | Mastered; consistent, reliable |
+| 0.8 – 1.0 | Strongly demonstrated; consistent, reliable |
 
-### Mastery Update Rules
+### Proficiency Update Rules
 
-Mastery is updated by the domain sensor after each task (in the education domain, this is the ZPD monitor):
+Proficiency is updated by the active domain lib after each task:
 
-- **Correct + no hint**: mastery increases (larger increase if no hint)
-- **Correct + hint used**: mastery increases modestly
-- **Incorrect**: mastery decreases (larger decrease if repeated error)
-- **Abandoned**: mastery unchanged
+- **Pass with no assist**: score increases (larger increase if no assist)
+- **Pass with assist**: score increases modestly
+- **Fail/constraint violation**: score decreases
+- **Abandoned**: score unchanged
 
-The exact update function for the education domain is in [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py).
+Concrete update functions are domain-owned and documented in domain packs.
 
-### Mastery Decay
+### Proficiency Decay
 
-Mastery may decay over time if the learner has not practiced a skill recently. Decay is configurable per domain pack:
+Proficiency may decay over time if the subject has not exercised a capability recently. Decay is configurable per domain pack:
 
 ```yaml
-mastery_decay:
+proficiency_decay:
   enabled: true
   decay_rate_per_day: 0.01  # 1% per day of inactivity
-  minimum_retained: 0.4     # mastery never decays below this
+  minimum_retained: 0.4     # score never decays below this
 ```
 
 Decay is applied when the entity profile is loaded for a new session.
@@ -145,7 +147,7 @@ Decay is applied when the entity profile is loaded for a new session.
 
 These two principles govern all assessment:
 
-1. **Mastery is measured from task performance, not behavioral inference.** The system looks at whether the learner solved the problem correctly, how many steps they showed, whether they needed a hint — not at how they phrased things, their tone, or other conversational signals.
+1. **Proficiency is measured from verifiable outcomes, not behavioral inference.** The system uses structured result fields from tool checks and invariant outcomes, not conversational tone or unstructured cues.
 
 2. **Preferences do not affect assessment.** An entity's stated interests are used for example theming only. The same mathematical equivalence check applies to a rocket-themed problem and an apple-themed problem.
 
@@ -154,5 +156,4 @@ These two principles govern all assessment:
 ## References
 
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — artifact schema
-- [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py) — mastery update implementation
-- [`../domain-packs/education/algebra-level-1/domain-physics.yaml`](../domain-packs/education/algebra-level-1/domain-physics.yaml) — worked example
+- [`../domain-packs/education/artifact-and-mastery-examples.md`](../domain-packs/education/artifact-and-mastery-examples.md) — education-domain worked examples

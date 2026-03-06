@@ -3,60 +3,60 @@ dsa-orchestrator.py — Project Lumina D.S.A. Orchestrator Reference Implementat
 
 Version: 0.2.0
 Conforms to: specs/dsa-framework-v1.md
-             standards/causal-trace-ledger-v1.md
+                         standards/causal-trace-ledger-v1.md
 
 Implements the Action layer of the D.S.A. framework, connecting:
-    Domain Physics → (optional domain sensor) → CTL → Prompt Contract
+        Domain Physics -> (optional domain lib) -> CTL -> Prompt Contract
 
 The orchestrator:
-  1. Loads Domain Physics (JSON) defining invariants and standing orders.
-  2. Holds the current sensor state (initialised by the caller, or None).
-  3. For every session turn:
-       a. Evaluates non-delegated invariants against structured evidence by
-          interpreting the ``check`` expression declared in each invariant
-          definition.  No domain-specific logic is baked into the engine.
-       b. Steps any registered domain sensor to obtain an updated state and
-          a decision dict.  If no sensor is registered the decision is empty.
-       c. Resolves the final action (invariant failures trump sensor drift).
-       d. Builds a prompt_contract JSON object conforming to the domain schema.
-       e. Appends a hash-chained TraceEvent (and, when needed, an
-          EscalationRecord) to the Causal Trace Ledger (CTL).
-  4. Opens the session with a CommitmentRecord in the CTL.
+    1. Loads Domain Physics (JSON) defining invariants and standing orders.
+    2. Holds the current domain-lib state (initialised by the caller, or None).
+    3. For every session turn:
+         a. Evaluates non-delegated invariants against structured evidence by
+                interpreting the ``check`` expression declared in each invariant
+                definition. No domain-specific logic is baked into the engine.
+         b. Steps any registered domain lib to obtain an updated state and
+                a decision dict. If no lib is registered the decision is empty.
+         c. Resolves the final action (invariant failures trump state drift).
+         d. Builds a prompt_contract JSON object conforming to the domain schema.
+         e. Appends a hash-chained TraceEvent (and, when needed, an
+                EscalationRecord) to the Causal Trace Ledger (CTL).
+    4. Opens the session with a CommitmentRecord in the CTL.
 
 Invariant evaluation (domain-pack-driven):
-  Each invariant in the domain-pack may carry a ``check`` field whose value
-  is a simple predicate expression referencing flat evidence-dict keys:
+    Each invariant in the domain-pack may carry a ``check`` field whose value
+    is a simple predicate expression referencing flat evidence-dict keys:
 
-    ``<field>``                  — truthy check on evidence[field]
-    ``<field> == <literal>``     — equality check  (supports [] / true / false)
-    ``<field> != <literal>``     — inequality check
-    ``<field> >= <number>``      — numeric comparison  (also >, <, <=)
+        ``<field>``                  — truthy check on evidence[field]
+        ``<field> == <literal>``     — equality check (supports [] / true / false)
+        ``<field> != <literal>``     — inequality check
+        ``<field> >= <number>``      — numeric comparison (also >, <, <=)
 
-  Invariants marked with ``"handled_by": "<subsystem>"`` are skipped here
-  and delegated entirely to the registered domain sensor (or ignored when no
-  sensor is registered).  This mechanism is domain-agnostic: an agriculture
-  domain can define ``soil_moisture_drift_minor`` with
-  ``handled_by: soil_health_monitor`` using the same pattern.
+    Invariants marked with ``"handled_by": "<subsystem>"`` are skipped here
+    and delegated entirely to the registered domain lib (or ignored when no
+    lib is registered). This mechanism is domain-agnostic: an agriculture
+    domain can define ``soil_moisture_drift_minor`` with
+    ``handled_by: soil_health_monitor`` using the same pattern.
 
 Design constraints:
-  - Standard library only (no external dependencies).
-  - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
-    implemented in ctl-commitment-validator.py.
-  - No domain-specific sensor (e.g. a domain sensor) is imported or required by
-    the engine.  Domain integrations wire up their sensors externally and pass
-    them in via ``sensor_step_fn`` / ``initial_state``.
+    - Standard library only (no external dependencies).
+    - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
+        implemented in ctl-commitment-validator.py.
+    - No domain-specific domain-lib implementation is imported or required by
+        the engine. Domain integrations wire up their sensors externally and pass
+        them in via ``sensor_step_fn`` / ``initial_state``.
 
 Usage:
-    from dsa_orchestrator import DSAOrchestrator, load_domain_physics
-    from yaml_loader import load_yaml
-    domain = load_domain_physics("domain-packs/education/algebra-level-1/domain-physics.json")
-    profile = load_yaml("domain-packs/education/algebra-level-1/example-student-alice.yaml")
-    # For a domain with no sensor:
-    orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
-    # For the education domain example — wire up the ZPD monitor externally:
-    orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
-                           sensor_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
-    contract, action = orch.process_turn(task_spec, evidence)
+        from dsa_orchestrator import DSAOrchestrator, load_domain_physics
+        from yaml_loader import load_yaml
+        domain = load_domain_physics("domain-packs/education/algebra-level-1/domain-physics.json")
+        profile = load_yaml("domain-packs/education/algebra-level-1/example-student-alice.yaml")
+        # For a domain with no domain lib:
+        orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
+        # For the education domain example, wire up the ZPD monitor externally:
+        orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
+                                                     sensor_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
+        contract, action = orch.process_turn(task_spec, evidence)
 """
 
 from __future__ import annotations

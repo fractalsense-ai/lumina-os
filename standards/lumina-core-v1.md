@@ -80,18 +80,18 @@ See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL sp
 
 ## 3. Compressed State Conformance
 
-For domains that implement subject state tracking, each domain pack defines its own **subject state schema** in its `schemas/` directory. The D.S.A. engine is agnostic to the specific fields; domain sensor arrays populate whatever fields the domain schema defines.
+For domains that implement subject state tracking, each domain pack defines its own **subject state schema** in its `schemas/` directory. The D.S.A. engine is agnostic to the specific fields; domain libs populate whatever fields the domain schema defines.
 
 A domain's subject state schema must conform to the following structural requirements:
 
 - Stored as a versioned JSON Schema file in `domain-pack/schemas/`
 - Fields must be numeric (float or integer) or simple structured objects — no free text
-- All fields must be populated by deterministic sensors (see [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md))
+- All fields must be populated by deterministic domain-lib logic (see [`domain-state-lib-contract-v1.md`](domain-state-lib-contract-v1.md))
 - Schema changes that add required fields or alter field semantics require a version bump
 
 > **Education domain example:** The education domain's compressed learner state schema is at [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and operating-band thresholds — all concepts specific to educational assessment.
 
-See [`domain-sensor-array-v1.md`](domain-sensor-array-v1.md) for the sensor array specification that populates the state.
+See [`domain-state-lib-contract-v1.md`](domain-state-lib-contract-v1.md) for the domain-lib contract that populates the state.
 
 ---
 
@@ -147,7 +147,7 @@ Before publishing a domain pack or implementation:
 - [ ] All identifiers are pseudonymous
 - [ ] Terminology conforms to Section 4
 - [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
-- [ ] If the domain uses sensor subsystems, the relevant `subsystem_configs` block(s) are present with required thresholds
+- [ ] If the domain uses domain-lib subsystems, the relevant `subsystem_configs` block(s) are present with required thresholds
 
 ---
 

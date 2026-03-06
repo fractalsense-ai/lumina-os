@@ -14,7 +14,7 @@ Project Lumina principles are organized in two tiers:
 
 **Part II — Domain-Specific Principles (8–10)** — these principles apply strictly to domains where configured in the `domain-physics.yaml`. When a domain-specific principle IS active for a given domain, it is enforced with the same rigor as a universal principle — a Domain Authority cannot selectively disable it within a domain that has it enabled.
 
-The distinction matters because the core engine is domain-agnostic: it must serve an agriculture pack monitoring soil sensors just as well as an education pack tutoring a student. Principles that are irrelevant to machine-facing domains (consent screens, subject scaffolding) must not be imposed globally.
+The distinction matters because the core engine is domain-agnostic: it must serve an agriculture pack monitoring soil conditions through domain libs just as well as a clinical pack monitoring treatment safety constraints. Principles that are irrelevant to machine-facing or non-human domains (for example, consent screens or domain-specific scaffolding) must not be imposed globally.
 
 ---
 
@@ -39,15 +39,15 @@ Expanding scope without a justified escalation is a violation of this principle.
 
 ## Principle 2: Measurement, Not Surveillance
 
-**The system measures progress. It does not monitor the entity.**
+**The system records structured operational evidence. It does not retain unstructured interaction logs.**
 
-- No transcripts are stored at rest
-- Evidence is structured telemetry: correctness, hint usage, response latency, etc.
-- Raw conversation content is never written to the CTL or any persistent store
+- No raw transcripts or free-text interaction payloads are stored at rest
+- Evidence is structured telemetry defined by domain contracts (for example: correctness, latency, threshold deltas, tool outcomes)
+- Raw interaction content is never written to the CTL or persistent state stores
 - Hashes of content may be stored for integrity verification; the content itself is not
-- State estimates are based on task performance, not behavioral inference
+- State estimates are derived from structured outcomes and ground-truth measurements, not inferred internal traits
 
-The distinction: a surveillance system would record what was said and build a profile. A measurement system records whether the task was completed correctly and how long it took.
+The distinction: a surveillance system stores raw interactions and derives broad profiles. A measurement system stores only contract-bound evidence needed for bounded decisions and auditability.
 
 ---
 
@@ -90,27 +90,31 @@ Every scope expansion requires an escalation record and Meta Authority approval.
 
 ## Principle 6: Pseudonymity by Default
 
-**The AI layer does not know who the entity is.**
+**The AI layer does not use canonical identity attributes directly.**
 
-Identifiers in the system are pseudonymous tokens. The mapping from pseudonymous token to real identity is held by the institution in a separate, access-controlled system — not by the AI layer.
+Identifiers in the orchestration layer are pseudonymous tokens. Mapping from token to canonical identity is held in a separate, access-controlled system outside the AI layer.
 
-The AI orchestrator must function correctly without knowing the real name, contact information, or other identifying details of the entity it is serving.
+This applies across entity types:
+- Human-facing domains: canonical attributes can include name or contact details
+- Machine/data-facing domains: canonical attributes can include device IDs, endpoint URIs, or source-system keys
+
+The AI orchestrator must function correctly without direct access to canonical identity attributes.
 
 ---
 
-## Principle 7: Minimal Probing
+## Principle 7: Bounded Drift Probing
 
-**One probe per drift detection. Do not interrogate.**
+**One bounded probe per drift detection cycle. Do not run probe loops.**
 
-When drift is detected, the orchestrator may issue exactly one probe (a clarifying question or check-in). It must not issue a series of probing questions, interview the subject about their state, or make inferences from conversational cues.
+When drift is detected, the orchestrator may issue exactly one bounded probe for that cycle (for example, a single deterministic check or constrained clarifier defined by domain rules). It must not issue iterative probe chains to infer hidden state.
 
-Evidence is structural (task performance data), not conversational. The system learns from what the subject does, not from what they say about themselves.
+Evidence remains structural and contract-bound (tool outputs, invariant checks, task outcomes), not freeform conversational mining. The system learns from bounded evidence channels, not open-ended interrogation.
 
 ---
 
 ## Part II — Domain-Specific Principles (Context-Dependent)
 
-The following principles apply **only when activated by the domain pack's configuration**. They are irrelevant to machine-facing or sensor-monitoring domains but are critical for human-facing or subject-facing ones. When a domain pack enables them, they are non-negotiable within that domain.
+The following principles apply **only when activated by the domain pack's configuration**. They are irrelevant to machine-facing or domain-lib-monitoring domains but are critical for human-facing or subject-facing ones. When a domain pack enables them, they are non-negotiable within that domain.
 
 ---
 

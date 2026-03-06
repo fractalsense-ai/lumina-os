@@ -42,9 +42,9 @@
       "format": "uuid",
       "description": "UUID of the session being escalated."
     },
-    "student_id": {
+    "subject_id": {
       "type": ["string", "null"],
-      "description": "Pseudonymous student identifier for the session being escalated."
+      "description": "Pseudonymous subject identifier for the session being escalated."
     },
     "escalating_actor_id": {
       "type": "string",

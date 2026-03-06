@@ -29,7 +29,7 @@ A Domain Authority may:
 3. **Define Standing Orders** — specify the bounded automated responses within their domain
 4. **Define Escalation Triggers** — specify when the system must escalate to them or above
 5. **Define Artifacts** — specify domain achievement milestones and challenge structures
-6. **Set Subsystem Parameters** — configure domain-specific sensor parameters and drift thresholds (e.g., ZPD band for education, soil-health thresholds for agriculture)
+6. **Set Subsystem Parameters** — configure domain-specific sensor parameters and drift thresholds (e.g., operating-band thresholds for education, soil-health thresholds for agriculture)
 7. **Review CTL Records** — access audit logs for sessions in their domain
 8. **Receive Escalations** — receive and resolve escalation packets from their sessions
 9. **Authorize Tool Adapters** — approve which external tools may be used in their sessions
@@ -101,7 +101,7 @@ A Domain Authority's rights may be revoked by their Meta Authority. Revocation:
 
 The Subject/Target level has a limited form of Domain Authority over their own state and preferences. This applies across domains:
 
-- **Student (Education):** controls their own learning state, preferences, and (where required) consent
+- **Subject (Education):** controls their own learning state, preferences, and (where required) consent
 - **Patient (Medical):** controls their own treatment preferences, consent to treatment approaches, and session exit
 - **Operator / Environment (Agriculture):** controls operational preferences and environment-specific parameters
 

@@ -2,6 +2,14 @@
 
 Domain packs are the authored rulesets that bound a Project Lumina session to a specific subject area. This directory contains the authored domain packs for the Project Lumina reference implementation.
 
+Each domain owns its own:
+- principles
+- rules and invariants
+- state model and sensors
+- domain physics and standing-order vocabulary
+
+Root documentation defines universal engine behavior only.
+
 ---
 
 ## What Is a Domain Pack?
@@ -12,7 +20,7 @@ A domain pack is the **D (Domain)** pillar of the D.S.A. Framework. It defines:
 - **Standing Orders** — bounded automated responses the orchestrator may take
 - **Escalation Triggers** — when to pass control to the Meta Authority
 - **Artifacts** — milestones that can be earned in this domain
-- **Subsystem Configuration** — domain-specific sensor parameters and drift thresholds (e.g., ZPD band for education, soil moisture band for agriculture)
+- **Subsystem Configuration** — domain-specific sensor parameters and drift thresholds
 
 See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) for the full authoring specification.
 
@@ -24,7 +32,8 @@ See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) f
 domain-packs/
 ├── README.md                   ← this file
 ├── education/
-│   ├── sensors/                ← education-domain sensor array (ZPD, affect, fatigue)
+│   ├── README.md                ← domain principles/rules/states/physics index
+│   ├── domain-lib/             ← education-domain state lib components (ZPD, affect, fatigue)
 │   │   ├── README.md
 │   │   ├── compressed-state-estimators.md
 │   │   ├── zpd-monitor-spec-v1.md
@@ -40,7 +49,7 @@ domain-packs/
 │       ├── prompt-contract-schema.json
 │       └── CHANGELOG.md
 └── agriculture/
-    └── README.md               ← placeholder for future domain
+  └── README.md               ← domain principles/rules/states/physics index
 ```
 
 ---
@@ -67,7 +76,7 @@ python ../reference-implementations/yaml-to-json-converter.py \
 
 ### 4. Write the entity profile template
 
-Use `student-profile-template.yaml` from `algebra-level-1` as a base (or the equivalent template for your domain — the filename follows your domain's own naming conventions). The template defines the initial state for new entities.
+Use the profile template from an existing pack as a base (for example, `student-profile-template.yaml` in the education pack, or a domain-equivalent name in your pack). The template defines the initial state for new entities.
 
 ### 5. Write tool adapters (if needed)
 
@@ -118,3 +127,13 @@ Packs that fail validation are not usable.
 |--------|------|---------|--------|
 | Education — Algebra Level 1 | `education/algebra-level-1` | 0.2.0 | Active |
 | Agriculture | `agriculture/` | — | Placeholder |
+
+---
+
+## Required Domain Layout
+
+Each top-level domain folder should include a `README.md` that defines or links:
+- Domain principles
+- Domain rules/invariants authority
+- Domain state model (schemas + estimators/sensors)
+- Domain physics and standing-order vocabulary

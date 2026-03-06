@@ -102,4 +102,4 @@ Mastery artifacts may be presented within the world simulation context. Examples
 - Session transcripts are still not stored — the narrative content is ephemeral
 - World parameters are advisory for the orchestrator; they do not override Domain Physics
 - Not all domains require world simulation; it is opt-in via domain pack configuration
-- Outcome scores and assessments are domain-specific; the world simulation does not alter how the domain sensor evaluates performance
+- Outcome scores and assessments are domain-specific; the world simulation does not alter how the domain lib evaluates performance

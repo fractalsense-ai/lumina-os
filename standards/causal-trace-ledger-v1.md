@@ -73,7 +73,7 @@ Records a single decision or observation during an active session.
   "timestamp_utc": "<ISO-8601>",
   "session_id": "<uuid>",
   "actor_id": "<pseudonymous-token>",
-  "event_type": "invariant_check | standing_order_applied | zpd_drift_detected | probe_issued | state_update | tool_call | outcome_recorded",
+  "event_type": "invariant_check | standing_order_applied | state_drift_detected | probe_issued | state_update | tool_call | outcome_recorded",
   "invariant_id": "<string | null>",
   "standing_order_id": "<string | null>",
   "decision": "<string>",
@@ -93,8 +93,8 @@ Records a single decision or observation during an active session.
 **When to emit:**
 - Invariant check result (pass or fail)
 - Standing order applied
-- ZPD drift detected
-- Probe issued to learner
+- State drift detected
+- Probe issued to subject
 - State update committed
 - Tool called and returned
 - Outcome recorded (task completed)
@@ -139,7 +139,7 @@ Records the outcome of a task or artifact attempt.
   "prev_record_hash": "<sha256-hex>",
   "timestamp_utc": "<ISO-8601>",
   "session_id": "<uuid>",
-  "student_id": "<pseudonymous-token>",
+  "subject_id": "<pseudonymous-token>",
   "task_id": "<string>",
   "task_version": "<semver>",
   "outcome": "pass | partial | fail | abandoned",
@@ -182,7 +182,7 @@ Records an escalation event — when the orchestrator could not stabilize and pa
 **When to emit:**
 - Orchestrator exhausts all standing orders without stabilization
 - Critical invariant is violated and no standing order covers it
-- ZPD drift is major and unresolved
+- State drift is major and unresolved
 
 ---
 
@@ -214,8 +214,8 @@ def verify_chain(records: list) -> bool:
 ## Privacy Requirements
 
 - **No raw text**: Content fields must use hashes + external pointers, not inline text
-- **Pseudonymous IDs only**: `actor_id`, `student_id` are pseudonymous tokens
-- **Evidence summary only**: `evidence_summary` uses structured fields (correctness, latency, etc.) — not quotes from the learner
+- **Pseudonymous IDs only**: `actor_id`, `subject_id` are pseudonymous tokens
+- **Evidence summary only**: `evidence_summary` uses structured fields (correctness, latency, etc.) — not quotes from the subject
 - **Mastery deltas only**: `mastery_delta` records how mastery changed, not what was said
 
 ---

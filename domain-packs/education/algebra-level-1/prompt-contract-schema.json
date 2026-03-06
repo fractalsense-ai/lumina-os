@@ -13,11 +13,14 @@
         "task_presentation",
         "hint",
         "scaffold",
+        "zpd_scaffold",
         "probe",
         "verification_request",
         "more_steps_request",
         "method_justification_request",
         "boss_challenge",
+        "pause_or_break",
+        "zpd_intervene_or_escalate",
         "session_close_summary"
       ],
       "description": "Type of prompt being issued"

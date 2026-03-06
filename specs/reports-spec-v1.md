@@ -24,7 +24,7 @@ Generated once per day per Domain Authority. Summarizes all sessions in their do
 - Number of artifacts awarded
 - Aggregate mastery deltas per skill (average across entities)
 - Number of standing order triggers per invariant
-- Number of sensor drift events (minor and major)
+- Number of domain-lib drift events (minor and major)
 - Any escalations pending resolution
 
 **Format:** Structured JSON, rendered as human-readable summary on request.
@@ -69,7 +69,7 @@ Generated on demand for a Domain Authority. Reviews how their domain pack is per
 - Invariant trigger rate per invariant (critical and warning)
 - Standing order exhaustion rate (how often max_attempts was reached)
 - Escalation rate
-- Average session sensor drift rate
+- Average session domain-lib drift rate
 - Artifact unlock rate
 - Recommendations flagged (e.g., "invariant `show_work_minimum` triggers in >50% of sessions — consider reviewing its threshold")
 
@@ -114,7 +114,7 @@ A discrepancy is any situation where:
 | Report | Frequency | Triggered By |
 |--------|-----------|-------------|
 | Daily Session Log | Daily, automated | Session close events |
-| Student Progress Report | On demand | Domain Authority or Meta Authority request |
+| Entity Progress Report | On demand | Domain Authority or Meta Authority request |
 | Escalation Status Report | On demand | Meta Authority request |
 | Domain Pack Health Report | Weekly or on demand | Domain Authority request |
 

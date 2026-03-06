@@ -12,15 +12,23 @@ Project Lumina builds AI orchestration systems that are **domain-bounded**, **me
 
 ## The D.S.A. Engine & Traceable Accountability
 
-Project Lumina operates on **Dynamic Prompt Contracts** — every AI interaction is strictly bound by the D.S.A. Framework. Rather than issuing a generic prompt, the orchestrator assembles a contract from three pillars, and the AI may only act within what that contract authorizes.
+Project Lumina operates on **Dynamic Prompt Contracts**. Each turn follows a strict, auditable sequence:
 
-| Pillar | Name | Description |
-|--------|------|-------------|
-| **D** | **Domain (The Rules)** | The immutable ruleset authored by a human Domain Authority (e.g., a teacher, doctor, or coach). Defines strict invariants, standing orders, artifacts, and escalation triggers. |
-| **S** | **State (The Context)** | The mutable, mathematically compressed snapshot of the target entity at the time of the request. It contains the real-time variables, historical telemetry, and active status required by the orchestrator to make a bounded decision. |
-| **A** | **Action (The Boundary)** | The specific, highly constrained task the orchestrator is permitted to execute, based exclusively on the active Domain and State. The AI may only do what the Domain authorizes. |
+1. **Domain knowledge**
+2. **Context (state)**
+3. **Intent (action)**
+4. **Proposal (LLM)**
+5. **Verification (tools + invariants)**
+6. **Commit / escalate**
+7. **Trace (CTL)**
 
-The Domain is authored by the **Domain Authority** (the human expert: teacher, doctor, coach). The State is updated incrementally from structured evidence. The Action layer is bounded: it may only do what the Domain authorizes.
+The D.S.A. model is the contract materialization of this sequence:
+
+- **D (Domain)**: domain rules, invariants, standing orders, escalation triggers, and artifacts authored by a Domain Authority.
+- **S (State)**: compact, mutable session state updated from structured evidence.
+- **A (Action)**: bounded intended action produced by the orchestrator from Domain + State.
+
+The orchestrator assembles a dynamic prompt contract from these components. The LLM is constrained to that contract, verification checks are applied, and the resulting decision is committed or escalated and written to CTL.
 
 See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full specification.
 
@@ -51,7 +59,7 @@ Meso Authority     (e.g., Site Manager / Dept Head / Curriculum Director)
     ↓ Meta Authority for ↓
 Micro Authority    (e.g., Operator / Lead Physician / Teacher)
     ↓ Meta Authority for ↓
-Subject/Target     (e.g., Environment / Patient / Learner)
+Subject/Target     (e.g., Environment / Patient / Subject)
 ```
 
 Education is one instantiation of this pattern (Administration → Department Head → Teacher → Student). Agriculture (Corporate Policy → Site Manager → Operator → Environment) and medical (Hospital Admin → Department Head → Physician → Patient) are others.
@@ -68,7 +76,9 @@ See [`GOVERNANCE.md`](GOVERNANCE.md) for governance policies and [`governance/`]
 
 ## Key Principles
 
-Principles are organized in two tiers. See [`specs/principles-v1.md`](specs/principles-v1.md) for the full specification.
+Root-level principles are **universal engine principles only**. Domain-specific principles, rules, state semantics, and domain physics are owned by each domain pack under [`domain-packs/`](domain-packs/).
+
+See [`specs/principles-v1.md`](specs/principles-v1.md) for universal principles and [`domain-packs/README.md`](domain-packs/README.md) for domain-owned policy structure.
 
 ### Universal Core Engine Principles (1–7)
 
@@ -80,15 +90,9 @@ These apply to every Project Lumina interaction, regardless of domain:
 4. **Append-only accountability** — the ledger is never modified, only extended
 5. **Do not expand scope without drift justification** — scope creep is a violation
 6. **Pseudonymity by default** — the AI layer does not know who the entity is; pseudonymous tokens only
-7. **Minimal probing** — one probe per drift detection; do not interrogate subjects
+7. **Bounded drift probing** — one bounded probe per drift detection cycle; avoid multi-probe drift inference loops
 
-### Domain-Specific Principles (8–10)
-
-These principles apply only when activated by a specific domain pack's configuration (see the Education Domain Pack below for an example). Once active, the orchestrator enforces them with the exact same rigor as universal principles:
-
-8. **Consent and boundaries first** — the magic circle must be established before any session begins *(active when `requires_consent: true` is declared in the domain pack)*
-9. **Interests affect generation, never grading** — subject preferences improve immersion; they must not influence assessment *(activates in domains where subject profiles include preference data)*
-10. **Fade support as self-correction grows** — scaffolding reduces as mastery increases *(applies to domains with mastery tracking / drift monitoring)*
+Domain-specific principles are intentionally not defined at root. Each domain pack declares and versions its own principles in its own directory.
 
 ---
 
@@ -103,7 +107,7 @@ project-lumina/
 │   ├── lumina-core-v1.md
 │   ├── causal-trace-ledger-v1.md
 │   ├── domain-physics-schema-v1.json
-│   ├── domain-sensor-array-v1.md      ← sensor array contract
+│   ├── domain-state-lib-contract-v1.md ← domain-lib contract
 │   ├── prompt-contract-schema-v1.json
 │   └── tool-adapter-schema-v1.json
 ├── specs/                             ← detailed architecture specifications
@@ -133,10 +137,11 @@ project-lumina/
 ├── domain-packs/                      ← domain-specific everything
 │   ├── README.md
 │   ├── education/
+│   │   ├── README.md                  ← domain principles/rules/states/physics index
 │   │   ├── schemas/                   ← education-domain JSON schemas
 │   │   │   ├── compressed-state-schema-v1.json
 │   │   │   └── student-profile-schema-v1.json
-│   │   ├── sensors/                   ← education-domain sensor array (ZPD, affect, fatigue)
+│   │   ├── domain-lib/                ← education-domain state lib components (ZPD, affect, fatigue)
 │   │   │   ├── README.md
 │   │   │   ├── compressed-state-estimators.md
 │   │   │   ├── zpd-monitor-spec-v1.md
@@ -156,7 +161,7 @@ project-lumina/
 │   │       ├── prompt-contract-schema.json
 │   │       └── CHANGELOG.md
 │   └── agriculture/
-│       └── README.md
+│       └── README.md                  ← domain principles/rules/states/physics index
 ├── reference-implementations/         ← core D.S.A. engine Python reference code
 │   ├── README.md
 │   ├── yaml-to-json-converter.py

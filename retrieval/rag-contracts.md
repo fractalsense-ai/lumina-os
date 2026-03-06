@@ -32,12 +32,12 @@ A response that uses retrieved content without citation is a violation of the gr
 
 | Target Type | Description | Who May Request |
 |------------|-------------|-----------------|
-| Domain Pack | Invariants, standing orders, artifacts, ZPD config | Orchestrator (session-scoped) |
+| Domain Pack | Invariants, standing orders, artifacts, subsystem config | Orchestrator (session-scoped) |
 | Tool Adapter Definitions | Input/output schemas for authorized tools | Orchestrator (session-scoped) |
 | Mastery Artifacts | Artifact definitions and unlock conditions | Orchestrator (session-scoped) |
 | Boss Challenge Bundles | Task definitions for artifact assessment | Orchestrator (boss challenge only) |
 | CTL TraceEvents (structured fields only) | Prior decisions, standing order invocations | Domain Authority (audit), Orchestrator (limited) |
-| Student Profile | Compressed state, preferences, consent record | Orchestrator (own session only) |
+| Subject Profile | Compressed state, preferences, consent record | Orchestrator (own session only) |
 | Prior Session Summaries | Aggregate session outcomes (no transcripts) | Domain Authority, Meta Authority |
 | Evaluation Bundles | Test tasks for harness evaluation | Evaluation harness only |
 
@@ -47,7 +47,7 @@ A response that uses retrieved content without citation is a violation of the gr
 |------------------|--------|
 | Conversation transcripts | Not stored; retrieval would be a privacy violation |
 | Raw CTL record content | Only structured fields; never free-text payloads |
-| Another student's profile | Privacy isolation |
+| Another subject's profile | Privacy isolation |
 | Domain packs outside current scope | Domain-bounded operation |
 | Content from unapproved external sources | Domain Physics must authorize all retrieval targets |
 
@@ -70,7 +70,7 @@ The orchestrator follows a specific retrieval order to ensure determinism and au
 
 A session may only retrieve from:
 - The domain pack loaded for this session (verified hash)
-- The student profile for the current session's student (pseudonymous)
+- The subject profile for the current session subject (pseudonymous)
 - Artifacts defined within the current domain pack
 - Boss challenge bundles authorized by the current domain pack
 
@@ -78,7 +78,7 @@ A session may only retrieve from:
 
 A Domain Authority reviewing a session may retrieve:
 - CTL structured fields for sessions within their governed domains
-- Student progress summaries (pseudonymous, no transcripts)
+- Subject progress summaries (pseudonymous, no transcripts)
 - Domain pack versions within their authored scope
 
 ### Meta Authority Scope
@@ -125,7 +125,7 @@ Repeated out-of-scope retrieval attempts by a session are an escalation trigger.
 If grounding fails (required content cannot be retrieved and verified):
 
 1. **Do not generate** — do not produce a response based on ungrounded content
-2. **Disclose** — inform the learner: "I need to check something with your teacher before we continue"
+2. **Disclose** — inform the subject using domain vocabulary: "I need to check something with the domain authority before we continue"
 3. **Escalate** — create an `EscalationRecord` with trigger: `grounding_failure`
 4. **Freeze** — pause the session until the Meta Authority resolves the escalation
 

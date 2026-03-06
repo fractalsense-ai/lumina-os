@@ -1,0 +1,43 @@
+{
+  "id": "domain/agriculture/operations-level-1/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Lead Operations Manager",
+    "role": "DomainAuthority",
+    "pseudonymous_id": "da_agri_ops_001"
+  },
+  "meta_authority_id": "domain/agriculture/meta/v1",
+  "description": "Agriculture operations level 1 demo domain pack.",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "within_tolerance",
+      "description": "Operating signal should remain within configured tolerance.",
+      "severity": "warning",
+      "check": "within_tolerance",
+      "standing_order_on_violation": "request_more_steps"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "request_more_steps",
+      "action": "request_more_steps",
+      "trigger_condition": "within_tolerance",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Request additional operational details from the subject."
+    }
+  ],
+  "escalation_triggers": [],
+  "artifacts": [],
+  "subsystem_configs": {
+    "ops_monitor": {
+      "window_turns": 5,
+      "drift_threshold": 0.4
+    }
+  },
+  "evidence_summary_types": [
+    "ops_signal_summary"
+  ],
+  "tool_adapters": []
+}

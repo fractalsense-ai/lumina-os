@@ -1,6 +1,6 @@
 # Education Domain — Reference Implementations
 
-This directory contains Python reference implementations for the **education domain** sensors and utilities. These are education-specific and are separate from the core D.S.A. engine implementations in [`../../../reference-implementations/`](../../../reference-implementations/).
+This directory contains Python reference implementations for the **education domain** state-lib components and utilities. These are education-specific and are separate from the core D.S.A. engine implementations in [`../../../reference-implementations/`](../../../reference-implementations/).
 
 ---
 
@@ -33,6 +33,6 @@ python domain-packs/education/reference-implementations/zpd-monitor-demo.py
 
 | Implementation | Spec |
 |---------------|------|
-| `zpd-monitor-v0.2.py` | [`../sensors/zpd-monitor-spec-v1.md`](../sensors/zpd-monitor-spec-v1.md) |
-| `zpd-monitor-v0.2.py` | [`../sensors/compressed-state-estimators.md`](../sensors/compressed-state-estimators.md) |
+| `zpd-monitor-v0.2.py` | [`../domain-lib/zpd-monitor-spec-v1.md`](../domain-lib/zpd-monitor-spec-v1.md) |
+| `zpd-monitor-v0.2.py` | [`../domain-lib/compressed-state-estimators.md`](../domain-lib/compressed-state-estimators.md) |
 | `zpd-monitor-v0.2.py` | [`../schemas/compressed-state-schema-v1.json`](../schemas/compressed-state-schema-v1.json) |
