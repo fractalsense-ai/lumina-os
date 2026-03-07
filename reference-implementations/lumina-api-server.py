@@ -414,6 +414,10 @@ class ToolResponse(BaseModel):
     result: dict[str, Any]
 
 
+class CtlValidateResponse(BaseModel):
+    result: dict[str, Any]
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest) -> ChatResponse:
     session_id = req.session_id or str(uuid.uuid4())
@@ -456,6 +460,17 @@ async def run_tool(tool_id: str, req: ToolRequest) -> ToolResponse:
         log.exception("Tool invocation failed for %s", tool_id)
         raise HTTPException(status_code=400, detail=str(exc))
     return ToolResponse(tool_id=tool_id, result=result)
+
+
+@app.get("/api/ctl/validate", response_model=CtlValidateResponse)
+async def validate_ctl(session_id: str | None = None) -> CtlValidateResponse:
+    """Validate CTL hash-chain integrity for one session or all known sessions."""
+    try:
+        result = await run_in_threadpool(PERSISTENCE.validate_ctl_chain, session_id)
+    except Exception as exc:
+        log.exception("CTL validation failed")
+        raise HTTPException(status_code=500, detail=str(exc))
+    return CtlValidateResponse(result=result)
 
 
 if __name__ == "__main__":

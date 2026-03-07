@@ -64,6 +64,18 @@ python reference-implementations/ctl-commitment-validator.py \
   --verify-chain path/to/ledger.jsonl
 ```
 
+### Validate CTL via API
+
+```bash
+# Validate all known sessions
+curl http://localhost:8000/api/ctl/validate
+
+# Validate one session
+curl "http://localhost:8000/api/ctl/validate?session_id=<session-uuid>"
+```
+
+When `LUMINA_PERSISTENCE_BACKEND=sqlite`, CTL append-only semantics are also enforced by DB triggers that reject `UPDATE` and `DELETE` on `ctl_records`.
+
 ### Commit a domain pack hash to the CTL
 
 ```bash

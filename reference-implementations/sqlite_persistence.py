@@ -73,8 +73,33 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         self._engine = create_async_engine(self.database_url, echo=False)
 
     async def _create_tables(self) -> None:
+        from sqlalchemy import text
+
         async with self._engine.begin() as conn:
             await conn.run_sync(self._Base.metadata.create_all)
+            # Enforce append-only semantics at DB level for CTL.
+            await conn.execute(
+                text(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS trg_ctl_records_no_update
+                    BEFORE UPDATE ON ctl_records
+                    BEGIN
+                        SELECT RAISE(ABORT, 'ctl_records is append-only; UPDATE is forbidden');
+                    END;
+                    """
+                )
+            )
+            await conn.execute(
+                text(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS trg_ctl_records_no_delete
+                    BEFORE DELETE ON ctl_records
+                    BEGIN
+                        SELECT RAISE(ABORT, 'ctl_records is append-only; DELETE is forbidden');
+                    END;
+                    """
+                )
+            )
 
     def load_domain_physics(self, path: str) -> dict[str, Any]:
         with open(path, encoding="utf-8") as fh:
@@ -123,7 +148,6 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         asyncio.run(self._save_session_state_async(session_id, state))
 
     async def _save_session_state_async(self, session_id: str, state: dict[str, Any]) -> None:
-        from sqlalchemy import insert
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
         payload = json.dumps(state, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -134,3 +158,107 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         )
         async with self._engine.begin() as conn:
             await conn.execute(upsert_stmt)
+
+    def list_ctl_session_ids(self) -> list[str]:
+        return asyncio.run(self._list_ctl_session_ids_async())
+
+    async def _list_ctl_session_ids_async(self) -> list[str]:
+        from sqlalchemy import distinct, select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(select(distinct(self._CtlRecord.session_id)).order_by(self._CtlRecord.session_id))
+            values = result.scalars().all()
+        return [str(v) for v in values if v is not None]
+
+    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        if session_id is not None:
+            records = asyncio.run(self._load_ctl_records_async(session_id))
+            result = self._verify_records(records)
+            return {
+                "scope": "session",
+                "session_id": session_id,
+                **result,
+            }
+
+        results: list[dict[str, Any]] = []
+        all_intact = True
+        for sid in self.list_ctl_session_ids():
+            records = asyncio.run(self._load_ctl_records_async(sid))
+            result = self._verify_records(records)
+            all_intact = all_intact and bool(result.get("intact"))
+            results.append({"session_id": sid, **result})
+        return {
+            "scope": "all",
+            "sessions_checked": len(results),
+            "intact": all_intact,
+            "results": results,
+        }
+
+    async def _load_ctl_records_async(self, session_id: str) -> list[dict[str, Any]]:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._CtlRecord.payload_json)
+                .where(self._CtlRecord.session_id == session_id)
+                .order_by(self._CtlRecord.id.asc())
+            )
+            payloads = result.scalars().all()
+        records: list[dict[str, Any]] = []
+        for payload in payloads:
+            data = json.loads(payload)
+            if isinstance(data, dict):
+                records.append(data)
+        return records
+
+    @staticmethod
+    def _verify_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+        def hash_record(record: dict[str, Any]) -> str:
+            import hashlib
+
+            canonical = json.dumps(
+                record,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            return hashlib.sha256(canonical).hexdigest()
+
+        if not records:
+            return {
+                "intact": True,
+                "records_checked": 0,
+                "first_broken_index": None,
+                "first_broken_id": None,
+                "error": None,
+            }
+
+        first_prev = records[0].get("prev_record_hash")
+        if first_prev != "genesis":
+            return {
+                "intact": False,
+                "records_checked": 1,
+                "first_broken_index": 0,
+                "first_broken_id": records[0].get("record_id"),
+                "error": f"First record prev_record_hash must be 'genesis', got {first_prev!r}",
+            }
+
+        for idx in range(1, len(records)):
+            expected_prev = hash_record(records[idx - 1])
+            actual_prev = records[idx].get("prev_record_hash", "")
+            if actual_prev != expected_prev:
+                return {
+                    "intact": False,
+                    "records_checked": idx + 1,
+                    "first_broken_index": idx,
+                    "first_broken_id": records[idx].get("record_id"),
+                    "error": f"Hash mismatch at index {idx}: expected {expected_prev!r}, got {actual_prev!r}",
+                }
+
+        return {
+            "intact": True,
+            "records_checked": len(records),
+            "first_broken_index": None,
+            "first_broken_id": None,
+            "error": None,
+        }

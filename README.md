@@ -351,6 +351,7 @@ Tests: health check, stable turn (no escalation), major drift (escalation), CTL 
 | `GET` | `/api/health` | Health check — returns `{"status": "ok", "provider": "..."}` |
 | `POST` | `/api/chat` | Process a message through the D.S.A. pipeline |
 | `POST` | `/api/tool/{tool_id}` | Invoke a domain tool adapter directly |
+| `GET` | `/api/ctl/validate` | Validate CTL hash-chain integrity (all sessions or a specific `session_id`) |
 
 ### `POST /api/chat` request body
 

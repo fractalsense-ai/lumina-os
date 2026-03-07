@@ -31,6 +31,14 @@ class PersistenceAdapter(ABC):
     def save_session_state(self, session_id: str, state: dict[str, Any]) -> None:
         """Persist session metadata."""
 
+    @abstractmethod
+    def list_ctl_session_ids(self) -> list[str]:
+        """Return known CTL session IDs for the current backend."""
+
+    @abstractmethod
+    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        """Validate CTL hash-chain integrity for one session or all sessions."""
+
 
 class NullPersistenceAdapter(PersistenceAdapter):
     """No-op adapter mainly used for tests; keeps session state in-memory only."""
@@ -68,3 +76,22 @@ class NullPersistenceAdapter(PersistenceAdapter):
 
     def save_session_state(self, session_id: str, state: dict[str, Any]) -> None:
         self._session_state[session_id] = dict(state)
+
+    def list_ctl_session_ids(self) -> list[str]:
+        return []
+
+    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        if session_id:
+            return {
+                "scope": "session",
+                "session_id": session_id,
+                "intact": True,
+                "records_checked": 0,
+                "error": None,
+            }
+        return {
+            "scope": "all",
+            "sessions_checked": 0,
+            "intact": True,
+            "results": [],
+        }

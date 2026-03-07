@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -59,3 +60,97 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(state, fh, indent=2, ensure_ascii=False)
         tmp.replace(path)
+
+    def list_ctl_session_ids(self) -> list[str]:
+        ids: list[str] = []
+        for p in sorted(self.ctl_dir.glob("session-*.jsonl")):
+            name = p.name
+            if name.startswith("session-") and name.endswith(".jsonl"):
+                ids.append(name[len("session-") : -len(".jsonl")])
+        return ids
+
+    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        if session_id is not None:
+            records = self._load_ledger_records(Path(self.get_ctl_ledger_path(session_id)))
+            result = self._verify_records(records)
+            return {
+                "scope": "session",
+                "session_id": session_id,
+                **result,
+            }
+
+        results: list[dict[str, Any]] = []
+        all_intact = True
+        for sid in self.list_ctl_session_ids():
+            records = self._load_ledger_records(Path(self.get_ctl_ledger_path(sid)))
+            result = self._verify_records(records)
+            all_intact = all_intact and bool(result.get("intact"))
+            results.append({"session_id": sid, **result})
+        return {
+            "scope": "all",
+            "sessions_checked": len(results),
+            "intact": all_intact,
+            "results": results,
+        }
+
+    def _load_ledger_records(self, path: Path) -> list[dict[str, Any]]:
+        if not path.exists():
+            return []
+        records: list[dict[str, Any]] = []
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                records.append(json.loads(line))
+        return records
+
+    @staticmethod
+    def _hash_record(record: dict[str, Any]) -> str:
+        canonical = json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+    def _verify_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
+        if not records:
+            return {
+                "intact": True,
+                "records_checked": 0,
+                "first_broken_index": None,
+                "first_broken_id": None,
+                "error": None,
+            }
+
+        first_prev = records[0].get("prev_record_hash")
+        if first_prev != "genesis":
+            return {
+                "intact": False,
+                "records_checked": 1,
+                "first_broken_index": 0,
+                "first_broken_id": records[0].get("record_id"),
+                "error": f"First record prev_record_hash must be 'genesis', got {first_prev!r}",
+            }
+
+        for idx in range(1, len(records)):
+            expected_prev = self._hash_record(records[idx - 1])
+            actual_prev = records[idx].get("prev_record_hash", "")
+            if actual_prev != expected_prev:
+                return {
+                    "intact": False,
+                    "records_checked": idx + 1,
+                    "first_broken_index": idx,
+                    "first_broken_id": records[idx].get("record_id"),
+                    "error": f"Hash mismatch at index {idx}: expected {expected_prev!r}, got {actual_prev!r}",
+                }
+
+        return {
+            "intact": True,
+            "records_checked": len(records),
+            "first_broken_index": None,
+            "first_broken_id": None,
+            "error": None,
+        }
