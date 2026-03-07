@@ -1,8 +1,10 @@
-# Artifact and Mastery Specification — V1
+# Artifact and Mastery Specification — Education Domain (V1)
+
+> **Domain scope:** This specification defines how artifacts and mastery are recognized within the education domain. Other domains may adapt this pattern — for example, "certifications" in agriculture or "clinical competency records" in medical. The generic artifact *slot* in domain physics and the `OutcomeRecord` in the CTL are engine-level structural contracts; the *award process and rules* specified here are education-specific.
 
 **Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-06
 
 ---
 
@@ -90,7 +92,7 @@ boss_challenge:
   max_attempts_per_session: 1
 ```
 
-Education-specific worked examples are documented in [`../domain-packs/education/artifact-and-mastery-examples.md`](../domain-packs/education/artifact-and-mastery-examples.md).
+Education-specific worked examples are in [`../artifact-and-mastery-examples.md`](../artifact-and-mastery-examples.md).
 
 ### Boss Challenge Outcome
 
@@ -126,7 +128,7 @@ Proficiency is updated by the active domain lib after each task:
 - **Fail/constraint violation**: score decreases
 - **Abandoned**: score unchanged
 
-Concrete update functions are domain-owned and documented in domain packs.
+Concrete update functions are domain-owned. See the ZPD monitor implementation at [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
 
 ### Proficiency Decay
 
@@ -149,11 +151,14 @@ These two principles govern all assessment:
 
 1. **Proficiency is measured from verifiable outcomes, not behavioral inference.** The system uses structured result fields from tool checks and invariant outcomes, not conversational tone or unstructured cues.
 
-2. **Preferences do not affect assessment.** An entity's stated interests are used for example theming only. The same mathematical equivalence check applies to a rocket-themed problem and an apple-themed problem.
+2. **Preferences do not affect assessment.** An entity's stated interests are used for example theming only (see [`world-sim-spec-v1.md`](world-sim-spec-v1.md)). The same mathematical equivalence check applies to a rocket-themed problem and an apple-themed problem.
 
 ---
 
 ## References
 
-- [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — artifact schema
-- [`../domain-packs/education/artifact-and-mastery-examples.md`](../domain-packs/education/artifact-and-mastery-examples.md) — education-domain worked examples
+- [`../../../standards/domain-physics-schema-v1.json`](../../../standards/domain-physics-schema-v1.json) — artifact field definition in domain physics schema (engine-level)
+- [`../../../standards/causal-trace-ledger-v1.md`](../../../standards/causal-trace-ledger-v1.md) — OutcomeRecord definition (engine-level)
+- [`../artifact-and-mastery-examples.md`](../artifact-and-mastery-examples.md) — education-domain worked examples
+- [`world-sim-spec-v1.md`](world-sim-spec-v1.md) — how preferences shape the simulation context without affecting assessment
+- [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md) — consent boundary required before any session containing boss challenges

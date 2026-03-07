@@ -35,7 +35,7 @@ override_invariants:
     cannot_be_overridden: true
 
   - id: "consent_required"
-    description: "Magic circle consent must be present before any session"
+    description: "Consent boundary must be established before any session (Principle 8)"
     severity: critical
     check: "consent_record_present()"
     cannot_be_overridden: true

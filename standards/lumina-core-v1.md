@@ -45,7 +45,7 @@ A conformant `domain-physics.yaml` must declare:
 - `escalation_triggers`: at least one trigger referencing a standing order
 - `artifacts`: list of recognized mastery artifacts (may be empty for v0 packs)
 - `subsystem_configs`: optional map of domain-specific subsystem parameter blocks, keyed by subsystem ID (e.g. `zpd_monitor` for education, `soil_health_monitor` for agriculture). Each value is a free-form object understood only by that subsystem. Omit for domains with no configurable subsystems.
-- `requires_consent`: consent requirement flag (required for human-facing domains that must enforce the magic-circle consent principle; omit for machine-facing domains)
+- `requires_consent`: consent requirement flag (required for human-facing domains that must enforce the consent boundary principle — Principle 8; omit for machine-facing domains)
 
 ### 1.2 Invariant Severity Levels
 

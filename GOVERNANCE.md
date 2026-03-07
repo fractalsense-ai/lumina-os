@@ -11,6 +11,12 @@ Project Lumina governance is built on a **fractal authority structure**: every p
 
 ---
 
+## Accountability
+
+Ultimate accountability for any Project Lumina deployment sits with the **human Domain Authority** at each level, never the AI or the engine. The engine provides structural safeguards (D.S.A. contracts, CTL traces, escalation protocols) but does not replace human oversight, professional judgment, or legal compliance. No AI decision is final — every decision is traceable, auditable, and subject to human review.
+
+---
+
 ## Fractal Authority Structure
 
 The fractal authority structure is a generic pattern applicable to any domain:

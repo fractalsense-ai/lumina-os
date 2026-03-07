@@ -45,7 +45,7 @@ Total Turns:    18
 
 Consent Record
 --------------
-Magic Circle Accepted: true
+Consent Accepted:      true
 Consent Version:       1.0.0
 Consent Timestamp:     2026-03-02T09:59:43Z
 

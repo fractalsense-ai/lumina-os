@@ -35,7 +35,7 @@ In education packs, score updates are implemented by the education domain lib (Z
 
 ## Core Boundary
 
-Universal contracts live in:
-- [`../../specs/artifact-and-mastery-spec-v1.md`](../../specs/artifact-and-mastery-spec-v1.md)
+The artifact and mastery specification for this domain is at:
+- [`world-sim/artifact-and-mastery-spec-v1.md`](world-sim/artifact-and-mastery-spec-v1.md)
 
 Education-specific scoring semantics and examples live here.

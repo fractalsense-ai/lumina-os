@@ -1,8 +1,10 @@
-# Magic Circle Consent — V1
+# Magic Circle Consent — Education Domain (V1)
+
+> **Domain scope:** This consent specification is for the education domain. Other domains may adapt this pattern with domain-appropriate language and thresholds.
 
 **Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-06
 
 ---
 
@@ -109,7 +111,7 @@ A session closes with:
 A session is forcibly closed when:
 - The participant invokes the exit clause ("exit session" or equivalent)
 - An escalation is not acknowledged within SLA
-- A principle violation is detected (see [`principles-v1.md`](principles-v1.md))
+- A principle violation is detected (see [`../../specs/principles-v1.md`](../../specs/principles-v1.md))
 - A technical failure prevents CTL writes
 
 A forced close is recorded as a session-close `CommitmentRecord` with `close_type: forced` and the reason noted.
@@ -166,3 +168,15 @@ The following is a **generic consent template** that must be adapted for each do
 ### Education Domain Instantiation (Example)
 
 The education domain's consent template uses the following substitutions: participant → "student/learner," guardian/proxy → "parent or guardian," Domain Authority → "teacher," assessments → "grades." The education domain's full consent form is in `domain-packs/education/`.
+
+---
+
+## Liability Notes
+
+> **WARNING:** This consent specification is a structural template inspired by pedagogical best practices and liability framing — it is **not legal advice**. Deploying this in real educational settings involving children **requires** independent review and compliance with applicable laws (COPPA, FERPA, GDPR child data rules, local education regulations). Consult education lawyers and ethics boards before production use.
+
+- Domain Authority (teacher/admin) owns final responsibility for consent validity.
+- The engine only enforces structure and traceability.
+- Aligns with universal Principle 8 (consent boundary) and Principle 6 (pseudonymity by default).
+
+See also: [`world-sim-spec-v1.md`](world-sim-spec-v1.md) for how likes/dislikes shape the simulation content within the consent boundary.

@@ -122,5 +122,5 @@ The Subject/Target level has a limited form of Domain Authority over their own s
 
 - [`GOVERNANCE.md`](../GOVERNANCE.md) — fractal authority structure
 - [`meta-authority-policy-template.yaml`](meta-authority-policy-template.yaml) — Meta Authority policy
-- [`../specs/magic-circle-consent-v1.md`](../specs/magic-circle-consent-v1.md) — consent contract
+- Consent contract specification — see the relevant domain pack's consent documentation (e.g., [`../domain-packs/education/world-sim/magic-circle-consent-v1.md`](../domain-packs/education/world-sim/magic-circle-consent-v1.md) for education)
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements

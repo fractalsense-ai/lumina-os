@@ -186,9 +186,6 @@ project-lumina/
 │   ├── global-system-prompt-v1.md     ← root prompt (domain-agnostic base)
 │   ├── orchestrator-system-prompt-v1.md
 │   ├── domain-profile-spec-v1.md
-│   ├── magic-circle-consent-v1.md
-│   ├── world-sim-spec-v1.md
-│   ├── artifact-and-mastery-spec-v1.md
 │   ├── memory-spec-v1.md
 │   ├── audit-log-spec-v1.md
 │   ├── reports-spec-v1.md
@@ -221,6 +218,10 @@ project-lumina/
 │   │   │   ├── compressed-state-estimators.md
 │   │   │   ├── zpd-monitor-spec-v1.md
 │   │   │   └── fatigue-estimation-spec-v1.md
+│   │   ├── world-sim/                 ← consent + world simulation (domain-specific)
+│   │   │   ├── magic-circle-consent-v1.md
+│   │   │   ├── world-sim-spec-v1.md
+│   │   │   └── artifact-and-mastery-spec-v1.md
 │   │   ├── reference-implementations/
 │   │   │   ├── runtime-adapters.py    ← state builder, domain step, evidence extractor
 │   │   │   ├── tool-adapters.py       ← calculator, substitution checker
@@ -395,6 +396,16 @@ All domain packs and implementations must conform to:
 - [`standards/domain-physics-schema-v1.json`](standards/domain-physics-schema-v1.json) — domain pack schema
 - [`standards/domain-state-lib-contract-v1.md`](standards/domain-state-lib-contract-v1.md) — domain-lib adapter contract
 - [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) — CTL protocol
+
+---
+
+## Disclaimer
+
+Project Lumina is research/experimental software provided AS-IS under Apache 2.0 with NO WARRANTIES. No part of this project is certified for safety-critical, high-stakes, or regulated use (including with minors) without thorough independent validation.
+
+The engine provides structural accountability (D.S.A. contracts, CTL traces) but does **not** replace human oversight, professional judgment, or legal compliance. Ultimate accountability for any deployment sits with the human Domain Authority at each level, never the AI or the engine.
+
+Domain packs that involve vulnerable populations (children, patients, etc.) include additional warnings and must be independently reviewed before any real-world deployment. See individual domain pack READMEs for domain-specific disclaimers.
 
 ---
 

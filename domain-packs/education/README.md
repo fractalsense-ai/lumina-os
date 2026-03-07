@@ -64,3 +64,44 @@ Universal engine contracts live in:
 - [`../../specs/principles-v1.md`](../../specs/principles-v1.md)
 
 Education-specific principles, rules, states, and physics stay in this directory and its packs.
+
+---
+
+## World Simulation and Consent
+
+The education domain pack includes a **world simulation** layer and **magic circle consent** specification under [`world-sim/`](world-sim/):
+
+- [`world-sim/magic-circle-consent-v1.md`](world-sim/magic-circle-consent-v1.md) — consent contract for entering personalized learning simulation environments (the "magic circle")
+- [`world-sim/world-sim-spec-v1.md`](world-sim/world-sim-spec-v1.md) — how to present learning material within a narrative context adapted to the student's likes/dislikes
+- [`world-sim/artifact-and-mastery-spec-v1.md`](world-sim/artifact-and-mastery-spec-v1.md) — artifact award process, boss challenges, and proficiency estimation for the education domain
+
+The magic circle establishes explicit, informed consent before entering any simulated / immersive / world-sim learning mode. This creates a bounded environment where:
+- Special pedagogical rules apply (failure is safe, experimentation encouraged)
+- Real-world consequences are suspended within bounds
+- The system and Domain Authority are protected from liability claims related to simulation content
+
+Consent is **measurement + accountability**, not surveillance: only a pseudonymous token and scope hash are stored in CTL; no PII/transcript at rest.
+
+The world simulation personalizes presentation based on student interests and preferences (from the student profile's `likes` / `dislikes` fields) without affecting grading or assessment. Domain invariants are enforced identically regardless of narrative theme.
+
+These specs were relocated here from `specs/` because they are domain-specific liability + pedagogical framing, not core engine invariants. Other domain packs (e.g., agriculture for operational simulation consent, medical for scenario-based training) may adapt these patterns with domain-appropriate language and thresholds.
+
+---
+
+> **WARNING: Educational Domain Pack — Child Safety**
+>
+> This domain pack includes features for use with minors (e.g., Zone of Proximal Development monitoring, personalized world simulations, magic-circle consent flows).
+>
+> It is provided **AS-IS** under Apache 2.0 with **NO WARRANTIES**.
+>
+> Deploying this in real educational settings involving children **REQUIRES** independent review and compliance with applicable laws (COPPA, FERPA, GDPR child data rules, local education regulations).
+>
+> **Domain Authorities** (teachers, admins, districts) are **solely responsible** for:
+> - Obtaining required parental/guardian consents
+> - Ensuring psychological/developmental appropriateness
+> - Protecting student privacy and data
+> - Handling liability for simulation content or AI decisions
+>
+> The engine provides structural accountability (D.S.A. contracts, CTL traces) but does **NOT** replace human oversight, professional judgment, or legal compliance.
+>
+> The magic-circle consent specification is a structural template inspired by pedagogical best practices and liability framing — it is **not legal advice**. Consult education lawyers and ethics boards before production use.

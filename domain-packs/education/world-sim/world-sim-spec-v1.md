@@ -1,8 +1,10 @@
-# World Simulation Specification — V1
+# World Simulation Specification — Education Domain (V1)
+
+> **Domain scope:** This world simulation specification is for the education domain. Other domains may adapt this pattern for their own simulation/immersion contexts (e.g., operational simulations in agriculture, scenario-based training in corporate).
 
 **Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-06
 
 ---
 
@@ -83,6 +85,8 @@ The magic circle consent must occur before the world simulation begins. The cons
 - That the narrative is a session context, not entertainment
 
 The narrative frame does not reduce or modify any consent obligations.
+
+See [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md) for the full consent specification.
 
 ---
 

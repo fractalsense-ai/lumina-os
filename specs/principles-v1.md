@@ -120,7 +120,7 @@ The following principles apply **only when activated by the domain pack's config
 
 ## Principle 8: Consent and Boundaries First
 
-**The magic circle must be established before any session begins.**
+**A consent boundary must be established before any session begins.**
 
 **Activates when:** `requires_consent: true` is set in the domain pack.
 
@@ -132,7 +132,7 @@ A human participant (or their guardian, if a minor) must accept the consent cont
 
 There is no fallback for missing consent — a session without a valid consent record must not proceed.
 
-See [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md) for the consent contract specification.
+Each domain pack that sets `requires_consent: true` must provide its own consent contract specification appropriate to its context and regulatory requirements.
 
 ---
 

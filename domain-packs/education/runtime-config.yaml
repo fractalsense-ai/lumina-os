@@ -6,6 +6,20 @@ runtime:
   domain_physics_path: domain-packs/education/algebra-level-1/domain-physics.json
   subject_profile_path: domain-packs/education/algebra-level-1/example-student-alice.yaml
 
+  additional_specs:
+    - path: domain-packs/education/world-sim/magic-circle-consent-v1.md
+      purpose: "Consent contract for entering personalized learning simulation environments"
+    - path: domain-packs/education/world-sim/world-sim-spec-v1.md
+      purpose: "World simulation presentation template — narrative framing based on student preferences"
+    - path: domain-packs/education/world-sim/artifact-and-mastery-spec-v1.md
+      purpose: "Artifact award process, boss challenges, and proficiency estimation for the education domain"
+
+  pre_turn_checks:
+    - id: consent_boundary
+      enabled: true
+      description: "Require valid consent record before session proceeds; enforces Principle 8"
+      on_failure: escalate
+
   default_task_spec:
     task_id: algebra-linear-eq-001
     nominal_difficulty: 0.45
