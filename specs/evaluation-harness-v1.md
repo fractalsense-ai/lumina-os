@@ -1,8 +1,8 @@
 # Evaluation Harness — V1
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-08
 
 ---
 
@@ -61,6 +61,18 @@ These tests verify that no conversation content is written to any persistent sto
 - Assert: No field in any CTL record contains the real name
 - Assert: All actor/entity ID fields are pseudonymous tokens (format: `[a-f0-9]{32}`)
 - Pass criterion: All assertions pass
+
+**TC-CTL-005: Module policy commitment required**
+- Trigger: Start a session with a module `domain-physics.json` whose hash is not committed in CTL
+- Assert: Session is blocked/frozen before autonomous action
+- Assert: A discrepancy or policy-mismatch event is recorded
+- Pass criterion: Session does not proceed with uncommitted policy
+
+**TC-CTL-006: Policy update requires new commitment**
+- Trigger: Change module policy JSON content and version, then attempt a session without a new commitment
+- Assert: Session is blocked/frozen
+- Assert: Session proceeds only after updated hash commitment exists
+- Pass criterion: Updated policy cannot run without updated CTL commitment
 
 ---
 
@@ -173,6 +185,7 @@ A Project Lumina implementation is considered conformant with respect to measure
 
 Conformance must be re-verified after:
 - Any change to the CTL write path
-- Any change to the state update functions
-- Any change to the evidence extraction layer
+- Any change to the state update functions/domain-lib runtime logic
+- Any change to the turn-interpretation or tool-adapter pipeline
 - Any change to the entity profile update logic
+- Any material module `domain-physics` policy update (version/hash change)

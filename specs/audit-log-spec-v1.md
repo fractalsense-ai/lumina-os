@@ -1,8 +1,8 @@
 # Audit Log Specification — V1
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-08
 
 ---
 
@@ -52,7 +52,9 @@ Consent Timestamp:     2026-03-02T09:59:43Z
 Domain Pack Commitment
 ----------------------
 CommitmentRecord ID: <uuid>
+Module Physics JSON: domain-packs/<domain>/<module>/domain-physics.json
 Domain Pack Hash:    <sha256>
+Policy Version:      <semver>
 Committed At:        2026-03-01T08:00:00Z
 
 Invariant Check Log
@@ -118,9 +120,10 @@ Audit requests outside the requestor's scope must be rejected and the rejection 
 
 The audit log generator reads from the CTL and:
 1. Verifies the hash chain for the requested session's records
-2. Extracts the structured fields from each record
-3. Formats them as a human-readable report
-4. Appends a `TraceEvent` to the CTL noting that an audit was generated (who requested it, for which session)
+2. Verifies that the active module `domain-physics.json` hash matches the committed `CommitmentRecord` for that policy version
+3. Extracts the structured fields from each record
+4. Formats them as a human-readable report
+5. Appends a `TraceEvent` to the CTL noting that an audit was generated (who requested it, for which session)
 
 The audit log itself is not stored — it is generated fresh each time from the CTL.
 
