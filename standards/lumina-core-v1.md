@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-08
 
 ---
 
@@ -93,6 +93,8 @@ Every Lumina system must maintain a CTL-conformant ledger. Requirements:
 - **No transcripts**: records must not contain raw conversation content
 - **Pseudonymous**: actor identifiers are pseudonymous; real-identity mapping is held externally
 - **Record types**: all systems must support `CommitmentRecord` and `TraceEvent` at minimum
+- **Policy commitment gate**: active module `domain-physics.json` hash must match a committed `CommitmentRecord` before autonomous session execution
+- **Provenance metadata**: turn traces should include policy/prompt and payload lineage hashes (`domain_physics_hash`, `system_prompt_hash`, `turn_data_hash`, `prompt_contract_hash`, `tool_results_hash`, `llm_payload_hash`, `response_hash`)
 
 See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL specification.
 

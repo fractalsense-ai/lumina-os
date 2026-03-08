@@ -31,7 +31,7 @@ These tests verify that no conversation content is written to any persistent sto
 
 **TC-TNS-003: Evidence summary is structured only**
 - Trigger: Generate evidence for a turn
-- Assert: Evidence summary contains only fields defined by the active domain pack for that runtime
+- Assert: Turn-data/evidence summary contains only fields defined by the active domain pack for that runtime
 - Assert: No additional freeform transcript or unconstrained text fields
 - Pass criterion: All assertions pass
 

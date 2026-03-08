@@ -54,6 +54,7 @@ The Domain is the **immutable ruleset** for a session. It is authored by the Dom
 Domains are authored in YAML (human-readable) and converted to JSON (machine-queryable) using the `yaml-to-json-converter.py` reference tool. Both files are committed to Git; the JSON is the authoritative machine-readable form.
 
 The domain pack's current hash must be committed to the CTL as a `CommitmentRecord` before the pack is used operationally.
+At runtime, session startup should enforce this as a gate: if the active module hash has no matching commitment, autonomous execution is blocked.
 Material domain-policy updates require semantic version update, YAML->JSON regeneration, and a new CTL commitment of the updated JSON hash before activation.
 
 ---
@@ -85,9 +86,9 @@ The state fields populated in any given session depend entirely on the domain's 
 
 Additional state fields may be defined by the domain's subject state schema and populated by domain libs.
 
-### Evidence Inputs
+### Turn Data Inputs
 
-State is never inferred from raw conversation content. Evidence is a structured summary emitted by authorized tool adapters in the domain runtime path.
+State is never inferred from raw conversation content. Turn data is a structured summary emitted by authorized tool adapters and domain turn-interpretation runtime paths.
 
 ```json
 {

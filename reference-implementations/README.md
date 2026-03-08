@@ -14,11 +14,11 @@ This directory contains Python reference implementations of the **core D.S.A. en
 | `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract |
 | `dsa-orchestrator-demo.py` | End-to-end demo of the full D.S.A. Action loop wired to the education domain (10-turn scripted session) |
 | `runtime_loader.py` | Runtime config loader and adapter wiring validator |
-| `lumina-api-server.py` | FastAPI integration host for `/api/chat`, health, and CTL validation routes |
+| `lumina-api-server.py` | FastAPI integration host for `/api/chat`, `/api/health`, `/api/domain-info`, `/api/tool/{tool_id}`, and `/api/ctl/validate` |
 | `persistence_adapter.py` | Domain-agnostic persistence adapter interface |
 | `filesystem_persistence.py` | Filesystem-backed persistence adapter (default behavior) |
 | `sqlite_persistence.py` | SQLite persistence adapter (optional; SQLAlchemy async) |
-| `verify-repo-integrity.py` | Repo-level integrity checks (links, runtime paths, version alignment, frontend essentials) |
+| `verify-repo-integrity.py` | Repo-level integrity checks (links, runtime paths, version alignment, provenance-key consistency, tool-adapter linkage, frontend essentials) |
 | `run-full-verification.ps1` | One-command verification flow (integrity + orchestrator + frontend + optional API scenarios) |
 
 ---
@@ -106,6 +106,37 @@ curl "http://localhost:8000/api/ctl/validate?session_id=<session-uuid>"
 ```
 
 When `LUMINA_PERSISTENCE_BACKEND=sqlite`, CTL append-only semantics are also enforced by DB triggers that reject `UPDATE` and `DELETE` on `ctl_records`.
+
+### Deterministic API testing (no LLM variability)
+
+Use `turn_data_override` with `deterministic_response=true` to run stable contract tests:
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "optional-uuid",
+    "message": "loop turn",
+    "deterministic_response": true,
+    "turn_data_override": {
+      "correctness": "incorrect",
+      "equivalence_preserved": false,
+      "step_count": 2,
+      "repeated_error": true
+    }
+  }'
+```
+
+This path is used by `run-preintegration-scenarios.ps1` to validate standing-order and escalation behavior without external model variance.
+
+### Integrity checker coverage
+
+`verify-repo-integrity.py` currently enforces:
+- Markdown link integrity across repository docs
+- Runtime-config path validity
+- Domain version alignment checks
+- Tool-adapter linkage: declared `tool_adapters` IDs must resolve to adapter contract files
+- Provenance contract consistency across key schemas/specs
 
 ### Commit a domain pack hash to the CTL
 

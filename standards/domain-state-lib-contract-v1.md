@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0  
 **Status:** Active  
-**Last updated:** 2026-03-03
+**Last updated:** 2026-03-08
 
 ---
 
@@ -34,7 +34,7 @@ Every domain lib must conform to the following requirements:
 
 ### 1. Structured Evidence Only
 
-Domain-lib components must accept **structured evidence** as input — never raw conversation content or free text. Evidence is produced by tool adapters and the domain's evidence summary pipeline.
+Domain-lib components must accept **structured turn data/signals** as input — never raw conversation content or free text. Structured turn data is produced by tool adapters and the domain's turn-interpretation pipeline.
 
 ### 2. Deterministic Output
 
@@ -88,6 +88,8 @@ Draft → Validated → Committed (CTL) → Active
 ```
 
 A domain-lib update that changes thresholds or update rules is a **Minor** version bump. A domain-lib update that changes the output schema is a **Major** version bump.
+
+When domain-lib processing depends on deterministic tool outputs, those tools must be declared by module `domain-physics` `tool_adapters` IDs so runtime and governance checks can enforce bounded tool usage.
 
 ---
 

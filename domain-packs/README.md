@@ -20,7 +20,7 @@ A domain pack is the **D (Domain)** pillar of the D.S.A. Framework. It defines:
 - **Standing Orders** — bounded automated responses the orchestrator may take
 - **Escalation Triggers** — when to pass control to the Meta Authority
 - **Artifacts** — milestones that can be earned in this domain
-- **Subsystem Configuration** — domain-specific sensor parameters and drift thresholds
+- **Subsystem Configuration** — domain-specific domain-lib parameters and drift thresholds
 
 See [`../specs/domain-profile-spec-v1.md`](../specs/domain-profile-spec-v1.md) for the full authoring specification.
 
@@ -143,11 +143,12 @@ Examples:
 - A substitution checker that plugs a value into an equation and returns pass/fail
 - A unit-conversion calculator that converts between measurement systems
 
-Tool-adapters are **called by the orchestrator** (or by the evidence extractor on behalf of the orchestrator). They provide ground-truth evidence that the LLM cannot fabricate. The LLM should validate its reasoning against tool-adapter output, not the other way around.
+Tool-adapters are **called by the orchestrator** (or by the turn interpreter on behalf of the orchestrator). They provide ground-truth signals that the LLM cannot fabricate. The LLM should validate its reasoning against tool-adapter output, not the other way around.
 
 Domain-lib runtime components consume structured tool outputs and produce machine-readable state summaries. The orchestrator then enforces module invariants, standing orders, and escalation triggers defined in module `domain-physics.json`.
 
 Tool adapters should be explicitly linked from module `domain-physics` using `tool_adapters` IDs so tooling and governance can verify that only authorized tools are used for that module's physics.
+Repository integrity checks enforce this linkage: a declared `tool_adapters` ID must resolve to a concrete adapter contract file in the module.
 
 ### When to use which
 
@@ -181,6 +182,9 @@ The authoritative execution flow is:
 All domain packs in this directory must conform to:
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — Section 1
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — JSON Schema
+
+YAML authoring constraint:
+- The minimal `reference-implementations/yaml-loader.py` parser cannot reliably parse inline list mappings that mix nested keys on the same list item. Prefer explicit nested mapping blocks and plain string lists in `runtime-config.yaml` and `domain-physics.yaml`.
 
 Packs that fail validation are not usable.
 

@@ -79,15 +79,15 @@ Education-specific principles, rules, states, and physics stay in this directory
 
 ---
 
-## World Simulation and Consent
+## World Simulation and Consent Boundary
 
-The education domain pack includes a **world simulation** layer and **magic circle consent** specification under [`world-sim/`](world-sim/):
+The education domain pack includes a **world simulation** layer and a consent-boundary instantiation named **magic circle consent** under [`world-sim/`](world-sim/):
 
 - [`world-sim/magic-circle-consent-v1.md`](world-sim/magic-circle-consent-v1.md) — consent contract for entering personalized learning simulation environments (the "magic circle")
 - [`world-sim/world-sim-spec-v1.md`](world-sim/world-sim-spec-v1.md) — how to present learning material within a narrative context adapted to the student's likes/dislikes
 - [`world-sim/artifact-and-mastery-spec-v1.md`](world-sim/artifact-and-mastery-spec-v1.md) — artifact award process, boss challenges, and proficiency estimation for the education domain
 
-The magic circle establishes explicit, informed consent before entering any simulated / immersive / world-sim learning mode. This creates a bounded environment where:
+The consent boundary (implemented here as the magic circle) establishes explicit, informed consent before entering any simulated / immersive / world-sim learning mode. This creates a bounded environment where:
 - Special pedagogical rules apply (failure is safe, experimentation encouraged)
 - Real-world consequences are suspended within bounds
 - The system and Domain Authority are protected from liability claims related to simulation content
@@ -116,4 +116,4 @@ These specs were relocated here from `specs/` because they are domain-specific l
 >
 > The engine provides structural accountability (D.S.A. contracts, CTL traces) but does **NOT** replace human oversight, professional judgment, or legal compliance.
 >
-> The magic-circle consent specification is a structural template inspired by pedagogical best practices and liability framing — it is **not legal advice**. Consult education lawyers and ethics boards before production use.
+> The education-domain magic-circle consent specification is a structural template implementing the universal consent-boundary principle. It is **not legal advice**. Consult education lawyers and ethics boards before production use.
