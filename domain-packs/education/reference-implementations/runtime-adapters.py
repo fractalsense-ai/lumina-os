@@ -80,7 +80,7 @@ def _strip_markdown_fences(raw: str) -> str:
     return cleaned.strip()
 
 
-def extract_evidence(
+def interpret_turn_input(
     call_llm: Callable[[str, str, str | None], str],
     input_text: str,
     task_context: dict[str, Any],

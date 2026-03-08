@@ -75,7 +75,7 @@ def _validate_runtime_config(repo_root: Path, cfg: dict[str, Any], cfg_path: str
 
     required_runtime_keys = [
         "domain_system_prompt_path",
-        "evidence_extraction_prompt_path",
+        "turn_interpretation_prompt_path",
         "domain_physics_path",
         "subject_profile_path",
         "default_task_spec",
@@ -87,7 +87,7 @@ def _validate_runtime_config(repo_root: Path, cfg: dict[str, Any], cfg_path: str
     global_prompt_path = runtime_cfg.get("global_system_prompt_path", "specs/global-system-prompt-v1.md")
     _require_file(repo_root, _require_str(global_prompt_path, "runtime.global_system_prompt_path"), "runtime.global_system_prompt_path")
     _require_file(repo_root, _require_str(runtime_cfg["domain_system_prompt_path"], "runtime.domain_system_prompt_path"), "runtime.domain_system_prompt_path")
-    _require_file(repo_root, _require_str(runtime_cfg["evidence_extraction_prompt_path"], "runtime.evidence_extraction_prompt_path"), "runtime.evidence_extraction_prompt_path")
+    _require_file(repo_root, _require_str(runtime_cfg["turn_interpretation_prompt_path"], "runtime.turn_interpretation_prompt_path"), "runtime.turn_interpretation_prompt_path")
     _require_file(repo_root, _require_str(runtime_cfg["domain_physics_path"], "runtime.domain_physics_path"), "runtime.domain_physics_path")
     _require_file(repo_root, _require_str(runtime_cfg["subject_profile_path"], "runtime.subject_profile_path"), "runtime.subject_profile_path")
 
@@ -98,9 +98,20 @@ def _validate_runtime_config(repo_root: Path, cfg: dict[str, Any], cfg_path: str
     if deterministic_templates is not None and not isinstance(deterministic_templates, dict):
         raise RuntimeError("'runtime.deterministic_templates' must be a mapping/dict")
 
+    turn_input_schema = runtime_cfg.get("turn_input_schema", {})
+    if turn_input_schema is not None and not isinstance(turn_input_schema, dict):
+        raise RuntimeError("'runtime.turn_input_schema' must be a mapping/dict when provided")
+
+    action_prompt_type_map = runtime_cfg.get("action_prompt_type_map", {})
+    if action_prompt_type_map is not None and not isinstance(action_prompt_type_map, dict):
+        raise RuntimeError("'runtime.action_prompt_type_map' must be a mapping/dict when provided")
+    for action, prompt_type in (action_prompt_type_map or {}).items():
+        _require_str(action, "runtime.action_prompt_type_map.<action>")
+        _require_str(prompt_type, f"runtime.action_prompt_type_map.{action}")
+
     _validate_adapter_cfg(adapters_cfg, "state_builder")
     _validate_adapter_cfg(adapters_cfg, "domain_step")
-    _validate_adapter_cfg(adapters_cfg, "evidence_extractor")
+    _validate_adapter_cfg(adapters_cfg, "turn_interpreter")
 
     tools_cfg = adapters_cfg.get("tools", {})
     if tools_cfg is not None and not isinstance(tools_cfg, dict):
@@ -131,11 +142,11 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
 
     global_prompt = _read_text(repo_root, runtime_cfg.get("global_system_prompt_path", "specs/global-system-prompt-v1.md"))
     domain_prompt = _read_text(repo_root, runtime_cfg["domain_system_prompt_path"])
-    evidence_prompt = _read_text(repo_root, runtime_cfg["evidence_extraction_prompt_path"])
+    turn_interpretation_prompt = _read_text(repo_root, runtime_cfg["turn_interpretation_prompt_path"])
 
     state_builder_cfg = adapters_cfg["state_builder"]
     domain_step_cfg = adapters_cfg["domain_step"]
-    evidence_extractor_cfg = adapters_cfg["evidence_extractor"]
+    turn_interpreter_cfg = adapters_cfg["turn_interpreter"]
 
     state_builder_fn = _load_callable(
         repo_root,
@@ -147,10 +158,10 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         domain_step_cfg["module_path"],
         domain_step_cfg["callable"],
     )
-    evidence_extractor_fn = _load_callable(
+    turn_interpreter_fn = _load_callable(
         repo_root,
-        evidence_extractor_cfg["module_path"],
-        evidence_extractor_cfg["callable"],
+        turn_interpreter_cfg["module_path"],
+        turn_interpreter_cfg["callable"],
     )
 
     tool_fns: dict[str, Callable[..., Any]] = {}
@@ -168,6 +179,8 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         raise RuntimeError("'runtime.tool_call_policies' must be a mapping/dict when provided")
 
     ui_manifest = cfg.get("ui_manifest")
+    if ui_manifest is None:
+        ui_manifest = runtime_cfg.get("ui_manifest")
     if ui_manifest is not None and not isinstance(ui_manifest, dict):
         raise RuntimeError("'ui_manifest' must be a mapping/dict when provided")
 
@@ -176,14 +189,16 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "subject_profile_path": str(repo_root / runtime_cfg["subject_profile_path"]),
         "default_task_spec": runtime_cfg.get("default_task_spec") or {},
         "domain_step_params": runtime_cfg.get("domain_step_params") or {},
-        "evidence_defaults": runtime_cfg.get("evidence_defaults") or {},
+        "turn_input_defaults": runtime_cfg.get("turn_input_defaults") or {},
+        "turn_input_schema": runtime_cfg.get("turn_input_schema") or {},
+        "action_prompt_type_map": runtime_cfg.get("action_prompt_type_map") or {},
         "deterministic_templates": deterministic_templates,
         "tool_call_policies": tool_call_policies,
         "ui_manifest": ui_manifest,
         "system_prompt": f"{global_prompt.strip()}\n\n# DOMAIN CONFIGURATION\n{domain_prompt.strip()}",
-        "evidence_extraction_prompt": evidence_prompt,
+        "turn_interpretation_prompt": turn_interpretation_prompt,
         "state_builder_fn": state_builder_fn,
         "domain_step_fn": domain_step_fn,
-        "evidence_extractor_fn": evidence_extractor_fn,
+        "turn_interpreter_fn": turn_interpreter_fn,
         "tool_fns": tool_fns,
     }

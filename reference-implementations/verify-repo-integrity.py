@@ -43,7 +43,7 @@ def check_runtime_config_paths(errors: list[str]) -> None:
 
     required_paths = [
         "domain_system_prompt_path",
-        "evidence_extraction_prompt_path",
+        "turn_interpretation_prompt_path",
         "domain_physics_path",
         "subject_profile_path",
     ]

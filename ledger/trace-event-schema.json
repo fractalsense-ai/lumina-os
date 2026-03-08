@@ -92,19 +92,8 @@
     },
     "evidence_summary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
-      "properties": {
-        "correctness": {
-          "type": ["string", "null"],
-          "enum": ["correct", "incorrect", "partial", null]
-        },
-        "hint_used": { "type": ["boolean", "null"] },
-        "response_latency_sec": { "type": ["number", "null"] },
-        "frustration_marker_count": { "type": ["integer", "null"], "minimum": 0 },
-        "repeated_error": { "type": ["boolean", "null"] },
-        "off_task_ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
-      },
-      "description": "Structured evidence summary for this turn. No raw text or transcript content."
+      "additionalProperties": true,
+      "description": "Structured evidence summary for this turn. Field vocabulary is domain-owned; no raw text or transcript content."
     },
     "state_snapshot_hash": {
       "type": ["string", "null"],

@@ -1,7 +1,7 @@
 runtime:
   global_system_prompt_path: specs/global-system-prompt-v1.md
   domain_system_prompt_path: domain-packs/education/prompts/domain-system-override.md
-  evidence_extraction_prompt_path: domain-packs/education/prompts/evidence-extraction.md
+  turn_interpretation_prompt_path: domain-packs/education/prompts/evidence-extraction.md
 
   domain_physics_path: domain-packs/education/algebra-level-1/domain-physics.json
   subject_profile_path: domain-packs/education/algebra-level-1/example-student-alice.yaml
@@ -40,7 +40,7 @@ runtime:
     major_drift_threshold: 0.5
     persistence_required: 3
 
-  evidence_defaults:
+  turn_input_defaults:
     correctness: partial
     hint_used: false
     response_latency_sec: 10.0
@@ -48,6 +48,55 @@ runtime:
     repeated_error: false
     off_task_ratio: 0.0
     step_count: 0
+
+  turn_input_schema:
+    correctness:
+      type: enum
+      values:
+        - correct
+        - incorrect
+        - partial
+      default: partial
+    hint_used:
+      type: bool
+      default: false
+    response_latency_sec:
+      type: float
+      minimum: 0.0
+      default: 10.0
+    frustration_marker_count:
+      type: int
+      minimum: 0
+      default: 0
+    repeated_error:
+      type: bool
+      default: false
+    off_task_ratio:
+      type: float
+      minimum: 0.0
+      maximum: 1.0
+      default: 0.0
+    step_count:
+      type: int
+      minimum: 0
+      default: 0
+    equivalence_preserved:
+      type: bool
+      default: false
+    substitution_check:
+      type: bool
+      default: false
+    method_recognized:
+      type: bool
+      default: false
+    illegal_operations:
+      type: list
+      default: []
+
+  action_prompt_type_map:
+    request_more_steps: more_steps_request
+    request_verification_retry: verification_request
+    request_method_justification: method_justification_request
 
   deterministic_templates:
     hint: "Let's take one small step on {task_id}. Show the next equivalence-preserving move."
@@ -86,9 +135,9 @@ adapters:
   domain_step:
     module_path: domain-packs/education/reference-implementations/runtime-adapters.py
     callable: domain_step
-  evidence_extractor:
+  turn_interpreter:
     module_path: domain-packs/education/reference-implementations/runtime-adapters.py
-    callable: extract_evidence
+    callable: interpret_turn_input
   tools:
     calculator:
       module_path: domain-packs/education/reference-implementations/tool-adapters.py

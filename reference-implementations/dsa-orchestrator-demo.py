@@ -563,8 +563,8 @@ def run_demo() -> None:
 
     # ── Create orchestrator (writes CommitmentRecord) ─────────
     # Wire up the education-domain ZPD monitor explicitly.
-    # A non-education domain (e.g. agriculture) would omit sensor_step_fn
-    # and initial_state, and the engine would skip the sensor step entirely.
+    # A non-education domain (e.g. agriculture) would omit domain_lib_step_fn
+    # and initial_state, and the engine would skip the domain-lib step entirely.
     session_id = str(uuid.uuid4())
     initial_state = _build_learning_state_from_profile(profile)
     orch = DSAOrchestrator(
@@ -572,7 +572,7 @@ def run_demo() -> None:
         subject_profile=profile,
         ledger_path=ledger_path,
         session_id=session_id,
-        sensor_step_fn=zpd_monitor_step,
+        domain_lib_step_fn=zpd_monitor_step,
         initial_state=initial_state,
     )
 
@@ -606,9 +606,9 @@ def run_demo() -> None:
 
         # Retrieve diagnostics stored by the orchestrator
         inv_results_display = orch.last_invariant_results
-        zpd_decision = orch.last_sensor_decision
+        zpd_decision = orch.last_domain_lib_decision
 
-        # Detect drift/escalation events (check sensor decision tier, not action name)
+        # Detect drift/escalation events (check domain-lib decision tier, not action name)
         if zpd_decision.get("tier") in ("minor", "major"):
             total_drift_events += 1
         escalation_records = [
@@ -626,8 +626,8 @@ def run_demo() -> None:
         else:
             print("  Evidence used: (no domain-invariant fields in evidence)")
 
-        # ── Print domain sensor decision ──────────────────────
-        print(f"\n  DOMAIN SENSOR (ZPD Monitor):")
+        # ── Print domain-lib decision ──────────────────────
+        print(f"\n  DOMAIN LIB (ZPD Monitor):")
         tier = zpd_decision.get("tier", "ok")
         tier_icon = {"ok": "✓ ok", "minor": "⚠ MINOR", "major": "⚡ MAJOR"}.get(tier, tier)
         rw = orch.state.recent_window

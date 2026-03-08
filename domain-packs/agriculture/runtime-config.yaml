@@ -1,7 +1,7 @@
 runtime:
   global_system_prompt_path: specs/global-system-prompt-v1.md
   domain_system_prompt_path: domain-packs/agriculture/prompts/domain-system-override.md
-  evidence_extraction_prompt_path: domain-packs/agriculture/prompts/evidence-extraction.md
+  turn_interpretation_prompt_path: domain-packs/agriculture/prompts/evidence-extraction.md
 
   domain_physics_path: domain-packs/agriculture/operations-level-1/domain-physics.json
   subject_profile_path: domain-packs/agriculture/operations-level-1/example-subject.yaml
@@ -17,11 +17,32 @@ runtime:
     window_turns: 5
     drift_threshold: 0.4
 
-  evidence_defaults:
+  turn_input_defaults:
     within_tolerance: true
     response_latency_sec: 10.0
     off_task_ratio: 0.0
     step_count: 0
+
+  turn_input_schema:
+    within_tolerance:
+      type: bool
+      default: true
+    response_latency_sec:
+      type: float
+      minimum: 0.0
+      default: 10.0
+    off_task_ratio:
+      type: float
+      minimum: 0.0
+      maximum: 1.0
+      default: 0.0
+    step_count:
+      type: int
+      minimum: 0
+      default: 0
+
+  action_prompt_type_map:
+    request_more_steps: more_steps_request
 
   ui_manifest:
     title: "Project Lumina"
@@ -48,6 +69,6 @@ adapters:
   domain_step:
     module_path: domain-packs/agriculture/reference-implementations/runtime-adapters.py
     callable: domain_step
-  evidence_extractor:
+  turn_interpreter:
     module_path: domain-packs/agriculture/reference-implementations/runtime-adapters.py
-    callable: extract_evidence
+    callable: interpret_turn_input

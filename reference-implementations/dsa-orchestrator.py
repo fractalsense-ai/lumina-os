@@ -43,8 +43,8 @@ Design constraints:
     - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
         implemented in ctl-commitment-validator.py.
     - No domain-specific domain-lib implementation is imported or required by
-        the engine. Domain integrations wire up their sensors externally and pass
-        them in via ``sensor_step_fn`` / ``initial_state``.
+        the engine. Domain integrations wire up their domain libs externally and pass
+        them in via ``domain_lib_step_fn`` / ``initial_state``.
 
 Usage:
         from dsa_orchestrator import DSAOrchestrator, load_domain_physics
@@ -55,7 +55,7 @@ Usage:
         orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
         # For the education domain example, wire up the ZPD monitor externally:
         orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
-                                                     sensor_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
+                                                     domain_lib_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
         contract, action = orch.process_turn(task_spec, evidence)
 """
 
@@ -200,15 +200,9 @@ def _evaluate_check_expr(check_expr: str, evidence: dict[str, Any]) -> bool | No
 # Action → Prompt Type Mapping
 # ─────────────────────────────────────────────────────────────
 
-_ACTION_TO_PROMPT_TYPE: dict[str | None, str] = {
+_DEFAULT_ACTION_TO_PROMPT_TYPE: dict[str | None, str] = {
     # Core domain-agnostic actions
     None: "task_presentation",
-    "request_more_steps": "more_steps_request",
-    "request_verification_retry": "verification_request",
-    "request_method_justification": "method_justification_request",
-    # Domain-specific actions not in this mapping pass through as their own
-    # prompt_type string, so domain packs can extend the vocabulary without
-    # modifying this engine.
 }
 
 
@@ -220,14 +214,14 @@ class DSAOrchestrator:
     """
     D.S.A. Action layer orchestrator.
 
-    Connects Domain Physics → (optional domain sensor) → CTL → Prompt Contract
+    Connects Domain Physics → (optional domain lib) → CTL → Prompt Contract
     for a single session.
 
     Attributes:
         domain      Domain physics dict loaded from JSON.
         profile     Subject profile dict (domain-agnostic; loaded by the caller).
-        state       Current sensor state supplied by the caller; updated each
-                    turn when a ``sensor_step_fn`` is registered.
+        state       Current domain-lib state supplied by the caller; updated each
+                turn when a ``domain_lib_step_fn`` is registered.
         session_id  UUID string identifying this session in the CTL.
     """
 
@@ -237,8 +231,9 @@ class DSAOrchestrator:
         subject_profile: dict[str, Any],
         ledger_path: str | Path,
         session_id: str | None = None,
-        sensor_step_fn: Callable[..., tuple[Any, dict[str, Any]]] | None = None,
+        domain_lib_step_fn: Callable[..., tuple[Any, dict[str, Any]]] | None = None,
         initial_state: Any | None = None,
+        action_prompt_type_map: dict[str, str] | None = None,
         ctl_append_callback: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> None:
         """
@@ -250,15 +245,18 @@ class DSAOrchestrator:
                              ``yaml_loader.load_yaml`` or equivalent).
             ledger_path:     Path to the JSONL CTL ledger file.
             session_id:      Optional session UUID; generated if omitted.
-            sensor_step_fn:  Optional domain sensor callable with signature
+            domain_lib_step_fn: Optional domain-lib callable with signature
                              ``(state, task_spec, evidence) -> (new_state, decision_dict)``.
                              Pass ``None`` (default) for domain packs that declare
-                             no sensor subsystem.
-            initial_state:   Initial sensor state to pass to ``sensor_step_fn`` on
-                             the first turn.  Ignored when ``sensor_step_fn`` is
+                             no domain-lib subsystem.
+            initial_state:   Initial domain-lib state to pass to ``domain_lib_step_fn`` on
+                             the first turn.  Ignored when ``domain_lib_step_fn`` is
                              ``None``.  For the education domain this is a
                              ``LearningState`` object built by the caller from the
                              subject profile.
+            action_prompt_type_map: Optional action-to-prompt_type mapping loaded
+                             from domain runtime config. Unknown actions still
+                             pass through as prompt_type values.
         """
         self.domain = domain_physics
         self.profile = subject_profile
@@ -266,16 +264,19 @@ class DSAOrchestrator:
         self.session_id = session_id or str(uuid.uuid4())
         self._prev_hash: str = "genesis"
         self._records: list[dict[str, Any]] = []
-        self._sensor_step_fn = sensor_step_fn
+        self._domain_lib_step_fn = domain_lib_step_fn
+        self._action_prompt_type_map: dict[str | None, str] = dict(_DEFAULT_ACTION_TO_PROMPT_TYPE)
+        for action, prompt_type in (action_prompt_type_map or {}).items():
+            self._action_prompt_type_map[str(action)] = str(prompt_type)
         self._ctl_append_callback = ctl_append_callback
 
         # Diagnostics for the most recently processed turn (read-only for callers)
         self.last_invariant_results: list[dict[str, Any]] = []
-        self.last_sensor_decision: dict[str, Any] = {}
+        self.last_domain_lib_decision: dict[str, Any] = {}
         self.last_standing_order_id: str | None = None
         self.last_standing_order_attempt: int | None = None
 
-        # Sensor state: managed externally; the engine treats it as opaque.
+        # Domain-lib state: managed externally; the engine treats it as opaque.
         self.state = initial_state
 
         # Standing-order attempts are tracked per standing-order ID.
@@ -353,7 +354,7 @@ class DSAOrchestrator:
         self,
         task_spec: dict[str, Any],
         invariant_results: list[dict[str, Any]],
-        sensor_decision: dict[str, Any],
+        domain_lib_decision: dict[str, Any],
         action: str | None,
         prompt_contract: dict[str, Any],
     ) -> None:
@@ -369,9 +370,9 @@ class DSAOrchestrator:
             "actor_role": "subject",
             "decision": action,
             "decision_rationale": {
-                "sensor_tier": sensor_decision.get("tier"),
-                "drift_pct": sensor_decision.get("drift_pct"),
-                "frustration": sensor_decision.get("frustration"),
+                "domain_lib_tier": domain_lib_decision.get("tier"),
+                "domain_metric_pct": domain_lib_decision.get("drift_pct"),
+                "domain_alert_flag": domain_lib_decision.get("frustration"),
                 "standing_order_id": self.last_standing_order_id,
                 "standing_order_attempt": self.last_standing_order_attempt,
                 "invariant_failures": [
@@ -387,7 +388,7 @@ class DSAOrchestrator:
     def _write_escalation_record(
         self,
         task_spec: dict[str, Any],
-        sensor_decision: dict[str, Any],
+        domain_lib_decision: dict[str, Any],
         trigger: str,
     ) -> None:
         """Append an EscalationRecord to the CTL."""
@@ -402,10 +403,10 @@ class DSAOrchestrator:
             "status": "open",
             "trigger": trigger,
             "task_id": task_spec.get("task_id", ""),
-            "sensor_decision": {
-                "tier": sensor_decision.get("tier"),
-                "frustration": sensor_decision.get("frustration"),
-                "drift_pct": sensor_decision.get("drift_pct"),
+            "domain_lib_decision": {
+                "tier": domain_lib_decision.get("tier"),
+                "domain_alert_flag": domain_lib_decision.get("frustration"),
+                "domain_metric_pct": domain_lib_decision.get("drift_pct"),
             },
             "target_role": "domain_authority",
             "sla_minutes": 30,
@@ -422,8 +423,8 @@ class DSAOrchestrator:
         Evaluate all domain-pack invariants against the structured evidence dict.
 
         Invariants marked with ``"handled_by": "<subsystem>"`` are skipped here
-        and delegated entirely to the registered domain sensor (or ignored when
-        no sensor is registered).
+        and delegated entirely to the registered domain lib (or ignored when
+        no domain lib is registered).
 
         Each remaining invariant is evaluated by parsing its ``check`` field —
         a simple predicate expression whose operand is a flat key in the evidence
@@ -440,7 +441,7 @@ class DSAOrchestrator:
         for inv in self.domain.get("invariants", []):
             inv_id: str = inv["id"]
 
-            # Skip invariants delegated to another subsystem (e.g. domain sensor)
+            # Skip invariants delegated to another subsystem (e.g. domain lib)
             if inv.get("handled_by"):
                 continue
 
@@ -477,7 +478,7 @@ class DSAOrchestrator:
     def _resolve_action(
         self,
         invariant_results: list[dict[str, Any]],
-        sensor_decision: dict[str, Any],
+        domain_lib_decision: dict[str, Any],
     ) -> tuple[str | None, bool, str | None]:
         """
         Determine the final action for this turn.
@@ -485,10 +486,10 @@ class DSAOrchestrator:
         Priority order:
           1. Critical invariant failure → its standing_order_on_violation.
           2. Warning invariant failure  → its standing_order_on_violation.
-          3. No invariant failure       → domain sensor's decision["action"].
+          3. No invariant failure       → domain lib's decision["action"].
 
-        Additionally, if the sensor decision action implies escalation AND
-        frustration is True, the second return value is True (escalate).
+        Additionally, if the domain-lib decision marks escalation conditions,
+        the second return value is True (escalate).
 
         Returns:
             (action, should_escalate, escalation_trigger)
@@ -510,13 +511,13 @@ class DSAOrchestrator:
             if not result["passed"] and result["severity"] == "warning":
                 return self._resolve_standing_order_action(result["standing_order_on_violation"])
 
-        # Fall through to domain sensor decision
-        action = sensor_decision.get("action")
-        # The engine checks an explicit boolean field set by the domain sensor.
-        # This keeps the core engine domain-agnostic — each domain pack's sensor
+        # Fall through to domain-lib decision
+        action = domain_lib_decision.get("action")
+        # The engine checks an explicit boolean field set by the domain lib.
+        # This keeps the core engine domain-agnostic — each domain pack's lib
         # is responsible for setting "should_escalate": True when escalation is
         # warranted (e.g., the education ZPD monitor sets this on major drift).
-        should_escalate = bool(sensor_decision.get("should_escalate", False))
+        should_escalate = bool(domain_lib_decision.get("should_escalate", False))
         escalation_trigger = "domain_lib_escalation_event" if should_escalate else None
         return action, should_escalate, escalation_trigger
 
@@ -570,7 +571,7 @@ class DSAOrchestrator:
         self,
         task_spec: dict[str, Any],
         action: str | None,
-        sensor_decision: dict[str, Any],
+        domain_lib_decision: dict[str, Any],
         standing_order_trigger: str | None,
     ) -> dict[str, Any]:
         """
@@ -581,7 +582,7 @@ class DSAOrchestrator:
         """
         # Unknown domain-specific actions pass through as their own prompt_type string
         # so domain packs can extend the vocabulary without modifying this engine.
-        prompt_type = _ACTION_TO_PROMPT_TYPE.get(action, action or "task_presentation")
+        prompt_type = self._action_prompt_type_map.get(action, action or "task_presentation")
 
         preferences = self.profile.get("preferences", {})
         interests: list[str] = preferences.get("interests") or []
@@ -593,7 +594,7 @@ class DSAOrchestrator:
             "domain_pack_version": self.domain.get("version", ""),
             "task_id": task_spec.get("task_id", ""),
             "task_nominal_difficulty": float(
-                task_spec.get("nominal_difficulty", sensor_decision.get("challenge", 0.5))
+                task_spec.get("nominal_difficulty", domain_lib_decision.get("challenge", 0.5))
             ),
             "skills_targeted": list(task_spec.get("skills_required", [])),
             "theme": theme,
@@ -627,48 +628,37 @@ class DSAOrchestrator:
                        Domain-invariant evidence keys are defined by the ``check``
                        expressions in the loaded domain-pack.  Missing fields are
                        silently skipped (no false negatives).
-                       Sensor-specific evidence keys are passed through unchanged to
-                       ``sensor_step_fn`` when one is registered.
-                       For example, for the algebra-level-1 education domain pack
-                       the expected keys include:
-                           correctness             — "correct"/"incorrect"/"partial"
-                           hint_used               — bool
-                           response_latency_sec    — float
-                           frustration_marker_count — int
-                           repeated_error          — bool
-                           off_task_ratio          — float
-                           equivalence_preserved   — bool
-                           illegal_operations      — list (empty = no violations)
-                           substitution_check      — bool
-                           method_recognized       — bool
-                           step_count              — int
+                       Domain-lib-specific evidence keys are passed through unchanged to
+                       ``domain_lib_step_fn`` when one is registered.
+                       Evidence schema ownership is domain-specific; the core engine
+                       does not require any fixed evidence field vocabulary.
 
         Returns:
             (prompt_contract, resolved_action)
             prompt_contract conforms to prompt-contract-schema.json.
-            resolved_action is the string action taken (e.g. "request_more_steps")
+            resolved_action is the string action taken (e.g. domain-defined standing-order action)
             or "task_presentation" when no corrective action is needed.
         """
         # 1. Evaluate non-delegated invariants
         invariant_results = self._evaluate_invariants(evidence)
 
-        # 2. Step any registered domain sensor.
-        #    If no sensor is registered the decision dict is empty and the
+        # 2. Step any registered domain lib.
+        #    If no domain lib is registered the decision dict is empty and the
         #    orchestrator falls back to invariant-only logic.
-        if self._sensor_step_fn is not None:
-            self.state, sensor_decision = self._sensor_step_fn(
+        if self._domain_lib_step_fn is not None:
+            self.state, domain_lib_decision = self._domain_lib_step_fn(
                 self.state, task_spec, evidence
             )
         else:
-            sensor_decision: dict[str, Any] = {}
+            domain_lib_decision: dict[str, Any] = {}
 
         # Store diagnostics for the caller
         self.last_invariant_results = invariant_results
-        self.last_sensor_decision = sensor_decision
+        self.last_domain_lib_decision = domain_lib_decision
 
         # 3. Resolve action
         action, should_escalate, escalation_trigger = self._resolve_action(
-            invariant_results, sensor_decision
+            invariant_results, domain_lib_decision
         )
 
         # Determine the standing order trigger label for the contract
@@ -682,19 +672,19 @@ class DSAOrchestrator:
 
         # 4. Build prompt contract
         prompt_contract = self._build_prompt_contract(
-            task_spec, action, sensor_decision, standing_order_trigger
+            task_spec, action, domain_lib_decision, standing_order_trigger
         )
 
         # 5. Append TraceEvent to CTL
         self._write_trace_event(
-            task_spec, invariant_results, sensor_decision, action, prompt_contract
+            task_spec, invariant_results, domain_lib_decision, action, prompt_contract
         )
 
         # 6. Append EscalationRecord if warranted
         if should_escalate:
             self._write_escalation_record(
                 task_spec,
-                sensor_decision,
+                domain_lib_decision,
                 escalation_trigger or "domain_lib_escalation_event",
             )
 

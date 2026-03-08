@@ -93,25 +93,7 @@
     "evidence_summary": {
       "type": "object",
       "description": "Structured evidence summary at the time of escalation. No transcript content.",
-      "additionalProperties": false,
-      "properties": {
-        "session_turns": { "type": "integer", "minimum": 0 },
-        "current_challenge": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "challenge_band": {
-          "type": ["object", "null"],
-          "properties": {
-            "min_challenge": { "type": "number" },
-            "max_challenge": { "type": "number" }
-          }
-        },
-        "outside_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "consecutive_outside": { "type": ["integer", "null"], "minimum": 0 },
-        "consecutive_incorrect": { "type": ["integer", "null"], "minimum": 0 },
-        "hint_count_window": { "type": ["integer", "null"], "minimum": 0 },
-        "frustration_flag": { "type": ["boolean", "null"] },
-        "affect_valence": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
-        "standing_order_attempts": { "type": ["object", "null"] }
-      }
+      "additionalProperties": true
     },
     "decision_trail_hashes": {
       "type": "array",

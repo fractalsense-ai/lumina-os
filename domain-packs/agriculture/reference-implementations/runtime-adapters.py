@@ -38,12 +38,13 @@ def _strip_markdown_fences(raw: str) -> str:
     return cleaned.strip()
 
 
-def extract_evidence(
+def interpret_turn_input(
     call_llm: Callable[[str, str, str | None], str],
     input_text: str,
     task_context: dict[str, Any],
     prompt_text: str,
     default_fields: dict[str, Any] | None = None,
+    tool_fns: dict[str, Callable[..., Any]] | None = None,
 ) -> dict[str, Any]:
     raw_response = call_llm(
         system=prompt_text,

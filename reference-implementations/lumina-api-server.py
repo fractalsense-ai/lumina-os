@@ -67,7 +67,7 @@ DOMAIN_PHYSICS_PATH = Path(RUNTIME["domain_physics_path"])
 SUBJECT_PROFILE_PATH = Path(RUNTIME["subject_profile_path"])
 DEFAULT_TASK_SPEC = dict(RUNTIME["default_task_spec"])
 SYSTEM_PROMPT = RUNTIME["system_prompt"]
-EVIDENCE_EXTRACTION_PROMPT = RUNTIME["evidence_extraction_prompt"]
+TURN_INTERPRETATION_PROMPT = RUNTIME["turn_interpretation_prompt"]
 
 CTL_DIR = Path(tempfile.gettempdir()) / "lumina-ctl"
 CTL_DIR.mkdir(parents=True, exist_ok=True)
@@ -139,41 +139,76 @@ def _coerce_float(
     return parsed
 
 
-def _normalize_evidence(evidence: dict[str, Any]) -> dict[str, Any]:
-    """Normalize extractor output to stable types before invariant checks."""
-    normalized = dict(evidence)
+def _coerce_str(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    return str(value)
 
-    correctness = normalized.get("correctness")
-    if correctness not in {"correct", "incorrect", "partial"}:
-        normalized["correctness"] = "partial"
 
-    normalized["hint_used"] = _coerce_bool(normalized.get("hint_used"), False)
-    normalized["repeated_error"] = _coerce_bool(normalized.get("repeated_error"), False)
-    normalized["response_latency_sec"] = _coerce_float(
-        normalized.get("response_latency_sec"), default=10.0, minimum=0.0
-    )
-    normalized["frustration_marker_count"] = _coerce_int(
-        normalized.get("frustration_marker_count"), default=0, minimum=0
-    )
-    normalized["off_task_ratio"] = _coerce_float(
-        normalized.get("off_task_ratio"), default=0.0, minimum=0.0, maximum=1.0
-    )
-    normalized["step_count"] = _coerce_int(normalized.get("step_count"), default=0, minimum=0)
+def _normalize_turn_data(
+    turn_data: dict[str, Any],
+    turn_input_schema: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Apply domain-owned schema rules; otherwise preserve values as-is."""
+    normalized = dict(turn_data)
+    schema = turn_input_schema or {}
+    if not isinstance(schema, dict):
+        return normalized
 
-    if "equivalence_preserved" in normalized and normalized.get("equivalence_preserved") is not None:
-        normalized["equivalence_preserved"] = _coerce_bool(
-            normalized.get("equivalence_preserved"), False
-        )
-    if "substitution_check" in normalized and normalized.get("substitution_check") is not None:
-        normalized["substitution_check"] = _coerce_bool(normalized.get("substitution_check"), False)
-    if "method_recognized" in normalized and normalized.get("method_recognized") is not None:
-        normalized["method_recognized"] = _coerce_bool(normalized.get("method_recognized"), False)
+    for field, raw_cfg in schema.items():
+        if not isinstance(raw_cfg, dict):
+            continue
 
-    illegal_operations = normalized.get("illegal_operations")
-    if isinstance(illegal_operations, list):
-        normalized["illegal_operations"] = [str(item) for item in illegal_operations]
-    else:
-        normalized["illegal_operations"] = []
+        field_type = str(raw_cfg.get("type", "")).strip().lower()
+        has_field = field in normalized
+        value = normalized.get(field)
+
+        if (not has_field or value is None) and "default" in raw_cfg:
+            value = raw_cfg.get("default")
+            normalized[field] = value
+
+        if value is None:
+            continue
+
+        if field_type == "bool":
+            normalized[field] = _coerce_bool(value, bool(raw_cfg.get("default", False)))
+            continue
+
+        if field_type == "int":
+            minimum = raw_cfg.get("minimum")
+            minimum_int = int(minimum) if isinstance(minimum, (int, float)) else None
+            normalized[field] = _coerce_int(value, int(raw_cfg.get("default", 0)), minimum_int)
+            continue
+
+        if field_type == "float":
+            minimum = raw_cfg.get("minimum")
+            maximum = raw_cfg.get("maximum")
+            min_float = float(minimum) if isinstance(minimum, (int, float)) else None
+            max_float = float(maximum) if isinstance(maximum, (int, float)) else None
+            normalized[field] = _coerce_float(value, float(raw_cfg.get("default", 0.0)), min_float, max_float)
+            continue
+
+        if field_type == "string":
+            normalized[field] = _coerce_str(value, str(raw_cfg.get("default", "")))
+            continue
+
+        if field_type == "enum":
+            values = raw_cfg.get("values")
+            if isinstance(values, list):
+                allowed = [str(v) for v in values]
+                rendered = str(value)
+                if rendered not in allowed and "default" in raw_cfg:
+                    rendered = str(raw_cfg.get("default"))
+                normalized[field] = rendered
+            continue
+
+        if field_type == "list":
+            if isinstance(value, list):
+                normalized[field] = value
+            elif "default" in raw_cfg and isinstance(raw_cfg.get("default"), list):
+                normalized[field] = list(raw_cfg.get("default"))
+            else:
+                normalized[field] = []
 
     return normalized
 
@@ -249,14 +284,14 @@ def render_contract_response(prompt_contract: dict[str, Any]) -> str:
         return template
 
 
-def extract_evidence(input_text: str, task_context: dict[str, Any]) -> dict[str, Any]:
-    extractor = RUNTIME["evidence_extractor_fn"]
-    return extractor(
+def interpret_turn_input(input_text: str, task_context: dict[str, Any]) -> dict[str, Any]:
+    interpreter = RUNTIME["turn_interpreter_fn"]
+    return interpreter(
         call_llm=call_llm,
         input_text=input_text,
         task_context=task_context,
-        prompt_text=EVIDENCE_EXTRACTION_PROMPT,
-        default_fields=RUNTIME["evidence_defaults"],
+        prompt_text=TURN_INTERPRETATION_PROMPT,
+        default_fields=RUNTIME["turn_input_defaults"],
         tool_fns=RUNTIME.get("tool_fns"),
     )
 
@@ -311,7 +346,7 @@ def _render_template_value(value: Any, context: dict[str, Any]) -> Any:
 def apply_tool_call_policy(
     resolved_action: str,
     prompt_contract: dict[str, Any],
-    evidence: dict[str, Any],
+    turn_data: dict[str, Any],
     task_spec: dict[str, Any],
 ) -> list[dict[str, Any]]:
     policies: dict[str, Any] = RUNTIME.get("tool_call_policies") or {}
@@ -322,7 +357,8 @@ def apply_tool_call_policy(
     context = {
         "action": resolved_action,
         "prompt_contract": prompt_contract,
-        "evidence": evidence,
+        "turn_data": turn_data,
+        "evidence": turn_data,
         "task_spec": task_spec,
     }
 
@@ -366,8 +402,9 @@ def get_or_create_session(session_id: str) -> dict[str, Any]:
             subject_profile=profile,
             ledger_path=str(ledger_path),
             session_id=session_id,
-            sensor_step_fn=lambda state, task, ev: domain_step(state, task, ev, domain_params),
+            domain_lib_step_fn=lambda state, task, ev: domain_step(state, task, ev, domain_params),
             initial_state=initial_state,
+            action_prompt_type_map=RUNTIME.get("action_prompt_type_map") or {},
             ctl_append_callback=lambda sid, record: PERSISTENCE.append_ctl_record(
                 sid,
                 record,
@@ -421,16 +458,15 @@ def process_message(
 
     task_context = dict(task_spec)
     task_context["current_problem"] = current_problem
-    evidence = evidence_override if evidence_override is not None else extract_evidence(input_text, task_context)
-    evidence = _normalize_evidence(evidence)
-    log.info("[%s] Evidence: %s", session_id, json.dumps(evidence, default=str))
+    turn_data = evidence_override if evidence_override is not None else interpret_turn_input(input_text, task_context)
+    turn_data = _normalize_turn_data(turn_data, RUNTIME.get("turn_input_schema") or {})
+    log.info("[%s] Turn Data: %s", session_id, json.dumps(turn_data, default=str))
 
-    prompt_contract, resolved_action = orch.process_turn(task_spec, evidence)
+    prompt_contract, resolved_action = orch.process_turn(task_spec, turn_data)
 
-    if evidence.get("substitution_check") is True and evidence.get("correctness") == "correct":
-        current_problem["status"] = "solved"
-    elif current_problem.get("status") != "solved":
-        current_problem["status"] = "in_progress"
+    reported_status = turn_data.get("problem_status")
+    if isinstance(reported_status, str) and reported_status.strip():
+        current_problem["status"] = reported_status.strip()
 
     session["current_problem"] = current_problem
     session["turn_count"] += 1
@@ -461,7 +497,7 @@ def process_message(
     tool_results = apply_tool_call_policy(
         resolved_action=resolved_action,
         prompt_contract=prompt_contract,
-        evidence=evidence,
+        turn_data=turn_data,
         task_spec=task_spec,
     )
 
