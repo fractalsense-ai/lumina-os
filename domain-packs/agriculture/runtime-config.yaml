@@ -23,6 +23,19 @@ runtime:
     off_task_ratio: 0.0
     step_count: 0
 
+  ui_manifest:
+    title: "Project Lumina"
+    subtitle: "Operations Level 1 — Field Monitoring"
+    domain_label: "Agriculture"
+    consent_heading: "Project Lumina"
+    consent_text: "This system monitors operational signals and reports variance. It does not store raw sensor data beyond structured telemetry. If conditions exceed tolerance, we escalate to the site manager."
+    consent_button_label: "I Acknowledge Operating Conditions"
+    placeholder_text: "Report current signal readings..."
+    theme:
+      primary: "oklch(0.45 0.10 145)"
+      accent: "oklch(0.65 0.15 85)"
+      background: "oklch(0.95 0.02 100)"
+
   deterministic_templates:
     task_presentation: "Proceed with {task_id}. Report current operating signal and any drift notes."
     more_steps_request: "Provide additional operational detail for {task_id} so we can verify tolerance."

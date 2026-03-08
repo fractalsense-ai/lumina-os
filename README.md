@@ -213,7 +213,7 @@ project-lumina/
 │   │   ├── schemas/
 │   │   │   ├── compressed-state-schema-v1.json
 │   │   │   └── student-profile-schema-v1.json
-│   │   ├── domain-lib/                ← state lib components (ZPD, affect, fatigue)
+│   │   ├── domain-lib/                ← passive specs (ZPD, affect, fatigue) — read as context, never executed
 │   │   │   ├── README.md
 │   │   │   ├── compressed-state-estimators.md
 │   │   │   ├── zpd-monitor-spec-v1.md
@@ -224,7 +224,7 @@ project-lumina/
 │   │   │   └── artifact-and-mastery-spec-v1.md
 │   │   ├── reference-implementations/
 │   │   │   ├── runtime-adapters.py    ← state builder, domain step, evidence extractor
-│   │   │   ├── tool-adapters.py       ← calculator, substitution checker
+│   │   │   ├── tool-adapters.py       ← active deterministic tools (algebra parser, calculator, substitution checker)
 │   │   │   ├── zpd-monitor-v0.2.py
 │   │   │   └── zpd-monitor-demo.py
 │   │   └── algebra-level-1/           ← specific domain pack instance
@@ -349,6 +349,7 @@ Tests: health check, stable turn (no escalation), major drift (escalation), CTL 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Health check — returns `{"status": "ok", "provider": "..."}` |
+| `GET` | `/api/domain-info` | Returns domain metadata and UI manifest for the loaded domain pack |
 | `POST` | `/api/chat` | Process a message through the D.S.A. pipeline |
 | `POST` | `/api/tool/{tool_id}` | Invoke a domain tool adapter directly |
 | `GET` | `/api/ctl/validate` | Validate CTL hash-chain integrity (all sessions or a specific `session_id`) |

@@ -111,6 +111,44 @@ A domain pack must be in the `Active` state (CTL commitment present) before use 
 
 ---
 
+## Domain-Lib vs Tool-Adapters
+
+Each domain pack may contain two distinct component types. Understanding the distinction is essential for correct authoring.
+
+### Domain-Lib (Passive Specifications)
+
+The `domain-lib/` folder holds **passive reference documents** — specifications, estimation models, threshold tables, and sensor profiles that the orchestrator and LLM *read* but never *execute*.
+
+Examples:
+- A ZPD monitor specification that defines zone boundaries and drift thresholds
+- A fatigue estimation model describing decay curves and recovery windows
+- A pH sensor profile specifying operating ranges and tolerance bands
+
+Domain-lib files have **no callable entry point**. They are consumed by the LLM as context or by the orchestrator as configuration lookup. They describe *what* the domain measures, not *how* to compute it.
+
+### Tool-Adapters (Active Deterministic Tools)
+
+The `tool-adapters/` folder holds **active tools** — deterministic functions that accept structured input and produce structured output. Each tool has a YAML adapter specification conforming to [`../standards/tool-adapter-schema-v1.json`](../standards/tool-adapter-schema-v1.json), plus a backing implementation (typically in `reference-implementations/tool-adapters.py`).
+
+Examples:
+- An algebra parser that tokenises student work into steps and checks algebraic equivalence
+- A substitution checker that plugs a value into an equation and returns pass/fail
+- A unit-conversion calculator that converts between measurement systems
+
+Tool-adapters are **called by the orchestrator** (or by the evidence extractor on behalf of the orchestrator). They provide ground-truth evidence that the LLM cannot fabricate. The LLM should validate its reasoning against tool-adapter output, not the other way around.
+
+### When to use which
+
+| Question | Domain-Lib | Tool-Adapter |
+|----------|-----------|--------------|
+| Does it have a callable function? | No | Yes |
+| Does it produce deterministic output? | N/A | Yes |
+| Is it a specification or reference? | Yes | No |
+| Does the orchestrator invoke it? | No (reads only) | Yes |
+| Does it conform to tool-adapter-schema? | No | Yes |
+
+---
+
 ## Conformance
 
 All domain packs in this directory must conform to:

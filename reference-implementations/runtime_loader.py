@@ -167,6 +167,10 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if tool_call_policies is not None and not isinstance(tool_call_policies, dict):
         raise RuntimeError("'runtime.tool_call_policies' must be a mapping/dict when provided")
 
+    ui_manifest = cfg.get("ui_manifest")
+    if ui_manifest is not None and not isinstance(ui_manifest, dict):
+        raise RuntimeError("'ui_manifest' must be a mapping/dict when provided")
+
     return {
         "domain_physics_path": str(repo_root / runtime_cfg["domain_physics_path"]),
         "subject_profile_path": str(repo_root / runtime_cfg["subject_profile_path"]),
@@ -175,6 +179,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "evidence_defaults": runtime_cfg.get("evidence_defaults") or {},
         "deterministic_templates": deterministic_templates,
         "tool_call_policies": tool_call_policies,
+        "ui_manifest": ui_manifest,
         "system_prompt": f"{global_prompt.strip()}\n\n# DOMAIN CONFIGURATION\n{domain_prompt.strip()}",
         "evidence_extraction_prompt": evidence_prompt,
         "state_builder_fn": state_builder_fn,

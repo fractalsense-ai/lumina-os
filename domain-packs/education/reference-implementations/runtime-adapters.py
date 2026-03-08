@@ -86,6 +86,7 @@ def extract_evidence(
     task_context: dict[str, Any],
     prompt_text: str,
     default_fields: dict[str, Any] | None = None,
+    tool_fns: dict[str, Callable[..., Any]] | None = None,
 ) -> dict[str, Any]:
     context_hint = ""
     if task_context.get("task_id"):
@@ -107,6 +108,27 @@ def extract_evidence(
         if status:
             context_hint += f"\nProblem status: {status}"
 
+    # ── Deterministic algebra parser (primary source) ──────────
+    parser_result: dict[str, Any] | None = None
+    all_tools = tool_fns or {}
+    algebra_parser_fn = all_tools.get("algebra_parser")
+    if algebra_parser_fn is not None and isinstance(current_problem, dict):
+        eq = current_problem.get("equation", "")
+        tvar = current_problem.get("target_variable", "x")
+        exp_ans = current_problem.get("expected_answer", "")
+        if eq:
+            try:
+                parser_result = algebra_parser_fn({
+                    "call_type": "parse_steps",
+                    "equation": eq,
+                    "target_variable": tvar,
+                    "expected_answer": exp_ans,
+                    "student_work": input_text,
+                })
+            except Exception:
+                parser_result = None
+
+    # ── LLM extraction (fallback / supplementary) ─────────────
     raw_response = call_llm(
         system=prompt_text,
         user=f"Student message: {input_text}{context_hint}",
@@ -133,5 +155,16 @@ def extract_evidence(
     for key, default_val in defaults.items():
         if key not in evidence or evidence[key] is None:
             evidence[key] = default_val
+
+    # ── Override LLM fields with deterministic parser output ──
+    if parser_result is not None and parser_result.get("ok"):
+        if parser_result.get("step_count") is not None:
+            evidence["step_count"] = parser_result["step_count"]
+        if parser_result.get("equivalence_preserved") is not None:
+            evidence["equivalence_preserved"] = parser_result["equivalence_preserved"]
+        if parser_result.get("substitution_check") is not None:
+            evidence["substitution_check"] = parser_result["substitution_check"]
+        if parser_result.get("method_recognized") is not None:
+            evidence["method_recognized"] = True
 
     return evidence

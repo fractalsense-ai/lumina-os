@@ -517,7 +517,7 @@ class DSAOrchestrator:
         # is responsible for setting "should_escalate": True when escalation is
         # warranted (e.g., the education ZPD monitor sets this on major drift).
         should_escalate = bool(sensor_decision.get("should_escalate", False))
-        escalation_trigger = "sensor_intervene_or_escalate_with_frustration" if should_escalate else None
+        escalation_trigger = "domain_lib_escalation_event" if should_escalate else None
         return action, should_escalate, escalation_trigger
 
     def _resolve_standing_order_action(
@@ -695,7 +695,7 @@ class DSAOrchestrator:
             self._write_escalation_record(
                 task_spec,
                 sensor_decision,
-                escalation_trigger or "sensor_intervene_or_escalate_with_frustration",
+                escalation_trigger or "domain_lib_escalation_event",
             )
 
         resolved_action = action if action is not None else "task_presentation"

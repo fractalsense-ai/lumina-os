@@ -25,12 +25,57 @@ type ApiChatResponse = {
   escalated: boolean
 }
 
+interface UiManifest {
+  title: string
+  subtitle: string
+  domain_label: string
+  consent_heading: string
+  consent_text: string
+  consent_button_label: string
+  placeholder_text: string
+  theme?: {
+    primary?: string
+    accent?: string
+    background?: string
+  }
+}
+
+interface DomainInfo {
+  domain_id: string
+  domain_version: string
+  ui_manifest: UiManifest
+}
+
+const DEFAULT_MANIFEST: UiManifest = {
+  title: 'Project Lumina',
+  subtitle: '',
+  domain_label: '',
+  consent_heading: 'Project Lumina',
+  consent_text:
+    'This system uses structured telemetry only. No raw transcripts are stored. If we get stuck, we escalate to a human authority.',
+  consent_button_label: 'I Agree',
+  placeholder_text: 'Type your message...',
+}
+
+function getApiBase(): string {
+  return (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
+}
+
+async function fetchDomainInfo(): Promise<DomainInfo | null> {
+  try {
+    const res = await fetch(`${getApiBase()}/api/domain-info`)
+    if (!res.ok) return null
+    return (await res.json()) as DomainInfo
+  } catch {
+    return null
+  }
+}
+
 async function orchestratorApiCall(
   userText: string,
   sessionId: string | null,
 ): Promise<ApiChatResponse> {
-  const apiBase = (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
-  const res = await fetch(`${apiBase}/api/chat`, {
+  const res = await fetch(`${getApiBase()}/api/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +94,21 @@ async function orchestratorApiCall(
   return (await res.json()) as ApiChatResponse
 }
 
-function ConsentScreen({ onConsent }: { onConsent: () => void }) {
+function applyThemeOverrides(theme: UiManifest['theme']) {
+  if (!theme) return
+  const root = document.documentElement
+  if (theme.primary) root.style.setProperty('--primary', theme.primary)
+  if (theme.accent) root.style.setProperty('--accent', theme.accent)
+  if (theme.background) root.style.setProperty('--background', theme.background)
+}
+
+function ConsentScreen({
+  manifest,
+  onConsent,
+}: {
+  manifest: UiManifest
+  onConsent: () => void
+}) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <motion.div
@@ -61,12 +120,11 @@ function ConsentScreen({ onConsent }: { onConsent: () => void }) {
           <div className="flex flex-col gap-6 items-center text-center">
             <Shield className="text-primary" size={48} weight="duotone" />
             <h1 className="font-bold text-3xl md:text-4xl tracking-tight text-foreground">
-              Project Lumina
+              {manifest.consent_heading}
             </h1>
             <div className="bg-muted p-6 rounded-lg">
               <p className="text-base leading-relaxed text-foreground">
-                I am not grading you for a report card. I do not keep transcripts of what you say. 
-                If we get stuck, we ask for human help.
+                {manifest.consent_text}
               </p>
             </div>
             <Button
@@ -74,7 +132,7 @@ function ConsentScreen({ onConsent }: { onConsent: () => void }) {
               size="lg"
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-medium tracking-wide transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
-              I Agree to the Magic Circle
+              {manifest.consent_button_label}
             </Button>
           </div>
         </Card>
@@ -142,7 +200,7 @@ function LoadingIndicator() {
   )
 }
 
-function ChatInterface() {
+function ChatInterface({ manifest }: { manifest: UiManifest }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -209,10 +267,10 @@ function ChatInterface() {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-card px-6 py-4">
         <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
-          Project Lumina
+          {manifest.title}
         </h1>
         <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Algebra Level 1 - Foundations
+          {manifest.subtitle}
         </p>
       </header>
 
@@ -244,7 +302,7 @@ function ChatInterface() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type your steps here..."
+              placeholder={manifest.input_placeholder}
               disabled={isLoading}
               className="flex-1 text-base"
             />
@@ -270,6 +328,14 @@ function App() {
     }
     return window.localStorage.getItem('lumina.consent_given') === 'true'
   })
+  const [manifest, setManifest] = useState<UiManifest>(DEFAULT_MANIFEST)
+
+  useEffect(() => {
+    fetchDomainInfo().then((info) => {
+      setManifest(info.ui_manifest)
+      applyThemeOverrides(info.ui_manifest.theme)
+    })
+  }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -282,10 +348,10 @@ function App() {
   }
 
   if (!consentGiven) {
-    return <ConsentScreen onConsent={handleConsent} />
+    return <ConsentScreen manifest={manifest} onConsent={handleConsent} />
   }
 
-  return <ChatInterface />
+  return <ChatInterface manifest={manifest} />
 }
 
 export default App

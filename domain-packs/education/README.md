@@ -56,6 +56,18 @@ Education packs declare their own prompt-contract extensions and domain vocabula
 
 ---
 
+## Domain-Lib vs Tool-Adapters
+
+The education domain separates its components into two categories:
+
+- **`domain-lib/`** — Passive specification documents (ZPD monitor spec, fatigue estimation spec, compressed-state estimators). These are read as context by the orchestrator and LLM. They define *what* the domain measures but have no callable entry point.
+
+- **`algebra-level-1/tool-adapters/`** — Active deterministic tools (algebra parser, substitution checker, calculator). These are invoked by the orchestrator or evidence extractor, accept structured input, and return structured output. They provide ground-truth evidence that the LLM validates against.
+
+See [`../README.md`](../README.md#domain-lib-vs-tool-adapters) for the full architectural distinction.
+
+---
+
 ## Boundary With Core
 
 Universal engine contracts live in:

@@ -66,6 +66,19 @@ runtime:
           left_value: "{evidence.left_value}"
           right_value: "{evidence.right_value}"
 
+ui_manifest:
+  title: "Project Lumina"
+  subtitle: "Algebra Level 1 — Foundations"
+  domain_label: "Education"
+  consent_heading: "Project Lumina"
+  consent_text: "I am not grading you for a report card. I do not keep transcripts of what you say. If we get stuck, we ask for human help."
+  consent_button_label: "I Agree to the Magic Circle"
+  placeholder_text: "Type your steps here..."
+  theme:
+    primary: "oklch(0.45 0.08 220)"
+    accent: "oklch(0.72 0.12 60)"
+    background: "oklch(0.96 0.01 80)"
+
 adapters:
   state_builder:
     module_path: domain-packs/education/reference-implementations/runtime-adapters.py
@@ -83,3 +96,6 @@ adapters:
     substitution_checker:
       module_path: domain-packs/education/reference-implementations/tool-adapters.py
       callable: substitution_checker_tool
+    algebra_parser:
+      module_path: domain-packs/education/reference-implementations/tool-adapters.py
+      callable: algebra_parser_tool

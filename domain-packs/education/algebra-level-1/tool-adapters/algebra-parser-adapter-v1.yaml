@@ -1,0 +1,100 @@
+# algebra-parser-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# This adapter provides deterministic parsing and validation of
+# student algebra work. The orchestrator calls it to ground
+# evidence extraction with verified step counts, equivalence
+# checks, and substitution verification — reducing reliance on
+# LLM extraction for fields that can be computed exactly.
+# ============================================================
+
+id: adapter/edu/algebra-parser/v1
+version: "1.0.0"
+tool_name: "Algebra Step Parser"
+description: >
+  Deterministic parser for linear algebra work. Parses student
+  free-text steps against a known equation, counts valid algebraic
+  moves, checks equivalence preservation per step, and verifies
+  final answers via substitution. Returns structured evidence the
+  orchestrator uses as ground truth for step_count,
+  equivalence_preserved, and substitution_check fields.
+
+domain_id: domain/edu/algebra-level-1/v1
+
+call_types:
+  - parse_steps
+  - check_equivalence
+  - verify_solution_substitution
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [parse_steps, check_equivalence, verify_solution_substitution]
+    student_work:
+      type: string
+      description: "Free-text student work to parse for algebraic steps"
+      maxLength: 2048
+    equation:
+      type: string
+      description: "The original equation (e.g., '2x + 3 = 11')"
+      maxLength: 256
+    target_variable:
+      type: string
+      description: "Variable being solved for (e.g., 'x')"
+      maxLength: 8
+    expected_answer:
+      type: string
+      description: "Expected solved form (e.g., 'x = 4')"
+      maxLength: 256
+    proposed_value:
+      type: number
+      description: "Numeric value proposed as the solution"
+
+output_schema:
+  type: object
+  properties:
+    ok:
+      type: boolean
+      description: "Whether the parse/check completed without errors"
+    step_count:
+      type: integer
+      description: "Number of valid algebraic steps detected"
+      minimum: 0
+    equivalence_preserved:
+      type: boolean
+      description: "Whether all detected steps preserve equation equivalence"
+    substitution_check:
+      type: boolean
+      description: "Whether the proposed value satisfies the original equation"
+    method_recognized:
+      type: string
+      description: "Detected solution method (e.g., 'isolation', 'balancing') or null"
+    parsed_steps:
+      type: array
+      description: "List of parsed step descriptions"
+      items:
+        type: object
+        properties:
+          raw:
+            type: string
+          operation:
+            type: string
+          valid:
+            type: boolean
+    error:
+      type: string
+      description: "Error message if parsing failed"
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_entity_consent: false
+  max_calls_per_session: 100
+  logged_in_ctl: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: request_more_steps

@@ -257,6 +257,7 @@ def extract_evidence(input_text: str, task_context: dict[str, Any]) -> dict[str,
         task_context=task_context,
         prompt_text=EVIDENCE_EXTRACTION_PROMPT,
         default_fields=RUNTIME["evidence_defaults"],
+        tool_fns=RUNTIME.get("tool_fns"),
     )
 
 
@@ -566,6 +567,18 @@ async def chat(req: ChatRequest) -> ChatResponse:
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "provider": LLM_PROVIDER}
+
+
+@app.get("/api/domain-info")
+async def domain_info() -> dict[str, Any]:
+    """Return domain UI manifest and identity for front-end theming."""
+    domain = PERSISTENCE.load_domain_physics(str(DOMAIN_PHYSICS_PATH))
+    manifest = RUNTIME.get("ui_manifest") or {}
+    return {
+        "domain_id": domain.get("id", "unknown"),
+        "domain_version": domain.get("version", "unknown"),
+        "ui_manifest": manifest,
+    }
 
 
 @app.post("/api/tool/{tool_id}", response_model=ToolResponse)
