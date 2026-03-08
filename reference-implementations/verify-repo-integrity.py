@@ -9,6 +9,33 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+PROVENANCE_RUNTIME_KEYS = [
+    "domain_pack_id",
+    "domain_pack_version",
+    "domain_physics_hash",
+    "global_prompt_hash",
+    "domain_prompt_hash",
+    "turn_interpretation_prompt_hash",
+    "system_prompt_hash",
+    "turn_data_hash",
+    "prompt_contract_hash",
+]
+
+PROVENANCE_POST_PAYLOAD_KEYS = [
+    "tool_results_hash",
+    "llm_payload_hash",
+    "response_hash",
+]
+
+PROVENANCE_STRICT_FILES = [
+    Path("ledger/trace-event-schema.json"),
+    Path("specs/dsa-framework-v1.md"),
+    Path("specs/audit-log-spec-v1.md"),
+    Path("specs/evaluation-harness-v1.md"),
+]
+
+PROVENANCE_ESCALATION_ADVISORY_FILE = Path("ledger/escalation-record-schema.json")
+
 
 def load_yaml(path: Path) -> dict[str, Any]:
     yaml_loader_path = REPO_ROOT / "reference-implementations" / "yaml-loader.py"
@@ -216,6 +243,40 @@ def check_domain_tool_adapter_linkage(errors: list[str]) -> None:
                 )
 
 
+def check_provenance_contract_consistency(errors: list[str]) -> None:
+    required_keys = PROVENANCE_RUNTIME_KEYS + PROVENANCE_POST_PAYLOAD_KEYS
+
+    for rel_path in PROVENANCE_STRICT_FILES:
+        abs_path = REPO_ROOT / rel_path
+        if not abs_path.exists():
+            errors.append(f"Missing provenance contract file: {rel_path}")
+            continue
+
+        text = abs_path.read_text(encoding="utf-8", errors="replace")
+        for key in required_keys:
+            if key not in text:
+                errors.append(
+                    f"Provenance contract drift: {rel_path} missing key '{key}'"
+                )
+
+    advisory_abs = REPO_ROOT / PROVENANCE_ESCALATION_ADVISORY_FILE
+    if not advisory_abs.exists():
+        errors.append(f"Missing provenance advisory file: {PROVENANCE_ESCALATION_ADVISORY_FILE}")
+        return
+
+    advisory_text = advisory_abs.read_text(encoding="utf-8", errors="replace").lower()
+    if "provenance" not in advisory_text:
+        errors.append(
+            "Escalation schema advisory drift: "
+            f"{PROVENANCE_ESCALATION_ADVISORY_FILE} should include provenance guidance text"
+        )
+    if "hash" not in advisory_text:
+        errors.append(
+            "Escalation schema advisory drift: "
+            f"{PROVENANCE_ESCALATION_ADVISORY_FILE} should include hash-lineage guidance text"
+        )
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -224,6 +285,7 @@ def main() -> int:
     check_markdown_relative_links(errors)
     check_frontend_essentials(errors)
     check_domain_tool_adapter_linkage(errors)
+    check_provenance_contract_consistency(errors)
 
     if errors:
         print("[FAIL] Repo integrity checks found issues:")
