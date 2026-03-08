@@ -13,9 +13,13 @@ This directory contains Python reference implementations of the **core D.S.A. en
 | `ctl-commitment-validator.py` | CTL hash chain validator and commitment recorder |
 | `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract |
 | `dsa-orchestrator-demo.py` | End-to-end demo of the full D.S.A. Action loop wired to the education domain (10-turn scripted session) |
+| `runtime_loader.py` | Runtime config loader and adapter wiring validator |
+| `lumina-api-server.py` | FastAPI integration host for `/api/chat`, health, and CTL validation routes |
 | `persistence_adapter.py` | Domain-agnostic persistence adapter interface |
 | `filesystem_persistence.py` | Filesystem-backed persistence adapter (default behavior) |
 | `sqlite_persistence.py` | SQLite persistence adapter (optional; SQLAlchemy async) |
+| `verify-repo-integrity.py` | Repo-level integrity checks (links, runtime paths, version alignment, frontend essentials) |
+| `run-full-verification.ps1` | One-command verification flow (integrity + orchestrator + frontend + optional API scenarios) |
 
 ---
 
@@ -62,6 +66,33 @@ python reference-implementations/yaml-to-json-converter.py \
 ```bash
 python reference-implementations/ctl-commitment-validator.py \
   --verify-chain path/to/ledger.jsonl
+```
+
+### Run repo integrity checks
+
+```bash
+python reference-implementations/verify-repo-integrity.py
+```
+
+### Run full verification flow
+
+```powershell
+./reference-implementations/run-full-verification.ps1
+```
+
+The script now auto-starts `lumina-api-server.py` for pre-integration scenarios if `/api/health` is not reachable at `-ApiBaseUrl`.
+
+Useful options:
+
+```powershell
+./reference-implementations/run-full-verification.ps1 -SkipOrchestratorDemo
+./reference-implementations/run-full-verification.ps1 -SkipFrontend
+```
+
+If you want to skip API scenario calls entirely:
+
+```powershell
+./reference-implementations/run-full-verification.ps1 -SkipApiScenarios
 ```
 
 ### Validate CTL via API

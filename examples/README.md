@@ -19,7 +19,7 @@ This walkthrough traces a single turn of an algebra session with student Alice.
 
 ### Setup
 
-- **Domain:** Algebra Level 1 v0.2.0
+- **Domain:** Algebra Level 1 v0.4.0
 - **Student:** Alice (pseudonymous ID: `a3f8c2e1b4d7f9a0c5e2b8d1a6f3c7e4`)
 - **Session:** turn 6 (mid-session)
 - **Current state:** Alice has been doing well (mastery ~0.65) but is now attempting a harder problem

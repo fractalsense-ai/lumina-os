@@ -14,3 +14,10 @@ __pycache__/
 *.swo
 .idea/
 .vscode/
+
+# Frontend
+front-end/node_modules/
+front-end/dist/
+front-end/.env
+front-end/.env.*
+front-end/*.tsbuildinfo

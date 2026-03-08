@@ -20,6 +20,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+# Ensure local reference-implementation imports resolve regardless of launch style.
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -33,11 +38,7 @@ from runtime_loader import load_runtime_context
 # Resolve paths and imports
 # ─────────────────────────────────────────────────────────────
 
-_THIS_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _THIS_DIR.parent
-
-if str(_THIS_DIR) not in sys.path:
-    sys.path.insert(0, str(_THIS_DIR))
 
 _orch_spec = importlib.util.spec_from_file_location(
     "dsa_orchestrator",

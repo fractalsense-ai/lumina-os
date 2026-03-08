@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { Shield, PaperPlaneRight, User, Robot } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -148,7 +147,6 @@ function ChatInterface() {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -245,7 +243,7 @@ function ChatInterface() {
               id="chat-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Type your steps here..."
               disabled={isLoading}
               className="flex-1 text-base"
@@ -266,7 +264,18 @@ function ChatInterface() {
 }
 
 function App() {
-  const [consentGiven, setConsentGiven] = useKV<boolean>('consent_given', false)
+  const [consentGiven, setConsentGiven] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return window.localStorage.getItem('lumina.consent_given') === 'true'
+  })
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('lumina.consent_given', String(consentGiven))
+    }
+  }, [consentGiven])
 
   const handleConsent = () => {
     setConsentGiven(true)

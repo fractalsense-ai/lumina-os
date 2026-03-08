@@ -1,35 +1,39 @@
-# Agriculture Domain Pack — Placeholder
+# Agriculture Domain Pack
 
-**Status:** Placeholder — not yet authored
+**Status:** Experimental / partial implementation
 
 ---
 
-This directory is reserved for the Agriculture domain pack.
+This directory contains early agriculture-domain assets used to test runtime decoupling.
 
-This domain folder will own:
-- domain principles
-- domain rules and invariants
-- domain state model and sensors
-- domain physics and standing-order vocabulary
+Implemented today:
+- `operations-level-1/domain-physics.json`
+- `runtime-config.yaml`
+- prompt overrides under `prompts/`
+- adapter stub under `reference-implementations/`
 
-When authored, it will follow the same structure as [`../education/algebra-level-1/`](../education/algebra-level-1/):
+Not yet complete:
+- no full `operations-level-1` profile/template set
+- no production-ready tool adapter implementations
+- no domain-lib specs equivalent to the education pack
+- no validated end-to-end test scenarios
+
+Current structure:
 
 ```
 agriculture/
-├── README.md                    (this file)
-└── crop-planning-level-1/
-    ├── domain-physics.yaml
-    ├── domain-physics.json
-    ├── tool-adapters/
-    ├── entity-profile-template.yaml
-    ├── prompt-contract-schema.json
-    └── CHANGELOG.md
+├── README.md
+├── runtime-config.yaml
+├── operations-level-1/
+│   ├── domain-physics.json
+│   └── example-subject.yaml
+├── prompts/
+│   ├── domain-system-override.md
+│   └── evidence-extraction.md
+└── reference-implementations/
+    └── runtime-adapters.py
 ```
 
-The agriculture domain could cover:
-- Crop yield calculations
-- Soil composition analysis
-- Planting schedule optimization
-- Weather impact estimation
+Use this pack as an experimental reference, not as a fully validated production domain.
 
-To author this domain pack, follow the authoring guide in [`../README.md`](../README.md) and the full specification in [`../../specs/domain-profile-spec-v1.md`](../../specs/domain-profile-spec-v1.md).
+For authoring guidance, see [`../README.md`](../README.md) and [`../../specs/domain-profile-spec-v1.md`](../../specs/domain-profile-spec-v1.md).
