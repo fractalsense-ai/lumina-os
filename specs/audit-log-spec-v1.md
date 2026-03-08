@@ -79,6 +79,22 @@ Outcome Records
 Task: linear_equations_one_variable_set_1 → partial (score: 0.65)
 Task: linear_equations_one_variable_set_2 → pass (score: 0.88)
 
+Payload Provenance Lineage
+--------------------------
+Runtime Policy Hashes:
+- domain_physics_hash: <sha256>
+- global_prompt_hash: <sha256>
+- domain_prompt_hash: <sha256>
+- turn_interpretation_prompt_hash: <sha256>
+- system_prompt_hash: <sha256>
+
+Turn/Payload Hashes:
+- turn_data_hash: <sha256>
+- prompt_contract_hash: <sha256>
+- tool_results_hash: <sha256>
+- llm_payload_hash: <sha256>
+- response_hash: <sha256>
+
 Mastery Deltas
 --------------
 solve_one_variable:    0.52 → 0.61
@@ -159,6 +175,12 @@ Every audit request is itself recorded as a `TraceEvent`:
 ```
 
 This ensures that even audits are themselves auditable.
+
+---
+
+## Provenance Expectations
+
+When present in CTL metadata, provenance hash lineage fields should be surfaced in audit output so reviewers can trace packet integrity from policy activation through turn input, prompt contract, tool results, model payload, and final response.
 
 ---
 

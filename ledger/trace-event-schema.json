@@ -110,7 +110,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Additional structured metadata. Must not contain PII or transcript content."
+      "description": "Additional structured metadata. Must not contain PII or transcript content. For turn-processing provenance events, metadata SHOULD include runtime provenance keys (domain_pack_id, domain_pack_version, domain_physics_hash, global_prompt_hash, domain_prompt_hash, turn_interpretation_prompt_hash, system_prompt_hash), input hash keys (turn_data_hash, prompt_contract_hash), and when present post-payload hash keys (tool_results_hash, llm_payload_hash, response_hash)."
     }
   }
 }

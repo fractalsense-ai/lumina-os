@@ -39,6 +39,127 @@ function Assert-Condition {
 	}
 }
 
+function Get-ObjectValue {
+	param(
+		[object]$Object,
+		[string]$Key
+	)
+
+	if ($null -eq $Object) {
+		return $null
+	}
+
+	if ($Object -is [hashtable]) {
+		if ($Object.ContainsKey($Key)) {
+			return $Object[$Key]
+		}
+		return $null
+	}
+
+	$prop = $Object.PSObject.Properties[$Key]
+	if ($null -eq $prop) {
+		return $null
+	}
+	return $prop.Value
+}
+
+function Assert-IsSha256Hex {
+	param(
+		[object]$Value,
+		[string]$FieldLabel
+	)
+
+	$text = [string]$Value
+	Assert-Condition ($text -match '^[a-f0-9]{64}$') "$FieldLabel must be a 64-char lowercase SHA-256 hex digest"
+}
+
+function Assert-ProvenanceForLedger {
+	param(
+		[array]$Records,
+		[string]$LedgerLabel,
+		[bool]$ExpectEscalation
+	)
+
+	$requiredRuntimeKeys = @(
+		'domain_pack_id',
+		'domain_pack_version',
+		'domain_physics_hash',
+		'global_prompt_hash',
+		'domain_prompt_hash',
+		'turn_interpretation_prompt_hash',
+		'system_prompt_hash',
+		'turn_data_hash',
+		'prompt_contract_hash'
+	)
+
+	$requiredPostPayloadKeys = @(
+		'tool_results_hash',
+		'llm_payload_hash',
+		'response_hash'
+	)
+
+	$hashKeys = @(
+		'domain_physics_hash',
+		'global_prompt_hash',
+		'domain_prompt_hash',
+		'turn_interpretation_prompt_hash',
+		'system_prompt_hash',
+		'turn_data_hash',
+		'prompt_contract_hash',
+		'tool_results_hash',
+		'llm_payload_hash',
+		'response_hash'
+	)
+
+	$traceRecords = @($Records | Where-Object { $_.record_type -eq 'TraceEvent' })
+	Assert-Condition ($traceRecords.Count -ge 1) "$LedgerLabel must contain at least one TraceEvent"
+
+	$turnTrace = $traceRecords | Where-Object {
+		$md = Get-ObjectValue -Object $_ -Key 'metadata'
+		$null -ne (Get-ObjectValue -Object $md -Key 'turn_data_hash')
+	} | Select-Object -First 1
+	Assert-Condition ($null -ne $turnTrace) "$LedgerLabel missing TraceEvent metadata with turn_data_hash"
+
+	$turnMetadata = Get-ObjectValue -Object $turnTrace -Key 'metadata'
+	foreach ($key in $requiredRuntimeKeys) {
+		$value = Get-ObjectValue -Object $turnMetadata -Key $key
+		Assert-Condition ($null -ne $value -and [string]$value -ne '') "$LedgerLabel missing provenance metadata key '$key'"
+	}
+
+	$postPayloadTrace = $traceRecords | Where-Object {
+		$md = Get-ObjectValue -Object $_ -Key 'metadata'
+		$null -ne (Get-ObjectValue -Object $md -Key 'response_hash')
+	} | Select-Object -First 1
+	Assert-Condition ($null -ne $postPayloadTrace) "$LedgerLabel missing post-payload provenance TraceEvent"
+
+	$postPayloadMetadata = Get-ObjectValue -Object $postPayloadTrace -Key 'metadata'
+	foreach ($key in $requiredPostPayloadKeys) {
+		$value = Get-ObjectValue -Object $postPayloadMetadata -Key $key
+		Assert-Condition ($null -ne $value -and [string]$value -ne '') "$LedgerLabel missing post-payload metadata key '$key'"
+	}
+
+	foreach ($key in $hashKeys) {
+		$value = Get-ObjectValue -Object $postPayloadMetadata -Key $key
+		if ($null -eq $value -or [string]$value -eq '') {
+			$value = Get-ObjectValue -Object $turnMetadata -Key $key
+		}
+		Assert-Condition ($null -ne $value -and [string]$value -ne '') "$LedgerLabel missing hash field '$key' in provenance metadata"
+		Assert-IsSha256Hex -Value $value -FieldLabel "$LedgerLabel.$key"
+	}
+
+	if ($ExpectEscalation) {
+		$escalationRecord = $Records | Where-Object { $_.record_type -eq 'EscalationRecord' } | Select-Object -First 1
+		Assert-Condition ($null -ne $escalationRecord) "$LedgerLabel expected escalation record for provenance check"
+		$escalationMetadata = Get-ObjectValue -Object $escalationRecord -Key 'metadata'
+		Assert-Condition ($null -ne $escalationMetadata) "$LedgerLabel EscalationRecord missing metadata"
+		foreach ($key in @('domain_physics_hash', 'turn_data_hash', 'prompt_contract_hash')) {
+			$value = Get-ObjectValue -Object $escalationMetadata -Key $key
+			Assert-Condition ($null -ne $value -and [string]$value -ne '') "$LedgerLabel EscalationRecord missing provenance key '$key'"
+			Assert-IsSha256Hex -Value $value -FieldLabel "$LedgerLabel.escalation.$key"
+		}
+	}
+}
+
 Write-Section "Health Check"
 $health = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/health"
 Write-Host "API status: $($health.status) provider=$($health.provider)"
@@ -148,6 +269,13 @@ $exhaustRecords = Get-Content $exhaustLedger | ForEach-Object { $_ | ConvertFrom
 $exhaustEscCount = @($exhaustRecords | Where-Object { $_.record_type -eq "EscalationRecord" }).Count
 Assert-Condition ($exhaustEscCount -ge 1) "Expected EscalationRecord in standing-order exhaustion ledger"
 Write-Host "Exhaustion EscalationRecord count: $exhaustEscCount"
+
+Write-Section "Validate Provenance Metadata"
+$stableRecords = Get-Content $noEscLedger | ForEach-Object { $_ | ConvertFrom-Json }
+Assert-ProvenanceForLedger -Records $stableRecords -LedgerLabel "stable" -ExpectEscalation $false
+Assert-ProvenanceForLedger -Records $escRecords -LedgerLabel "major-drift" -ExpectEscalation $true
+Assert-ProvenanceForLedger -Records $exhaustRecords -LedgerLabel "exhaustion" -ExpectEscalation $true
+Write-Host "Provenance metadata checks passed for all ledgers."
 
 Write-Section "Result"
 Write-Host "Pre-integration scenarios passed."

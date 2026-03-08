@@ -124,7 +124,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Additional structured metadata. Must not contain PII or transcript content."
+      "description": "Additional structured metadata. Must not contain PII or transcript content. Escalation records SHOULD carry the same provenance lineage keys as associated turn traces when available, including runtime provenance hashes and turn/prompt hashes."
     }
   }
 }

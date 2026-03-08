@@ -2,7 +2,7 @@
 
 **Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-08
 
 ---
 
@@ -164,10 +164,16 @@ One turn of a D.S.A. session:
 7. [Domain/Action] Orchestrator evaluates module invariants and state signals, then resolves standing order/escalation decisions
 8. [Action] Decision tier calculated: ok / minor / major / escalate
 9. [Action] Standing order applied if needed
-10. [CTL] TraceEvent appended (state hash + decision + evidence summary)
+10. [CTL] TraceEvent appended (state hash + decision + evidence summary + provenance hash lineage)
 11. [Action] Response generated (grounded, within Domain scope)
 12. -> repeat from step 3
 ```
+
+Provenance hash lineage fields recorded in CTL metadata (when applicable):
+- Runtime policy/prompt hashes: `domain_physics_hash`, `global_prompt_hash`, `domain_prompt_hash`, `turn_interpretation_prompt_hash`, `system_prompt_hash`
+- Runtime policy identity: `domain_pack_id`, `domain_pack_version`
+- Turn/prompt hashes: `turn_data_hash`, `prompt_contract_hash`
+- Post-payload hashes: `tool_results_hash`, `llm_payload_hash`, `response_hash`
 
 ---
 

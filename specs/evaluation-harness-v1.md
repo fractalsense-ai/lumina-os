@@ -74,6 +74,18 @@ These tests verify that no conversation content is written to any persistent sto
 - Assert: Session proceeds only after updated hash commitment exists
 - Pass criterion: Updated policy cannot run without updated CTL commitment
 
+**TC-CTL-007: Turn trace includes provenance lineage hashes**
+- Trigger: Run one deterministic turn in an active committed module
+- Assert: At least one `TraceEvent` metadata object includes runtime provenance keys: `domain_pack_id`, `domain_pack_version`, `domain_physics_hash`, `global_prompt_hash`, `domain_prompt_hash`, `turn_interpretation_prompt_hash`, `system_prompt_hash`
+- Assert: The same turn lineage includes `turn_data_hash` and `prompt_contract_hash`
+- Pass criterion: Required provenance keys are present and each hash value matches SHA-256 hex format
+
+**TC-CTL-008: Post-payload provenance hashes recorded**
+- Trigger: Run one deterministic turn end-to-end through prompt contract, tool policy, and response generation
+- Assert: At least one `TraceEvent` metadata object includes `tool_results_hash`, `llm_payload_hash`, and `response_hash`
+- Assert: Hash values match SHA-256 hex format
+- Pass criterion: Post-payload hash lineage is present and valid
+
 ---
 
 ### Category 3: Invariant and Standing Order Bounds
