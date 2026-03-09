@@ -408,6 +408,23 @@ Current baseline includes:
 - Integration tests for auth endpoints in `reference-implementations/lumina-api-server.py`
 - Integration tests for `/api/chat`, `/api/tool/{tool_id}`, and `/api/ctl/validate`
 
+### Run frontend unit tests (Vitest)
+
+```powershell
+Push-Location .\front-end
+npm.cmd run test:unit
+Pop-Location
+```
+
+### Run frontend E2E smoke tests (Playwright)
+
+```powershell
+Push-Location .\front-end
+npm.cmd exec playwright install chromium
+npm.cmd run test:e2e
+Pop-Location
+```
+
 The full verification script also runs secret hygiene checks for local key storage at `front-end/lib/openaikey.md`.
 
 ### Explore the architecture

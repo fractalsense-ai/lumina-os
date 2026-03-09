@@ -1,0 +1,55 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip install fastapi uvicorn pydantic
+
+      - name: Secret hygiene check
+        shell: pwsh
+        run: ./reference-implementations/check-local-secret-hygiene.ps1
+
+      - name: Backend tests
+        run: python -m pytest tests -q
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: front-end/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: front-end
+        run: npm ci
+
+      - name: Frontend unit tests
+        working-directory: front-end
+        run: npm run test:unit
+
+      - name: Install Playwright browser
+        working-directory: front-end
+        run: npm exec playwright install chromium
+
+      - name: Frontend e2e smoke tests
+        working-directory: front-end
+        run: npm run test:e2e
