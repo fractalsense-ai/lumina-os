@@ -86,6 +86,10 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "List of tool adapter IDs available in this domain"
+    },
+    "permissions": {
+      "$ref": "rbac-permission-schema-v1.json",
+      "description": "chmod-style permission block controlling read, write, and execute access to this module. See rbac-permission-schema-v1.json for the full schema."
     }
   },
   "$defs": {

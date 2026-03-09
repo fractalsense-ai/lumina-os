@@ -90,7 +90,7 @@ Run the converter to validate and produce the JSON:
 
 ```bash
 python reference-implementations/yaml-to-json-converter.py \
-  domain-packs/education/algebra-level-1/domain-physics.yaml \
+  domain-packs/education/modules/algebra-level-1/domain-physics.yaml \
   --schema standards/domain-physics-schema-v1.json
 ```
 
@@ -102,7 +102,7 @@ Before the domain pack is used operationally, commit its hash to the CTL:
 
 ```bash
 python reference-implementations/ctl-commitment-validator.py \
-  --commit domain-packs/education/algebra-level-1/domain-physics.json \
+  --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger path/to/ledger.jsonl
 ```
@@ -211,9 +211,60 @@ Multi-domain sessions are advanced usage and require explicit Meta Authority app
 
 ---
 
+## Access Control
+
+Every domain-physics document must include a `permissions` block that controls who can read, write, and execute the module. Permissions follow a UNIX chmod-style octal model.
+
+### Permission Block
+
+```yaml
+permissions:
+  mode: "750"                          # rwxr-x---
+  owner: "da_algebra_lead_001"         # pseudonymous_id of owning Domain Authority
+  group: "domain_authority"            # role receiving group-level bits
+  acl:                                 # optional extended ACL
+    - role: qa
+      access: rx
+      scope: evaluation_only
+    - role: auditor
+      access: r
+      scope: ctl_records_only
+    - role: user
+      access: x
+```
+
+### Permission Bits
+
+| Bit | Value | Meaning |
+|-----|-------|---------|
+| r | 4 | Read domain physics, session data, CTL records |
+| w | 2 | Author or modify domain packs, invariants, standing orders |
+| x | 1 | Run sessions, trigger tool adapters |
+
+The runtime resolves each authenticated user against the module's owner, group, and others categories, then checks the corresponding octal digit for the required permission bit. `root` bypasses all checks.
+
+### Runtime Config Access Control
+
+The runtime configuration (`runtime-config.yaml`) may also declare an `access_control` block listing which roles may use the module at runtime:
+
+```yaml
+access_control:
+  required_role: user
+  allowed_roles:
+    - root
+    - domain_authority
+    - it_support
+    - qa
+    - user
+```
+
+For the full access control specification, see [`rbac-spec-v1.md`](rbac-spec-v1.md).
+
+---
+
 ## References
 
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json)
 - [`../domain-packs/README.md`](../domain-packs/README.md)
-- [`../domain-packs/education/algebra-level-1/`](../domain-packs/education/algebra-level-1/) — worked example
+- [`../domain-packs/education/modules/algebra-level-1/`](../domain-packs/education/modules/algebra-level-1/) — worked example
 - [`../reference-implementations/yaml-to-json-converter.py`](../reference-implementations/yaml-to-json-converter.py)

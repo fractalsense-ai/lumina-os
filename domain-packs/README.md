@@ -38,17 +38,18 @@ domain-packs/
 │   │   ├── compressed-state-estimators.md
 │   │   ├── zpd-monitor-spec-v1.md
 │   │   └── fatigue-estimation-spec-v1.md
-│   └── algebra-level-1/        ← complete worked example
-│       ├── domain-physics.yaml    (source — human-authored)
-│       ├── domain-physics.json    (derived — machine-authoritative)
-│       ├── tool-adapters/
-│       │   ├── algebra-parser-adapter-v1.yaml
-│       │   ├── calculator-adapter-v1.yaml
-│       │   └── substitution-checker-adapter-v1.yaml
-│       ├── student-profile-template.yaml
-│       ├── example-student-alice.yaml
-│       ├── prompt-contract-schema.json
-│       └── CHANGELOG.md
+│   └─ modules/
+│       └─ algebra-level-1/        ← complete worked example
+│           ├─ domain-physics.yaml    (source — human-authored)
+│           ├─ domain-physics.json    (derived — machine-authoritative)
+│           ├─ tool-adapters/
+│           │   ├─ algebra-parser-adapter-v1.yaml
+│           │   ├─ calculator-adapter-v1.yaml
+│           │   └─ substitution-checker-adapter-v1.yaml
+│           ├─ student-profile-template.yaml
+│           ├─ example-student-alice.yaml
+│           ├─ prompt-contract-schema.json
+│           └─ CHANGELOG.md
 └── agriculture/
   └── README.md               ← domain principles/rules/states/physics index
 ```
@@ -65,7 +66,7 @@ mkdir -p domain-packs/{org}/{subject-level}
 
 ### 2. Write domain-physics.yaml
 
-Use the template from `algebra-level-1/domain-physics.yaml` as a starting point. Your YAML must conform to [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json).
+Use the template from `modules/algebra-level-1/domain-physics.yaml` as a starting point. Your YAML must conform to [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json).
 
 ### 3. Validate and convert to JSON
 
@@ -194,7 +195,7 @@ Packs that fail validation are not usable.
 
 | Domain | Pack | Version | Status |
 |--------|------|---------|--------|
-| Education — Algebra Level 1 | `education/algebra-level-1` | 0.4.0 | Active |
+| Education — Algebra Level 1 | `education/modules/algebra-level-1` | 0.4.0 | Active |
 | Agriculture | `agriculture/` | — | Placeholder |
 
 ---

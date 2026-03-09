@@ -277,6 +277,59 @@ Assert-ProvenanceForLedger -Records $escRecords -LedgerLabel "major-drift" -Expe
 Assert-ProvenanceForLedger -Records $exhaustRecords -LedgerLabel "exhaustion" -ExpectEscalation $true
 Write-Host "Provenance metadata checks passed for all ledgers."
 
+# ────────────────────────────────────────────────────────────
+# Auth Flow Scenarios (against live API)
+# ────────────────────────────────────────────────────────────
+
+Write-Section "Auth: Register + Login + Token Flow"
+
+# Register first user (bootstrap → root)
+$regBody = @{
+	username = "integ_root_$(Get-Random)"
+	password = "TestPass123!"
+} | ConvertTo-Json -Depth 4
+
+$regResp = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/auth/register" -ContentType "application/json" -Body $regBody
+Assert-Condition ($null -ne (Get-ObjectValue $regResp "access_token")) "Register should return access_token"
+Assert-Condition ((Get-ObjectValue $regResp "role") -eq "root") "First registered user should be root (bootstrap)"
+$rootToken = (Get-ObjectValue $regResp "access_token")
+Write-Host "Bootstrap register passed (user promoted to root)."
+
+# Login with the same user
+$loginBody = ($regBody | ConvertFrom-Json)
+$loginPayload = @{
+	username = $loginBody.username
+	password = $loginBody.password
+} | ConvertTo-Json -Depth 4
+
+$loginResp = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/auth/login" -ContentType "application/json" -Body $loginPayload
+Assert-Condition ($null -ne (Get-ObjectValue $loginResp "access_token")) "Login should return access_token"
+Write-Host "Login passed."
+
+# Access /api/auth/me with token
+$meHeaders = @{ Authorization = "Bearer $rootToken" }
+$meResp = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/auth/me" -Headers $meHeaders
+Assert-Condition ((Get-ObjectValue $meResp "role") -eq "root") "/auth/me should return role=root"
+Write-Host "Auth /me endpoint passed."
+
+# Authenticated chat with token
+$authChatBody = @{
+	message = "health check with auth"
+	deterministic_response = $true
+	turn_data_override = @{
+		correctness = "correct"
+		frustration_marker_count = 0
+		step_count = 1
+		hint_used = $false
+		repeated_error = $false
+		off_task_ratio = 0.0
+		response_latency_sec = 3
+	}
+} | ConvertTo-Json -Depth 6
+$authChatResp = Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/chat" -ContentType "application/json" -Body $authChatBody -Headers $meHeaders
+Assert-Condition ($null -ne (Get-ObjectValue $authChatResp "response")) "Authenticated chat should return response"
+Write-Host "Authenticated chat passed."
+
 Write-Section "Result"
 Write-Host "Pre-integration scenarios passed."
 Write-Host "Session IDs: $noEscSession, $escSession, $exhaustSession"

@@ -49,8 +49,8 @@ Design constraints:
 Usage:
         from dsa_orchestrator import DSAOrchestrator, load_domain_physics
         from yaml_loader import load_yaml
-        domain = load_domain_physics("domain-packs/education/algebra-level-1/domain-physics.json")
-        profile = load_yaml("domain-packs/education/algebra-level-1/example-student-alice.yaml")
+        domain = load_domain_physics("domain-packs/education/modules/algebra-level-1/domain-physics.json")
+        profile = load_yaml("domain-packs/education/modules/algebra-level-1/example-student-alice.yaml")
         # For a domain with no domain lib:
         orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
         # For the education domain example, wire up the ZPD monitor externally:

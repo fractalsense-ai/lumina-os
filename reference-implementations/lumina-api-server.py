@@ -26,12 +26,24 @@ _THIS_DIR = Path(__file__).resolve().parent
 if str(_THIS_DIR) not in sys.path:
     sys.path.insert(0, str(_THIS_DIR))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
+from auth import (
+    AuthError,
+    TokenExpiredError,
+    TokenInvalidError,
+    VALID_ROLES,
+    create_jwt,
+    hash_password,
+    verify_jwt,
+    verify_password,
+)
 from filesystem_persistence import FilesystemPersistenceAdapter
+from permissions import Operation, check_permission
 from persistence_adapter import PersistenceAdapter
 from runtime_loader import load_runtime_context
 
@@ -62,6 +74,12 @@ RUNTIME_CONFIG_PATH = os.environ.get("LUMINA_RUNTIME_CONFIG_PATH")
 PERSISTENCE_BACKEND = os.environ.get("LUMINA_PERSISTENCE_BACKEND", "filesystem").strip().lower()
 DB_URL = os.environ.get("LUMINA_DB_URL")
 ENFORCE_POLICY_COMMITMENT = os.environ.get("LUMINA_ENFORCE_POLICY_COMMITMENT", "true").strip().lower() not in {"0", "false", "no"}
+CORS_ORIGINS: list[str] = [
+    o.strip()
+    for o in os.environ.get("LUMINA_CORS_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]
+BOOTSTRAP_MODE: bool = os.environ.get("LUMINA_BOOTSTRAP_MODE", "true").strip().lower() not in {"0", "false", "no"}
 
 RUNTIME = load_runtime_context(_REPO_ROOT, runtime_config_path=RUNTIME_CONFIG_PATH)
 
@@ -596,7 +614,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -632,12 +650,98 @@ class CtlValidateResponse(BaseModel):
     result: dict[str, Any]
 
 
+# ── Auth request/response models ─────────────────────────────
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "user"
+    governed_modules: list[str] | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    role: str
+
+
+class UserResponse(BaseModel):
+    user_id: str
+    username: str
+    role: str
+    governed_modules: list[str]
+    active: bool
+
+
+# ── Auth middleware ───────────────────────────────────────────
+
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = None,
+) -> dict[str, Any] | None:
+    """Extract and verify JWT from Authorization header.
+
+    Returns the decoded token payload or None when no token is provided
+    (allows endpoints to choose whether auth is required).
+    """
+    if credentials is None:
+        return None
+    try:
+        payload = verify_jwt(credentials.credentials)
+    except TokenExpiredError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except (TokenInvalidError, AuthError):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return payload
+
+
+def require_auth(user: dict[str, Any] | None) -> dict[str, Any]:
+    """Raise 401 if no authenticated user."""
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user
+
+
+def require_role(user: dict[str, Any], *allowed_roles: str) -> None:
+    """Raise 403 if user role is not in *allowed_roles*."""
+    if user.get("role") not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest) -> ChatResponse:
+async def chat(
+    req: ChatRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> ChatResponse:
     session_id = req.session_id or str(uuid.uuid4())
 
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    # Resolve authenticated user (optional — unauthenticated allowed when bootstrap)
+    user = await get_current_user(credentials)
+
+    # When auth is provided, check module-level execute permission
+    if user is not None:
+        domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(DOMAIN_PHYSICS_PATH))
+        module_perms = domain.get("permissions")
+        if module_perms:
+            has_access = check_permission(
+                user_id=user["sub"],
+                user_role=user["role"],
+                module_permissions=module_perms,
+                operation=Operation.EXECUTE,
+            )
+            if not has_access:
+                raise HTTPException(status_code=403, detail="Module access denied")
 
     try:
         result = await run_in_threadpool(
@@ -679,7 +783,23 @@ async def domain_info() -> dict[str, Any]:
 
 
 @app.post("/api/tool/{tool_id}", response_model=ToolResponse)
-async def run_tool(tool_id: str, req: ToolRequest) -> ToolResponse:
+async def run_tool(
+    tool_id: str,
+    req: ToolRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> ToolResponse:
+    # Tool invocation requires at least execute permission
+    user = await get_current_user(credentials)
+    if user is not None:
+        domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(DOMAIN_PHYSICS_PATH))
+        module_perms = domain.get("permissions")
+        if module_perms and not check_permission(
+            user_id=user["sub"],
+            user_role=user["role"],
+            module_permissions=module_perms,
+            operation=Operation.EXECUTE,
+        ):
+            raise HTTPException(status_code=403, detail="Module access denied")
     try:
         result = await run_in_threadpool(invoke_runtime_tool, tool_id, req.payload)
     except Exception as exc:
@@ -689,14 +809,165 @@ async def run_tool(tool_id: str, req: ToolRequest) -> ToolResponse:
 
 
 @app.get("/api/ctl/validate", response_model=CtlValidateResponse)
-async def validate_ctl(session_id: str | None = None) -> CtlValidateResponse:
+async def validate_ctl(
+    session_id: str | None = None,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> CtlValidateResponse:
     """Validate CTL hash-chain integrity for one session or all known sessions."""
+    user = await get_current_user(credentials)
+    if user is not None:
+        require_role(user, "root", "domain_authority", "qa", "auditor")
     try:
         result = await run_in_threadpool(PERSISTENCE.validate_ctl_chain, session_id)
     except Exception as exc:
         log.exception("CTL validation failed")
         raise HTTPException(status_code=500, detail=str(exc))
     return CtlValidateResponse(result=result)
+
+
+# ─────────────────────────────────────────────────────────────
+# Auth Endpoints
+# ─────────────────────────────────────────────────────────────
+
+
+@app.post("/api/auth/register", response_model=TokenResponse)
+async def register(req: RegisterRequest) -> TokenResponse:
+    """Register a new user.
+
+    In bootstrap mode the first user is automatically assigned the ``root`` role.
+    Non-bootstrap registration of privileged roles requires an authenticated root user.
+    """
+    if req.role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {req.role}")
+
+    if not req.username or not req.password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+
+    if len(req.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    existing = await run_in_threadpool(PERSISTENCE.get_user_by_username, req.username)
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Username already taken")
+
+    # Bootstrap: first user auto-promoted to root
+    all_users = await run_in_threadpool(PERSISTENCE.list_users)
+    role = req.role
+    if BOOTSTRAP_MODE and len(all_users) == 0:
+        role = "root"
+        log.info("Bootstrap mode: first user promoted to root")
+
+    user_id = str(uuid.uuid4())
+    pw_hash = hash_password(req.password)
+
+    await run_in_threadpool(
+        PERSISTENCE.create_user,
+        user_id,
+        req.username,
+        pw_hash,
+        role,
+        req.governed_modules,
+    )
+
+    token = create_jwt(
+        user_id=user_id,
+        role=role,
+        governed_modules=req.governed_modules or [],
+    )
+
+    log.info("Registered user %s (%s) with role %s", req.username, user_id, role)
+    return TokenResponse(access_token=token, user_id=user_id, role=role)
+
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+async def login(req: LoginRequest) -> TokenResponse:
+    """Authenticate and return a JWT."""
+    if not req.username or not req.password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+
+    user = await run_in_threadpool(PERSISTENCE.get_user_by_username, req.username)
+    if user is None or not verify_password(req.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not user.get("active", True):
+        raise HTTPException(status_code=403, detail="Account deactivated")
+
+    token = create_jwt(
+        user_id=user["user_id"],
+        role=user["role"],
+        governed_modules=user.get("governed_modules") or [],
+    )
+
+    return TokenResponse(
+        access_token=token,
+        user_id=user["user_id"],
+        role=user["role"],
+    )
+
+
+@app.post("/api/auth/refresh", response_model=TokenResponse)
+async def refresh(
+    credentials: HTTPAuthorizationCredentials = _bearer_scheme,  # type: ignore[assignment]
+) -> TokenResponse:
+    """Issue a fresh token for an authenticated user."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    # Re-read from persistence to get latest role/modules
+    user = await run_in_threadpool(PERSISTENCE.get_user, user_data["sub"])
+    if user is None or not user.get("active", True):
+        raise HTTPException(status_code=401, detail="User not found or deactivated")
+
+    token = create_jwt(
+        user_id=user["user_id"],
+        role=user["role"],
+        governed_modules=user.get("governed_modules") or [],
+    )
+    return TokenResponse(
+        access_token=token,
+        user_id=user["user_id"],
+        role=user["role"],
+    )
+
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def me(
+    credentials: HTTPAuthorizationCredentials = _bearer_scheme,  # type: ignore[assignment]
+) -> UserResponse:
+    """Return the profile of the currently authenticated user."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    user = await run_in_threadpool(PERSISTENCE.get_user, user_data["sub"])
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(
+        user_id=user["user_id"],
+        username=user["username"],
+        role=user["role"],
+        governed_modules=user.get("governed_modules") or [],
+        active=user.get("active", True),
+    )
+
+
+@app.get("/api/auth/users", response_model=list[UserResponse])
+async def list_all_users(
+    credentials: HTTPAuthorizationCredentials = _bearer_scheme,  # type: ignore[assignment]
+) -> list[UserResponse]:
+    """List all users (root and it_support only)."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    require_role(user_data, "root", "it_support")
+    users = await run_in_threadpool(PERSISTENCE.list_users)
+    return [
+        UserResponse(
+            user_id=u["user_id"],
+            username=u["username"],
+            role=u["role"],
+            governed_modules=u.get("governed_modules") or [],
+            active=u.get("active", True),
+        )
+        for u in users
+    ]
 
 
 if __name__ == "__main__":
@@ -708,4 +979,6 @@ if __name__ == "__main__":
     log.info("Domain physics: %s", DOMAIN_PHYSICS_PATH)
     log.info("Subject profile: %s", SUBJECT_PROFILE_PATH)
     log.info("CTL directory: %s", CTL_DIR)
+    log.info("Bootstrap mode: %s", BOOTSTRAP_MODE)
+    log.info("CORS origins: %s", CORS_ORIGINS)
     uvicorn.run(app, host="0.0.0.0", port=port)

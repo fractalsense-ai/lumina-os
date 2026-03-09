@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/rbac-permission-schema-v1.json",
+  "title": "RBAC Module Permission Schema V1",
+  "description": "JSON Schema for the permissions block in a Project Lumina domain-physics document. Defines chmod-style octal mode, ownership, and optional extended ACL entries.",
+  "type": "object",
+  "required": ["mode", "owner", "group"],
+  "additionalProperties": false,
+  "properties": {
+    "mode": {
+      "type": "string",
+      "pattern": "^[0-7]{3}$",
+      "description": "Three-digit UNIX-style octal permission mode. Each digit is the sum of read (4), write (2), and execute (1) bits for owner, group, and others respectively. Example: '750' = rwxr-x---."
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pseudonymous ID of the owning Domain Authority. Must match a domain_authority.pseudonymous_id in the same domain-physics document or in the governance user registry."
+    },
+    "group": {
+      "type": "string",
+      "enum": [
+        "root",
+        "domain_authority",
+        "it_support",
+        "qa",
+        "auditor",
+        "user"
+      ],
+      "description": "Role name that maps to the group permission bits. Any authenticated user with this role receives the group-level access defined by the middle octal digit."
+    },
+    "acl": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/acl_entry"
+      },
+      "description": "Optional extended ACL entries granting additional access beyond the octal mode. ACL entries can grant but never revoke access already permitted by the mode bits."
+    }
+  },
+  "$defs": {
+    "acl_entry": {
+      "type": "object",
+      "required": ["role", "access"],
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "root",
+            "domain_authority",
+            "it_support",
+            "qa",
+            "auditor",
+            "user"
+          ],
+          "description": "Canonical role ID receiving the access grant."
+        },
+        "access": {
+          "type": "string",
+          "pattern": "^[rwx]{1,3}$",
+          "description": "Permission characters granted: any combination of r (read), w (write), x (execute). Example: 'rx' grants read and execute."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Optional scope qualifier limiting what the access grant applies to. Values are module-defined (e.g., 'evaluation_only', 'ctl_records_only'). When omitted, the grant applies to the full module."
+        }
+      }
+    }
+  }
+}

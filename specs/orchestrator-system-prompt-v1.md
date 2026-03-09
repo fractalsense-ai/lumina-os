@@ -94,7 +94,7 @@ The Orchestrator formats and appends these fields as a `# DOMAIN CONFIGURATION` 
 The following override produces **exactly the same Conversational Interface behaviour** as the hardcoded education-specific prompt that existed in v1.0.0 of this spec. No regression for the education domain.
 
 ```yaml
-# In domain-packs/education/algebra-level-1/domain-physics.yaml
+# In domain-packs/education/modules/algebra-level-1/domain-physics.yaml
 conversational_interface_overrides:
   target_audience: "teenagers (middle school, ages 11–14)"
   tone_profile: >
@@ -207,5 +207,5 @@ context without forcing a theme.
 |---|---|
 | [`specs/dsa-framework-v1.md`](dsa-framework-v1.md) | Defines the A (Action) pillar that produces the `prompt_contract` |
 | [`standards/prompt-contract-schema-v1.json`](../standards/prompt-contract-schema-v1.json) | Universal base JSON schema that all `prompt_contract` objects must conform to |
-| [`domain-packs/education/algebra-level-1/prompt-contract-schema.json`](../domain-packs/education/algebra-level-1/prompt-contract-schema.json) | Example: education domain pack's extension of the universal base schema |
+| [`domain-packs/education/modules/algebra-level-1/prompt-contract-schema.json`](../domain-packs/education/modules/algebra-level-1/prompt-contract-schema.json) | Example: education domain pack's extension of the universal base schema |
 | [`reference-implementations/dsa-orchestrator.py`](../reference-implementations/dsa-orchestrator.py) | Reference implementation that produces the `prompt_contract` |

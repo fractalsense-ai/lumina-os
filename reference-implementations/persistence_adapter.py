@@ -48,6 +48,44 @@ class PersistenceAdapter(ABC):
     ) -> bool:
         """Return True when CTL contains a matching policy CommitmentRecord."""
 
+    # ── User / Auth persistence ──────────────────────────────
+
+    @abstractmethod
+    def create_user(
+        self,
+        user_id: str,
+        username: str,
+        password_hash: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Persist a new user record.  Returns the stored representation."""
+
+    @abstractmethod
+    def get_user(self, user_id: str) -> dict[str, Any] | None:
+        """Return user record by ID, or None."""
+
+    @abstractmethod
+    def get_user_by_username(self, username: str) -> dict[str, Any] | None:
+        """Return user record by username, or None."""
+
+    @abstractmethod
+    def list_users(self) -> list[dict[str, Any]]:
+        """Return all user records (password hashes excluded)."""
+
+    @abstractmethod
+    def update_user_role(
+        self,
+        user_id: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        """Update role/governed_modules for an existing user. Returns updated record or None."""
+
+    @abstractmethod
+    def deactivate_user(self, user_id: str) -> bool:
+        """Soft-delete a user. Returns True if found and deactivated."""
+
 
 class NullPersistenceAdapter(PersistenceAdapter):
     """No-op adapter mainly used for tests; keeps session state in-memory only."""
@@ -111,4 +149,69 @@ class NullPersistenceAdapter(PersistenceAdapter):
         subject_version: str | None,
         subject_hash: str,
     ) -> bool:
+        return True
+
+    # ── User / Auth (in-memory) ──────────────────────────────
+
+    def __init_users(self) -> None:
+        if not hasattr(self, "_users"):
+            self._users: dict[str, dict[str, Any]] = {}
+
+    def create_user(
+        self,
+        user_id: str,
+        username: str,
+        password_hash: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any]:
+        self.__init_users()
+        record = {
+            "user_id": user_id,
+            "username": username,
+            "password_hash": password_hash,
+            "role": role,
+            "governed_modules": governed_modules or [],
+            "active": True,
+        }
+        self._users[user_id] = record
+        return {k: v for k, v in record.items() if k != "password_hash"}
+
+    def get_user(self, user_id: str) -> dict[str, Any] | None:
+        self.__init_users()
+        return self._users.get(user_id)
+
+    def get_user_by_username(self, username: str) -> dict[str, Any] | None:
+        self.__init_users()
+        for u in self._users.values():
+            if u["username"] == username:
+                return u
+        return None
+
+    def list_users(self) -> list[dict[str, Any]]:
+        self.__init_users()
+        return [
+            {k: v for k, v in u.items() if k != "password_hash"}
+            for u in self._users.values()
+        ]
+
+    def update_user_role(
+        self,
+        user_id: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        self.__init_users()
+        if user_id not in self._users:
+            return None
+        self._users[user_id]["role"] = role
+        if governed_modules is not None:
+            self._users[user_id]["governed_modules"] = governed_modules
+        return {k: v for k, v in self._users[user_id].items() if k != "password_hash"}
+
+    def deactivate_user(self, user_id: str) -> bool:
+        self.__init_users()
+        if user_id not in self._users:
+            return False
+        self._users[user_id]["active"] = False
         return True

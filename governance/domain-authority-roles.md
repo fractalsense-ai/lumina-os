@@ -1,8 +1,8 @@
 # Domain Authority Roles — Project Lumina
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-09
 
 ---
 
@@ -118,9 +118,59 @@ The Subject/Target level has a limited form of Domain Authority over their own s
 
 ---
 
+## Operational Roles (RBAC)
+
+Project Lumina defines six operational roles for runtime access control. These roles map onto the four-level governance hierarchy above and are enforced via JWT-authenticated API requests and chmod-style module permissions.
+
+| Role | ID | Hierarchy Level | Default Module Mode | Description |
+|------|----|----------------|--------------------:|-------------|
+| **Root** | `root` | 0 | `777` | OS-level administrator. Bypasses all permission checks. User management, system configuration, institution-wide policy. Maps to **Macro Authority**. |
+| **Domain Authority** | `domain_authority` | 1 | `750` | Subject-matter expert. Authors and governs domain packs. Scoped to specific modules via `governed_modules` JWT claim. Maps to **Meso** or **Micro Authority**. |
+| **IT Support** | `it_support` | 2 | — | Tier-1 technical support. Diagnostics, runtime monitoring, session troubleshooting. Cross-cutting role. |
+| **Quality Assurance** | `qa` | 2 | — | Conformance testing. Runs evaluation harness, regression tests on assigned modules. Cross-cutting role. |
+| **Auditor** | `auditor` | 2 | — | Compliance / audit officer. Read-only access to CTL records, audit logs, and session traces within scope. Cross-cutting role. |
+| **Standard User** | `user` | 3 | — | Session participant (student, patient, operator). Execute-only access on permitted modules. Maps to **Subject/Target**. |
+
+### Role-to-Governance Mapping
+
+| Governance Level | Governance Title | RBAC Role(s) |
+|-----------------|-----------------|--------------|
+| 1 — Macro | School Board / Admin | `root` |
+| 2 — Meso | Department Head | `domain_authority` (Meta Authority scope) |
+| 3 — Micro | Teacher / Operator | `domain_authority` (module scope) |
+| 4 — Subject | Student / Patient | `user` |
+| (cross-cutting) | IT Support | `it_support` |
+| (cross-cutting) | QA Tester | `qa` |
+| (cross-cutting) | Compliance | `auditor` |
+
+### Permission Model (chmod)
+
+Each domain-pack module declares a `permissions` block with a 3-digit UNIX-style octal mode:
+
+```
+  u   g   o        u = owner (Domain Authority)
+  7   5   0        g = group  (role matching permissions.group)
+  rwx r-x ---      o = others (any other authenticated user)
+```
+
+Permission bits: **r** (4) = read, **w** (2) = write, **x** (1) = execute.
+
+- **Read** — view domain physics, session data, CTL records
+- **Write** — author/modify domain packs, invariants, standing orders
+- **Execute** — run sessions, trigger tool adapters
+
+Optional `acl` entries provide fine-grained overrides beyond owner/group/others.
+
+For the full specification, see [`../specs/rbac-spec-v1.md`](../specs/rbac-spec-v1.md).
+
+---
+
 ## References
 
 - [`GOVERNANCE.md`](../GOVERNANCE.md) — fractal authority structure
 - [`meta-authority-policy-template.yaml`](meta-authority-policy-template.yaml) — Meta Authority policy
+- [`../specs/rbac-spec-v1.md`](../specs/rbac-spec-v1.md) — RBAC specification
+- [`../standards/rbac-permission-schema-v1.json`](../standards/rbac-permission-schema-v1.json) — permission schema
+- [`../standards/role-definition-schema-v1.json`](../standards/role-definition-schema-v1.json) — role definition schema
 - Consent contract specification — see the relevant domain pack's consent documentation (e.g., [`../domain-packs/education/world-sim/magic-circle-consent-v1.md`](../domain-packs/education/world-sim/magic-circle-consent-v1.md) for education)
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements

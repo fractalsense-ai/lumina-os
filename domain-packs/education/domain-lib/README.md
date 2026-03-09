@@ -10,7 +10,7 @@
 
 This directory contains the education domain's **domain lib** — passive specification documents that define the estimators feeding the compressed state for education-domain sessions.
 
-These files are **reference specifications**, not executable code. They describe data models, threshold tables, estimation algorithms, and decision criteria that the orchestrator and LLM read as context. For active, callable tools that accept input and produce deterministic output, see the [`tool-adapters/`](../algebra-level-1/tool-adapters/) directory within each subject-level pack.
+These files are **reference specifications**, not executable code. They describe data models, threshold tables, estimation algorithms, and decision criteria that the orchestrator and LLM read as context. For active, callable tools that accept input and produce deterministic output, see the [`tool-adapters/`](../modules/algebra-level-1/tool-adapters/) directory within each subject-level pack.
 
 Each component defines a deterministic heuristic that takes structured evidence as input and produces an updated state value. No ML models are used.
 

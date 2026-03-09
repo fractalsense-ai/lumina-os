@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/role-definition-schema-v1.json",
+  "title": "Lumina Role Definition Schema V1",
+  "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical role in the system.",
+  "type": "object",
+  "required": ["role_id", "role_name", "hierarchy_level", "description", "default_module_mode"],
+  "additionalProperties": false,
+  "properties": {
+    "role_id": {
+      "type": "string",
+      "enum": [
+        "root",
+        "domain_authority",
+        "it_support",
+        "qa",
+        "auditor",
+        "user"
+      ],
+      "description": "Unique canonical identifier for the role."
+    },
+    "role_name": {
+      "type": "string",
+      "description": "Human-readable display name for the role."
+    },
+    "hierarchy_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "Position in the role hierarchy. 0 = highest (root), 3 = lowest (user). Peers share the same level."
+    },
+    "description": {
+      "type": "string",
+      "description": "Purpose and responsibilities of this role."
+    },
+    "default_module_mode": {
+      "type": "string",
+      "pattern": "^[0-7]{3}$",
+      "description": "Recommended default octal mode when this role owns a module. Only applicable to roles that can own modules (root, domain_authority)."
+    },
+    "bypass_permissions": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, this role bypasses all permission checks. Only valid for the root role."
+    },
+    "scope_type": {
+      "type": "string",
+      "enum": ["global", "governed_modules", "assigned_modules", "session_only"],
+      "description": "How this role's access scope is determined. global = all modules; governed_modules = per JWT governed_modules claim; assigned_modules = per ACL; session_only = own sessions only."
+    },
+    "max_session_scope": {
+      "type": "string",
+      "enum": ["all", "governed", "assigned", "own"],
+      "description": "Maximum session visibility. all = every session in the system; governed = sessions in governed modules; assigned = sessions in ACL-assigned modules; own = only sessions the user created."
+    },
+    "audit_visibility": {
+      "type": "string",
+      "enum": ["all", "governed", "assigned", "own"],
+      "description": "CTL record visibility scope. Determines which audit trails this role can inspect."
+    },
+    "may_create_users": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this role can register new users."
+    },
+    "may_assign_roles": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this role can change other users' roles."
+    }
+  }
+}

@@ -37,4 +37,4 @@ Project Lumina operates on a strict **Accountability by Design** philosophy. We 
 
 ## 🌍 Domain Impact (For Core Changes Only)
 
-*If you modified the core D.S.A. orchestrator, list the Domain Packs you tested this against to ensure you didn't introduce domain bias (e.g., tested against `education/algebra-level-1` and `agriculture/operations-level-1`).*
+*If you modified the core D.S.A. orchestrator, list the Domain Packs you tested this against to ensure you didn't introduce domain bias (e.g., tested against `education/modules/algebra-level-1` and `agriculture/modules/operations-level-1`).*

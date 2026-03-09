@@ -19,7 +19,7 @@ Usage:
 
     # Commit a domain pack hash
     python reference-implementations/ctl-commitment-validator.py \\
-        --commit domain-packs/education/algebra-level-1/domain-physics.json \\
+        --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \\
         --actor-id <pseudonymous-id> \\
         --ledger path/to/ledger.jsonl
 

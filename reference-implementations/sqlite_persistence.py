@@ -38,7 +38,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
     def _init_sqlalchemy(self) -> None:
         try:
-            from sqlalchemy import Column, DateTime, Integer, String, Text
+            from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
             from sqlalchemy.ext.asyncio import create_async_engine
             from sqlalchemy.orm import DeclarativeBase
             from sqlalchemy.sql import func
@@ -67,9 +67,21 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             payload_json = Column(Text, nullable=False)
             updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+        class User(Base):
+            __tablename__ = "users"
+            user_id = Column(String(128), primary_key=True)
+            username = Column(String(128), nullable=False, unique=True, index=True)
+            password_hash = Column(String(256), nullable=False)
+            role = Column(String(64), nullable=False)
+            governed_modules_json = Column(Text, nullable=False, server_default="[]")
+            active = Column(Boolean, nullable=False, server_default="1")
+            created_at_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+            updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
         self._Base = Base
         self._CtlRecord = CtlRecord
         self._SessionState = SessionState
+        self._User = User
         self._engine = create_async_engine(self.database_url, echo=False)
 
     async def _create_tables(self) -> None:
@@ -306,3 +318,147 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             "first_broken_id": None,
             "error": None,
         }
+
+    # ── User / Auth persistence ──────────────────────────────
+
+    def _user_row_to_dict(self, row: Any) -> dict[str, Any]:
+        return {
+            "user_id": row.user_id,
+            "username": row.username,
+            "password_hash": row.password_hash,
+            "role": row.role,
+            "governed_modules": json.loads(row.governed_modules_json),
+            "active": bool(row.active),
+        }
+
+    def create_user(
+        self,
+        user_id: str,
+        username: str,
+        password_hash: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any]:
+        return asyncio.run(
+            self._create_user_async(user_id, username, password_hash, role, governed_modules)
+        )
+
+    async def _create_user_async(
+        self,
+        user_id: str,
+        username: str,
+        password_hash: str,
+        role: str,
+        governed_modules: list[str] | None,
+    ) -> dict[str, Any]:
+        from sqlalchemy import insert
+
+        modules_json = json.dumps(governed_modules or [], ensure_ascii=False)
+        stmt = insert(self._User).values(
+            user_id=user_id,
+            username=username,
+            password_hash=password_hash,
+            role=role,
+            governed_modules_json=modules_json,
+            active=True,
+        )
+        async with self._engine.begin() as conn:
+            await conn.execute(stmt)
+        return {
+            "user_id": user_id,
+            "username": username,
+            "role": role,
+            "governed_modules": governed_modules or [],
+            "active": True,
+        }
+
+    def get_user(self, user_id: str) -> dict[str, Any] | None:
+        return asyncio.run(self._get_user_async(user_id))
+
+    async def _get_user_async(self, user_id: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._User).where(self._User.user_id == user_id)
+            )
+            row = result.first()
+        if row is None:
+            return None
+        return self._user_row_to_dict(row)
+
+    def get_user_by_username(self, username: str) -> dict[str, Any] | None:
+        return asyncio.run(self._get_user_by_username_async(username))
+
+    async def _get_user_by_username_async(self, username: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._User).where(self._User.username == username)
+            )
+            row = result.first()
+        if row is None:
+            return None
+        return self._user_row_to_dict(row)
+
+    def list_users(self) -> list[dict[str, Any]]:
+        return asyncio.run(self._list_users_async())
+
+    async def _list_users_async(self) -> list[dict[str, Any]]:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(select(self._User).order_by(self._User.username))
+            rows = result.all()
+        return [
+            {k: v for k, v in self._user_row_to_dict(r).items() if k != "password_hash"}
+            for r in rows
+        ]
+
+    def update_user_role(
+        self,
+        user_id: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        return asyncio.run(self._update_user_role_async(user_id, role, governed_modules))
+
+    async def _update_user_role_async(
+        self,
+        user_id: str,
+        role: str,
+        governed_modules: list[str] | None,
+    ) -> dict[str, Any] | None:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            existing = await conn.execute(
+                select(self._User.user_id).where(self._User.user_id == user_id)
+            )
+            if existing.first() is None:
+                return None
+            values: dict[str, Any] = {"role": role}
+            if governed_modules is not None:
+                values["governed_modules_json"] = json.dumps(governed_modules, ensure_ascii=False)
+            await conn.execute(
+                update(self._User).where(self._User.user_id == user_id).values(**values)
+            )
+        return asyncio.run(self._get_user_async(user_id))
+
+    def deactivate_user(self, user_id: str) -> bool:
+        return asyncio.run(self._deactivate_user_async(user_id))
+
+    async def _deactivate_user_async(self, user_id: str) -> bool:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            existing = await conn.execute(
+                select(self._User.user_id).where(self._User.user_id == user_id)
+            )
+            if existing.first() is None:
+                return False
+            await conn.execute(
+                update(self._User).where(self._User.user_id == user_id).values(active=False)
+            )
+        return True

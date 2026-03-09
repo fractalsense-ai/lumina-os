@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/domain-packs/education/algebra-level-1/prompt-contract-schema.json",
+  "$id": "https://projectlumina.org/domain-packs/education/modules/algebra-level-1/prompt-contract-schema.json",
   "title": "Algebra Level 1 — Prompt Contract Schema",
   "description": "Defines the structured contract for prompts used in Algebra Level 1 sessions. Prompts must conform to this schema before being issued to the student.",
   "type": "object",

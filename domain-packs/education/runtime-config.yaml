@@ -3,8 +3,17 @@ runtime:
   domain_system_prompt_path: domain-packs/education/prompts/domain-system-override.md
   turn_interpretation_prompt_path: domain-packs/education/prompts/turn-interpretation.md
 
-  domain_physics_path: domain-packs/education/algebra-level-1/domain-physics.json
-  subject_profile_path: domain-packs/education/algebra-level-1/example-student-alice.yaml
+  domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
+  subject_profile_path: domain-packs/education/modules/algebra-level-1/example-student-alice.yaml
+
+  access_control:
+    required_role: user
+    allowed_roles:
+      - root
+      - domain_authority
+      - it_support
+      - qa
+      - user
 
   additional_specs:
     - domain-packs/education/world-sim/magic-circle-consent-v1.md

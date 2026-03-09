@@ -57,7 +57,7 @@ python reference-implementations/dsa-orchestrator-demo.py
 
 ```bash
 python reference-implementations/yaml-to-json-converter.py \
-  domain-packs/education/algebra-level-1/domain-physics.yaml \
+  domain-packs/education/modules/algebra-level-1/domain-physics.yaml \
   --schema standards/domain-physics-schema-v1.json
 ```
 
@@ -142,7 +142,7 @@ This path is used by `run-preintegration-scenarios.ps1` to validate standing-ord
 
 ```bash
 python reference-implementations/ctl-commitment-validator.py \
-  --commit domain-packs/education/algebra-level-1/domain-physics.json \
+  --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger path/to/ledger.jsonl
 ```

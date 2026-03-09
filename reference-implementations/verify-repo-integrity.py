@@ -111,9 +111,9 @@ def check_runtime_config_paths(errors: list[str]) -> None:
 
 
 def check_algebra_version_alignment(errors: list[str]) -> None:
-    yaml_path = REPO_ROOT / "domain-packs" / "education" / "algebra-level-1" / "domain-physics.yaml"
-    json_path = REPO_ROOT / "domain-packs" / "education" / "algebra-level-1" / "domain-physics.json"
-    changelog_path = REPO_ROOT / "domain-packs" / "education" / "algebra-level-1" / "CHANGELOG.md"
+    yaml_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.yaml"
+    json_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.json"
+    changelog_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "CHANGELOG.md"
     examples_path = REPO_ROOT / "examples" / "README.md"
     domain_packs_readme_path = REPO_ROOT / "domain-packs" / "README.md"
 
@@ -142,7 +142,7 @@ def check_algebra_version_alignment(errors: list[str]) -> None:
         errors.append(f"examples/README.md does not reference latest domain version string: {expected}")
 
     domain_packs_text = domain_packs_readme_path.read_text(encoding="utf-8")
-    expected_row = f"| Education — Algebra Level 1 | `education/algebra-level-1` | {changelog_version} |"
+    expected_row = f"| Education — Algebra Level 1 | `education/modules/algebra-level-1` | {changelog_version} |"
     if expected_row not in domain_packs_text:
         errors.append(
             "domain-packs/README.md education version row is out of date; "
@@ -277,6 +277,77 @@ def check_provenance_contract_consistency(errors: list[str]) -> None:
         )
 
 
+def check_auth_infrastructure(errors: list[str]) -> None:
+    """Verify auth module, permissions module, and RBAC schemas exist and import."""
+    auth_path = REPO_ROOT / "reference-implementations" / "auth.py"
+    perms_path = REPO_ROOT / "reference-implementations" / "permissions.py"
+    rbac_schema = REPO_ROOT / "standards" / "rbac-permission-schema-v1.json"
+    role_schema = REPO_ROOT / "standards" / "role-definition-schema-v1.json"
+    rbac_spec = REPO_ROOT / "specs" / "rbac-spec-v1.md"
+
+    for p, label in [
+        (auth_path, "auth.py"),
+        (perms_path, "permissions.py"),
+        (rbac_schema, "rbac-permission-schema-v1.json"),
+        (role_schema, "role-definition-schema-v1.json"),
+        (rbac_spec, "rbac-spec-v1.md"),
+    ]:
+        if not p.exists():
+            errors.append(f"Auth infrastructure missing: {label}")
+
+    # Validate RBAC permission schema parses as JSON
+    if rbac_schema.exists():
+        try:
+            data = json.loads(rbac_schema.read_text(encoding="utf-8"))
+            if "properties" not in data:
+                errors.append("rbac-permission-schema-v1.json: missing 'properties' key")
+        except json.JSONDecodeError as exc:
+            errors.append(f"rbac-permission-schema-v1.json: invalid JSON — {exc}")
+
+    # Verify domain-physics files include permissions block
+    edu_dp = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.yaml"
+    agr_dp = REPO_ROOT / "domain-packs" / "agriculture" / "modules" / "operations-level-1" / "domain-physics.json"
+    if edu_dp.exists():
+        edu_text = edu_dp.read_text(encoding="utf-8")
+        if "permissions:" not in edu_text:
+            errors.append("education domain-physics.yaml: missing permissions block")
+    if agr_dp.exists():
+        try:
+            agr_data = json.loads(agr_dp.read_text(encoding="utf-8"))
+            if "permissions" not in agr_data:
+                errors.append("agriculture domain-physics.json: missing permissions block")
+        except json.JSONDecodeError as exc:
+            errors.append(f"agriculture domain-physics.json: invalid JSON — {exc}")
+
+
+def check_docs_structure(errors: list[str]) -> None:
+    """Verify docs/ man-page directory structure exists."""
+    docs_root = REPO_ROOT / "docs"
+    if not docs_root.is_dir():
+        errors.append("docs/ directory missing")
+        return
+
+    expected_sections = [
+        "1-commands",
+        "2-syscalls",
+        "3-functions",
+        "4-formats",
+        "5-standards",
+        "6-examples",
+        "7-concepts",
+        "8-admin",
+    ]
+    for section in expected_sections:
+        section_dir = docs_root / section
+        if not section_dir.is_dir():
+            errors.append(f"docs/{section}/ directory missing")
+        elif not (section_dir / "README.md").exists():
+            errors.append(f"docs/{section}/README.md missing")
+
+    if not (docs_root / "README.md").exists():
+        errors.append("docs/README.md master index missing")
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -286,6 +357,8 @@ def main() -> int:
     check_frontend_essentials(errors)
     check_domain_tool_adapter_linkage(errors)
     check_provenance_contract_consistency(errors)
+    check_auth_infrastructure(errors)
+    check_docs_structure(errors)
 
     if errors:
         print("[FAIL] Repo integrity checks found issues:")

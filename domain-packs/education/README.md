@@ -11,15 +11,15 @@ Core engine docs do not define education principles, education state semantics, 
 Education-specific principles are declared and versioned by education domain packs. They can extend universal behavior for education contexts (for example, consent requirements or scaffolding behavior), but they are not root-level universal rules.
 
 Primary implementation reference:
-- [`algebra-level-1/domain-physics.yaml`](algebra-level-1/domain-physics.yaml)
+- [`modules/algebra-level-1/domain-physics.yaml`](modules/algebra-level-1/domain-physics.yaml)
 
 ---
 
 ## Domain Rules and Invariants
 
 Education invariants and standing-order bindings are authored in domain physics and interpreted by the orchestrator as domain data:
-- [`algebra-level-1/domain-physics.yaml`](algebra-level-1/domain-physics.yaml)
-- [`algebra-level-1/domain-physics.json`](algebra-level-1/domain-physics.json)
+- [`modules/algebra-level-1/domain-physics.yaml`](modules/algebra-level-1/domain-physics.yaml)
+- [`modules/algebra-level-1/domain-physics.json`](modules/algebra-level-1/domain-physics.json)
 
 ---
 
@@ -51,8 +51,8 @@ Reference implementation:
 ## Domain Physics and Prompt Contracts
 
 Education packs declare their own prompt-contract extensions and domain vocabulary:
-- [`algebra-level-1/prompt-contract-schema.json`](algebra-level-1/prompt-contract-schema.json)
-- [`algebra-level-1/tool-adapters/`](algebra-level-1/tool-adapters/)
+- [`modules/algebra-level-1/prompt-contract-schema.json`](modules/algebra-level-1/prompt-contract-schema.json)
+- [`modules/algebra-level-1/tool-adapters/`](modules/algebra-level-1/tool-adapters/)
 
 ---
 
@@ -62,7 +62,7 @@ The education domain separates its components into two categories:
 
 - **`domain-lib/`** — Passive specification documents (ZPD monitor spec, fatigue estimation spec, compressed-state estimators). These are read as context by the orchestrator and LLM. They define *what* the domain measures but have no callable entry point.
 
-- **`algebra-level-1/tool-adapters/`** — Active deterministic tools (algebra parser, substitution checker, calculator). These are invoked by the orchestrator or turn interpreter, accept structured input, and return structured output. They provide ground-truth data that the LLM validates against.
+- **`modules/algebra-level-1/tool-adapters/`** — Active deterministic tools (algebra parser, substitution checker, calculator). These are invoked by the orchestrator or turn interpreter, accept structured input, and return structured output. They provide ground-truth data that the LLM validates against.
 
 See [`../README.md`](../README.md#domain-lib-vs-tool-adapters) for the full architectural distinction.
 

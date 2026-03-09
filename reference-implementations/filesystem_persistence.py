@@ -174,3 +174,83 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
             "first_broken_id": None,
             "error": None,
         }
+
+    # ── User / Auth persistence (file-backed) ────────────────
+
+    def _users_path(self) -> Path:
+        return self.ctl_dir / "users.json"
+
+    def _load_users(self) -> dict[str, dict[str, Any]]:
+        path = self._users_path()
+        if not path.exists():
+            return {}
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+
+    def _save_users(self, users: dict[str, dict[str, Any]]) -> None:
+        path = self._users_path()
+        tmp = path.with_suffix(".json.tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(users, fh, indent=2, ensure_ascii=False)
+        tmp.replace(path)
+
+    def create_user(
+        self,
+        user_id: str,
+        username: str,
+        password_hash: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any]:
+        users = self._load_users()
+        record = {
+            "user_id": user_id,
+            "username": username,
+            "password_hash": password_hash,
+            "role": role,
+            "governed_modules": governed_modules or [],
+            "active": True,
+        }
+        users[user_id] = record
+        self._save_users(users)
+        return {k: v for k, v in record.items() if k != "password_hash"}
+
+    def get_user(self, user_id: str) -> dict[str, Any] | None:
+        users = self._load_users()
+        return users.get(user_id)
+
+    def get_user_by_username(self, username: str) -> dict[str, Any] | None:
+        for u in self._load_users().values():
+            if u.get("username") == username:
+                return u
+        return None
+
+    def list_users(self) -> list[dict[str, Any]]:
+        return [
+            {k: v for k, v in u.items() if k != "password_hash"}
+            for u in self._load_users().values()
+        ]
+
+    def update_user_role(
+        self,
+        user_id: str,
+        role: str,
+        governed_modules: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        users = self._load_users()
+        if user_id not in users:
+            return None
+        users[user_id]["role"] = role
+        if governed_modules is not None:
+            users[user_id]["governed_modules"] = governed_modules
+        self._save_users(users)
+        return {k: v for k, v in users[user_id].items() if k != "password_hash"}
+
+    def deactivate_user(self, user_id: str) -> bool:
+        users = self._load_users()
+        if user_id not in users:
+            return False
+        users[user_id]["active"] = False
+        self._save_users(users)
+        return True

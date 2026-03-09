@@ -7,13 +7,13 @@
 This directory contains early agriculture-domain assets used to test runtime decoupling.
 
 Implemented today:
-- `operations-level-1/domain-physics.json`
+- `modules/operations-level-1/domain-physics.json`
 - `runtime-config.yaml`
 - prompt overrides under `prompts/`
 - adapter stub under `reference-implementations/`
 
 Not yet complete:
-- no full `operations-level-1` profile/template set
+- no full `modules/operations-level-1` profile/template set
 - no production-ready tool adapter implementations
 - no domain-lib specs equivalent to the education pack
 - no validated end-to-end test scenarios
@@ -24,7 +24,8 @@ Current structure:
 agriculture/
 ├── README.md
 ├── runtime-config.yaml
-├── operations-level-1/
+├── modules/
+│   └── operations-level-1/
 │   ├── domain-physics.json
 │   ├── example-subject.yaml
 │   └── tool-adapters/

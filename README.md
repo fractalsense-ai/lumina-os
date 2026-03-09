@@ -2,6 +2,8 @@
 
 **Bounded, accountable AI orchestration — architecture specifications, modular runtime, and reference implementations.**
 
+> **Documentation** — Full UNIX man-page style reference: [`docs/`](docs/README.md)
+
 ---
 
 ## Vision
@@ -251,13 +253,14 @@ project-lumina/
 │   │   │   ├── tool-adapters.py       ← active deterministic tools (algebra parser, calculator, substitution checker)
 │   │   │   ├── zpd-monitor-v0.2.py
 │   │   │   └── zpd-monitor-demo.py
-│   │   └── algebra-level-1/           ← specific domain pack instance
-│   │       ├── domain-physics.yaml / .json
-│   │       ├── prompt-contract-schema.json
-│   │       ├── tool-adapters/
-│   │       ├── student-profile-template.yaml
-│   │       ├── example-student-alice.yaml
-│   │       └── CHANGELOG.md
+│   │   └── modules/
+│   │       └── algebra-level-1/       ← specific domain pack instance
+│   │           ├── domain-physics.yaml / .json
+│   │           ├── prompt-contract-schema.json
+│   │           ├── tool-adapters/
+│   │           ├── student-profile-template.yaml
+│   │           ├── example-student-alice.yaml
+│   │           └── CHANGELOG.md
 │   └── agriculture/                   ← agriculture domain pack (domain-swap proof)
 │       ├── README.md
 │       ├── runtime-config.yaml
@@ -266,14 +269,17 @@ project-lumina/
 │       │   └── turn-interpretation.md
 │       ├── reference-implementations/
 │       │   └── runtime-adapters.py
-│       └── operations-level-1/
-│           ├── domain-physics.json
-│           ├── example-subject.yaml
-│           └── tool-adapters/
-│               └── collar-sensor-adapter-v1.yaml
+│       └── modules/
+│           └── operations-level-1/
+│               ├── domain-physics.json
+│               ├── example-subject.yaml
+│               └── tool-adapters/
+│                   └── collar-sensor-adapter-v1.yaml
 ├── reference-implementations/         ← core D.S.A. engine (domain-agnostic)
 │   ├── README.md
 │   ├── lumina-api-server.py           ← generic runtime host (FastAPI)
+│   ├── auth.py                        ← JWT authentication module
+│   ├── permissions.py                 ← chmod-style permission checker
 │   ├── runtime_loader.py             ← config loader + adapter resolver
 │   ├── dsa-orchestrator.py            ← D.S.A. orchestrator engine
 │   ├── dsa-orchestrator-demo.py       ← standalone orchestrator demo
@@ -286,6 +292,16 @@ project-lumina/
 │   ├── verify-repo-integrity.py       ← doc/schema/linkage/version integrity checks
 │   ├── run-preintegration-scenarios.ps1 ← deterministic regression test suite
 │   └── run-full-verification.ps1      ← one-command verification flow
+├── docs/                              ← UNIX man-page documentation
+│   ├── README.md                      ← master index
+│   ├── 1-commands/                    ← command references
+│   ├── 2-syscalls/                    ← API endpoint references
+│   ├── 3-functions/                   ← library function references
+│   ├── 4-formats/                     ← schema and format references
+│   ├── 5-standards/                   ← specification index
+│   ├── 6-examples/                    ← worked examples
+│   ├── 7-concepts/                    ← architecture concepts
+│   └── 8-admin/                       ← administration guides
 └── examples/                          ← worked interaction examples
     ├── README.md
     ├── causal-learning-trace-example.json
@@ -373,7 +389,7 @@ Tests: health check, stable turn (no escalation), major drift (escalation), stan
 1. Read [`specs/principles-v1.md`](specs/principles-v1.md) — understand the non-negotiables
 2. Read [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — understand the framework
 3. Browse [`domain-packs/education/runtime-config.yaml`](domain-packs/education/runtime-config.yaml) — see how a domain owns its runtime behavior
-4. Browse [`domain-packs/education/algebra-level-1/`](domain-packs/education/algebra-level-1/) — a complete worked domain pack
+4. Browse [`domain-packs/education/modules/algebra-level-1/`](domain-packs/education/modules/algebra-level-1/) — a complete worked domain pack
 5. Run [`domain-packs/education/reference-implementations/zpd-monitor-demo.py`](domain-packs/education/reference-implementations/zpd-monitor-demo.py) — see the ZPD monitor in action
 6. Run [`reference-implementations/dsa-orchestrator-demo.py`](reference-implementations/dsa-orchestrator-demo.py) — see the full D.S.A. orchestrator loop
 7. Read [`examples/README.md`](examples/README.md) — walk through a full interaction trace
@@ -390,6 +406,13 @@ Tests: health check, stable turn (no escalation), major drift (escalation), stan
 | `POST` | `/api/chat` | Process a message through the D.S.A. pipeline |
 | `POST` | `/api/tool/{tool_id}` | Invoke a domain tool adapter directly |
 | `GET` | `/api/ctl/validate` | Validate CTL hash-chain integrity (all sessions or a specific `session_id`) |
+| `POST` | `/api/auth/register` | Register a new user (bootstrap: first user → root) |
+| `POST` | `/api/auth/login` | Authenticate and receive a JWT |
+| `POST` | `/api/auth/refresh` | Refresh an existing JWT |
+| `GET` | `/api/auth/me` | Return current user profile |
+| `GET` | `/api/auth/users` | List all users (root / it_support only) |
+
+See [`docs/2-syscalls/lumina-api-server.md`](docs/2-syscalls/lumina-api-server.md) for full endpoint reference.
 
 ### `POST /api/chat` request body
 
@@ -428,6 +451,10 @@ Tests: health check, stable turn (no escalation), major drift (escalation), stan
 | `LUMINA_PERSISTENCE_BACKEND` | No | `filesystem` | Persistence backend: `filesystem` or `sqlite` |
 | `LUMINA_DB_URL` | No | `sqlite+aiosqlite:///lumina.db` | SQLAlchemy DB URL used when persistence backend is `sqlite` |
 | `LUMINA_ENFORCE_POLICY_COMMITMENT` | No | `true` | Enforce active module hash commitment before session execution |
+| `LUMINA_JWT_SECRET` | No | random | HMAC secret for JWT signing (auto-generated if unset) |
+| `LUMINA_JWT_TTL_MINUTES` | No | `60` | JWT token lifetime in minutes |
+| `LUMINA_BOOTSTRAP_MODE` | No | `true` | First registered user auto-promoted to `root` |
+| `LUMINA_CORS_ORIGINS` | No | `http://localhost:3000` | Comma-separated allowed CORS origins |
 | `LUMINA_PORT` | No | `8000` | Server port |
 | `OPENAI_API_KEY` | For live | — | OpenAI API key |
 | `ANTHROPIC_API_KEY` | For live | — | Anthropic API key |

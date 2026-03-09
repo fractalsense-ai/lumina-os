@@ -90,6 +90,24 @@ rollback_policy:
   rollback_records_retained: true
   retroactive_record_modification: never_permitted
 
+# ── Authentication & RBAC Policy ────────────────────────────
+# JWT and role-based access control settings for this authority scope.
+auth_policy:
+  jwt_issuer: "lumina"                   # Token issuer claim (iss)
+  jwt_algorithm: "HS256"                 # Signing algorithm (HS256 or RS256)
+  token_ttl_minutes: 60                  # Access token lifetime
+  refresh_enabled: true                  # Whether refresh tokens are issued
+  bootstrap_allows_first_root: true      # First user auto-gets root role
+
+# Map pseudonymous IDs to operational roles and module scopes.
+role_assignments:
+  - pseudonymous_id: "<32-char hex token>"
+    role: "domain_authority"             # One of: root, domain_authority, it_support, qa, auditor, user
+    governed_modules:
+      - "domain/org/algebra-level-1/v1"
+    granted_by: "<root or meta authority pseudonymous_id>"
+    recorded_as: CommitmentRecord
+
 # ── Renewal ─────────────────────────────────────────────────
 # This policy expires and must be re-committed to the CTL.
 renewal:

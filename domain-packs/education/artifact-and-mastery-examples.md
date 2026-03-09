@@ -31,7 +31,7 @@ boss_challenge:
 
 In education packs, score updates are implemented by the education domain lib (ZPD monitor implementation):
 - [`reference-implementations/zpd-monitor-v0.2.py`](reference-implementations/zpd-monitor-v0.2.py)
-- [`algebra-level-1/domain-physics.yaml`](algebra-level-1/domain-physics.yaml)
+- [`modules/algebra-level-1/domain-physics.yaml`](modules/algebra-level-1/domain-physics.yaml)
 
 ## Core Boundary
 

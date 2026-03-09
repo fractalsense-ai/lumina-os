@@ -7,16 +7,16 @@ optionally validates the result against the domain-physics-schema-v1.json.
 Usage:
     # Convert only
     python reference-implementations/yaml-to-json-converter.py \\
-        domain-packs/education/algebra-level-1/domain-physics.yaml
+        domain-packs/education/modules/algebra-level-1/domain-physics.yaml
 
     # Convert and validate
     python reference-implementations/yaml-to-json-converter.py \\
-        domain-packs/education/algebra-level-1/domain-physics.yaml \\
+        domain-packs/education/modules/algebra-level-1/domain-physics.yaml \\
         --schema standards/domain-physics-schema-v1.json
 
     # Specify output path
     python reference-implementations/yaml-to-json-converter.py \\
-        domain-packs/education/algebra-level-1/domain-physics.yaml \\
+        domain-packs/education/modules/algebra-level-1/domain-physics.yaml \\
         --output /tmp/domain-physics-validated.json \\
         --schema standards/domain-physics-schema-v1.json
 
