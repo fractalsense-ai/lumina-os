@@ -29,6 +29,7 @@ def _load_api_module():
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/runtime-config.yaml")
+    monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
 
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()

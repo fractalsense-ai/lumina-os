@@ -6,7 +6,7 @@
 #
 # See: standards/domain-registry-schema-v1.json
 
-default_domain: customer_service
+default_domain: education
 
 domains:
   education:
