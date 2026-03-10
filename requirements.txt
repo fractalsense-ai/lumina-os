@@ -1,0 +1,11 @@
+# Core runtime dependencies for Project Lumina API host
+fastapi>=0.111.0
+uvicorn>=0.30.0
+
+# Optional providers for live LLM calls (install as needed)
+# openai>=1.0.0
+# anthropic>=0.34.0
+
+# Optional SQLite persistence backend (install when using LUMINA_PERSISTENCE_BACKEND=sqlite)
+# sqlalchemy[asyncio]>=2.0.0
+# aiosqlite>=0.20.0

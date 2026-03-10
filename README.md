@@ -165,8 +165,8 @@ project-lumina/
 python -m venv .venv
 source .venv/bin/activate  # or .\.venv\Scripts\activate on Windows
 
-# 2. Install the server dependency
-pip install fastapi uvicorn
+# 2. Install runtime dependencies
+pip install -r requirements.txt
 
 # 3. Set the runtime config (required — no silent defaults)
 export LUMINA_RUNTIME_CONFIG_PATH="domain-packs/education/runtime-config.yaml"
@@ -214,6 +214,8 @@ Then start the server and send requests without `deterministic_response` or `tur
 python reference-implementations/verify-repo-integrity.py
 
 # Backend unit + integration tests
+# Install runtime + dev dependencies
+pip install -r requirements.txt
 pip install -r requirements-dev.txt
 python -m pytest tests -q
 
