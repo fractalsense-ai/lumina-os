@@ -4,6 +4,7 @@ CLI tools and utilities for domain pack management, CTL operations, and system v
 
 | Command | Description |
 |---------|-------------|
+| [installation-and-packaging](installation-and-packaging.md) | Installation workflows (pip, uv, editable install, CLI entrypoints) |
 | [yaml-to-json-converter](yaml-to-json-converter.md) | Convert domain-physics YAML to validated JSON |
 | [ctl-commitment-validator](ctl-commitment-validator.md) | Commit and verify domain pack hashes in the CTL |
 | [verify-repo-integrity](verify-repo-integrity.md) | Run repository-wide integrity checks |

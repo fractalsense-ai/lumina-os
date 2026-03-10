@@ -158,6 +158,8 @@ project-lumina/
 - Python 3.12+ (tested on 3.14)
 - An LLM API key (OpenAI or Anthropic) — only required for live (non-deterministic) responses
 
+Install and packaging workflows are documented in [`docs/1-commands/installation-and-packaging.md`](docs/1-commands/installation-and-packaging.md).
+
 ### Run the deterministic demo (no API key needed)
 
 ```bash
