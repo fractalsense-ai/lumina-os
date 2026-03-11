@@ -13,8 +13,22 @@ domains:
     runtime_config_path: domain-packs/education/runtime-config.yaml
     label: Education — Algebra Level 1
     description: K-12 algebra tutoring domain with scaffolded problem solving.
+    keywords:
+      - algebra
+      - equation
+      - math
+      - solve
+      - variable
+      - tutoring
 
   agriculture:
     runtime_config_path: domain-packs/agriculture/runtime-config.yaml
     label: Agriculture — Operations Level 1
     description: Agricultural operations monitoring and variance reporting.
+    keywords:
+      - crop
+      - yield
+      - soil
+      - harvest
+      - irrigation
+      - agriculture

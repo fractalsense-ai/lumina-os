@@ -145,13 +145,13 @@ def test_chat_invalid_domain_returns_400(multi_client: TestClient) -> None:
 
 
 @pytest.mark.integration
-def test_session_domain_binding_immutable(multi_client: TestClient) -> None:
-    """Once a session is bound to a domain, switching domain_id must fail."""
-    # First turn: bind session to education domain
+def test_session_domain_switch(multi_client: TestClient) -> None:
+    """A session can switch domain_id to a different domain mid-session."""
+    # First turn: start in education domain
     resp1 = multi_client.post(
         "/api/chat",
         json={
-            "session_id": "immutable-binding-test",
+            "session_id": "domain-switch-test",
             "message": "First turn in education",
             "deterministic_response": True,
             "domain_id": "education",
@@ -169,18 +169,46 @@ def test_session_domain_binding_immutable(multi_client: TestClient) -> None:
     assert resp1.status_code == 200
     assert resp1.json()["domain_id"] == "education"
 
-    # Second turn: attempt to switch to agriculture — must fail
+    # Second turn: switch to agriculture — should succeed
     resp2 = multi_client.post(
         "/api/chat",
         json={
-            "session_id": "immutable-binding-test",
-            "message": "Trying to switch domain",
+            "session_id": "domain-switch-test",
+            "message": "Switching to agriculture",
             "deterministic_response": True,
             "domain_id": "agriculture",
+            "turn_data_override": {
+                "within_tolerance": True,
+                "response_latency_sec": 5,
+                "off_task_ratio": 0.0,
+                "step_count": 1,
+            },
         },
     )
-    assert resp2.status_code == 500
-    assert "bound to domain" in resp2.text
+    assert resp2.status_code == 200
+    assert resp2.json()["domain_id"] == "agriculture"
+
+    # Third turn: switch back to education — should resume
+    resp3 = multi_client.post(
+        "/api/chat",
+        json={
+            "session_id": "domain-switch-test",
+            "message": "Back to education",
+            "deterministic_response": True,
+            "domain_id": "education",
+            "turn_data_override": {
+                "correctness": "correct",
+                "frustration_marker_count": 0,
+                "step_count": 1,
+                "hint_used": False,
+                "repeated_error": False,
+                "off_task_ratio": 0.0,
+                "response_latency_sec": 5,
+            },
+        },
+    )
+    assert resp3.status_code == 200
+    assert resp3.json()["domain_id"] == "education"
 
 
 @pytest.mark.integration

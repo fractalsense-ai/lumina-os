@@ -36,7 +36,9 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
     def load_subject_profile(self, path: str) -> dict[str, Any]:
         return self._load_yaml(path)
 
-    def get_ctl_ledger_path(self, session_id: str) -> str:
+    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+        if domain_id:
+            return str(self.ctl_dir / f"session-{session_id}-{domain_id}.jsonl")
         return str(self.ctl_dir / f"session-{session_id}.jsonl")
 
     def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:

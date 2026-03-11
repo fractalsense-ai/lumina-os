@@ -16,8 +16,13 @@ class PersistenceAdapter(ABC):
         """Load subject profile document from persistent storage."""
 
     @abstractmethod
-    def get_ctl_ledger_path(self, session_id: str) -> str:
-        """Return a stable ledger path for a given session (used by file backends)."""
+    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+        """Return a stable ledger path for a given session.
+
+        When *domain_id* is provided, the path is scoped to that domain
+        context (e.g. ``session-{sid}-{domain_id}.jsonl``).  Use
+        ``domain_id="_meta"`` for the session meta-ledger.
+        """
 
     @abstractmethod
     def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
@@ -112,7 +117,9 @@ class NullPersistenceAdapter(PersistenceAdapter):
         spec.loader.exec_module(mod)  # type: ignore[union-attr]
         return mod.load_yaml(path)
 
-    def get_ctl_ledger_path(self, session_id: str) -> str:
+    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+        if domain_id:
+            return f"session-{session_id}-{domain_id}.jsonl"
         return f"session-{session_id}.jsonl"
 
     def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:

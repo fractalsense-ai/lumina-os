@@ -26,7 +26,7 @@ sqlite = [
   "sqlalchemy[asyncio]>=2.0.0",
   "aiosqlite>=0.20.0"
 ]
-education = [
+nlp = [
   "spacy>=3.7.0"
 ]
 dev = [

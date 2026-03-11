@@ -123,6 +123,22 @@ class DomainRegistry:
             })
         return result
 
+    def get_domain_routing_map(self) -> dict[str, dict[str, Any]]:
+        """Return domain metadata for semantic routing.
+
+        Returns ``{domain_id: {"label": str, "description": str, "keywords": list[str]}}``.
+        """
+        routing_map: dict[str, dict[str, Any]] = {}
+        for domain_id, entry in self._domains.items():
+            if domain_id == "_default" and not self._multi_domain:
+                continue
+            routing_map[domain_id] = {
+                "label": entry.get("label", domain_id),
+                "description": entry.get("description", ""),
+                "keywords": entry.get("keywords") or [],
+            }
+        return routing_map
+
     def resolve_domain_id(self, requested: str | None) -> str:
         """Map a request-level domain_id to a validated registry key."""
         if requested and requested in self._domains:

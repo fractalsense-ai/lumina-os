@@ -120,8 +120,10 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
     def load_subject_profile(self, path: str) -> dict[str, Any]:
         return self._load_yaml(path)
 
-    def get_ctl_ledger_path(self, session_id: str) -> str:
+    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         # DB backend does not rely on file path, but we keep interface compatibility.
+        if domain_id:
+            return f"sqlite://ctl/session-{session_id}-{domain_id}"
         return f"sqlite://ctl/session-{session_id}"
 
     def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:

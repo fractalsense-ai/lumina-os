@@ -116,17 +116,16 @@ def _check_substitution(equation_str: str, variable: str, value: float) -> bool:
 def _detect_steps(student_work: str) -> list[str]:
     """Split student free-text into individual step segments.
 
-    Uses spaCy sentence splitting when available, falling back to
-    enhanced regex splitting on natural-language connectors.
+    Uses core NLP sentence splitting (spaCy sentencizer + regex fallback).
     """
     import importlib.util as _ilu
     import sys as _sys
     from pathlib import Path as _Path
 
-    _utils_path = _Path(__file__).resolve().parent / "nlp_utils.py"
-    _mod_key = "edu_nlp_utils"
+    _core_path = _Path(__file__).resolve().parents[3] / "reference-implementations" / "core_nlp.py"
+    _mod_key = "core_nlp"
     if _mod_key not in _sys.modules:
-        _spec = _ilu.spec_from_file_location(_mod_key, str(_utils_path))
+        _spec = _ilu.spec_from_file_location(_mod_key, str(_core_path))
         _mod = _ilu.module_from_spec(_spec)  # type: ignore[arg-type]
         _sys.modules[_mod_key] = _mod
         _spec.loader.exec_module(_mod)  # type: ignore[union-attr]

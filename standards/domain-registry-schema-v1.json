@@ -29,6 +29,11 @@
           "description": {
             "type": "string",
             "description": "Short description of the domain's purpose."
+          },
+          "keywords": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Keywords for semantic domain routing. Used to match user messages to this domain."
           }
         },
         "additionalProperties": false

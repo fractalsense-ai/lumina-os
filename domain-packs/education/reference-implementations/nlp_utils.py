@@ -1,89 +1,35 @@
 """Shared NLP utilities for the education domain.
 
-Provides a lazy-loading spaCy interface that caches the model globally
-and degrades gracefully when spaCy or the language model is unavailable.
+Delegates to core NLP primitives (``reference-implementations/core_nlp.py``).
+This module exists for backward compatibility; new code should import
+from ``core_nlp`` directly.
 """
 
 from __future__ import annotations
 
-import logging
+import importlib.util
+import sys
+from pathlib import Path
 from typing import Any
 
-log = logging.getLogger("edu_nlp_utils")
 
-_nlp_instance: Any = None
-_spacy_available: bool | None = None
+def _ensure_core_nlp():
+    """Lazy-load core_nlp module if not already imported."""
+    if "core_nlp" in sys.modules:
+        return sys.modules["core_nlp"]
+    core_path = Path(__file__).resolve().parents[3] / "reference-implementations" / "core_nlp.py"
+    spec = importlib.util.spec_from_file_location("core_nlp", str(core_path))
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    sys.modules["core_nlp"] = mod
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
 
 
 def get_nlp() -> Any | None:
-    """Return a cached spaCy Language instance, or None if unavailable.
-
-    Loads ``en_core_web_sm`` on first call and caches it globally.
-    Returns None (no exception) when spaCy is not installed or the
-    model has not been downloaded.
-    """
-    global _nlp_instance, _spacy_available
-
-    if _spacy_available is False:
-        return None
-    if _nlp_instance is not None:
-        return _nlp_instance
-
-    try:
-        import spacy
-        _nlp_instance = spacy.load("en_core_web_sm")
-        _spacy_available = True
-        log.info("spaCy model en_core_web_sm loaded successfully")
-        return _nlp_instance
-    except ImportError:
-        _spacy_available = False
-        log.info("spaCy not installed — falling back to regex-based NLP")
-        return None
-    except OSError:
-        _spacy_available = False
-        log.info("spaCy model en_core_web_sm not found — falling back to regex-based NLP")
-        return None
+    """Return a cached spaCy Language instance, or None if unavailable."""
+    return _ensure_core_nlp().get_nlp()
 
 
 def split_sentences(text: str) -> list[str]:
-    """Split text into sentences using spaCy, with regex fallback.
-
-    Returns a list of non-empty sentence strings.
-    """
-    nlp = get_nlp()
-    if nlp is not None:
-        doc = nlp(text)
-        sentences = [sent.text.strip() for sent in doc.sents if sent.text.strip()]
-        if sentences:
-            return sentences
-
-    # Regex fallback: split on sentence-ending punctuation followed by
-    # whitespace, or on natural-language connectors used between algebraic
-    # steps.  Avoids splitting on periods inside decimals.
-    import re
-    parts: list[str] = []
-    for raw_line in text.splitlines():
-        stripped = raw_line.strip()
-        if not stripped:
-            continue
-        # Split on natural-language step connectors
-        fragments = re.split(
-            r"[;,]\s*(?=[A-Za-z])"            # semicolons / commas before words
-            r"|(?<=\d)\.\s+(?=[A-Z])"          # period-space after digit before capital
-            r"|(?<=[a-z])\.\s+(?=[A-Z])"       # period-space after lowercase before capital
-            r"|\bso\s+that\s+(?:means?\s+)?"   # "so that means"
-            r"|\bso\b\s+"                      # "so "
-            r"|\bthen\b\s+"                    # "then "
-            r"|\bmeaning\b\s+"                 # "meaning "
-            r"|\btherefore\b\s+"               # "therefore "
-            r"|\bafter\s+(?:that\s+)?"         # "after that"
-            r"|\bwhich\s+means\b\s+"           # "which means"
-            r"|\bnow\b\s+",                    # "now "
-            stripped,
-            flags=re.IGNORECASE,
-        )
-        for part in fragments:
-            part = part.strip()
-            if part:
-                parts.append(part)
-    return parts
+    """Split text into sentences using core NLP (spaCy + regex fallback)."""
+    return _ensure_core_nlp().split_sentences(text)

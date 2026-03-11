@@ -586,27 +586,85 @@ def apply_tool_call_policy(
 
 
 # ─────────────────────────────────────────────────────────────
-# Session Manager (domain-aware)
+# Session Manager — multi-domain context support
 # ─────────────────────────────────────────────────────────────
 
-_sessions: dict[str, dict[str, Any]] = {}
-# Maps session_id -> domain_id for immutable binding
-_session_domains: dict[str, str] = {}
+# Maximum number of domain contexts per session (prevents context-thrashing)
+_MAX_CONTEXTS_PER_SESSION = int(os.environ.get("LUMINA_MAX_CONTEXTS_PER_SESSION", "10"))
 
 
-def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict[str, Any]:
-    # If session already exists, enforce immutable domain binding
-    if session_id in _sessions:
-        bound_domain = _session_domains.get(session_id)
-        if domain_id and bound_domain and domain_id != bound_domain:
-            raise RuntimeError(
-                f"Session '{session_id}' is bound to domain '{bound_domain}'. "
-                f"Cannot switch to '{domain_id}' mid-session."
-            )
-        return _sessions[session_id]
+class DomainContext:
+    """Isolated per-domain state within a session."""
 
-    # Resolve domain for new session
-    resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    __slots__ = (
+        "orchestrator",
+        "task_spec",
+        "current_problem",
+        "turn_count",
+        "domain_id",
+        "problem_presented_at",
+    )
+
+    def __init__(
+        self,
+        orchestrator: Any,
+        task_spec: dict[str, Any],
+        current_problem: dict[str, Any],
+        turn_count: int,
+        domain_id: str,
+        problem_presented_at: float,
+    ) -> None:
+        self.orchestrator = orchestrator
+        self.task_spec = task_spec
+        self.current_problem = current_problem
+        self.turn_count = turn_count
+        self.domain_id = domain_id
+        self.problem_presented_at = problem_presented_at
+
+    def to_session_dict(self) -> dict[str, Any]:
+        """Return a dict matching the legacy session shape for process_message()."""
+        return {
+            "orchestrator": self.orchestrator,
+            "task_spec": self.task_spec,
+            "current_problem": self.current_problem,
+            "turn_count": self.turn_count,
+            "domain_id": self.domain_id,
+            "problem_presented_at": self.problem_presented_at,
+        }
+
+    def sync_from_dict(self, d: dict[str, Any]) -> None:
+        """Update mutable fields from the session dict after process_message mutations."""
+        self.task_spec = d["task_spec"]
+        self.current_problem = d["current_problem"]
+        self.turn_count = d["turn_count"]
+        if "problem_presented_at" in d:
+            self.problem_presented_at = d["problem_presented_at"]
+
+
+class SessionContainer:
+    """Holds isolated domain contexts for a single session."""
+
+    __slots__ = ("active_domain_id", "contexts", "user")
+
+    def __init__(self, active_domain_id: str, user: dict[str, Any] | None = None) -> None:
+        self.active_domain_id = active_domain_id
+        self.contexts: dict[str, DomainContext] = {}
+        self.user = user
+
+    @property
+    def active_context(self) -> DomainContext:
+        return self.contexts[self.active_domain_id]
+
+
+_session_containers: dict[str, SessionContainer] = {}
+
+
+def _build_domain_context(
+    session_id: str,
+    resolved_domain_id: str,
+    persisted_state: dict[str, Any] | None = None,
+) -> DomainContext:
+    """Construct a fresh DomainContext for a domain (shared by create + switch)."""
     runtime = DOMAIN_REGISTRY.get_runtime_context(resolved_domain_id)
 
     _assert_policy_commitment(runtime)
@@ -614,8 +672,8 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
     subject_profile_path = Path(runtime["subject_profile_path"])
     domain = PERSISTENCE.load_domain_physics(str(domain_physics_path))
     profile = PERSISTENCE.load_subject_profile(str(subject_profile_path))
-    ledger_path = PERSISTENCE.get_ctl_ledger_path(session_id)
-    persisted_state = PERSISTENCE.load_session_state(session_id) or {}
+    ledger_path = PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=resolved_domain_id)
+    ps = persisted_state or {}
 
     state_builder = runtime["state_builder_fn"]
     domain_step = runtime["domain_step_fn"]
@@ -640,36 +698,113 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
     )
 
     default_task_spec = dict(runtime["default_task_spec"])
-    task_spec = dict(persisted_state.get("task_spec") or default_task_spec)
-    current_problem = dict(persisted_state.get("current_problem") or _default_current_problem(task_spec, runtime))
-    turn_count = int(persisted_state.get("turn_count") or 0)
-    standing_order_attempts = persisted_state.get("standing_order_attempts") or {}
+    task_spec = dict(ps.get("task_spec") or default_task_spec)
+    current_problem = dict(ps.get("current_problem") or _default_current_problem(task_spec, runtime))
+    turn_count = int(ps.get("turn_count") or 0)
+    standing_order_attempts = ps.get("standing_order_attempts") or {}
     if not isinstance(standing_order_attempts, dict):
         standing_order_attempts = {}
     orch.set_standing_order_attempts(standing_order_attempts)
 
-    _session_domains[session_id] = resolved_domain_id
-    _sessions[session_id] = {
-        "orchestrator": orch,
-        "task_spec": task_spec,
-        "current_problem": current_problem,
-        "turn_count": turn_count,
-        "domain_id": resolved_domain_id,
-        "problem_presented_at": time.time(),
-    }
+    return DomainContext(
+        orchestrator=orch,
+        task_spec=task_spec,
+        current_problem=current_problem,
+        turn_count=turn_count,
+        domain_id=resolved_domain_id,
+        problem_presented_at=time.time(),
+    )
+
+
+def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict[str, Any]:
+    """Return a legacy-shaped session dict for the requested domain context.
+
+    If the session already exists and the requested domain differs from
+    the active domain, a domain switch is performed (creating a new
+    context if needed).
+    """
+    if session_id in _session_containers:
+        container = _session_containers[session_id]
+        resolved = domain_id or container.active_domain_id
+
+        if resolved != container.active_domain_id:
+            # ── Domain switch ────────────────────────────────
+            previous_domain = container.active_domain_id
+
+            if resolved in container.contexts:
+                # Reactivate previously visited domain
+                container.active_domain_id = resolved
+                log.info(
+                    "[%s] Reactivated domain context: %s",
+                    session_id,
+                    resolved,
+                )
+            else:
+                # Create new domain context
+                if len(container.contexts) >= _MAX_CONTEXTS_PER_SESSION:
+                    raise RuntimeError(
+                        f"Session '{session_id}' has reached the maximum of "
+                        f"{_MAX_CONTEXTS_PER_SESSION} domain contexts."
+                    )
+                resolved_domain_id_checked = DOMAIN_REGISTRY.resolve_domain_id(resolved)
+                ctx = _build_domain_context(session_id, resolved_domain_id_checked)
+                container.contexts[resolved_domain_id_checked] = ctx
+                container.active_domain_id = resolved_domain_id_checked
+                log.info(
+                    "[%s] Created new domain context: %s",
+                    session_id,
+                    resolved_domain_id_checked,
+                )
+                # Persist the new context
+                _persist_session_container(session_id, container)
+
+            # Record the domain switch event in the meta-ledger
+            PERSISTENCE.append_ctl_record(
+                session_id,
+                {
+                    "event": "domain_switch",
+                    "from_domain": previous_domain,
+                    "to_domain": container.active_domain_id,
+                    "timestamp": time.time(),
+                    "session_id": session_id,
+                },
+                ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+            )
+
+        return container.active_context.to_session_dict()
+
+    # ── New session ──────────────────────────────────────────
+    resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    ctx = _build_domain_context(session_id, resolved_domain_id)
+
+    container = SessionContainer(active_domain_id=resolved_domain_id)
+    container.contexts[resolved_domain_id] = ctx
+    _session_containers[session_id] = container
+
+    _persist_session_container(session_id, container)
+    log.info("Created new session: %s (domain=%s)", session_id, resolved_domain_id)
+
+    return container.active_context.to_session_dict()
+
+
+def _persist_session_container(session_id: str, container: SessionContainer) -> None:
+    """Persist all domain contexts in a session container."""
+    contexts_state: dict[str, Any] = {}
+    for did, ctx in container.contexts.items():
+        contexts_state[did] = {
+            "task_spec": ctx.task_spec,
+            "current_problem": ctx.current_problem,
+            "turn_count": ctx.turn_count,
+            "standing_order_attempts": ctx.orchestrator.get_standing_order_attempts(),
+            "domain_id": did,
+        }
     PERSISTENCE.save_session_state(
         session_id,
         {
-            "task_spec": task_spec,
-            "current_problem": current_problem,
-            "turn_count": turn_count,
-            "standing_order_attempts": orch.get_standing_order_attempts(),
-            "domain_id": resolved_domain_id,
+            "active_domain_id": container.active_domain_id,
+            "contexts": contexts_state,
         },
     )
-    log.info("Created new session: %s (domain=%s)", session_id, resolved_domain_id)
-
-    return _sessions[session_id]
 
 
 # ─────────────────────────────────────────────────────────────
@@ -807,17 +942,24 @@ def process_message(
 
     session["current_problem"] = current_problem
     session["turn_count"] += 1
-    PERSISTENCE.save_session_state(
-        session_id,
-        {
-            "task_spec": task_spec,
-            "current_problem": current_problem,
-            "turn_count": session["turn_count"],
-            "last_action": resolved_action,
-            "standing_order_attempts": orch.get_standing_order_attempts(),
-            "domain_id": resolved_domain_id,
-        },
-    )
+
+    # Sync mutations back to the DomainContext in the session container
+    container = _session_containers.get(session_id)
+    if container is not None:
+        container.active_context.sync_from_dict(session)
+        _persist_session_container(session_id, container)
+    else:
+        PERSISTENCE.save_session_state(
+            session_id,
+            {
+                "task_spec": task_spec,
+                "current_problem": current_problem,
+                "turn_count": session["turn_count"],
+                "last_action": resolved_action,
+                "standing_order_attempts": orch.get_standing_order_attempts(),
+                "domain_id": resolved_domain_id,
+            },
+        )
 
     log.info(
         "[%s] Turn %s: action=%s, prompt_type=%s",
@@ -1010,16 +1152,69 @@ async def chat(
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    # Resolve domain early so permission check uses the correct domain physics
-    try:
-        resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(req.domain_id)
-    except DomainNotFoundError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-
     # Resolve authenticated user (optional — unauthenticated allowed when bootstrap)
     user = await get_current_user(credentials)
 
-    # When auth is provided, check module-level execute permission against resolved domain
+    # ── Domain resolution: semantic routing → explicit → default ──
+    routing_record: dict[str, Any] = {
+        "event": "routing_decision",
+        "explicit_domain": req.domain_id,
+        "session_id": session_id,
+        "timestamp": time.time(),
+    }
+
+    if req.domain_id:
+        # Explicit domain_id — always wins
+        try:
+            resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(req.domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        routing_record["method"] = "explicit"
+        routing_record["confidence"] = 1.0
+    else:
+        # Semantic routing when no domain_id provided
+        try:
+            from core_nlp import classify_domain
+        except ImportError:
+            classify_domain = None  # type: ignore[assignment]
+
+        routing_map = DOMAIN_REGISTRY.get_domain_routing_map()
+        inferred = None
+
+        if classify_domain is not None and routing_map:
+            # Filter to accessible domains if user is authenticated
+            accessible = None
+            if user is not None:
+                accessible = _get_accessible_domain_ids(user, routing_map)
+            inferred = classify_domain(req.message, routing_map, accessible)
+
+        if inferred is not None:
+            resolved_domain_id = inferred["domain_id"]
+            routing_record["method"] = inferred.get("method", "keyword")
+            routing_record["confidence"] = inferred["confidence"]
+            routing_record["inferred_domain"] = inferred["domain_id"]
+            log.info(
+                "[%s] Semantic routing: %s (confidence=%.3f, method=%s)",
+                session_id,
+                resolved_domain_id,
+                inferred["confidence"],
+                inferred.get("method"),
+            )
+        else:
+            # Fall back to default domain
+            try:
+                resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(None)
+            except RuntimeError as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not determine domain. Please specify domain_id.",
+                )
+            routing_record["method"] = "default"
+            routing_record["confidence"] = 0.0
+
+    routing_record["final_domain"] = resolved_domain_id
+
+    # ── RBAC gate: check EXECUTE permission on the target domain ──
     if user is not None:
         runtime = DOMAIN_REGISTRY.get_runtime_context(resolved_domain_id)
         domain_physics_path = runtime["domain_physics_path"]
@@ -1034,6 +1229,16 @@ async def chat(
             )
             if not has_access:
                 raise HTTPException(status_code=403, detail="Module access denied")
+
+    # ── Log routing decision to meta-ledger (Step 9) ─────────
+    try:
+        PERSISTENCE.append_ctl_record(
+            session_id,
+            routing_record,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+        )
+    except Exception:
+        log.debug("Could not write routing decision to meta-ledger")
 
     try:
         result = await run_in_threadpool(
@@ -1059,6 +1264,37 @@ async def chat(
         tool_results=result.get("tool_results") or None,
         domain_id=result.get("domain_id"),
     )
+
+
+def _get_accessible_domain_ids(
+    user: dict[str, Any],
+    routing_map: dict[str, dict[str, Any]],
+) -> list[str]:
+    """Return domain IDs the user has EXECUTE access to."""
+    if user.get("role") == "root":
+        return list(routing_map.keys())
+
+    accessible: list[str] = []
+    for domain_id in routing_map:
+        try:
+            runtime = DOMAIN_REGISTRY.get_runtime_context(domain_id)
+            domain_physics_path = runtime["domain_physics_path"]
+            domain = PERSISTENCE.load_domain_physics(str(domain_physics_path))
+            module_perms = domain.get("permissions")
+            if module_perms is None:
+                # No permissions block = open access
+                accessible.append(domain_id)
+                continue
+            if check_permission(
+                user_id=user["sub"],
+                user_role=user["role"],
+                module_permissions=module_perms,
+                operation=Operation.EXECUTE,
+            ):
+                accessible.append(domain_id)
+        except Exception:
+            continue
+    return accessible
 
 
 @app.get("/api/health")
