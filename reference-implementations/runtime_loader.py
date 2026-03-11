@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import importlib.util
@@ -240,6 +240,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "system_prompt": system_prompt,
         "turn_interpretation_prompt": turn_interpretation_prompt,
         "runtime_provenance": runtime_provenance,
+        "domain": domain_physics,
         "state_builder_fn": state_builder_fn,
         "domain_step_fn": domain_step_fn,
         "turn_interpreter_fn": turn_interpreter_fn,

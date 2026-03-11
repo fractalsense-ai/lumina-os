@@ -1,4 +1,4 @@
-"""
+﻿"""
 lumina-api-server.py — Project Lumina Integration Server
 
 Generic runtime host for D.S.A. orchestration:
@@ -212,7 +212,9 @@ def _detect_glossary_query(
     if not _GLOSSARY_QUERY_RE.search(text):
         return None
 
-    # Build a lookup index: lowered term/alias → glossary entry
+    # Build a lookup index: lowered term/alias → glossary entry.
+    # For aliases starting with a leading article, also index the stripped form.
+    _ARTICLE_RE = re.compile(r"^(?:a|an|the)\s+", re.IGNORECASE)
     index: dict[str, dict[str, Any]] = {}
     for entry in glossary:
         key = str(entry.get("term", "")).lower().strip()
@@ -222,6 +224,9 @@ def _detect_glossary_query(
             akey = str(alias).lower().strip()
             if akey:
                 index[akey] = entry
+                stripped = _ARTICLE_RE.sub("", akey).strip()
+                if stripped and stripped != akey:
+                    index[stripped] = entry
 
     # Normalise the question to extract the candidate term.
     candidate = text.lower()
@@ -229,8 +234,8 @@ def _detect_glossary_query(
     candidate = re.sub(r"[?.!]+$", "", candidate).strip()
     # Strip common question prefixes
     candidate = re.sub(
-        r"^(?:what\s+(?:is|are|does)\s+(?:a|an|the)?\s*"
-        r"|what\s+does\s+|what(?:'s| is)\s+"
+        r"^(?:what\s+(?:is|are|does)\s+(?:an|a|the)?\s*"
+        r"|what\s+does\s+|what(?:'s| is)\s+(?:an|a|the)?\s*"
         r"|define\s+|meaning\s+of\s+)",
         "",
         candidate,
@@ -739,7 +744,12 @@ def process_message(
 
     task_context = dict(task_spec)
     task_context["current_problem"] = current_problem
-    turn_data = turn_data_override if turn_data_override is not None else interpret_turn_input(input_text, task_context, runtime)
+    if turn_data_override is not None:
+        turn_data = turn_data_override
+    elif deterministic_response:
+        turn_data = dict(runtime.get("turn_input_defaults") or {})
+    else:
+        turn_data = interpret_turn_input(input_text, task_context, runtime)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
     # Inject server-side solve elapsed time (more reliable than LLM estimate)
