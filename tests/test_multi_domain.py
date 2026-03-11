@@ -9,13 +9,15 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-import auth
-from persistence_adapter import NullPersistenceAdapter
+from lumina.auth import auth
+from lumina.persistence.adapter import NullPersistenceAdapter
+from lumina.core.yaml_loader import load_yaml as _load_yaml
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_api_module(module_name: str = "lumina_api_server_multidomain_test"):
-    repo_root = Path(__file__).resolve().parents[1]
-    module_path = repo_root / "reference-implementations" / "lumina-api-server.py"
+    module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     spec = importlib.util.spec_from_file_location(module_name, str(module_path))
     if spec is None or spec.loader is None:
         raise RuntimeError("Could not load lumina-api-server module")
@@ -28,20 +30,14 @@ def _load_api_module(module_name: str = "lumina_api_server_multidomain_test"):
 @pytest.fixture
 def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     """Load API module in multi-domain mode with the domain registry."""
-    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "domain-registry.yaml")
+    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "cfg/domain-registry.yaml")
     # Ensure single-domain var is unset so registry takes precedence
     monkeypatch.delenv("LUMINA_RUNTIME_CONFIG_PATH", raising=False)
 
     mod = _load_api_module("lumina_api_server_multidomain_test")
     mod.PERSISTENCE = NullPersistenceAdapter()
     mod.BOOTSTRAP_MODE = False
-
-    repo_root = Path(__file__).resolve().parents[1]
-    yaml_loader_path = repo_root / "reference-implementations" / "yaml-loader.py"
-    yaml_spec = importlib.util.spec_from_file_location("test_yaml_loader_md", str(yaml_loader_path))
-    yaml_mod = importlib.util.module_from_spec(yaml_spec)
-    yaml_spec.loader.exec_module(yaml_mod)
-    mod.PERSISTENCE.load_subject_profile = lambda path: yaml_mod.load_yaml(path)
+    mod.PERSISTENCE.load_subject_profile = _load_yaml
 
     monkeypatch.setattr(auth, "JWT_SECRET", "test-secret")
     return mod

@@ -7,13 +7,15 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-import auth
-from persistence_adapter import NullPersistenceAdapter
+from lumina.auth import auth
+from lumina.persistence.adapter import NullPersistenceAdapter
+from lumina.core.yaml_loader import load_yaml as _load_yaml
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_api_module():
-    repo_root = Path(__file__).resolve().parents[1]
-    module_path = repo_root / "reference-implementations" / "lumina-api-server.py"
+    module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     module_name = "lumina_api_server_chat_tool_ctl_test"
 
     spec = importlib.util.spec_from_file_location(module_name, str(module_path))
@@ -28,21 +30,13 @@ def _load_api_module():
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
 
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
     mod.BOOTSTRAP_MODE = False
-
-    repo_root = Path(__file__).resolve().parents[1]
-    yaml_loader_path = repo_root / "reference-implementations" / "yaml-loader.py"
-    yaml_spec = importlib.util.spec_from_file_location("test_yaml_loader", str(yaml_loader_path))
-    if yaml_spec is None or yaml_spec.loader is None:
-        raise RuntimeError("Could not load yaml-loader.py")
-    yaml_mod = importlib.util.module_from_spec(yaml_spec)
-    yaml_spec.loader.exec_module(yaml_mod)
-    mod.PERSISTENCE.load_subject_profile = lambda path: yaml_mod.load_yaml(path)
+    mod.PERSISTENCE.load_subject_profile = _load_yaml
 
     monkeypatch.setattr(auth, "JWT_SECRET", "test-secret")
     return mod

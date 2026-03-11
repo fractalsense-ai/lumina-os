@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -11,13 +12,12 @@ import pytest
 # ── Load the _detect_glossary_query function from lumina-api-server ──
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-_REF = _REPO_ROOT / "reference-implementations"
-if str(_REF) not in sys.path:
-    sys.path.insert(0, str(_REF))
 
 
 def _load_detect_fn():
-    module_path = _REF / "lumina-api-server.py"
+    # Ensure server module can initialize (needs at least one domain config path)
+    os.environ.setdefault("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     spec = importlib.util.spec_from_file_location("lumina_api_server_glossary_test", str(module_path))
     if spec is None or spec.loader is None:
         raise RuntimeError("Could not load lumina-api-server module")

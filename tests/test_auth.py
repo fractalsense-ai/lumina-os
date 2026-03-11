@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-import auth
+from lumina.auth import auth
 
 
 @pytest.mark.unit

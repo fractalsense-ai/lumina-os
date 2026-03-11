@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from dsa_orchestrator import DSAOrchestrator
+from lumina.orchestrator.dsa_orchestrator import DSAOrchestrator
 
 
 # ── Helpers ──────────────────────────────────────────────────

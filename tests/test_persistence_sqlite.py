@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sqlite_persistence import SQLitePersistenceAdapter
+from lumina.persistence.sqlite import SQLitePersistenceAdapter
 
 
 @pytest.fixture

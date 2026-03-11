@@ -14,7 +14,7 @@ from unittest.mock import patch
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-REF_DIR = REPO_ROOT / "reference-implementations"
+REF_DIR = REPO_ROOT / "src" / "lumina" / "systools"
 
 
 def _load_module(script_name: str, module_name: str):
@@ -27,12 +27,12 @@ def _load_module(script_name: str, module_name: str):
 
 @pytest.fixture(scope="module")
 def validator_mod():
-    return _load_module("ctl-commitment-validator.py", "ctl_commitment_validator")
+    return _load_module("ctl_validator.py", "ctl_commitment_validator")
 
 
 @pytest.fixture(scope="module")
 def freeze_mod():
-    return _load_module("lumina-security-freeze.py", "lumina_security_freeze")
+    return _load_module("security_freeze.py", "lumina_security_freeze")
 
 
 def _write_sample_domain_physics(path: Path) -> None:

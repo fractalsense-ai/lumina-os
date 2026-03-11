@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from persistence_adapter import NullPersistenceAdapter
+from lumina.persistence.adapter import NullPersistenceAdapter
 
 
 @pytest.mark.unit

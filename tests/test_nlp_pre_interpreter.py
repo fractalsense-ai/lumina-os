@@ -13,8 +13,8 @@ _NLP_PATH = (
     Path(__file__).resolve().parent.parent
     / "domain-packs"
     / "education"
-    / "reference-implementations"
-    / "nlp-pre-interpreter.py"
+    / "systools"
+    / "nlp_pre_interpreter.py"
 )
 _spec = importlib.util.spec_from_file_location("nlp_pre_interpreter", str(_NLP_PATH))
 _mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]

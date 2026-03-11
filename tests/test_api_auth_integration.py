@@ -7,13 +7,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-import auth
-from persistence_adapter import NullPersistenceAdapter
+from lumina.auth import auth
+from lumina.persistence.adapter import NullPersistenceAdapter
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_api_module():
-    repo_root = Path(__file__).resolve().parents[1]
-    module_path = repo_root / "reference-implementations" / "lumina-api-server.py"
+    module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     module_name = "lumina_api_server_test"
 
     spec = importlib.util.spec_from_file_location(module_name, str(module_path))
@@ -28,7 +29,7 @@ def _load_api_module():
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
 
     mod = _load_api_module()

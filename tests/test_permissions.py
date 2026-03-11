@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from permissions import Operation, check_permission, check_permission_or_raise, mode_to_symbolic, parse_octal
+from lumina.core.permissions import Operation, check_permission, check_permission_or_raise, mode_to_symbolic, parse_octal
 
 
 BASE_PERMS = {

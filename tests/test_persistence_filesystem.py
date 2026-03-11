@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from filesystem_persistence import FilesystemPersistenceAdapter
+from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 
 
 @pytest.fixture

@@ -8,8 +8,21 @@ __pycache__/
 .env.*
 !.env.example
 
-# Test ledger files
+# Virtual environment
+.venv/
+venv/
+
+# Build / packaging
+dist/
+*.egg-info/
+.hatch/
+
+# Test artifacts
 /tmp/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
 
 # Editor and OS files
 .DS_Store
@@ -18,10 +31,12 @@ __pycache__/
 .idea/
 .vscode/
 
-# Frontend
-front-end/node_modules/
-front-end/dist/
-front-end/.env
-front-end/.env.*
-front-end/*.tsbuildinfo
-front-end/lib/openaikey.md
+# Frontend (src/web/)
+src/web/node_modules/
+src/web/dist/
+src/web/.env
+src/web/.env.*
+src/web/*.tsbuildinfo
+src/web/coverage/
+src/web/test-results/
+src/web/lib/openaikey.md

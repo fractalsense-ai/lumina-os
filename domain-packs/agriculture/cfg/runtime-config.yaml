@@ -1,0 +1,83 @@
+runtime:
+  global_system_prompt_path: specs/global-system-prompt-v1.md
+  domain_system_prompt_path: domain-packs/agriculture/prompts/domain-system-override.md
+  turn_interpretation_prompt_path: domain-packs/agriculture/prompts/turn-interpretation.md
+
+  domain_physics_path: domain-packs/agriculture/modules/operations-level-1/domain-physics.json
+  subject_profile_path: domain-packs/agriculture/modules/operations-level-1/example-subject.yaml
+
+  access_control:
+    required_role: user
+    allowed_roles:
+      - root
+      - domain_authority
+      - it_support
+      - qa
+      - user
+
+  default_task_spec:
+    task_id: operations-signal-001
+    nominal_difficulty: 0.4
+    skills_required:
+      - monitor_signal
+      - report_variance
+
+  domain_step_params:
+    window_turns: 5
+    drift_threshold: 0.4
+
+  turn_input_defaults:
+    within_tolerance: true
+    response_latency_sec: 10.0
+    off_task_ratio: 0.0
+    step_count: 0
+
+  turn_input_schema:
+    within_tolerance:
+      type: bool
+      default: true
+    response_latency_sec:
+      type: float
+      minimum: 0.0
+      default: 10.0
+    off_task_ratio:
+      type: float
+      minimum: 0.0
+      maximum: 1.0
+      default: 0.0
+    step_count:
+      type: int
+      minimum: 0
+      default: 0
+
+  action_prompt_type_map:
+    request_more_steps: more_steps_request
+
+  ui_manifest:
+    title: "Project Lumina"
+    subtitle: "Operations Level 1 — Field Monitoring"
+    domain_label: "Agriculture"
+    consent_heading: "Project Lumina"
+    consent_text: "This system monitors operational signals and reports variance. It does not store raw sensor data beyond structured telemetry. If conditions exceed tolerance, we escalate to the site manager."
+    consent_button_label: "I Acknowledge Operating Conditions"
+    placeholder_text: "Report current signal readings..."
+    theme:
+      primary: "oklch(0.45 0.10 145)"
+      accent: "oklch(0.65 0.15 85)"
+      background: "oklch(0.95 0.02 100)"
+
+  deterministic_templates:
+    task_presentation: "Proceed with {task_id}. Report current operating signal and any drift notes."
+    more_steps_request: "Provide additional operational detail for {task_id} so we can verify tolerance."
+    default: "Continue with {task_id} and share the next operational update."
+
+adapters:
+  state_builder:
+    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    callable: build_initial_learning_state
+  domain_step:
+    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    callable: domain_step
+  turn_interpreter:
+    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    callable: interpret_turn_input
