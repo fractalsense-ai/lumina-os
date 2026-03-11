@@ -464,3 +464,112 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
                 update(self._User).where(self._User.user_id == user_id).values(active=False)
             )
         return True
+
+    def update_user_password(self, user_id: str, new_hash: str) -> bool:
+        return asyncio.run(self._update_user_password_async(user_id, new_hash))
+
+    async def _update_user_password_async(self, user_id: str, new_hash: str) -> bool:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            existing = await conn.execute(
+                select(self._User.user_id).where(self._User.user_id == user_id)
+            )
+            if existing.first() is None:
+                return False
+            await conn.execute(
+                update(self._User).where(self._User.user_id == user_id).values(password_hash=new_hash)
+            )
+        return True
+
+    def query_ctl_records(
+        self,
+        session_id: str | None = None,
+        record_type: str | None = None,
+        event_type: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        return asyncio.run(
+            self._query_ctl_records_async(session_id, record_type, event_type, domain_id, limit, offset)
+        )
+
+    async def _query_ctl_records_async(
+        self,
+        session_id: str | None,
+        record_type: str | None,
+        event_type: str | None,
+        domain_id: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[dict[str, Any]]:
+        from sqlalchemy import select
+
+        stmt = select(self._CtlRecord.payload_json).order_by(self._CtlRecord.id.asc())
+        if session_id:
+            stmt = stmt.where(self._CtlRecord.session_id == session_id)
+        if record_type:
+            stmt = stmt.where(self._CtlRecord.record_type == record_type)
+        stmt = stmt.offset(offset).limit(limit)
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(stmt)
+            payloads = result.scalars().all()
+
+        records: list[dict[str, Any]] = []
+        for payload in payloads:
+            try:
+                rec = json.loads(payload)
+            except Exception:
+                continue
+            if not isinstance(rec, dict):
+                continue
+            if event_type and rec.get("event_type") != event_type:
+                continue
+            records.append(rec)
+        return records
+
+    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+        return asyncio.run(self._list_ctl_sessions_summary_async())
+
+    async def _list_ctl_sessions_summary_async(self) -> list[dict[str, Any]]:
+        from sqlalchemy import distinct, func, select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(
+                    self._CtlRecord.session_id,
+                    func.count(self._CtlRecord.id).label("record_count"),
+                    func.min(self._CtlRecord.created_at_utc).label("first_ts"),
+                    func.max(self._CtlRecord.created_at_utc).label("last_ts"),
+                ).group_by(self._CtlRecord.session_id)
+            )
+            rows = result.all()
+        return [
+            {
+                "session_id": row.session_id,
+                "record_count": row.record_count,
+                "first_timestamp": str(row.first_ts) if row.first_ts else None,
+                "last_timestamp": str(row.last_ts) if row.last_ts else None,
+            }
+            for row in rows
+        ]
+
+    def query_escalations(
+        self,
+        status: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        records = self.query_ctl_records(record_type="EscalationRecord", limit=10000)
+        if status:
+            records = [r for r in records if r.get("status") == status]
+        if domain_id:
+            records = [r for r in records if r.get("domain_pack_id") == domain_id]
+        return records[offset : offset + limit]
+
+    def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
+        records = self.query_ctl_records(record_type="CommitmentRecord", limit=10000)
+        return [r for r in records if r.get("subject_id") == subject_id]

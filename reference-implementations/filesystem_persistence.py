@@ -256,3 +256,114 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         users[user_id]["active"] = False
         self._save_users(users)
         return True
+
+    def update_user_password(self, user_id: str, new_hash: str) -> bool:
+        users = self._load_users()
+        if user_id not in users:
+            return False
+        users[user_id]["password_hash"] = new_hash
+        self._save_users(users)
+        return True
+
+    def query_ctl_records(
+        self,
+        session_id: str | None = None,
+        record_type: str | None = None,
+        event_type: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        all_records: list[dict[str, Any]] = []
+        if session_id:
+            sids = [session_id]
+        else:
+            sids = self.list_ctl_session_ids()
+        for sid in sids:
+            # Try domain-specific ledgers if domain_id filter is set
+            if domain_id:
+                path = Path(self.get_ctl_ledger_path(sid, domain_id=domain_id))
+            else:
+                path = Path(self.get_ctl_ledger_path(sid))
+            records = self._load_ledger_records(path)
+            # Also load domain-specific ledgers when no domain_id filter
+            if not domain_id:
+                for p in sorted(self.ctl_dir.glob(f"session-{sid}-*.jsonl")):
+                    if p.name != path.name:
+                        records.extend(self._load_ledger_records(p))
+            all_records.extend(records)
+
+        # Apply filters
+        filtered = all_records
+        if record_type:
+            filtered = [r for r in filtered if r.get("record_type") == record_type]
+        if event_type:
+            filtered = [r for r in filtered if r.get("event_type") == event_type]
+
+        # Sort by timestamp
+        filtered.sort(key=lambda r: r.get("timestamp_utc", ""))
+
+        return filtered[offset : offset + limit]
+
+    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+        summaries: list[dict[str, Any]] = []
+        seen_sessions: dict[str, dict[str, Any]] = {}
+
+        for p in sorted(self.ctl_dir.glob("session-*.jsonl")):
+            name = p.name
+            if not name.startswith("session-") or not name.endswith(".jsonl"):
+                continue
+            # Extract session_id from filename
+            stem = name[len("session-"):-len(".jsonl")]
+            # Handle domain-scoped ledger names: session-{sid}-{domain}.jsonl
+            parts = stem.rsplit("-", 1)
+            # If it's a UUID-style sid, we need smarter parsing
+            records = self._load_ledger_records(p)
+            for rec in records:
+                sid = rec.get("session_id", stem)
+                if sid not in seen_sessions:
+                    seen_sessions[sid] = {
+                        "session_id": sid,
+                        "record_count": 0,
+                        "first_timestamp": rec.get("timestamp_utc"),
+                        "last_timestamp": rec.get("timestamp_utc"),
+                        "domains": set(),
+                    }
+                entry = seen_sessions[sid]
+                entry["record_count"] += 1
+                ts = rec.get("timestamp_utc", "")
+                if ts and (not entry["first_timestamp"] or ts < entry["first_timestamp"]):
+                    entry["first_timestamp"] = ts
+                if ts and (not entry["last_timestamp"] or ts > entry["last_timestamp"]):
+                    entry["last_timestamp"] = ts
+                dom = rec.get("domain_id") or rec.get("to_domain")
+                if dom:
+                    entry["domains"].add(dom)
+
+        for sid, entry in seen_sessions.items():
+            summaries.append({
+                "session_id": entry["session_id"],
+                "record_count": entry["record_count"],
+                "first_timestamp": entry["first_timestamp"],
+                "last_timestamp": entry["last_timestamp"],
+                "domains": sorted(entry["domains"]),
+            })
+        return summaries
+
+    def query_escalations(
+        self,
+        status: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        records = self.query_ctl_records(record_type="EscalationRecord")
+        if status:
+            records = [r for r in records if r.get("status") == status]
+        if domain_id:
+            records = [r for r in records if r.get("domain_pack_id") == domain_id]
+        return records[offset : offset + limit]
+
+    def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
+        records = self.query_ctl_records(record_type="CommitmentRecord")
+        return [r for r in records if r.get("subject_id") == subject_id]

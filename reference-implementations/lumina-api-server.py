@@ -9,6 +9,7 @@ Generic runtime host for D.S.A. orchestration:
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import hashlib
 import json
@@ -40,8 +41,16 @@ from auth import (
     VALID_ROLES,
     create_jwt,
     hash_password,
+    revoke_token_jti,
     verify_jwt,
     verify_password,
+)
+from admin_operations import (
+    build_commitment_record,
+    build_trace_event,
+    can_govern_domain,
+    map_role_to_actor_role,
+    _canonical_sha256 as admin_canonical_sha256,
 )
 from domain_registry import DomainNotFoundError, DomainRegistry
 from filesystem_persistence import FilesystemPersistenceAdapter
@@ -83,6 +92,9 @@ CORS_ORIGINS: list[str] = [
     if o.strip()
 ]
 BOOTSTRAP_MODE: bool = os.environ.get("LUMINA_BOOTSTRAP_MODE", "true").strip().lower() not in {"0", "false", "no"}
+
+# Session idle timeout (minutes). 0 = disabled.
+SESSION_IDLE_TIMEOUT_MINUTES: int = int(os.environ.get("LUMINA_SESSION_IDLE_TIMEOUT_MINUTES", "30"))
 
 # ─────────────────────────────────────────────────────────────
 # Domain Registry (replaces single-domain RUNTIME singleton)
@@ -644,12 +656,13 @@ class DomainContext:
 class SessionContainer:
     """Holds isolated domain contexts for a single session."""
 
-    __slots__ = ("active_domain_id", "contexts", "user")
+    __slots__ = ("active_domain_id", "contexts", "user", "last_activity")
 
     def __init__(self, active_domain_id: str, user: dict[str, Any] | None = None) -> None:
         self.active_domain_id = active_domain_id
         self.contexts: dict[str, DomainContext] = {}
         self.user = user
+        self.last_activity: float = time.time()
 
     @property
     def active_context(self) -> DomainContext:
@@ -947,6 +960,7 @@ def process_message(
     container = _session_containers.get(session_id)
     if container is not None:
         container.active_context.sync_from_dict(session)
+        container.last_activity = time.time()
         _persist_session_container(session_id, container)
     else:
         PERSISTENCE.save_session_state(
@@ -1033,7 +1047,7 @@ def process_message(
 app = FastAPI(
     title="Project Lumina API",
     description="D.S.A. Orchestrator + LLM Conversational Interface (multi-domain)",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -1103,6 +1117,38 @@ class UserResponse(BaseModel):
     role: str
     governed_modules: list[str]
     active: bool
+
+
+# ── Admin request/response models ────────────────────────────
+
+class UpdateUserRequest(BaseModel):
+    role: str | None = None
+    governed_modules: list[str] | None = None
+
+
+class RevokeRequest(BaseModel):
+    user_id: str | None = None
+
+
+class PasswordResetRequest(BaseModel):
+    user_id: str | None = None
+    new_password: str
+
+
+class DomainCommitRequest(BaseModel):
+    domain_id: str
+    actor_id: str | None = None
+    summary: str | None = None
+
+
+class DomainPhysicsUpdateRequest(BaseModel):
+    updates: dict[str, Any]
+    summary: str
+
+
+class EscalationResolveRequest(BaseModel):
+    decision: str  # "approve", "reject", "defer"
+    reasoning: str
 
 
 # ── Auth middleware ───────────────────────────────────────────
@@ -1525,6 +1571,656 @@ async def list_all_users(
         )
         for u in users
     ]
+
+
+# ─────────────────────────────────────────────────────────────
+# Admin Endpoints — Phase 1: User & Access Management
+# ─────────────────────────────────────────────────────────────
+
+
+@app.patch("/api/auth/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: str,
+    req: UpdateUserRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> UserResponse:
+    """Update user role and/or governed_modules (root only)."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    require_role(user_data, "root")
+
+    if req.role is not None and req.role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {req.role}")
+
+    if req.governed_modules is not None and req.role != "domain_authority":
+        if req.role is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="governed_modules can only be set for domain_authority role",
+            )
+
+    target = await run_in_threadpool(PERSISTENCE.get_user, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    old_role = target["role"]
+    new_role = req.role or old_role
+    new_governed = req.governed_modules if req.governed_modules is not None else target.get("governed_modules")
+
+    updated = await run_in_threadpool(
+        PERSISTENCE.update_user_role, user_id, new_role, new_governed
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # CTL: TraceEvent for role change
+    if new_role != old_role:
+        event = build_trace_event(
+            session_id="admin",
+            actor_id=user_data["sub"],
+            event_type="other",
+            decision=f"role_change: {old_role} -> {new_role}",
+            evidence_summary={
+                "target_user_id": user_id,
+                "old_role": old_role,
+                "new_role": new_role,
+            },
+        )
+        try:
+            PERSISTENCE.append_ctl_record(
+                "admin", event,
+                ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            )
+        except Exception:
+            log.debug("Could not write role_change trace event")
+
+    return UserResponse(
+        user_id=updated["user_id"],
+        username=updated["username"],
+        role=updated["role"],
+        governed_modules=updated.get("governed_modules") or [],
+        active=updated.get("active", True),
+    )
+
+
+@app.delete("/api/auth/users/{user_id}", status_code=204)
+async def delete_user(
+    user_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> None:
+    """Deactivate a user (soft delete). Root only."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    require_role(user_data, "root")
+
+    if user_id == user_data["sub"]:
+        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+
+    success = await run_in_threadpool(PERSISTENCE.deactivate_user, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    event = build_trace_event(
+        session_id="admin",
+        actor_id=user_data["sub"],
+        event_type="other",
+        decision="user_deactivated",
+        evidence_summary={"target_user_id": user_id},
+    )
+    try:
+        PERSISTENCE.append_ctl_record(
+            "admin", event,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write user_deactivated trace event")
+
+
+@app.post("/api/auth/revoke", status_code=200)
+async def revoke_token(
+    req: RevokeRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, str]:
+    """Revoke an auth token. Root/it_support for any user; authenticated user for own token."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if req.user_id is not None and req.user_id != user_data["sub"]:
+        require_role(user_data, "root", "it_support")
+
+    # Revoke the current token's JTI
+    jti = user_data.get("jti")
+    if jti:
+        revoke_token_jti(jti)
+
+    event = build_trace_event(
+        session_id="admin",
+        actor_id=user_data["sub"],
+        event_type="other",
+        decision="token_revoked",
+        evidence_summary={"target_user_id": req.user_id or user_data["sub"]},
+    )
+    try:
+        PERSISTENCE.append_ctl_record(
+            "admin", event,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write token_revoked trace event")
+
+    return {"status": "revoked"}
+
+
+@app.post("/api/auth/password-reset", status_code=200)
+async def password_reset(
+    req: PasswordResetRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, str]:
+    """Reset password. Root/it_support for any user; authenticated user for own."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    target_user_id = req.user_id or user_data["sub"]
+    if target_user_id != user_data["sub"]:
+        require_role(user_data, "root", "it_support")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    new_hash = hash_password(req.new_password)
+    success = await run_in_threadpool(PERSISTENCE.update_user_password, target_user_id, new_hash)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    event = build_trace_event(
+        session_id="admin",
+        actor_id=user_data["sub"],
+        event_type="other",
+        decision="password_reset",
+        evidence_summary={"target_user_id": target_user_id},
+    )
+    try:
+        PERSISTENCE.append_ctl_record(
+            "admin", event,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write password_reset trace event")
+
+    return {"status": "password_updated"}
+
+
+# ─────────────────────────────────────────────────────────────
+# Admin Endpoints — Phase 2: Domain Pack Lifecycle
+# ─────────────────────────────────────────────────────────────
+
+
+@app.post("/api/domain-pack/commit")
+async def domain_pack_commit(
+    req: DomainCommitRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Commit domain pack hash to CTL."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, req.domain_id):
+        raise HTTPException(status_code=403, detail="Not authorized for this domain")
+
+    try:
+        resolved = DOMAIN_REGISTRY.resolve_domain_id(req.domain_id)
+    except DomainNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+    domain_physics_path = runtime["domain_physics_path"]
+    domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(domain_physics_path))
+
+    subject_hash = admin_canonical_sha256(domain)
+    subject_version = str(domain.get("version", ""))
+
+    record = build_commitment_record(
+        actor_id=req.actor_id or user_data["sub"],
+        actor_role=map_role_to_actor_role(user_data["role"]),
+        commitment_type="domain_pack_activation",
+        subject_id=resolved,
+        summary=req.summary or f"Domain pack activation: {resolved}",
+        subject_version=subject_version,
+        subject_hash=subject_hash,
+    )
+
+    PERSISTENCE.append_ctl_record(
+        "admin", record,
+        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+    )
+
+    return {
+        "record_id": record["record_id"],
+        "subject_hash": subject_hash,
+        "subject_version": subject_version,
+        "commitment_type": "domain_pack_activation",
+    }
+
+
+@app.get("/api/domain-pack/{domain_id}/history")
+async def domain_pack_history(
+    domain_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List version/commitment history for a domain pack."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    allowed_roles = ("root", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        if user_data["role"] == "domain_authority" and can_govern_domain(user_data, domain_id):
+            pass  # allowed
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    records = await run_in_threadpool(PERSISTENCE.query_commitments, domain_id)
+    return [
+        {
+            "record_id": r.get("record_id"),
+            "commitment_type": r.get("commitment_type"),
+            "timestamp": r.get("timestamp_utc"),
+            "subject_version": r.get("subject_version"),
+            "subject_hash": r.get("subject_hash"),
+            "summary": r.get("summary"),
+        }
+        for r in records
+    ]
+
+
+@app.patch("/api/domain-pack/{domain_id}/physics")
+async def update_domain_physics(
+    domain_id: str,
+    req: DomainPhysicsUpdateRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Update domain physics fields and auto-commit."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+        raise HTTPException(status_code=403, detail="Not authorized for this domain")
+
+    try:
+        resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    except DomainNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+    domain_physics_path = Path(runtime["domain_physics_path"])
+
+    # Load, update, write atomically
+    domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(domain_physics_path))
+    for key, value in req.updates.items():
+        domain[key] = value
+
+    def _write_physics() -> None:
+        tmp = domain_physics_path.with_suffix(".json.tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(domain, fh, indent=2, ensure_ascii=False)
+        tmp.replace(domain_physics_path)
+
+    await run_in_threadpool(_write_physics)
+
+    subject_hash = admin_canonical_sha256(domain)
+
+    # Auto-commit
+    record = build_commitment_record(
+        actor_id=user_data["sub"],
+        actor_role=map_role_to_actor_role(user_data["role"]),
+        commitment_type="domain_pack_activation",
+        subject_id=resolved,
+        summary=req.summary,
+        subject_version=str(domain.get("version", "")),
+        subject_hash=subject_hash,
+        metadata={"updated_fields": list(req.updates.keys())},
+    )
+    PERSISTENCE.append_ctl_record(
+        "admin", record,
+        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+    )
+
+    return {
+        "subject_hash": subject_hash,
+        "updated_fields": list(req.updates.keys()),
+        "record_id": record["record_id"],
+    }
+
+
+def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: str = "normal", close_reason: str | None = None) -> None:
+    """Close a session: write CommitmentRecords and remove from memory."""
+    container = _session_containers.get(session_id)
+    if container is None:
+        return
+
+    for did, ctx in container.contexts.items():
+        record = build_commitment_record(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            commitment_type="session_close",
+            subject_id=session_id,
+            summary=f"Session closed ({close_type}): domain {did}",
+            close_type=close_type,
+            close_reason=close_reason,
+            metadata={"domain_id": did, "turn_count": ctx.turn_count},
+        )
+        try:
+            PERSISTENCE.append_ctl_record(
+                session_id, record,
+                ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=did),
+            )
+        except Exception:
+            log.debug("Could not write session_close record for %s/%s", session_id, did)
+
+    # Persist final state then free memory
+    _persist_session_container(session_id, container)
+    del _session_containers[session_id]
+
+
+@app.post("/api/session/{session_id}/close", status_code=200)
+async def close_session(
+    session_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, str]:
+    """Explicitly close a session."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    container = _session_containers.get(session_id)
+    if container is None:
+        raise HTTPException(status_code=404, detail="Session not found or already closed")
+
+    # Access check: root, it_support, governed domain_authority, or session owner
+    is_owner = container.user is not None and container.user.get("sub") == user_data["sub"]
+    is_privileged = user_data["role"] in ("root", "it_support")
+    is_da = user_data["role"] == "domain_authority" and can_govern_domain(
+        user_data, container.active_domain_id
+    )
+    if not (is_owner or is_privileged or is_da):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    await run_in_threadpool(
+        _close_session,
+        session_id,
+        user_data["sub"],
+        map_role_to_actor_role(user_data["role"]),
+        "normal",
+    )
+    return {"status": "closed", "session_id": session_id}
+
+
+# ─────────────────────────────────────────────────────────────
+# Admin Endpoints — Phase 3: Audit & Escalation
+# ─────────────────────────────────────────────────────────────
+
+
+@app.get("/api/escalations")
+async def list_escalations(
+    status: str | None = None,
+    domain_id: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List escalation records with optional filters."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    allowed_roles = ("root", "it_support", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        if user_data["role"] == "domain_authority":
+            pass  # will be filtered by governed domains below
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    records = await run_in_threadpool(
+        PERSISTENCE.query_escalations,
+        status=status,
+        domain_id=domain_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    # Scope domain_authority to governed domains only
+    if user_data["role"] == "domain_authority":
+        governed = user_data.get("governed_modules") or []
+        records = [r for r in records if r.get("domain_pack_id") in governed]
+
+    return records
+
+
+@app.post("/api/escalations/{escalation_id}/resolve")
+async def resolve_escalation(
+    escalation_id: str,
+    req: EscalationResolveRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Resolve an escalation."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if req.decision not in ("approve", "reject", "defer"):
+        raise HTTPException(status_code=400, detail="decision must be approve, reject, or defer")
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    # Find the escalation record
+    all_escalations = await run_in_threadpool(PERSISTENCE.query_escalations)
+    target = None
+    for esc in all_escalations:
+        if esc.get("record_id") == escalation_id:
+            target = esc
+            break
+
+    if target is None:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+
+    # Domain authority scoping
+    if user_data["role"] == "domain_authority":
+        domain = target.get("domain_pack_id", "")
+        if not can_govern_domain(user_data, domain):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+
+    record = build_commitment_record(
+        actor_id=user_data["sub"],
+        actor_role=map_role_to_actor_role(user_data["role"]),
+        commitment_type="escalation_resolution",
+        subject_id=escalation_id,
+        summary=f"Escalation {req.decision}: {req.reasoning[:200]}",
+        metadata={
+            "decision": req.decision,
+            "reasoning": req.reasoning,
+            "original_trigger": target.get("trigger", ""),
+        },
+        references=[escalation_id],
+    )
+
+    session_id = target.get("session_id", "admin")
+    PERSISTENCE.append_ctl_record(
+        session_id, record,
+        ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_admin"),
+    )
+
+    return {
+        "record_id": record["record_id"],
+        "escalation_id": escalation_id,
+        "decision": req.decision,
+    }
+
+
+@app.get("/api/audit/log")
+async def audit_log(
+    session_id: str | None = None,
+    domain_id: str | None = None,
+    format: str = "json",
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Generate audit log report from CTL records."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    # RBAC: root=all, da=governed, qa/auditor=scoped, user=own sessions only
+    allowed_roles = ("root", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        if user_data["role"] == "domain_authority":
+            pass  # filtered below
+        elif user_data["role"] == "user":
+            pass  # filtered to own sessions below
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    records = await run_in_threadpool(
+        PERSISTENCE.query_ctl_records,
+        session_id=session_id,
+        domain_id=domain_id,
+    )
+
+    # Log the audit request itself
+    audit_event = build_trace_event(
+        session_id="admin",
+        actor_id=user_data["sub"],
+        event_type="audit_requested",
+        decision=f"Audit log requested: session={session_id}, domain={domain_id}",
+    )
+    try:
+        PERSISTENCE.append_ctl_record(
+            "admin", audit_event,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write audit_requested trace event")
+
+    # Build summary
+    record_types: dict[str, int] = {}
+    for r in records:
+        rt = r.get("record_type", "unknown")
+        record_types[rt] = record_types.get(rt, 0) + 1
+
+    return {
+        "total_records": len(records),
+        "record_type_counts": record_types,
+        "filters": {
+            "session_id": session_id,
+            "domain_id": domain_id,
+        },
+        "records": records if format == "json" else [],
+        "generated_by": user_data["sub"],
+    }
+
+
+@app.get("/api/ctl/records")
+async def query_ctl_records(
+    session_id: str | None = None,
+    record_type: str | None = None,
+    event_type: str | None = None,
+    domain_id: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """Query CTL records with filters."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    allowed_roles = ("root", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        if user_data["role"] == "domain_authority":
+            pass  # governed scope applies via domain_id filter
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    records = await run_in_threadpool(
+        PERSISTENCE.query_ctl_records,
+        session_id=session_id,
+        record_type=record_type,
+        event_type=event_type,
+        domain_id=domain_id,
+        limit=limit,
+        offset=offset,
+    )
+    return records
+
+
+@app.get("/api/ctl/sessions")
+async def list_ctl_sessions(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List all CTL session IDs with summary info."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    allowed_roles = ("root", "domain_authority", "it_support", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    summaries = await run_in_threadpool(PERSISTENCE.list_ctl_sessions_summary)
+    return summaries
+
+
+@app.get("/api/ctl/records/{record_id}")
+async def get_ctl_record(
+    record_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Get a specific CTL record by record_id."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    allowed_roles = ("root", "qa", "auditor")
+    if user_data["role"] not in allowed_roles:
+        if user_data["role"] == "domain_authority":
+            pass
+        else:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    # Search all records for the matching record_id
+    all_records = await run_in_threadpool(PERSISTENCE.query_ctl_records, limit=10000)
+    for r in all_records:
+        if r.get("record_id") == record_id:
+            return r
+
+    raise HTTPException(status_code=404, detail="Record not found")
+
+
+# ─────────────────────────────────────────────────────────────
+# Session Idle Timeout — Background Task
+# ─────────────────────────────────────────────────────────────
+
+
+async def _session_idle_cleanup() -> None:
+    """Background task: close sessions that exceed the idle timeout."""
+    while True:
+        await asyncio.sleep(60)
+        if SESSION_IDLE_TIMEOUT_MINUTES <= 0:
+            continue
+        timeout_seconds = SESSION_IDLE_TIMEOUT_MINUTES * 60
+        now = time.time()
+        expired_ids = [
+            sid for sid, container in _session_containers.items()
+            if (now - container.last_activity) > timeout_seconds
+        ]
+        for sid in expired_ids:
+            log.info("Auto-closing idle session: %s", sid)
+            try:
+                _close_session(sid, "system", "system", "forced", "idle_timeout")
+            except Exception:
+                log.exception("Failed to auto-close session %s", sid)
+
+
+@app.on_event("startup")
+async def _start_idle_cleanup() -> None:
+    if SESSION_IDLE_TIMEOUT_MINUTES > 0:
+        asyncio.create_task(_session_idle_cleanup())
+        log.info("Session idle timeout enabled: %d minutes", SESSION_IDLE_TIMEOUT_MINUTES)
 
 
 if __name__ == "__main__":

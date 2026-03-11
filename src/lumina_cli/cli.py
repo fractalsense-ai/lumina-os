@@ -31,5 +31,9 @@ def ctl_validate() -> None:
     _run_reference_script("ctl-commitment-validator.py")
 
 
+def security_freeze() -> None:
+    _run_reference_script("lumina-security-freeze.py")
+
+
 def yaml_convert() -> None:
     _run_reference_script("yaml-to-json-converter.py")

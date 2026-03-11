@@ -39,6 +39,7 @@ lumina-api = "lumina_cli.cli:api"
 lumina-verify = "lumina_cli.cli:verify"
 lumina-orchestrator-demo = "lumina_cli.cli:orchestrator_demo"
 lumina-ctl-validate = "lumina_cli.cli:ctl_validate"
+lumina-security-freeze = "lumina_cli.cli:security_freeze"
 lumina-yaml-convert = "lumina_cli.cli:yaml_convert"
 
 [tool.hatch.build.targets.wheel]

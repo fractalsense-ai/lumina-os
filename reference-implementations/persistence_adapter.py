@@ -91,6 +91,40 @@ class PersistenceAdapter(ABC):
     def deactivate_user(self, user_id: str) -> bool:
         """Soft-delete a user. Returns True if found and deactivated."""
 
+    @abstractmethod
+    def update_user_password(self, user_id: str, new_hash: str) -> bool:
+        """Update stored password hash. Returns True if user found and updated."""
+
+    @abstractmethod
+    def query_ctl_records(
+        self,
+        session_id: str | None = None,
+        record_type: str | None = None,
+        event_type: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """Query CTL records across all sessions with optional filters."""
+
+    @abstractmethod
+    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+        """Return summary info for each CTL session."""
+
+    @abstractmethod
+    def query_escalations(
+        self,
+        status: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """Query EscalationRecords with optional filters."""
+
+    @abstractmethod
+    def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
+        """Query CommitmentRecords for a given subject_id."""
+
 
 class NullPersistenceAdapter(PersistenceAdapter):
     """No-op adapter mainly used for tests; keeps session state in-memory only."""
@@ -222,3 +256,36 @@ class NullPersistenceAdapter(PersistenceAdapter):
             return False
         self._users[user_id]["active"] = False
         return True
+
+    def update_user_password(self, user_id: str, new_hash: str) -> bool:
+        self.__init_users()
+        if user_id not in self._users:
+            return False
+        self._users[user_id]["password_hash"] = new_hash
+        return True
+
+    def query_ctl_records(
+        self,
+        session_id: str | None = None,
+        record_type: str | None = None,
+        event_type: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        return []
+
+    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+        return []
+
+    def query_escalations(
+        self,
+        status: str | None = None,
+        domain_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        return []
+
+    def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
+        return []

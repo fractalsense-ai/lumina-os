@@ -32,6 +32,20 @@ VALID_ROLES: frozenset[str] = frozenset(
     {"root", "domain_authority", "it_support", "qa", "auditor", "user"}
 )
 
+# In-memory set of revoked token JTIs.  Cleared on server restart
+# (tokens have a TTL so this is acceptable for the reference impl).
+_REVOKED_JTIS: set[str] = set()
+
+
+def revoke_token_jti(jti: str) -> None:
+    """Add a JTI to the revocation set."""
+    _REVOKED_JTIS.add(jti)
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Check if a JTI has been revoked."""
+    return jti in _REVOKED_JTIS
+
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -138,6 +152,7 @@ def create_jwt(
         "iat": now,
         "exp": now + ttl * 60,
         "iss": JWT_ISSUER,
+        "jti": secrets.token_hex(16),
     }
 
     h = _b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
@@ -188,5 +203,9 @@ def verify_jwt(token: str) -> dict[str, Any]:
 
     if payload.get("iss") != JWT_ISSUER:
         raise TokenInvalidError(f"Unexpected issuer: {payload.get('iss')!r}")
+
+    jti = payload.get("jti")
+    if jti and is_token_revoked(jti):
+        raise TokenInvalidError("Token has been revoked")
 
     return payload

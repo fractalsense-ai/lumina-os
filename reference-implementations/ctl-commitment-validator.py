@@ -5,6 +5,7 @@ Commands:
     --verify-chain     Verify the hash chain of an entire CTL ledger file
     --verify-session   Verify records for a specific session ID
     --commit           Commit a domain pack (or other artifact) hash to the CTL
+    --rollback         Roll back a domain pack to a previous version
     --print-ledger     Print all records in a ledger in human-readable form
 
 Usage:
@@ -21,6 +22,13 @@ Usage:
     python reference-implementations/ctl-commitment-validator.py \\
         --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \\
         --actor-id <pseudonymous-id> \\
+        --ledger path/to/ledger.jsonl
+
+    # Rollback a domain pack
+    python reference-implementations/ctl-commitment-validator.py \\
+        --rollback domain-packs/education/modules/algebra-level-1/domain-physics.json \\
+        --actor-id <pseudonymous-id> \\
+        --reason "Defective invariant in v2.1.0" \\
         --ledger path/to/ledger.jsonl
 
     # Print ledger contents
@@ -282,6 +290,79 @@ def cmd_commit(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_rollback(args: argparse.Namespace) -> int:
+    subject_path = Path(args.rollback)
+    ledger_path = Path(args.ledger)
+    actor_id = args.actor_id
+    reason = args.reason
+
+    if not subject_path.exists():
+        print(f"ERROR: Subject file not found: {subject_path}", file=sys.stderr)
+        return 1
+
+    subject_hash = canonical_file_hash(subject_path)
+    with open(subject_path, encoding="utf-8") as f:
+        data = json.load(f)
+    subject_id = data.get("id", str(subject_path))
+    subject_version = data.get("version", None)
+
+    # Find the most recent activation record for this subject
+    records = load_ledger(ledger_path)
+    prior_activation = None
+    for r in reversed(records):
+        if (r.get("record_type") == "CommitmentRecord"
+                and r.get("commitment_type") == "domain_pack_activation"
+                and r.get("subject_id") == subject_id):
+            prior_activation = r
+            break
+
+    # Interactive confirmation
+    print("─" * 60)
+    print("DOMAIN PACK ROLLBACK")
+    print("─" * 60)
+    print(f"  Subject:     {subject_id}")
+    print(f"  Version:     {subject_version}")
+    print(f"  Hash:        {subject_hash[:16]}...")
+    print(f"  Actor:       {actor_id}")
+    print(f"  Reason:      {reason}")
+    if prior_activation:
+        print(f"  Prior commit: {prior_activation['record_id']}")
+    else:
+        print("  Prior commit: (none found)")
+    print("─" * 60)
+    print("This will append a domain_pack_rollback CommitmentRecord to the CTL.")
+
+    confirmation = input("Type 'ROLLBACK' to confirm: ")
+    if confirmation.strip() != "ROLLBACK":
+        print("Aborted.")
+        return 1
+
+    prev_hash = hash_record(records[-1]) if records else "genesis"
+
+    record: dict[str, Any] = {
+        "record_type": "CommitmentRecord",
+        "record_id": str(uuid.uuid4()),
+        "prev_record_hash": prev_hash,
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "actor_id": actor_id,
+        "actor_role": "domain_authority",
+        "commitment_type": "domain_pack_rollback",
+        "subject_id": subject_id,
+        "subject_version": subject_version,
+        "subject_hash": subject_hash,
+        "summary": f"Rollback: {reason}",
+        "references": [prior_activation["record_id"]] if prior_activation else [],
+        "metadata": {"reason": reason},
+    }
+
+    append_record(ledger_path, record)
+    print(f"Rollback recorded: {subject_path.name}")
+    print(f"  record_id:    {record['record_id']}")
+    print(f"  subject_hash: {record['subject_hash']}")
+    print(f"  ledger:       {ledger_path}")
+    return 0
+
+
 def cmd_print_ledger(args: argparse.Namespace) -> int:
     ledger_path = Path(args.print_ledger)
     records = load_ledger(ledger_path)
@@ -334,6 +415,11 @@ def main() -> None:
         help="Path to the artifact JSON file to commit. Requires --actor-id and --ledger.",
     )
     group.add_argument(
+        "--rollback",
+        metavar="JSON_FILE",
+        help="Path to the artifact JSON file to roll back. Requires --actor-id, --reason, and --ledger.",
+    )
+    group.add_argument(
         "--print-ledger",
         metavar="LEDGER",
         help="Path to the JSONL ledger file. Prints records in human-readable form.",
@@ -348,6 +434,7 @@ def main() -> None:
         help="CommitmentRecord type (default: domain_pack_activation).",
     )
     parser.add_argument("--summary", metavar="TEXT", help="Human-readable summary (for --commit).")
+    parser.add_argument("--reason", metavar="TEXT", help="Reason for rollback (for --rollback).")
 
     args = parser.parse_args()
 
@@ -364,6 +451,14 @@ def main() -> None:
         if not args.actor_id:
             parser.error("--commit requires --actor-id")
         sys.exit(cmd_commit(args))
+    elif args.rollback:
+        if not args.ledger:
+            parser.error("--rollback requires --ledger")
+        if not args.actor_id:
+            parser.error("--rollback requires --actor-id")
+        if not args.reason:
+            parser.error("--rollback requires --reason")
+        sys.exit(cmd_rollback(args))
     elif args.print_ledger:
         args.ledger = args.print_ledger
         sys.exit(cmd_print_ledger(args))
