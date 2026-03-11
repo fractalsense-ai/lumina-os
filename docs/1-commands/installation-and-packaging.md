@@ -72,3 +72,42 @@ lumina-ctl-validate       # validate a CTL commitment record
 lumina-security-freeze    # check for exposed secrets / security hygiene
 lumina-yaml-convert       # convert YAML files to JSON
 ```
+
+## Frontend (src/web)
+
+The reference UI is a Vite + React + TypeScript app located in `src/web/`. Node.js 20+ is required.
+
+```bash
+cd src/web
+npm install
+```
+
+### Dev server
+
+```bash
+npm run dev
+# Starts on http://localhost:5173 by default
+```
+
+The dev server proxies API requests to the Lumina backend. Start the backend first:
+
+```bash
+# In a separate terminal (repo root)
+lumina-api    # or: python -m lumina.api.server
+```
+
+### Production build
+
+```bash
+npm run build
+# Output written to src/web/dist/
+npm run preview    # serves the built output locally
+```
+
+### Frontend tests
+
+```bash
+npm run test:unit      # Vitest unit tests
+npm run test:coverage  # unit tests + coverage report (src/web/coverage/)
+npm run test:e2e       # Playwright e2e smoke tests (requires a running backend)
+```
