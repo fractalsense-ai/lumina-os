@@ -22,6 +22,18 @@ RecentWindow = _zpd_mod.RecentWindow
 LearningState = _zpd_mod.LearningState
 zpd_monitor_step = _zpd_mod.zpd_monitor_step
 
+_fluency_spec = importlib.util.spec_from_file_location(
+    "fluency_monitor_runtime",
+    str(_THIS_DIR / "fluency_monitor.py"),
+)
+_fluency_mod = importlib.util.module_from_spec(_fluency_spec)  # type: ignore[arg-type]
+sys.modules["fluency_monitor_runtime"] = _fluency_mod
+_fluency_spec.loader.exec_module(_fluency_mod)  # type: ignore[union-attr]
+
+FluencyState = _fluency_mod.FluencyState
+fluency_monitor_step_fn = _fluency_mod.fluency_monitor_step
+build_initial_fluency_state_fn = _fluency_mod.build_initial_fluency_state
+
 
 def build_initial_learning_state(profile: dict[str, Any]) -> Any:
     """Build the education domain-lib state from profile learning_state."""
@@ -48,7 +60,7 @@ def build_initial_learning_state(profile: dict[str, Any]) -> Any:
         hint_flags=[bool(v) for v in (recent_window_raw.get("hint_flags") or [])],
     )
 
-    return LearningState(
+    ls = LearningState(
         affect=AffectState(
             salience=float(affect.get("salience", 0.7)),
             valence=float(affect.get("valence", 0.0)),
@@ -61,6 +73,11 @@ def build_initial_learning_state(profile: dict[str, Any]) -> Any:
         uncertainty=float(learning_state.get("uncertainty", 0.5)),
     )
 
+    # Attach fluency state as a dynamic attribute so the composite
+    # state object carries both ZPD learning state and fluency tracking.
+    ls.fluency = FluencyState()  # type: ignore[attr-defined]
+    return ls
+
 
 def domain_step(
     state: Any,
@@ -68,7 +85,24 @@ def domain_step(
     evidence: dict[str, Any],
     params: dict[str, Any],
 ) -> tuple[Any, dict[str, Any]]:
-    return zpd_monitor_step(state, task_spec, evidence, params=params)
+    # 1. ZPD monitor (primary)
+    state, zpd_decision = zpd_monitor_step(state, task_spec, evidence, params=params)
+
+    # 2. Fluency monitor (secondary)
+    fluency_state: FluencyState = getattr(state, "fluency", FluencyState())
+    fluency_params = params.get("fluency_monitor") or {}
+    fluency_state, fluency_decision = fluency_monitor_step_fn(
+        fluency_state, task_spec, evidence, params=fluency_params,
+    )
+    state.fluency = fluency_state  # type: ignore[attr-defined]
+
+    # 3. Merge: ZPD drift actions take priority over fluency actions
+    merged = dict(zpd_decision)
+    merged["fluency"] = fluency_decision
+    if zpd_decision.get("action") is None and fluency_decision.get("action") is not None:
+        merged["action"] = fluency_decision["action"]
+
+    return state, merged
 
 
 def _strip_markdown_fences(raw: str) -> str:

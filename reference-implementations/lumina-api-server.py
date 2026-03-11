@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -110,8 +111,45 @@ def _build_persistence_adapter() -> PersistenceAdapter:
 PERSISTENCE: PersistenceAdapter = _build_persistence_adapter()
 
 
-def _default_current_problem(task_spec: dict[str, Any]) -> dict[str, Any]:
-    """Create a session-scoped problem context when the task spec omits one."""
+def _get_generate_problem_fn(runtime: dict[str, Any]) -> Any:
+    """Resolve the ``generate_problem`` callable from the domain-pack's
+    reference-implementations directory, mirroring how runtime_loader
+    loads domain adapters via importlib.
+    """
+    domain_step_cfg = (runtime.get("adapters") or {}).get("domain_step") or {}
+    module_path = domain_step_cfg.get("module_path", "")
+    if module_path:
+        gen_path = Path(_REPO_ROOT) / Path(module_path).parent / "problem_generator.py"
+        if gen_path.is_file():
+            spec = importlib.util.spec_from_file_location("_problem_generator", str(gen_path))
+            if spec and spec.loader:
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                return getattr(mod, "generate_problem", None)
+    return None
+
+
+def _default_current_problem(task_spec: dict[str, Any], runtime: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Create a session-scoped problem via the deterministic generator.
+
+    Falls back to the task_spec's ``current_problem`` if the generator
+    or tier config is unavailable.
+    """
+    # Try dynamic generation from domain-physics tiers
+    if runtime is not None:
+        domain = runtime.get("domain") or {}
+        subsystem_configs = domain.get("subsystem_configs") or {}
+        tiers = subsystem_configs.get("equation_difficulty_tiers")
+        if isinstance(tiers, list) and tiers:
+            try:
+                gen_fn = _get_generate_problem_fn(runtime)
+                if gen_fn is not None:
+                    difficulty = float(task_spec.get("nominal_difficulty", 0.5))
+                    return gen_fn(difficulty, tiers)
+            except Exception:
+                log.warning("Problem generator unavailable; falling back to task_spec")
+
+    # Fallback: use whatever is in the task_spec
     current_problem = task_spec.get("current_problem")
     if isinstance(current_problem, dict):
         return dict(current_problem)
@@ -514,7 +552,7 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
 
     default_task_spec = dict(runtime["default_task_spec"])
     task_spec = dict(persisted_state.get("task_spec") or default_task_spec)
-    current_problem = dict(persisted_state.get("current_problem") or _default_current_problem(task_spec))
+    current_problem = dict(persisted_state.get("current_problem") or _default_current_problem(task_spec, runtime))
     turn_count = int(persisted_state.get("turn_count") or 0)
     standing_order_attempts = persisted_state.get("standing_order_attempts") or {}
     if not isinstance(standing_order_attempts, dict):
@@ -528,6 +566,7 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
         "current_problem": current_problem,
         "turn_count": turn_count,
         "domain_id": resolved_domain_id,
+        "problem_presented_at": time.time(),
     }
     PERSISTENCE.save_session_state(
         session_id,
@@ -571,6 +610,12 @@ def process_message(
     task_context["current_problem"] = current_problem
     turn_data = turn_data_override if turn_data_override is not None else interpret_turn_input(input_text, task_context, runtime)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
+
+    # Inject server-side solve elapsed time (more reliable than LLM estimate)
+    presented_at = session.get("problem_presented_at")
+    if presented_at is not None:
+        turn_data["solve_elapsed_sec"] = time.time() - presented_at
+
     log.info("[%s] Turn Data: %s", session_id, json.dumps(turn_data, default=str))
 
     turn_provenance: dict[str, Any] = dict(runtime_provenance)
@@ -585,6 +630,39 @@ def process_message(
     reported_status = turn_data.get("problem_status")
     if isinstance(reported_status, str) and reported_status.strip():
         current_problem["status"] = reported_status.strip()
+
+    # ── Fluency-gated problem advancement ─────────────────────
+    fluency_decision = {}
+    domain_lib_decision = getattr(orch, "last_domain_lib_decision", None) or {}
+    if isinstance(domain_lib_decision.get("fluency"), dict):
+        fluency_decision = domain_lib_decision["fluency"]
+
+    should_advance = fluency_decision.get("advanced", False)
+    correctness = turn_data.get("correctness", "partial")
+
+    if should_advance or (
+        resolved_action == "task_presentation"
+        and correctness == "correct"
+        and turn_data.get("substitution_check") is True
+    ):
+        domain = (runtime.get("domain") or {}).get("subsystem_configs") or {}
+        tiers = domain.get("equation_difficulty_tiers")
+        if isinstance(tiers, list) and tiers:
+            try:
+                gen_fn = _get_generate_problem_fn(runtime)
+                if gen_fn is not None:
+                    if should_advance:
+                        next_tier = fluency_decision.get("next_tier", "")
+                        tier_objs = {str(t.get("tier_id")): t for t in tiers}
+                        target_tier = tier_objs.get(next_tier, tiers[-1])
+                        diff = (float(target_tier.get("min_difficulty", 0)) +
+                                float(target_tier.get("max_difficulty", 1))) / 2
+                    else:
+                        diff = float(task_spec.get("nominal_difficulty", 0.5))
+                    current_problem = gen_fn(diff, tiers)
+            except Exception:
+                log.warning("Problem generation on advance failed")
+        session["problem_presented_at"] = time.time()
 
     session["current_problem"] = current_problem
     session["turn_count"] += 1
@@ -623,11 +701,13 @@ def process_message(
 
     if deterministic_response:
         llm_payload = dict(prompt_contract)
+        llm_payload["current_problem"] = current_problem
         if tool_results:
             llm_payload["tool_results"] = tool_results
         llm_response = render_contract_response(prompt_contract, runtime)
     else:
         llm_payload = dict(prompt_contract)
+        llm_payload["current_problem"] = current_problem
         if tool_results:
             llm_payload["tool_results"] = tool_results
         llm_response = call_llm(

@@ -18,6 +18,7 @@
         "verification_request",
         "more_steps_request",
         "method_justification_request",
+        "inject_domain_rule",
         "boss_challenge",
         "pause_or_break",
         "zpd_intervene_or_escalate",
@@ -77,6 +78,18 @@
     "grounded": {
       "type": "boolean",
       "description": "Whether all claims in this prompt are grounded in cited artifacts"
+    },
+    "current_problem": {
+      "type": "object",
+      "description": "The active equation context for this session, injected by the server",
+      "properties": {
+        "equation": { "type": "string", "description": "The equation to present or evaluate" },
+        "target_variable": { "type": "string", "description": "Variable to solve for" },
+        "expected_answer": { "type": "string", "description": "Correct solved form" },
+        "equation_type": { "type": "string", "description": "Tier equation type identifier" },
+        "difficulty_tier": { "type": "string", "description": "Tier ID from domain-physics" },
+        "status": { "type": "string", "enum": ["in_progress", "solved", "skipped"] }
+      }
     }
   }
 }

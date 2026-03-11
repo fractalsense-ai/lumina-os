@@ -61,6 +61,14 @@
       "check": "outside_pct >= 0.5",
       "handled_by": "zpd_monitor",
       "standing_order_on_violation": "zpd_intervene_or_escalate"
+    },
+    {
+      "id": "fluency_bottleneck",
+      "description": "The student has solved equations correctly but failed to meet the time threshold across consecutive attempts, indicating procedural fluency has not been achieved at the current tier.\n",
+      "severity": "warning",
+      "check": "average_completion_time > fluency_monitor.time_threshold_seconds",
+      "handled_by": "fluency_monitor",
+      "standing_order_on_violation": "trigger_targeted_hint"
     }
   ],
   "standing_orders": [
@@ -103,6 +111,22 @@
       "max_attempts": 1,
       "escalation_on_exhaust": true,
       "description": "Pause the current task. Issue one probe to check understanding. If the probe response does not improve state, escalate to teacher.\n"
+    },
+    {
+      "id": "trigger_targeted_hint",
+      "action": "trigger_targeted_hint",
+      "trigger_condition": "fluency_bottleneck",
+      "max_attempts": 3,
+      "escalation_on_exhaust": false,
+      "description": "Provide a targeted procedural hint addressing the specific operation the student is struggling with (e.g. inverse operations, combining like terms). Do not solve the problem.\n"
+    },
+    {
+      "id": "hint_inverse_operations",
+      "action": "inject_domain_rule",
+      "trigger_condition": "evidence contains inverse_error",
+      "max_attempts": 2,
+      "escalation_on_exhaust": true,
+      "description": "Provide the strict domain rule for moving constants across the equals sign using inverse operations. Do not solve the problem; only state the structural algebraic rule.\n"
     }
   ],
   "escalation_triggers": [
@@ -148,7 +172,38 @@
       "minor_drift_threshold": 0.3,
       "major_drift_threshold": 0.5,
       "persistence_required": 3
-    }
+    },
+    "fluency_monitor": {
+      "target_consecutive_successes": 3,
+      "time_threshold_seconds": 45,
+      "tier_progression": ["tier_1", "tier_2", "tier_3"]
+    },
+    "equation_difficulty_tiers": [
+      {
+        "tier_id": "tier_1",
+        "label": "Entry \u2014 Single-Step Isolation",
+        "equation_type": "single_step_isolation",
+        "equation_template": "x + a = b",
+        "min_difficulty": 0.0,
+        "max_difficulty": 0.35
+      },
+      {
+        "tier_id": "tier_2",
+        "label": "Intermediate \u2014 Variable Consolidation",
+        "equation_type": "variable_consolidation",
+        "equation_template": "ax = b",
+        "min_difficulty": 0.35,
+        "max_difficulty": 0.65
+      },
+      {
+        "tier_id": "tier_3",
+        "label": "Advanced \u2014 Multi-Step Linear",
+        "equation_type": "multi_step_linear",
+        "equation_template": "ax + b = c  or  ax - b = c",
+        "min_difficulty": 0.65,
+        "max_difficulty": 1.0
+      }
+    ]
   },
   "evidence_summary_types": [
     "step_diff_summary",
@@ -157,7 +212,8 @@
     "method_summary",
     "step_count_summary",
     "affect_summary",
-    "zpd_drift_summary"
+    "zpd_drift_summary",
+    "fluency_summary"
   ],
   "tool_adapters": [
     "adapter/edu/algebra-parser/v1",

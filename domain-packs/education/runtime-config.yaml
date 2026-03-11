@@ -35,11 +35,6 @@ runtime:
       - check_equivalence
       - show_work_steps
       - verify_solution
-    current_problem:
-      equation: "2x + 3 = 11"
-      target_variable: "x"
-      expected_answer: "x = 4"
-      status: "in_progress"
 
   domain_step_params:
     min_challenge: 0.3
@@ -48,6 +43,13 @@ runtime:
     minor_drift_threshold: 0.3
     major_drift_threshold: 0.5
     persistence_required: 3
+    fluency_monitor:
+      target_consecutive_successes: 3
+      time_threshold_seconds: 45
+      tier_progression:
+        - tier_1
+        - tier_2
+        - tier_3
 
   turn_input_defaults:
     correctness: partial
@@ -106,6 +108,9 @@ runtime:
     request_more_steps: more_steps_request
     request_verification_retry: verification_request
     request_method_justification: method_justification_request
+    trigger_targeted_hint: hint
+    inject_domain_rule: inject_domain_rule
+    advance_tier: task_presentation
 
   deterministic_templates:
     hint: "Let's take one small step on {task_id}. Show the next equivalence-preserving move."
