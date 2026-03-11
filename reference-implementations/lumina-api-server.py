@@ -485,14 +485,18 @@ def render_contract_response(prompt_contract: dict[str, Any], runtime: dict[str,
 
 def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime: dict[str, Any]) -> dict[str, Any]:
     interpreter = runtime["turn_interpreter_fn"]
-    return interpreter(
-        call_llm=call_llm,
-        input_text=input_text,
-        task_context=task_context,
-        prompt_text=runtime["turn_interpretation_prompt"],
-        default_fields=runtime["turn_input_defaults"],
-        tool_fns=runtime.get("tool_fns"),
-    )
+    kwargs: dict[str, Any] = {
+        "call_llm": call_llm,
+        "input_text": input_text,
+        "task_context": task_context,
+        "prompt_text": runtime["turn_interpretation_prompt"],
+        "default_fields": runtime["turn_input_defaults"],
+        "tool_fns": runtime.get("tool_fns"),
+    }
+    nlp_fn = runtime.get("nlp_pre_interpreter_fn")
+    if nlp_fn is not None:
+        kwargs["nlp_pre_interpreter_fn"] = nlp_fn
+    return interpreter(**kwargs)
 
 
 def invoke_runtime_tool(tool_id: str, payload: dict[str, Any], runtime: dict[str, Any]) -> dict[str, Any]:

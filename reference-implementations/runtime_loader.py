@@ -196,6 +196,16 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         turn_interpreter_cfg["callable"],
     )
 
+    # Optional NLP pre-interpreter adapter (backward compatible).
+    nlp_pre_interpreter_fn: Callable[..., Any] | None = None
+    nlp_cfg = adapters_cfg.get("nlp_pre_interpreter")
+    if nlp_cfg is not None:
+        nlp_pre_interpreter_fn = _load_callable(
+            repo_root,
+            nlp_cfg["module_path"],
+            nlp_cfg["callable"],
+        )
+
     tool_fns: dict[str, Callable[..., Any]] = {}
     tools_cfg = adapters_cfg.get("tools") or {}
     for tool_id, tool_cfg in tools_cfg.items():
@@ -233,5 +243,6 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "state_builder_fn": state_builder_fn,
         "domain_step_fn": domain_step_fn,
         "turn_interpreter_fn": turn_interpreter_fn,
+        "nlp_pre_interpreter_fn": nlp_pre_interpreter_fn,
         "tool_fns": tool_fns,
     }

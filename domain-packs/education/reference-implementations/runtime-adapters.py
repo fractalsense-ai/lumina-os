@@ -121,6 +121,7 @@ def interpret_turn_input(
     prompt_text: str,
     default_fields: dict[str, Any] | None = None,
     tool_fns: dict[str, Callable[..., Any]] | None = None,
+    nlp_pre_interpreter_fn: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     context_hint = ""
     if task_context.get("task_id"):
@@ -133,6 +134,36 @@ def interpret_turn_input(
         target_variable = current_problem.get("target_variable")
         expected_answer = current_problem.get("expected_answer")
         status = current_problem.get("status")
+        if equation:
+            context_hint += f"\nCurrent problem equation: {equation}"
+        if target_variable:
+            context_hint += f"\nTarget variable: {target_variable}"
+        if expected_answer:
+            context_hint += f"\nExpected solved form: {expected_answer}"
+        if status:
+            context_hint += f"\nProblem status: {status}"
+
+    # ── NLP pre-interpreter (deterministic anchors) ────────────
+    nlp_evidence: dict[str, Any] | None = None
+    if nlp_pre_interpreter_fn is not None:
+        try:
+            nlp_evidence = nlp_pre_interpreter_fn(input_text, task_context)
+        except Exception:
+            nlp_evidence = None
+
+    if nlp_evidence is not None:
+        anchors = nlp_evidence.get("_nlp_anchors") or []
+        if anchors:
+            lines = ["\nNLP pre-analysis (deterministic):"]
+            for a in anchors:
+                line = f"- {a['field']}: {a['value']}"
+                if "confidence" in a:
+                    line += f" (confidence: {a['confidence']})"
+                if "detail" in a:
+                    line += f" — {a['detail']}"
+                lines.append(line)
+            lines.append("Use these as starting values. Override if your analysis disagrees.")
+            context_hint += "\n" + "\n".join(lines)
         if equation:
             context_hint += f"\nCurrent problem equation: {equation}"
         if target_variable:

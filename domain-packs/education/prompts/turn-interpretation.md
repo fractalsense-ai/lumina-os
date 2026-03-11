@@ -44,3 +44,11 @@ Output rules:
 - Output only valid JSON (no markdown fences, no prose).
 - Do not store or repeat raw student text.
 - Keep types exact (booleans are booleans, numbers are numbers, list is list).
+
+NLP anchor rules:
+- If "NLP pre-analysis (deterministic)" is provided in the context below,
+  use the listed values as your starting point for the corresponding fields.
+- You may confirm or override any NLP value based on your understanding of
+  the student message. NLP values are deterministic approximations — your
+  role is to apply contextual judgment.
+- Fields not covered by NLP anchors should be determined independently.

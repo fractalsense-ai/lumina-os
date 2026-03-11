@@ -154,6 +154,9 @@ adapters:
   turn_interpreter:
     module_path: domain-packs/education/reference-implementations/runtime-adapters.py
     callable: interpret_turn_input
+  nlp_pre_interpreter:
+    module_path: domain-packs/education/reference-implementations/nlp-pre-interpreter.py
+    callable: nlp_preprocess
   tools:
     calculator:
       module_path: domain-packs/education/reference-implementations/tool-adapters.py
