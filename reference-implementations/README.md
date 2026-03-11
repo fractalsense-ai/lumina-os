@@ -11,10 +11,10 @@ This directory contains Python reference implementations of the **core D.S.A. en
 | `yaml-loader.py` | Domain-agnostic minimal YAML loader (standard library only) |
 | `yaml-to-json-converter.py` | Converts and validates domain pack YAML → JSON |
 | `ctl-commitment-validator.py` | CTL hash chain validator and commitment recorder |
-| `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract |
+| `dsa-orchestrator.py` | D.S.A. orchestrator: domain-agnostic invariant evaluation + CTL + prompt contract. Includes standing-order exhaustion fix: max_attempts stops cleanly, per-invariant counter reset, `escalation_from_exhaustion` reason. |
 | `dsa-orchestrator-demo.py` | End-to-end demo of the full D.S.A. Action loop wired to the education domain (10-turn scripted session) |
 | `runtime_loader.py` | Runtime config loader and adapter wiring validator |
-| `lumina-api-server.py` | FastAPI integration host for `/api/chat`, `/api/health`, `/api/domain-info`, `/api/tool/{tool_id}`, and `/api/ctl/validate` |
+| `lumina-api-server.py` | FastAPI integration host for `/api/chat`, `/api/health`, `/api/domain-info`, `/api/tool/{tool_id}`, and `/api/ctl/validate`. Each chat turn runs: glossary detection intercept → NLP pre-analysis (<1 ms) → LLM turn interpreter with NLP anchors → domain adapter dispatch. |
 | `persistence_adapter.py` | Domain-agnostic persistence adapter interface |
 | `filesystem_persistence.py` | Filesystem-backed persistence adapter (default behavior) |
 | `sqlite_persistence.py` | SQLite persistence adapter (optional; SQLAlchemy async) |

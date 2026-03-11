@@ -4,6 +4,21 @@ All notable changes to this domain pack will be documented here.
 
 ---
 
+## v0.5.0 — 2026-03-11
+
+### Changed
+- `show_work_minimum` max_attempts reduced from 3 to 2 (domain physics threshold tuning)
+
+### Added
+- NLP pre-interpreter registered as `nlp_pre_interpreter` adapter in `runtime-config.yaml`;
+  provides deterministic answer/frustration/hint/off-task anchors injected into the LLM prompt
+  on every turn (education domain only)
+- `fluency_monitor` and `problem_generator` wired into the education domain turn pipeline;
+  fluency gate advances tiers after 3 consecutive correct answers under 45 s;
+  problem generator serves tier-appropriate algebra problems from a reproducible random seed
+
+---
+
 ## v0.4.0 — 2026-03-05
 
 ### Changed

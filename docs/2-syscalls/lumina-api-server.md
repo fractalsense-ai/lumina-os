@@ -55,6 +55,13 @@ Process a conversational turn through the D.S.A. pipeline.
 
 **Auth:** Optional Bearer token. When provided, module execute permission is checked against the resolved domain.
 
+**Pipeline:** Each turn passes through four stages before the orchestrator receives the evidence dict:
+
+1. **Glossary detection** — domain-defined vocabulary terms are matched in the raw message; a match short-circuits D.S.A. and returns an inline definition response directly.
+2. **NLP pre-analysis** — `nlp_preprocess()` runs deterministic extraction (<1 ms) and appends `_nlp_anchors` to the LLM context hint; provides answer-match confidence, frustration markers, hint requests, and off-task ratio without blocking the LLM.
+3. **LLM turn interpreter** — receives the full message plus NLP anchor hints; produces structured evidence fields.
+4. **Domain adapter dispatch** — education domain algebra-parser override applies post-LLM for `solution_value`, `step_count`, and `equivalence_preserved`; agriculture and other adapters receive the same interface with no NLP kwargs injected.
+
 **Notes:** `domain_id` selects which domain context to use. When omitted, the default domain is used. Sessions are immutably bound to their initial domain.
 
 ---
