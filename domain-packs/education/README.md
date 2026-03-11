@@ -48,6 +48,42 @@ Reference implementation:
 
 ---
 
+## Turn Interpretation Subsystem
+
+Student messages pass through a three-stage pipeline before the orchestrator evaluates domain invariants:
+
+1. **Glossary detection intercept** — the raw message is scanned against domain-defined vocabulary terms. A match short-circuits D.S.A. and returns an inline definition without entering the orchestrator loop.
+
+2. **NLP pre-interpreter** (`nlp-pre-interpreter.py`) — deterministic extractors (<1 ms, stdlib only) annotate the message with structured anchors before the LLM sees it:
+   - `answer_match` — regex-based answer extraction with confidence score (0.95 for `x=N` form, 0.90 for prose)
+   - `frustration_markers` — keyword list, ALL_CAPS, excessive punctuation, short frustrated utterances
+   - `hint_request` — explicit hint-seeking patterns
+   - `off_task_ratio` — math-vocabulary token ratio for off-topic detection
+   Anchors are injected into the LLM context hint as `_nlp_anchors`; the LLM turn interpreter always runs (world-sim dependency).
+
+3. **Algebra parser override** (`runtime-adapters.py`) — post-LLM deterministic override for `solution_value`, `step_count`, and `equivalence_preserved` using the algebra parser tool adapter. Ground-truth values replace LLM estimates for these fields.
+
+Function references:
+- [`../../docs/3-functions/nlp-pre-interpreter.md`](../../docs/3-functions/nlp-pre-interpreter.md)
+- [`../../docs/3-functions/fluency-monitor.md`](../../docs/3-functions/fluency-monitor.md)
+- [`../../docs/3-functions/problem-generator.md`](../../docs/3-functions/problem-generator.md)
+
+---
+
+## Fluency Monitor and Problem Generator
+
+The education domain implements a tier-advancement system for algebra practice:
+
+- **Fluency monitor** (`fluency_monitor.py`) — tracks consecutive correct answers with solve times. After 3 consecutive correct answers each under 45 s the student advances to the next tier. A correct answer that exceeds the threshold triggers a targeted hint rather than advancement.
+
+- **Problem generator** (`problem_generator.py`) — generates tier-appropriate `ProblemSpec` dicts:
+  - Tier 1: `x + a = b` (one-step, add/subtract)
+  - Tier 2: `ax = b` (one-step, multiply/divide)
+  - Tier 3: `ax ± b = c` (two-step)
+  All solutions are positive integers; uses stdlib `random` only.
+
+---
+
 ## Domain Physics and Prompt Contracts
 
 Education packs declare their own prompt-contract extensions and domain vocabulary:
