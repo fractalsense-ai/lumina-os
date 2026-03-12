@@ -16,11 +16,13 @@ The LLM is the **processing unit**, not the authority. The chat interface is the
 ┌─────────────────────────────────────────────┐
 │  Chat Interface                             │  ← the GUI (human-facing surface)
 ├─────────────────────────────────────────────┤
+│  Domain Adapter — NLP Pre-Processing (A)    │  ← domain-owned; extracts structured signals
+├─────────────────────────────────────────────┤
 │  Global Base Prompt                         │  ← universal rules (like IP headers)
 ├─────────────────────────────────────────────┤
 │  Domain Physics                             │  ← domain-specific policy layer
 ├─────────────────────────────────────────────┤
-│  Module State + Turn Data                   │  ← session-specific context
+│  Module State + Turn Data                   │  ← session-specific context + NLP anchors
 ├─────────────═══════════════════─────────────┤
 │  Assembled Prompt Contract                  │  ← the "packet" sent to the LLM
 ├─────────────────────────────────────────────┤
@@ -28,9 +30,13 @@ The LLM is the **processing unit**, not the authority. The chat interface is the
 ├─────────────────────────────────────────────┤
 │  Tool-Adapter Verification                  │  ← deterministic output checking
 ├─────────────────────────────────────────────┤
+│  Domain Adapter — Signal Synthesis (B)      │  ← computes engine contract fields
+├─────────────────────────────────────────────┤
 │  CTL (Causal Trace Ledger)                  │  ← structured event/error logging
 └─────────────────────────────────────────────┘
 ```
+
+> Both Domain Adapter rows are **domain-owned** and live entirely in the domain pack — zero domain-specific names appear in the core engine. See [`docs/7-concepts/domain-adapter-pattern.md`](docs/7-concepts/domain-adapter-pattern.md) for the authoring pattern.
 
 The core engine is **fully domain-agnostic**. All domain-specific behavior — prompts, state models, turn interpretation, tool adapters, and deterministic templates — lives in self-contained **domain packs** loaded at runtime. No server code changes are needed to switch domains.
 

@@ -26,6 +26,7 @@ All domain-specific behavior lives here. If you are adding a new use case, you a
 * You must define the rules of reality in a `domain-physics.yaml` or `.json` file.
 * You must provide a complete `runtime-config.yaml` to map actions to your specific Python tool adapters.
 * **Fractal Authority:** Your domain pack must clearly define its governance levels (Macro → Meso → Micro → Target).
+* **Runtime Adapter:** You must implement `systools/runtime_adapters.py` with an `interpret_turn_input` function. All domain-specific signal computation — including engine contract fields like `problem_solved` and `problem_status` — must be computed here. These fields must never be hardcoded or evaluated inside `src/lumina/`. See [`docs/7-concepts/domain-adapter-pattern.md`](docs/7-concepts/domain-adapter-pattern.md) for the complete authoring pattern, engine contract field catalogue, and examples covering both single-step and multi-step task domains (e.g., a 15-step procedural task produces `problem_status = "step_N_of_15_complete"` on each turn and sets `problem_solved = True` on the final step).
 
 ---
 

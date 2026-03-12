@@ -33,16 +33,24 @@ domain-packs/
 ├── README.md                   ← this file
 ├── education/
 │   ├── README.md                ← domain principles/rules/states/physics index
-│   ├── domain-lib/             ← education-domain state lib components (ZPD, affect, fatigue)
+│   ├── cfg/
+│   │   └── runtime-config.yaml  ← defaults, schema, tool policies, deterministic templates
+│   ├── domain-lib/             ← passive state estimators (specs + implementations)
 │   │   ├── README.md
 │   │   ├── compressed-state-estimators.md
 │   │   ├── zpd-monitor-spec-v1.md
 │   │   └── fatigue-estimation-spec-v1.md
+│   ├── systools/               ← runtime adapter: NLP pre-processing + signal synthesis
+│   │   ├── nlp_pre_interpreter.py   ← Phase A: deterministic extractors
+│   │   ├── runtime_adapters.py      ← interpret_turn_input: Phase A + B + domain-lib calls
+│   │   ├── problem_generator.py     ← generates next task spec (sets min_steps etc.)
+│   │   ├── fluency_monitor.py       ← domain-lib: fluency state estimator
+│   │   └── zpd_monitor_v0_2.py      ← domain-lib: ZPD state estimator
 │   └─ modules/
 │       └─ algebra-level-1/        ← complete worked example
 │           ├─ domain-physics.yaml    (source — human-authored)
 │           ├─ domain-physics.json    (derived — machine-authoritative)
-│           ├─ tool-adapters/
+│           ├─ tool-adapters/         ← active verifiers called by the orchestrator policy
 │           │   ├─ algebra-parser-adapter-v1.yaml
 │           │   ├─ calculator-adapter-v1.yaml
 │           │   └─ substitution-checker-adapter-v1.yaml
@@ -53,6 +61,18 @@ domain-packs/
 └── agriculture/
   └── README.md               ← domain principles/rules/states/physics index
 ```
+
+### Three-layer distinction
+
+Domain packs use three distinct component types. They are different in how the core engine interacts with them:
+
+| Layer | Location | Called by | Purpose |
+|---|---|---|---|
+| **Tool adapters** | `modules/<module>/tool-adapters/` | Core engine (via `tool_call_policies`) | Active verifiers — deterministically check LLM proposals on specific actions |
+| **Domain library** | `domain-lib/` specs + `systools/` implementations | Runtime adapter (`runtime_adapters.py`) | Passive state estimators — ZPD, fluency, fatigue — never called directly by the engine |
+| **Runtime adapter** | `systools/runtime_adapters.py` | Core engine (`interpret_turn_input`) | Synthesis layer — runs NLP pre-processing (Phase A) and signal synthesis (Phase B), calls domain-lib internally, writes engine contract fields |
+
+See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adapter-pattern.md) for the full authoring guide including the engine contract field reference and the `problem_solved` / `problem_status` pattern.
 
 ---
 
@@ -82,7 +102,7 @@ Use the profile template from an existing pack as a base (for example, `student-
 
 ### 5. Write tool adapters (if needed)
 
-For each external tool, write a tool adapter YAML conforming to [`../standards/tool-adapter-schema-v1.json`](../standards/tool-adapter-schema-v1.json).
+For each external tool, write a tool adapter YAML conforming to [`../standards/tool-adapter-schema-v1.json`](../standards/tool-adapter-schema-v1.json). Tool adapters are **active verifiers** called by the orchestrator on specific resolved actions. They do not compute gate signals — that is the runtime adapter's job.
 
 ### 6. Write a CHANGELOG.md
 
@@ -101,6 +121,14 @@ Every material module policy change requires:
 - semantic version update,
 - YAML -> JSON regeneration,
 - CTL commitment of the updated module `domain-physics.json` hash before activation.
+
+### 8. Implement your runtime adapter
+
+Create `systools/runtime_adapters.py` with an `interpret_turn_input` function. This is the synthesis layer where:
+- **Phase A** — an optional NLP pre-interpreter extracts deterministic signals from raw input before the LLM prompt is assembled
+- **Phase B** — at the end of the function, engine contract fields (`problem_solved`, `problem_status`) are computed from domain-owned evidence
+
+See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adapter-pattern.md) for the step-by-step template, engine contract field catalogue, and worked examples for both single-step and multi-step task domains.
 
 ---
 
