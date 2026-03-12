@@ -1773,12 +1773,13 @@ async def domain_pack_commit(
 
     subject_hash = admin_canonical_sha256(domain)
     subject_version = str(domain.get("version", ""))
+    subject_id = str(domain.get("id", resolved))
 
     record = build_commitment_record(
         actor_id=req.actor_id or user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
         commitment_type="domain_pack_activation",
-        subject_id=resolved,
+        subject_id=subject_id,
         summary=req.summary or f"Domain pack activation: {resolved}",
         subject_version=subject_version,
         subject_hash=subject_hash,
@@ -1864,13 +1865,14 @@ async def update_domain_physics(
     await run_in_threadpool(_write_physics)
 
     subject_hash = admin_canonical_sha256(domain)
+    subject_id = str(domain.get("id", resolved))
 
     # Auto-commit
     record = build_commitment_record(
         actor_id=user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
         commitment_type="domain_pack_activation",
-        subject_id=resolved,
+        subject_id=subject_id,
         summary=req.summary,
         subject_version=str(domain.get("version", "")),
         subject_hash=subject_hash,
