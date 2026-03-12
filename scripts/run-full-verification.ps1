@@ -82,6 +82,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "verify-repo-integrity.py failed"
 }
 
+Write-Section "Manifest Integrity"
+& $PythonExe -m lumina.systools.manifest_integrity check
+if ($LASTEXITCODE -ne 0) {
+    throw "Manifest integrity check failed (hash mismatch detected in docs/MANIFEST.yaml)"
+}
+
 if (-not $SkipOrchestratorDemo) {
     Write-Section "Orchestrator Demo"
     & $PythonExe "reference-implementations/dsa-orchestrator-demo.py"

@@ -41,6 +41,8 @@ lumina-orchestrator-demo = "lumina.cli.cli:orchestrator_demo"
 lumina-ctl-validate = "lumina.cli.cli:ctl_validate"
 lumina-security-freeze = "lumina.cli.cli:security_freeze"
 lumina-yaml-convert = "lumina.cli.cli:yaml_convert"
+lumina-integrity-check = "lumina.cli.cli:integrity_check"
+lumina-manifest-regen = "lumina.cli.cli:manifest_regen"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lumina"]

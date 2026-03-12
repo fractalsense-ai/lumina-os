@@ -22,7 +22,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: a65477c23c5b857068bfed76ecd106266cbc3e576d85f498978d46ba9bb047f5
 
   - path: docs/1-commands/installation-and-packaging.md
     type: doc
@@ -30,7 +30,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 2bb1d7690db92684a7f456ab739e00c41479b0fcb9eee6997dbb0afe7193409c
 
   - path: docs/1-commands/yaml-to-json-converter.md
     type: doc
@@ -38,7 +38,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 8d6e61fa0039f64340467ecd2c31b8222d49aec5dde4d59c901b034295bc0009
 
   - path: docs/1-commands/ctl-commitment-validator.md
     type: doc
@@ -46,7 +46,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: e539f728f42ae60277774a04e7a092aa964328acf46ce5c3453dfcc1b7636870
 
   - path: docs/1-commands/verify-repo-integrity.md
     type: doc
@@ -54,7 +54,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 656a337ca277c7c72b5c346753ff028f8a42ac8f0cad4fe654445cb5854b85df
 
   - path: docs/1-commands/dsa-orchestrator-demo.md
     type: doc
@@ -62,7 +62,23 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 22ca15e2a714fde800b787c3683b5f9848e063c64986d872865b463be9e1acdd
+
+  - path: docs/1-commands/integrity-check.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: 9c708546d799b9f90a4fad4b0c9b2994ea222c6d5096a18772802db7171b7000
+
+  - path: docs/1-commands/manifest-regenerate.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: 553dc2f60be7c400b459794ae78c082862aa53f93a2d30f550b3fd2be5cf0529
 
   # ── Section 2: System Calls ────────────────────────────────────────────────
 
@@ -72,7 +88,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 516213cf393a9035f1e30578e89e093aed31f1027f5d1dce0ca26633737e8cde
 
   - path: docs/2-syscalls/lumina-api-server.md
     type: doc
@@ -80,7 +96,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 5574e252a83e2222ffb89bfee8b5165f6b692b92c5d2665c3c7c83468929c4e8
 
   # ── Section 3: Functions ───────────────────────────────────────────────────
 
@@ -90,7 +106,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 56977704a0e261c2230bb99048ed057b402cba3a4a8dc447568427d3cc7c0e6e
 
   - path: docs/3-functions/auth.md
     type: doc
@@ -98,7 +114,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: fafc64c2c03de1c8faf24a6eb076b27f56860032b8d75907d758b9c69b1ed744
 
   - path: docs/3-functions/permissions.md
     type: doc
@@ -106,7 +122,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: d26ade3677ba7853e69b585e87f42cab2823defa72405b2fdc6aedc77c796047
 
   - path: docs/3-functions/persistence-adapter.md
     type: doc
@@ -114,7 +130,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: cbfbac07908a1feb84b1205c9cbda7fb69e2d962a4c620107e57b01492cdb423
 
   # ── Section 4: Formats ─────────────────────────────────────────────────────
 
@@ -124,7 +140,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 8c50488d75d230c48e27aa395c3c6a4c3432a1f93718891559c88671a2912bad
 
   - path: docs/4-formats/artifact-manifest-format.md
     type: doc
@@ -132,7 +148,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 64bd95bfdfbdf32f61062d2594c14939ca9ede24525cd6589bac00565d2392ce
 
   - path: docs/4-formats/tool-adapter-versioning.md
     type: doc
@@ -140,7 +156,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 054d346651b7663aec0f0d7aac4d39176a5554e577eee400b147dbffa90c41b2
 
   # ── Section 5: Standards ───────────────────────────────────────────────────
 
@@ -150,7 +166,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 6a4d94c86a5cf586d75e5ca3c63339db91b59496e85326ef110aa4f78c5b0a43
 
   - path: docs/5-standards/document-versioning-policy.md
     type: doc
@@ -158,7 +174,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 74fbbf1113b16ec6e2377751d6e4e0210dc3aa792d4c3953f9aa35a40977aaab
 
   - path: docs/5-standards/domain-library-lifecycle.md
     type: doc
@@ -166,7 +182,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 479029ea25fc9714461f2a5dcfb1de7526095ca406dafb4c9e682f76c0adf3a7
 
   # ── Section 6: Examples ────────────────────────────────────────────────────
 
@@ -176,7 +192,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: b05952f8fc5a15f44471f9ef12171471e04975d28724134562af220f1851ab17
 
   # ── Section 7: Concepts ────────────────────────────────────────────────────
 
@@ -186,7 +202,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 542887b00ae624bf05ef3c531a4cf166fe9e89e7f7fdd78d1542816bc486a187
 
   - path: docs/7-concepts/domain-adapter-pattern.md
     type: doc
@@ -194,7 +210,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 5b0ec2fb8d29819ff391a8b864d5d1c6de925abfe0ae1adcf85f07eaeab50275
 
   # ── Section 8: Administration ──────────────────────────────────────────────
 
@@ -204,7 +220,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 5c4db9d81c570fb92b5b349c24abb9d5145103eac7073b65494373405c1034e6
 
   - path: docs/8-admin/rbac-administration.md
     type: doc
@@ -212,7 +228,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: c7e7e4b545412ead6fed575cab9e554729321ceb9621beaf6f6a84fa509e9b8c
 
   - path: docs/8-admin/secrets-and-runtime-config.md
     type: doc
@@ -220,7 +236,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: pending
+    sha256: 1286c4e4d5c6769313065acdc5e376519f3f4b92566dc2166150f055e9cb9bae
 
   # ── Specs ──────────────────────────────────────────────────────────────────
 
@@ -229,70 +245,70 @@ artifacts:
     doc_version: 2.0.0
     status: active
     last_updated: 2026-03-03
-    sha256: pending
+    sha256: 0a6f164c03dd627c1632cff4dab397fffa0bb98738c029d6ad8590ce34713ab1
 
   - path: specs/dsa-framework-v1.md
     type: spec
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 773579cd5be8f72816f1193b253a35b4ac0c1bab80181f3f9dc4ea4b2f69d873
 
   - path: specs/rbac-spec-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-09
-    sha256: pending
+    sha256: 2207cb835d9ffec94620b789a509082e9fa22b06f22c37b12a2c508d311148f6
 
   - path: specs/audit-log-spec-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: d50a6870bc97670f7f8aef2e506f82784255a1624c2d81858d4bb301dec50189
 
   - path: specs/domain-profile-spec-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: f5f4432068b444d9793782821128806a2f5b8761868a7e74e164c058f02999bf
 
   - path: specs/evaluation-harness-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 55582626d53d97dc4f6bfc5b1aff7459928e70bf17dcb3b3cd8c3289eacd7551
 
   - path: specs/global-system-prompt-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: f3f3e37362646ef1fa794a6f1c541679be3f1a3d4e28e5b5fb2f28bedf1fceb5
 
   - path: specs/memory-spec-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: a58e06b38bbe82d886beb1cad5ec892055bb66329727ee1388d4074d014a3f16
 
   - path: specs/orchestrator-system-prompt-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 742a3a777767be077636d5bbf0e6d0aab844d2a144b53364adac2909c1c81710
 
   - path: specs/reports-spec-v1.md
     type: spec
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: e15ddac9ed492ff55d8b262c853db5968e9dc84b3f920fa0386dd1f3e516d922
 
   # ── Standards (.md) ────────────────────────────────────────────────────────
 
@@ -301,21 +317,21 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: e7452080de26027a11b02aef7f801aa90888974ee033cc92c96de92359c1c93c
 
   - path: standards/causal-trace-ledger-v1.md
     type: standard
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: pending
+    sha256: bc3d44486b25a3aa2fcef22f0c13bc1fbb0d09b3288c6e3ef2d3b7418b2cf27a
 
   - path: standards/domain-state-lib-contract-v1.md
     type: standard
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: b024bbd2e0a295dd960aabb13f2fe9559c997e1c85c782ba0f6585effbd275f1
 
   # ── Standards (JSON Schemas) ───────────────────────────────────────────────
 
@@ -324,42 +340,42 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: e2f09b45db7c1e2c1e2be4a670b5ff9e3460e4b9acf36cdd8bf496b08fd70a10
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 15eabc8cefb41afd6c7f510ed68eb6ff49add3fe15282587037f42eec450466d
 
   - path: standards/prompt-contract-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 15053fc27dd6ed1c4a6e366916534baf54199570b33895c74a3a77b0ce852ca8
 
   - path: standards/rbac-permission-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 14507601d1a019a5a605885ccbbfab02f2cb47d989b502197096a3c84708d640
 
   - path: standards/role-definition-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 04f8ec7c52b90a8656f743d4cc679738feb27abc1960b56bee9e04bf5d757e75
 
   - path: standards/tool-adapter-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: a0ac7dc3093e0b964d1b68bf154c398baae391331cb976a20ddd26764e8b5f0d
 
   # ── Ledger Schemas ─────────────────────────────────────────────────────────
 
@@ -368,28 +384,28 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: pending
+    sha256: 3f261b486284dfa924b5e9151d437debe760918cae1c16ff8e87a11144cd1d82
 
   - path: ledger/commitment-record-schema.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: pending
+    sha256: 9e8bb0bf462f91031b85e34aed4c75c9c46b2bf17952aae3c16315f967347d4f
 
   - path: ledger/escalation-record-schema.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: pending
+    sha256: 92d5c68ba3cf56d50effad3be2247353ae544c9d2be01e5d06029c829a53d08c
 
   - path: ledger/trace-event-schema.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: pending
+    sha256: eb448c42ba58b9a6b475f53713227e430ab95bada4b2e0a1d0aa7cea2c5c4201
 
   # ── Retrieval Schemas ──────────────────────────────────────────────────────
 
@@ -398,4 +414,4 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: pending
+    sha256: 1ebf1220e2430e9ed2e92c48336177bbe724b22590247f34e50c1b8193016031

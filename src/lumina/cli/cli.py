@@ -40,3 +40,25 @@ def security_freeze() -> None:
 
 def yaml_convert() -> None:
     _run_systool("yaml_converter.py")
+
+
+def integrity_check() -> None:
+    import sys
+
+    _saved_argv = sys.argv[:]
+    try:
+        sys.argv = [sys.argv[0], "check"]
+        _run_systool("manifest_integrity.py")
+    finally:
+        sys.argv = _saved_argv
+
+
+def manifest_regen() -> None:
+    import sys
+
+    _saved_argv = sys.argv[:]
+    try:
+        sys.argv = [sys.argv[0], "regen"]
+        _run_systool("manifest_integrity.py")
+    finally:
+        sys.argv = _saved_argv
