@@ -50,6 +50,8 @@
       "enum": [
         "domain_pack_activation",
         "domain_pack_rollback",
+        "system_physics_activation",
+        "system_physics_rollback",
         "policy_change",
         "escalation_resolution",
         "session_open",
@@ -59,7 +61,7 @@
         "audit_policy",
         "other"
       ],
-      "description": "The type of commitment being made."
+      "description": "The type of commitment being made. Use 'system_physics_activation' when committing a new version of cfg/system-physics.json to the system CTL; use 'system_physics_rollback' when reverting to a prior version."
     },
     "subject_id": {
       "type": "string",

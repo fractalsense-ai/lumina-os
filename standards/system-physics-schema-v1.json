@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/system-physics-schema-v1.json",
+  "title": "System Physics Schema V1",
+  "description": "JSON Schema for Project Lumina System Physics documents. Defines the structured SOP for the top-level Conversational Interface (CI) layer — the invariants, standing orders, escalation triggers, and output contract that govern the CI regardless of which domain is active. Derived from YAML source (cfg/system-physics.yaml); the compiled JSON form's SHA-256 hash is committed to the system CTL before operational activation.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "meta_authority_id",
+    "conforms_to",
+    "invariants",
+    "standing_orders",
+    "escalation_triggers",
+    "ci_output_contract"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^system/[a-z0-9_-]+/[a-z0-9_-]+/v[0-9]+$",
+      "description": "Globally unique system physics identifier. Format: system/{org}/{name}/v{major}"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semantic version string (major.minor or major.minor.patch)"
+    },
+    "meta_authority_id": {
+      "type": "string",
+      "description": "ID of the Meta Authority responsible for this system physics document. Use 'root' for the top-level governance body."
+    },
+    "conforms_to": {
+      "type": "string",
+      "description": "Version of lumina-core this system-physics document targets (e.g. 'lumina-core-v1.0.0')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this system physics document's scope and purpose"
+    },
+    "invariants": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/invariant" },
+      "description": "List of system-layer invariants. Must include at least one critical invariant. These apply unconditionally — before and regardless of which domain is active."
+    },
+    "standing_orders": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/standing_order" },
+      "description": "List of bounded automated CI responses the orchestrator may take when a system invariant is violated"
+    },
+    "escalation_triggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/escalation_trigger" },
+      "description": "Conditions that cause the system layer to escalate to the Meta Authority"
+    },
+    "ci_output_contract": {
+      "type": "object",
+      "required": [
+        "output_mode",
+        "chain_of_thought",
+        "raw_json_output",
+        "grounding_requirement",
+        "capability_claims",
+        "internal_state_disclosure"
+      ],
+      "additionalProperties": false,
+      "description": "Structured rules governing CI output behaviour. These are the machine-readable source of truth for the human-readable rendering in specs/global-system-prompt-v1.md.",
+      "properties": {
+        "output_mode": {
+          "type": "string",
+          "enum": ["conversational_text"],
+          "description": "Primary output mode. 'conversational_text' means user-facing prose only; no structured data payloads unless explicitly overridden."
+        },
+        "chain_of_thought": {
+          "type": "string",
+          "enum": ["disallowed", "allowed_if_domain_permits"],
+          "description": "Whether the CI may surface internal reasoning steps to the user."
+        },
+        "raw_json_output": {
+          "type": "string",
+          "enum": ["only_if_explicitly_requested", "allowed", "disallowed"],
+          "description": "When raw JSON may appear in CI output."
+        },
+        "grounding_requirement": {
+          "type": "string",
+          "enum": ["must_derive_from_prompt_contract", "best_effort"],
+          "description": "How tightly CI responses must be grounded in the active prompt contract."
+        },
+        "capability_claims": {
+          "type": "string",
+          "enum": ["bounded_by_active_prompt_contract", "unrestricted"],
+          "description": "Whether capability claims are bounded by the active prompt contract (prevents false advertising of hidden features)."
+        },
+        "internal_state_disclosure": {
+          "type": "string",
+          "enum": ["prohibited_unless_domain_permits", "allowed"],
+          "description": "Whether internal confidence scores, private policy internals, or sensitive runtime state may be disclosed."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "invariant": {
+      "type": "object",
+      "required": ["id", "description", "severity"],
+      "additionalProperties": false,
+      "if": {
+        "not": { "required": ["handled_by"] }
+      },
+      "then": {
+        "required": ["check"]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this invariant within the system physics document"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the invariant"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "warning"],
+          "description": "critical: violation halts autonomous CI action and triggers immediate standing order or escalation; warning: triggers a standing order"
+        },
+        "check": {
+          "type": "string",
+          "description": "Predicate expression evaluated by the orchestrator. Required when handled_by is absent."
+        },
+        "handled_by": {
+          "type": "string",
+          "description": "ID of the subsystem that evaluates this invariant. When present, the orchestrator defers to the named subsystem."
+        },
+        "standing_order_on_violation": {
+          "type": "string",
+          "description": "ID of the standing order to invoke when this invariant is violated"
+        },
+        "signal_type": {
+          "type": "string",
+          "description": "Optional signal type emitted when this invariant fires"
+        }
+      }
+    },
+    "standing_order": {
+      "type": "object",
+      "required": ["id", "action", "trigger_condition", "max_attempts", "escalation_on_exhaust"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this standing order"
+        },
+        "action": {
+          "type": "string",
+          "description": "The automated action the CI takes when this standing order is activated"
+        },
+        "trigger_condition": {
+          "type": "string",
+          "description": "Invariant ID or condition that activates this order"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum times this order may be applied per session before escalation"
+        },
+        "escalation_on_exhaust": {
+          "type": "boolean",
+          "description": "Whether to escalate to the Meta Authority when max_attempts is reached"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this standing order does"
+        }
+      }
+    },
+    "escalation_trigger": {
+      "type": "object",
+      "required": ["id", "condition", "target_role"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string",
+          "description": "The condition that triggers escalation to the Meta Authority"
+        },
+        "target_role": {
+          "type": "string",
+          "description": "Role of the Meta Authority receiving this escalation"
+        },
+        "sla_minutes": {
+          "type": "integer",
+          "description": "SLA for acknowledgement in minutes; breach is itself a reportable event in the system CTL"
+        }
+      }
+    }
+  }
+}

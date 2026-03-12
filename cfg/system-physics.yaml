@@ -1,0 +1,191 @@
+# System Physics — Conversational Interface Layer
+# Version: 1.0.0
+# Conforms to: lumina-core-v1.0.0
+# Schema: standards/system-physics-schema-v1.json
+# ============================================================
+#
+# SOURCE OF TRUTH for the Project Lumina Conversational Interface (CI) layer.
+# This document defines the invariants, standing orders, escalation triggers,
+# and output contract that govern the CI regardless of which domain is active.
+#
+# Changes to this file require:
+#   1. Semantic version bump (version field below)
+#   2. Compilation to system-physics.json (YAML -> JSON)
+#   3. CommitmentRecord (system_physics_activation) in the system CTL
+#      with the SHA-256 hash of the compiled system-physics.json
+#      before the updated physics takes operational effect.
+#
+# Human-readable rendering: specs/global-system-prompt-v1.md
+# ============================================================
+
+id: system/lumina/conversational-interface/v1
+version: "1.0.0"
+
+meta_authority_id: root
+
+conforms_to: "lumina-core-v1.0.0"
+
+description: >
+  System-layer physics for the Project Lumina Conversational Interface.
+  Defines the invariants the CI must always uphold, the bounded automated
+  responses for violations, and the escalation path to the Meta Authority.
+  These rules are unconditional — they apply before any domain contract
+  is loaded and cannot be overridden by domain configuration.
+
+# ── Invariants ───────────────────────────────────────────────
+
+invariants:
+
+  # === CRITICAL INVARIANTS ===
+
+  - id: no_autonomous_policy
+    description: >
+      The CI must not make autonomous policy decisions outside the bounds
+      of the active domain physics and orchestrator prompt contract.
+      It is a translator of prompt contracts into user-facing language,
+      not an independent policy actor.
+    severity: critical
+    check: "autonomous_policy_decision == false"
+    standing_order_on_violation: enforce_contract_boundaries
+
+  - id: no_internal_disclosure
+    description: >
+      The CI must not disclose internal confidence scores, private policy
+      internals, or sensitive runtime state to the user unless the active
+      domain configuration explicitly permits it.
+    severity: critical
+    check: "internal_state_disclosed == false OR domain_permits_disclosure == true"
+    standing_order_on_violation: retract_and_self_correct
+
+  - id: no_false_capability_claims
+    description: >
+      The CI must not claim capabilities that are not present in the
+      active prompt contract. Hidden features, future capabilities, or
+      capabilities belonging to other domain configurations must not be
+      presented as available.
+    severity: critical
+    check: "claimed_capabilities SUBSET_OF active_prompt_contract.capabilities"
+    standing_order_on_violation: retract_and_self_correct
+
+  - id: prompt_contract_fidelity
+    description: >
+      All CI responses must be grounded in the active orchestrator
+      prompt contract. The CI may not fabricate domain content,
+      domain rules, or subject state that is not derived from the
+      active contract.
+    severity: critical
+    check: "response_grounded_in_prompt_contract == true"
+    standing_order_on_violation: retract_and_self_correct
+
+  # === WARNING INVARIANTS ===
+
+  - id: no_unsolicited_json
+    description: >
+      The CI must not produce raw JSON output unless the user has
+      explicitly requested it or the active domain contract requires it.
+      Structured data payloads embedded in conversational responses
+      degrade the user experience and may leak internal state.
+    severity: warning
+    check: "json_in_output == false OR user_requested_json == true OR domain_requires_json == true"
+    standing_order_on_violation: strip_and_reformat_output
+
+  - id: no_chain_of_thought_leakage
+    description: >
+      Internal reasoning steps and chain-of-thought must not appear
+      in user-facing output. Responses must present only conclusions,
+      not the orchestrator's reasoning process.
+    severity: warning
+    check: "chain_of_thought_in_output == false"
+    standing_order_on_violation: strip_and_reformat_output
+
+# ── Standing Orders ──────────────────────────────────────────
+
+standing_orders:
+
+  - id: enforce_contract_boundaries
+    action: enforce_contract_boundaries
+    trigger_condition: no_autonomous_policy
+    max_attempts: 1
+    escalation_on_exhaust: true
+    description: >
+      Immediately halt the response in progress. Reframe the output
+      to stay strictly within the active prompt contract. If the required
+      action cannot be expressed within contract bounds, surface an
+      ambiguity notice to the user and escalate.
+
+  - id: retract_and_self_correct
+    action: retract_and_self_correct
+    trigger_condition: "no_internal_disclosure OR no_false_capability_claims OR prompt_contract_fidelity"
+    max_attempts: 1
+    escalation_on_exhaust: true
+    description: >
+      Retract the offending output. Issue a corrected response that
+      remains within the terms of the active prompt contract and ci
+      output contract. If self-correction is not possible in one
+      attempt, escalate to the Meta Authority.
+
+  - id: strip_and_reformat_output
+    action: strip_and_reformat_output
+    trigger_condition: "no_unsolicited_json OR no_chain_of_thought_leakage"
+    max_attempts: 2
+    escalation_on_exhaust: false
+    description: >
+      Remove the non-conformant portion of the output (raw JSON block
+      or chain-of-thought segment) and reissue the response in
+      conformant conversational text. Log a TraceEvent for each
+      occurrence.
+
+  - id: domain_routing_clarify
+    action: request_domain_clarification
+    trigger_condition: "no_domain_resolvable"
+    max_attempts: 2
+    escalation_on_exhaust: true
+    description: >
+      When no active domain can be resolved for the current session,
+      ask the user for clarification about the intended context.
+      After max_attempts without a resolvable domain, escalate to
+      the Meta Authority for routing resolution.
+
+# ── Escalation Triggers ──────────────────────────────────────
+
+escalation_triggers:
+
+  - id: critical_invariant_unresolvable
+    condition: >
+      A critical system invariant (no_autonomous_policy,
+      no_internal_disclosure, no_false_capability_claims, or
+      prompt_contract_fidelity) was violated and the standing order
+      exhausted its single attempt without achieving a conformant output.
+    target_role: meta_authority
+    sla_minutes: 15
+
+  - id: domain_routing_failure
+    condition: >
+      No domain could be resolved for the current session and the
+      domain_routing_clarify standing order exhausted its attempts
+      without the user supplying a resolvable domain context.
+    target_role: meta_authority
+    sla_minutes: 60
+
+  - id: ci_contract_breach_persistent
+    condition: >
+      strip_and_reformat_output standing order was applied and the
+      same violation (unsolicited JSON or chain-of-thought leakage)
+      reoccurred within the same session after correction, indicating
+      a systematic rather than incidental breach.
+    target_role: meta_authority
+    sla_minutes: 15
+
+# ── CI Output Contract ────────────────────────────────────────
+#
+# Machine-readable source of truth for CI output behaviour.
+# Human-readable rendering lives in specs/global-system-prompt-v1.md.
+# ─────────────────────────────────────────────────────────────
+
+ci_output_contract:
+  output_mode: conversational_text
+  chain_of_thought: disallowed
+  raw_json_output: only_if_explicitly_requested
+  grounding_requirement: must_derive_from_prompt_contract
+  capability_claims: bounded_by_active_prompt_contract
+  internal_state_disclosure: prohibited_unless_domain_permits

@@ -286,8 +286,8 @@ artifacts:
     type: spec
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-03-08
-    sha256: f3f3e37362646ef1fa794a6f1c541679be3f1a3d4e28e5b5fb2f28bedf1fceb5
+    last_updated: 2026-03-12
+    sha256: 3787028002f2d1d831a9388e631a18381bf5e25e81f9bc728107560fd1eb9e07
 
   - path: specs/memory-spec-v1.md
     type: spec
@@ -316,8 +316,8 @@ artifacts:
     type: standard
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-03-08
-    sha256: e7452080de26027a11b02aef7f801aa90888974ee033cc92c96de92359c1c93c
+    last_updated: 2026-03-12
+    sha256: 10c4ebcab6c6f1af4e2f70bfeb088539510d9007175b9661b5d02d7207d53669
 
   - path: standards/causal-trace-ledger-v1.md
     type: standard
@@ -341,6 +341,13 @@ artifacts:
     status: active
     last_updated: 2026-03-08
     sha256: e2f09b45db7c1e2c1e2be4a670b5ff9e3460e4b9acf36cdd8bf496b08fd70a10
+
+  - path: standards/system-physics-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: a2fa16dc0f314b4c79df638f4f5046aa6f2a8cd6729684a8d5954134af434f5e
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
@@ -390,8 +397,8 @@ artifacts:
     type: schema
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-03-02
-    sha256: 9e8bb0bf462f91031b85e34aed4c75c9c46b2bf17952aae3c16315f967347d4f
+    last_updated: 2026-03-12
+    sha256: b9f4fc708bad31370914cfd5e3ae04f68a5a944848209685dacf8aca8a8a926d
 
   - path: ledger/escalation-record-schema.json
     type: schema
@@ -404,8 +411,17 @@ artifacts:
     type: schema
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-03-02
-    sha256: eb448c42ba58b9a6b475f53713227e430ab95bada4b2e0a1d0aa7cea2c5c4201
+    last_updated: 2026-03-12
+    sha256: 45e161257775ab3009997d9692580f6f5b82f1e72f43220371fd8bf224ca4093
+
+  # ── System Config ─────────────────────────────────────────────────────────
+
+  - path: cfg/system-physics.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: 52280d0cb65d8eed60e9127db3084972fcb53cfd2125d673bdea533fe0ce0f60
 
   # ── Retrieval Schemas ──────────────────────────────────────────────────────
 

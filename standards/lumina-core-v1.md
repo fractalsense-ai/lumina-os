@@ -84,7 +84,60 @@ Domain-lib runtime components consume structured signals (including tool-adapter
 
 ---
 
-## 2. Causal Trace Ledger (CTL) Conformance
+## 2. Global System Conformance
+
+The top-level Conversational Interface (CI) layer — the rules that govern every Lumina session regardless of domain — must be managed with the same rigor as domain packs: authored in a structured YAML source, validated against a JSON Schema, and committed to a dedicated system CTL before taking operational effect.
+
+### 2.0 System Physics Artifact Requirements
+
+The system layer must include the following artifacts:
+
+| Artifact | Required | Schema |
+|----------|----------|--------|
+| `cfg/system-physics.yaml` | Yes | [`system-physics-schema-v1.json`](system-physics-schema-v1.json) |
+| `cfg/system-physics.json` | Yes (derived) | Same schema |
+| `specs/global-system-prompt-v1.md` | Yes (rendered view) | Derived from `cfg/system-physics.yaml`; must not diverge |
+
+`cfg/system-physics.json` is the compiled form of the YAML source. Its SHA-256 hash is what gets committed to the system CTL via a `CommitmentRecord (system_physics_activation)`. The markdown rendering in `specs/global-system-prompt-v1.md` is kept for human readability but is **not** the source of truth.
+
+### 2.1 System Physics Requirements
+
+A conformant `cfg/system-physics.yaml` must declare:
+
+- `id`: globally unique identifier (format: `system/{org}/{name}/v{major}`)
+- `version`: semver string
+- `meta_authority_id`: id of the Meta Authority responsible (or `"root"` for top-level governance body)
+- `conforms_to`: the `lumina-core` version this document targets
+- `invariants`: at least one invariant with `severity: critical`
+- `standing_orders`: at least one standing order with `max_attempts` and `escalation_on_exhaust`
+- `escalation_triggers`: at least one trigger pointing to `target_role: meta_authority`
+- `ci_output_contract`: structured rules governing CI output behaviour (output_mode, chain_of_thought, raw_json_output, grounding_requirement, capability_claims, internal_state_disclosure)
+
+### 2.2 System CTL
+
+The system layer maintains its **own CTL**, separate from domain/session CTLs but conforming to the same record schemas (`CommitmentRecord`, `TraceEvent`, `EscalationRecord`).
+
+- Storage path convention: `LUMINA_CTL_DIR/system/` (or equivalent configured path)
+- System CTL must be append-only and hash-chained, same as domain/session CTLs
+- Every activation of a new `cfg/system-physics.json` requires a `CommitmentRecord` with `commitment_type: system_physics_activation` and `subject_hash` set to the SHA-256 of the compiled JSON before it takes effect
+- Rollbacks require `commitment_type: system_physics_rollback`
+
+### 2.3 Cross-Ledger Hash Reference
+
+Every domain/session `TraceEvent` record **SHOULD** include `system_physics_hash` in its `metadata` block — the SHA-256 of the active `cfg/system-physics.json` at the time of the event.
+
+This creates an auditable cross-reference chain: any domain CTL record can be traced back to the exact system-layer version that was operational at that moment, without coupling the system CTL and domain CTLs structurally.
+
+```
+Domain CTL TraceEvent.metadata.system_physics_hash
+  └─► System CTL CommitmentRecord.subject_hash  (system_physics_activation)
+        └─► cfg/system-physics.json  (compiled, SHA-256 verified)
+              └─► cfg/system-physics.yaml  (YAML source, human-authored)
+```
+
+---
+
+## 3. Causal Trace Ledger (CTL) Conformance
 
 Every Lumina system must maintain a CTL-conformant ledger. Requirements:
 
@@ -100,7 +153,7 @@ See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL sp
 
 ---
 
-## 3. Compressed State Conformance
+## 4. Compressed State Conformance
 
 For domains that implement subject state tracking, each domain pack defines its own **subject state schema** in its `schemas/` directory. The D.S.A. engine is agnostic to the specific fields; domain libs populate whatever fields the domain schema defines.
 
@@ -117,7 +170,7 @@ See [`domain-state-lib-contract-v1.md`](domain-state-lib-contract-v1.md) for the
 
 ---
 
-## 4. Naming and Terminology
+## 5. Naming and Terminology
 
 All Project Lumina documents and code must use the following canonical terminology:
 
@@ -133,7 +186,7 @@ All Project Lumina documents and code must use the following canonical terminolo
 
 ---
 
-## 5. RAG Layer Conformance
+## 6. RAG Layer Conformance
 
 Systems using retrieval-augmented generation must conform to the grounding contract:
 
@@ -146,7 +199,7 @@ See [`../retrieval/rag-contracts.md`](../retrieval/rag-contracts.md) for the ful
 
 ---
 
-## 6. Versioning
+## 7. Versioning
 
 This meta-specification itself is versioned. Breaking changes to this specification:
 - Increment the major version
@@ -155,10 +208,18 @@ This meta-specification itself is versioned. Breaking changes to this specificat
 
 ---
 
-## 7. Conformance Checklist
+## 8. Conformance Checklist
 
 Before publishing a domain pack or implementation:
 
+**System Layer**
+- [ ] `cfg/system-physics.yaml` validates against `system-physics-schema-v1.json`
+- [ ] `cfg/system-physics.json` (compiled form) is present and its SHA-256 matches a `CommitmentRecord (system_physics_activation)` in the system CTL
+- [ ] `specs/global-system-prompt-v1.md` reflects the current `ci_output_contract` in `cfg/system-physics.yaml`
+- [ ] System CTL is append-only and hash-chained
+- [ ] Domain/session `TraceEvent` records include `system_physics_hash` in `metadata`
+
+**Domain Packs**
 - [ ] Domain Physics YAML validates against `domain-physics-schema-v1.json`
 - [ ] At least one `critical` invariant is defined
 - [ ] All standing orders have `max_attempts` and `escalation_on_exhaust` set
@@ -167,7 +228,7 @@ Before publishing a domain pack or implementation:
 - [ ] CTL integration is append-only and hash-chained
 - [ ] No transcript content is stored in the CTL
 - [ ] All identifiers are pseudonymous
-- [ ] Terminology conforms to Section 4
+- [ ] Terminology conforms to Section 5
 - [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
 - [ ] If module domain-lib subsystems are used, module `domain-physics` declares the relevant `subsystem_configs` block(s) with required thresholds
 - [ ] Module `domain-physics` owns normative thresholds/tolerances and standing-order trigger semantics

@@ -1,5 +1,18 @@
 # Global Conversational Interface Base Prompt
 
+> **Rendered view only.**
+> Source of truth: [`cfg/system-physics.yaml`](../cfg/system-physics.yaml)
+> Schema: [`standards/system-physics-schema-v1.json`](../standards/system-physics-schema-v1.json)
+>
+> This document is the human-readable rendering of the CI output contract and
+> invariants defined in `cfg/system-physics.yaml`. It must not diverge from that
+> source. Any changes to CI behaviour must be made in `cfg/system-physics.yaml`,
+> compiled to `cfg/system-physics.json`, and committed to the system CTL as a
+> `CommitmentRecord` with `commitment_type: system_physics_activation` before
+> the updated behaviour takes operational effect.
+
+---
+
 You are the Conversational Interface for Project Lumina.
 
 Core rules:
