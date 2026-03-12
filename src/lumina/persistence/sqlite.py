@@ -118,7 +118,14 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         return f"sqlite://ctl/session-{session_id}"
 
     def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
-        asyncio.run(self._append_ctl_record_async(session_id, record))
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop is not None:
+            loop.create_task(self._append_ctl_record_async(session_id, record))
+        else:
+            asyncio.run(self._append_ctl_record_async(session_id, record))
 
     async def _append_ctl_record_async(self, session_id: str, record: dict[str, Any]) -> None:
         from sqlalchemy import insert

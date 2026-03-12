@@ -118,18 +118,8 @@ def _detect_steps(student_work: str) -> list[str]:
 
     Uses core NLP sentence splitting (spaCy sentencizer + regex fallback).
     """
-    import importlib.util as _ilu
-    import sys as _sys
-    from pathlib import Path as _Path
-
-    _core_path = _Path(__file__).resolve().parents[3] / "reference-implementations" / "core_nlp.py"
-    _mod_key = "core_nlp"
-    if _mod_key not in _sys.modules:
-        _spec = _ilu.spec_from_file_location(_mod_key, str(_core_path))
-        _mod = _ilu.module_from_spec(_spec)  # type: ignore[arg-type]
-        _sys.modules[_mod_key] = _mod
-        _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
-    return _sys.modules[_mod_key].split_sentences(student_work)
+    from lumina.core.nlp import split_sentences as _split_sentences
+    return _split_sentences(student_work)
 
 
 _OPERATION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
