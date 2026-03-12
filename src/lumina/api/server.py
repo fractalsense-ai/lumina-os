@@ -116,22 +116,29 @@ def _build_persistence_adapter() -> PersistenceAdapter:
 PERSISTENCE: PersistenceAdapter = _build_persistence_adapter()
 
 
-def _get_generate_problem_fn(runtime: dict[str, Any]) -> Any:
-    """Resolve the ``generate_problem`` callable from the domain-pack's
-    reference-implementations directory, mirroring how runtime_loader
-    loads domain adapters via importlib.
-    """
-    domain_step_cfg = (runtime.get("adapters") or {}).get("domain_step") or {}
-    module_path = domain_step_cfg.get("module_path", "")
-    if module_path:
-        gen_path = Path(_REPO_ROOT) / Path(module_path).parent / "problem_generator.py"
-        if gen_path.is_file():
-            spec = importlib.util.spec_from_file_location("_problem_generator", str(gen_path))
-            if spec and spec.loader:
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                return getattr(mod, "generate_problem", None)
-    return None
+# ─────────────────────────────────────────────────────────────
+# Per-user profile helpers
+# ─────────────────────────────────────────────────────────────
+
+_PROFILES_DIR = _REPO_ROOT / "cfg" / "profiles"
+
+
+def _resolve_user_profile_path(user_id: str, domain_key: str) -> Path:
+    """Return ``cfg/profiles/{user_id}/{domain_key}.yaml`` under the repo root."""
+    safe_uid = user_id.replace("/", "_").replace("\\", "_")
+    safe_domain = domain_key.replace("/", "_").replace("\\", "_")
+    return _PROFILES_DIR / safe_uid / f"{safe_domain}.yaml"
+
+
+def _ensure_user_profile(user_id: str, domain_key: str, template_path: str) -> str:
+    """Return a user-specific profile path, copying template if not yet created."""
+    target = _resolve_user_profile_path(user_id, domain_key)
+    if not target.exists():
+        import shutil
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(template_path, target)
+        log.info("Initialised profile for user=%s domain=%s at %s", user_id, domain_key, target)
+    return str(target)
 
 
 def _default_current_problem(task_spec: dict[str, Any], runtime: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -147,7 +154,7 @@ def _default_current_problem(task_spec: dict[str, Any], runtime: dict[str, Any] 
         tiers = subsystem_configs.get("equation_difficulty_tiers")
         if isinstance(tiers, list) and tiers:
             try:
-                gen_fn = _get_generate_problem_fn(runtime)
+                gen_fn = (runtime.get("tool_fns") or {}).get("generate_problem")
                 if gen_fn is not None:
                     difficulty = float(task_spec.get("nominal_difficulty", 0.5))
                     return gen_fn(difficulty, tiers)
@@ -608,6 +615,7 @@ class DomainContext:
         "turn_count",
         "domain_id",
         "problem_presented_at",
+        "subject_profile_path",
     )
 
     def __init__(
@@ -618,6 +626,7 @@ class DomainContext:
         turn_count: int,
         domain_id: str,
         problem_presented_at: float,
+        subject_profile_path: str = "",
     ) -> None:
         self.orchestrator = orchestrator
         self.task_spec = task_spec
@@ -625,6 +634,7 @@ class DomainContext:
         self.turn_count = turn_count
         self.domain_id = domain_id
         self.problem_presented_at = problem_presented_at
+        self.subject_profile_path = subject_profile_path
 
     def to_session_dict(self) -> dict[str, Any]:
         """Return a dict matching the legacy session shape for process_message()."""
@@ -669,13 +679,26 @@ def _build_domain_context(
     session_id: str,
     resolved_domain_id: str,
     persisted_state: dict[str, Any] | None = None,
+    user: dict[str, Any] | None = None,
 ) -> DomainContext:
     """Construct a fresh DomainContext for a domain (shared by create + switch)."""
     runtime = DOMAIN_REGISTRY.get_runtime_context(resolved_domain_id)
 
     _assert_policy_commitment(runtime)
     domain_physics_path = Path(runtime["domain_physics_path"])
-    subject_profile_path = Path(runtime["subject_profile_path"])
+
+    # Resolve profile: per-user file when authenticated, default path otherwise
+    if user is not None:
+        domain_key = resolved_domain_id.split("/")[0] if "/" in resolved_domain_id else resolved_domain_id
+        subject_profile_path = Path(
+            _ensure_user_profile(
+                user_id=str(user["sub"]),
+                domain_key=domain_key,
+                template_path=str(runtime["subject_profile_path"]),
+            )
+        )
+    else:
+        subject_profile_path = Path(runtime["subject_profile_path"])
     domain = PERSISTENCE.load_domain_physics(str(domain_physics_path))
     profile = PERSISTENCE.load_subject_profile(str(subject_profile_path))
     ledger_path = PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=resolved_domain_id)
@@ -719,10 +742,15 @@ def _build_domain_context(
         turn_count=turn_count,
         domain_id=resolved_domain_id,
         problem_presented_at=time.time(),
+        subject_profile_path=str(subject_profile_path),
     )
 
 
-def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict[str, Any]:
+def get_or_create_session(
+    session_id: str,
+    domain_id: str | None = None,
+    user: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return a legacy-shaped session dict for the requested domain context.
 
     If the session already exists and the requested domain differs from
@@ -753,7 +781,7 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
                         f"{_MAX_CONTEXTS_PER_SESSION} domain contexts."
                     )
                 resolved_domain_id_checked = DOMAIN_REGISTRY.resolve_domain_id(resolved)
-                ctx = _build_domain_context(session_id, resolved_domain_id_checked)
+                ctx = _build_domain_context(session_id, resolved_domain_id_checked, user=container.user)
                 container.contexts[resolved_domain_id_checked] = ctx
                 container.active_domain_id = resolved_domain_id_checked
                 log.info(
@@ -781,9 +809,9 @@ def get_or_create_session(session_id: str, domain_id: str | None = None) -> dict
 
     # ── New session ──────────────────────────────────────────
     resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
-    ctx = _build_domain_context(session_id, resolved_domain_id)
+    ctx = _build_domain_context(session_id, resolved_domain_id, user=user)
 
-    container = SessionContainer(active_domain_id=resolved_domain_id)
+    container = SessionContainer(active_domain_id=resolved_domain_id, user=user)
     container.contexts[resolved_domain_id] = ctx
     _session_containers[session_id] = container
 
@@ -824,8 +852,9 @@ def process_message(
     turn_data_override: dict[str, Any] | None = None,
     deterministic_response: bool = False,
     domain_id: str | None = None,
+    user: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    session = get_or_create_session(session_id, domain_id=domain_id)
+    session = get_or_create_session(session_id, domain_id=domain_id, user=user)
     orch: DSAOrchestrator = session["orchestrator"]
     task_spec: dict[str, Any] = session["task_spec"]
     current_problem: dict[str, Any] = session["current_problem"]
@@ -931,7 +960,7 @@ def process_message(
         tiers = domain.get("equation_difficulty_tiers")
         if isinstance(tiers, list) and tiers:
             try:
-                gen_fn = _get_generate_problem_fn(runtime)
+                gen_fn = (runtime.get("tool_fns") or {}).get("generate_problem")
                 if gen_fn is not None:
                     if should_advance:
                         next_tier = fluency_decision.get("next_tier", "")
@@ -955,6 +984,18 @@ def process_message(
         container.active_context.sync_from_dict(session)
         container.last_activity = time.time()
         _persist_session_container(session_id, container)
+
+        # ── Auto-save per-user profile after each turn ────────
+        if container.user is not None and orch.state is not None:
+            profile_path = container.active_context.subject_profile_path
+            if profile_path:
+                try:
+                    import dataclasses
+                    profile_data = PERSISTENCE.load_subject_profile(profile_path)
+                    profile_data["learning_state"] = dataclasses.asdict(orch.state)
+                    PERSISTENCE.save_subject_profile(profile_path, profile_data)
+                except Exception:
+                    log.warning("Profile auto-save failed for session %s", session_id)
     else:
         PERSISTENCE.save_session_state(
             session_id,
@@ -1287,6 +1328,7 @@ async def chat(
             req.turn_data_override,
             req.deterministic_response,
             resolved_domain_id,
+            user,
         )
     except DomainNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

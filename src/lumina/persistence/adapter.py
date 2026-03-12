@@ -16,6 +16,10 @@ class PersistenceAdapter(ABC):
         """Load subject profile document from persistent storage."""
 
     @abstractmethod
+    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
+        """Persist a subject profile document (atomic write)."""
+
+    @abstractmethod
     def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         """Return a stable ledger path for a given session.
 
@@ -150,6 +154,9 @@ class NullPersistenceAdapter(PersistenceAdapter):
         sys.modules["persistence_yaml_loader"] = mod
         spec.loader.exec_module(mod)  # type: ignore[union-attr]
         return mod.load_yaml(path)
+
+    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
+        return None
 
     def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:

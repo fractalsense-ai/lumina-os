@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Shield, PaperPlaneRight, User, Robot } from '@phosphor-icons/react'
+import { Shield, PaperPlaneRight, User, Robot, SignOut } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -47,6 +47,13 @@ interface DomainInfo {
   ui_manifest: UiManifest
 }
 
+interface AuthState {
+  token: string
+  userId: string
+  username: string
+  role: string
+}
+
 const DEFAULT_MANIFEST: UiManifest = {
   title: 'Project Lumina',
   subtitle: '',
@@ -75,12 +82,17 @@ async function fetchDomainInfo(): Promise<DomainInfo | null> {
 async function orchestratorApiCall(
   userText: string,
   sessionId: string | null,
+  auth: AuthState | null,
 ): Promise<ApiChatResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (auth) {
+    headers['Authorization'] = `Bearer ${auth.token}`
+  }
   const res = await fetch(`${getApiBase()}/api/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       session_id: sessionId,
       message: userText,
@@ -101,6 +113,129 @@ function applyThemeOverrides(theme: UiManifest['theme']) {
   if (theme.primary) root.style.setProperty('--primary', theme.primary)
   if (theme.accent) root.style.setProperty('--accent', theme.accent)
   if (theme.background) root.style.setProperty('--background', theme.background)
+}
+
+function LoginScreen({
+  manifest,
+  onAuth,
+}: {
+  manifest: UiManifest
+  onAuth: (auth: AuthState) => void
+}) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async () => {
+    const u = username.trim()
+    const p = password.trim()
+    if (!u || !p) {
+      setError('Username and password are required.')
+      return
+    }
+    setError(null)
+    setIsLoading(true)
+    try {
+      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
+      const res = await fetch(`${getApiBase()}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError(body?.detail ?? `${mode === 'login' ? 'Login' : 'Registration'} failed.`)
+        return
+      }
+      const data = await res.json()
+      const auth: AuthState = {
+        token: data.access_token,
+        userId: data.user_id,
+        username: u,
+        role: data.role,
+      }
+      localStorage.setItem('lumina.auth', JSON.stringify(auth))
+      onAuth(auth)
+    } catch {
+      setError('Could not reach the Lumina API. Is the server running?')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSubmit()
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Card className="max-w-sm w-full p-8 shadow-lg">
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Shield className="text-primary" size={40} weight="duotone" />
+              <h1 className="font-bold text-2xl tracking-tight text-foreground">
+                {manifest.title}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'login' ? 'Sign in to continue' : 'Create your account'}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Input
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={handleKey}
+                disabled={isLoading}
+                autoFocus
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKey}
+                disabled={isLoading}
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-medium"
+            >
+              {isLoading
+                ? 'Please wait…'
+                : mode === 'login'
+                ? 'Sign In'
+                : 'Create Account'}
+            </Button>
+
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null) }}
+            >
+              {mode === 'login'
+                ? "Don't have an account? Register"
+                : 'Already have an account? Sign in'}
+            </button>
+          </div>
+        </Card>
+      </motion.div>
+    </div>
+  )
 }
 
 function ConsentScreen({
@@ -201,11 +336,12 @@ function LoadingIndicator() {
   )
 }
 
-function ChatInterface({ manifest }: { manifest: UiManifest }) {
+function ChatInterface({ manifest, auth, onLogout }: { manifest: UiManifest; auth: AuthState; onLogout: () => void }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  // Stable session_id tied to the authenticated user
+  const [sessionId] = useState<string>(`user_${auth.userId}`)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -231,8 +367,7 @@ function ChatInterface({ manifest }: { manifest: UiManifest }) {
     setIsLoading(true)
 
     try {
-      const apiResponse = await orchestratorApiCall(trimmedInput, sessionId)
-      setSessionId(apiResponse.session_id)
+      const apiResponse = await orchestratorApiCall(trimmedInput, sessionId, auth)
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -267,12 +402,30 @@ function ChatInterface({ manifest }: { manifest: UiManifest }) {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-card px-6 py-4">
-        <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
-          {manifest.title}
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          {manifest.subtitle}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
+              {manifest.title}
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              {manifest.subtitle}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground hidden sm:block">
+              {auth.username}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onLogout}
+              title="Sign out"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <SignOut size={20} />
+            </Button>
+          </div>
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -323,16 +476,39 @@ function ChatInterface({ manifest }: { manifest: UiManifest }) {
 }
 
 function App() {
-  const [consentGiven, setConsentGiven] = useState<boolean>(() => {
-    if (typeof window === 'undefined') {
-      return false
+  const [auth, setAuth] = useState<AuthState | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const stored = window.localStorage.getItem('lumina.auth')
+      return stored ? (JSON.parse(stored) as AuthState) : null
+    } catch {
+      return null
     }
+  })
+  const [consentGiven, setConsentGiven] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
     return window.localStorage.getItem('lumina.consent_given') === 'true'
   })
   const [manifest, setManifest] = useState<UiManifest>(DEFAULT_MANIFEST)
 
+  // Validate stored token against /api/auth/me on mount; clear if stale
+  useEffect(() => {
+    if (auth === null) return
+    fetch(`${getApiBase()}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${auth.token}` },
+    }).then((res) => {
+      if (res.status === 401) {
+        localStorage.removeItem('lumina.auth')
+        setAuth(null)
+      }
+    }).catch(() => {
+      // Network error — keep auth so the user can still see the login screen
+    })
+  }, [])
+
   useEffect(() => {
     fetchDomainInfo().then((info) => {
+      if (!info) return
       setManifest(info.ui_manifest)
       applyThemeOverrides(info.ui_manifest.theme)
     })
@@ -344,15 +520,25 @@ function App() {
     }
   }, [consentGiven])
 
-  const handleConsent = () => {
-    setConsentGiven(true)
+  const handleAuth = (newAuth: AuthState) => {
+    setAuth(newAuth)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('lumina.auth')
+    setAuth(null)
+    setConsentGiven(false)
+  }
+
+  if (auth === null) {
+    return <LoginScreen manifest={manifest} onAuth={handleAuth} />
   }
 
   if (!consentGiven) {
-    return <ConsentScreen manifest={manifest} onConsent={handleConsent} />
+    return <ConsentScreen manifest={manifest} onConsent={() => setConsentGiven(true)} />
   }
 
-  return <ChatInterface manifest={manifest} />
+  return <ChatInterface manifest={manifest} auth={auth} onLogout={handleLogout} />
 }
 
 export default App

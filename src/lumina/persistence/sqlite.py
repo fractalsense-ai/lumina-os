@@ -8,6 +8,7 @@ from typing import Any
 
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.yaml_loader import load_yaml
+from lumina.persistence.filesystem import _dump_yaml
 
 
 class SQLitePersistenceAdapter(PersistenceAdapter):
@@ -110,6 +111,14 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
     def load_subject_profile(self, path: str) -> dict[str, Any]:
         return self._load_yaml(path)
+
+    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_suffix(target.suffix + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(_dump_yaml(data))
+        tmp.replace(target)
 
     def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         # DB backend does not rely on file path, but we keep interface compatibility.

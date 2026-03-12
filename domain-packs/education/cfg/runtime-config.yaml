@@ -167,3 +167,6 @@ adapters:
     algebra_parser:
       module_path: domain-packs/education/systools/tool_adapters.py
       callable: algebra_parser_tool
+    generate_problem:
+      module_path: domain-packs/education/systools/problem_generator.py
+      callable: generate_problem

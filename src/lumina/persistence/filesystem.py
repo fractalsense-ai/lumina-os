@@ -9,6 +9,74 @@ from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.yaml_loader import load_yaml
 
 
+# ─────────────────────────────────────────────────────────────
+# Minimal YAML serializer (stdlib-only)
+# ─────────────────────────────────────────────────────────────
+
+def _yaml_scalar(v: Any) -> str:
+    """Serialise a scalar Python value as a YAML scalar string."""
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        return f"{v:.8g}"
+    s = str(v)
+    needs_quote = (
+        not s
+        or s.strip() != s
+        or s[0] in ':{[|>&*!%@`#'
+        or s.lower() in ("true", "false", "null", "yes", "no", "on", "off")
+        or "\n" in s
+        or ": " in s
+    )
+    if needs_quote:
+        escaped = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+        return f'"{escaped}"'
+    return s
+
+
+def _yaml_lines(obj: Any, indent: int) -> list[str]:
+    """Return lines for a YAML block representation (no trailing newlines)."""
+    pad = "  " * indent
+    if isinstance(obj, dict):
+        if not obj:
+            return [pad + "{}"]
+        lines: list[str] = []
+        for k, v in obj.items():
+            if isinstance(v, dict) and v:
+                lines.append(f"{pad}{k}:")
+                lines.extend(_yaml_lines(v, indent + 1))
+            elif isinstance(v, list) and v:
+                lines.append(f"{pad}{k}:")
+                lines.extend(_yaml_lines(v, indent + 1))
+            elif isinstance(v, list):
+                lines.append(f"{pad}{k}: []")
+            elif isinstance(v, dict):
+                lines.append(f"{pad}{k}: {{}}")
+            else:
+                lines.append(f"{pad}{k}: {_yaml_scalar(v)}")
+        return lines
+    if isinstance(obj, list):
+        lines = []
+        for item in obj:
+            if isinstance(item, dict) and item:
+                nested = _yaml_lines(item, indent + 1)
+                lines.append(f"{pad}- " + nested[0].lstrip())
+                lines.extend(nested[1:])
+            else:
+                lines.append(f"{pad}- {_yaml_scalar(item)}")
+        return lines
+    return [pad + _yaml_scalar(obj)]
+
+
+def _dump_yaml(data: Any) -> str:
+    """Serialise *data* to a YAML string (stdlib-only, no external deps)."""
+    return "\n".join(_yaml_lines(data, 0)) + "\n"
+
+
 class FilesystemPersistenceAdapter(PersistenceAdapter):
     """Filesystem-backed persistence preserving current reference behavior."""
 
@@ -26,6 +94,14 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
 
     def load_subject_profile(self, path: str) -> dict[str, Any]:
         return self._load_yaml(path)
+
+    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_suffix(target.suffix + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(_dump_yaml(data))
+        tmp.replace(target)
 
     def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:
