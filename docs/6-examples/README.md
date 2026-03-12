@@ -1,5 +1,11 @@
 # Section 6 — Examples
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Worked examples, traces, and reference scenarios.
 
 | Example | Description |

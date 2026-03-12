@@ -1,5 +1,11 @@
 # Section 4 — Formats (Schemas & File Formats)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 JSON schemas, data structures, and file format specifications.
 
 | Format | Description |
@@ -14,5 +20,8 @@ JSON schemas, data structures, and file format specifications.
 | [escalation-record-schema.json](../../ledger/escalation-record-schema.json) | EscalationRecord schema |
 | [trace-event-schema.json](../../ledger/trace-event-schema.json) | Trace event schema |
 | [retrieval-index-schema-v1.json](../../retrieval/retrieval-index-schema-v1.json) | RAG retrieval index schema |
+
+| [artifact-manifest-format](artifact-manifest-format.md) | Format specification for `docs/MANIFEST.yaml` — the core artifact registry |
+| [tool-adapter-versioning](tool-adapter-versioning.md) | Version lifecycle for tool adapter YAML declarations |
 
 All schemas are stored under [`../standards/`](../../standards/) and [`../ledger/`](../../ledger/). This index provides a navigable reference.

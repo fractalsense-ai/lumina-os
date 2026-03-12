@@ -1,5 +1,11 @@
 # Section 8 — Administration
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Governance, RBAC configuration, audit policy, and operational procedures.
 
 | Topic | Description |

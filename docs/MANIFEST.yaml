@@ -1,0 +1,401 @@
+# Project Lumina — Core Artifact Registry
+# docs/MANIFEST.yaml
+#
+# Machine-readable index of all versioned core artifacts.
+# AI agents: read this file first to discover available artifacts and their versions.
+# Domain-pack artifacts are indexed in per-pack MANIFEST.yaml files, not here.
+#
+# sha256 values must be recomputed whenever an artifact is modified.
+# See docs/5-standards/document-versioning-policy.md — UPDATING THE MANIFEST.
+# The value "pending" is reserved for the initial bootstrap only.
+
+schema_version: 1.0.0
+last_updated: 2026-03-12
+
+artifacts:
+
+  # ── Section 1: Commands ────────────────────────────────────────────────────
+
+  - path: docs/1-commands/README.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/1-commands/installation-and-packaging.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/1-commands/yaml-to-json-converter.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/1-commands/ctl-commitment-validator.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/1-commands/verify-repo-integrity.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/1-commands/dsa-orchestrator-demo.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 2: System Calls ────────────────────────────────────────────────
+
+  - path: docs/2-syscalls/README.md
+    type: doc
+    section: 2
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/2-syscalls/lumina-api-server.md
+    type: doc
+    section: 2
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 3: Functions ───────────────────────────────────────────────────
+
+  - path: docs/3-functions/README.md
+    type: doc
+    section: 3
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/3-functions/auth.md
+    type: doc
+    section: 3
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/3-functions/permissions.md
+    type: doc
+    section: 3
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/3-functions/persistence-adapter.md
+    type: doc
+    section: 3
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 4: Formats ─────────────────────────────────────────────────────
+
+  - path: docs/4-formats/README.md
+    type: doc
+    section: 4
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/4-formats/artifact-manifest-format.md
+    type: doc
+    section: 4
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/4-formats/tool-adapter-versioning.md
+    type: doc
+    section: 4
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 5: Standards ───────────────────────────────────────────────────
+
+  - path: docs/5-standards/README.md
+    type: doc
+    section: 5
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/5-standards/document-versioning-policy.md
+    type: doc
+    section: 5
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/5-standards/domain-library-lifecycle.md
+    type: doc
+    section: 5
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 6: Examples ────────────────────────────────────────────────────
+
+  - path: docs/6-examples/README.md
+    type: doc
+    section: 6
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 7: Concepts ────────────────────────────────────────────────────
+
+  - path: docs/7-concepts/README.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/7-concepts/domain-adapter-pattern.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Section 8: Administration ──────────────────────────────────────────────
+
+  - path: docs/8-admin/README.md
+    type: doc
+    section: 8
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/8-admin/rbac-administration.md
+    type: doc
+    section: 8
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  - path: docs/8-admin/secrets-and-runtime-config.md
+    type: doc
+    section: 8
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-12
+    sha256: pending
+
+  # ── Specs ──────────────────────────────────────────────────────────────────
+
+  - path: specs/principles-v1.md
+    type: spec
+    doc_version: 2.0.0
+    status: active
+    last_updated: 2026-03-03
+    sha256: pending
+
+  - path: specs/dsa-framework-v1.md
+    type: spec
+    doc_version: 1.2.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/rbac-spec-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-09
+    sha256: pending
+
+  - path: specs/audit-log-spec-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/domain-profile-spec-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/evaluation-harness-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/global-system-prompt-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/memory-spec-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/orchestrator-system-prompt-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: specs/reports-spec-v1.md
+    type: spec
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  # ── Standards (.md) ────────────────────────────────────────────────────────
+
+  - path: standards/lumina-core-v1.md
+    type: standard
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/causal-trace-ledger-v1.md
+    type: standard
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-02
+    sha256: pending
+
+  - path: standards/domain-state-lib-contract-v1.md
+    type: standard
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  # ── Standards (JSON Schemas) ───────────────────────────────────────────────
+
+  - path: standards/domain-physics-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/domain-registry-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/prompt-contract-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/rbac-permission-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/role-definition-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  - path: standards/tool-adapter-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending
+
+  # ── Ledger Schemas ─────────────────────────────────────────────────────────
+
+  - path: ledger/causal-trace-ledger-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-02
+    sha256: pending
+
+  - path: ledger/commitment-record-schema.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-02
+    sha256: pending
+
+  - path: ledger/escalation-record-schema.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-02
+    sha256: pending
+
+  - path: ledger/trace-event-schema.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-02
+    sha256: pending
+
+  # ── Retrieval Schemas ──────────────────────────────────────────────────────
+
+  - path: retrieval/retrieval-index-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-08
+    sha256: pending

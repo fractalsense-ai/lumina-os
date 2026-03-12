@@ -1,5 +1,11 @@
 # RBAC Administration
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## Overview
 
 Project Lumina uses a chmod-style permission model with 6 canonical roles. Permissions are stored as 3-digit octal values in each module's domain-physics document.

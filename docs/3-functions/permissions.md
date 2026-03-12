@@ -1,5 +1,11 @@
 # permissions(3)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `permissions.py` — chmod-style module permission checker

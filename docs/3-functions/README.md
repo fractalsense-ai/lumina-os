@@ -1,5 +1,11 @@
 # Section 3 — Functions (Library Reference)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Internal library interfaces used by the Lumina runtime.
 
 | Module | Description |

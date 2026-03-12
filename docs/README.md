@@ -1,5 +1,11 @@
 # Project Lumina — Documentation Index
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Documentation is organized using the UNIX man-page section convention.
 
 | Section | Name | Contents |
@@ -28,3 +34,15 @@ Documentation is organized using the UNIX man-page section convention.
 ---
 
 Domain-specific documentation (education prompts, agriculture adapters, etc.) stays in [`../domain-packs/`](../domain-packs/).
+
+---
+
+## Versioning
+
+All artifacts in this repository are versioned with semver headers, status fields, and
+SHA-256 integrity records. See [document-versioning-policy(5)](5-standards/document-versioning-policy.md)
+for the full rules.
+
+The machine-readable artifact index is at [MANIFEST.yaml](MANIFEST.yaml). AI agents and
+automated tooling should read the manifest first to discover current artifact versions,
+verify integrity, and follow `superseded_by` pointers before reading any artifact.

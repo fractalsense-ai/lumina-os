@@ -1,5 +1,11 @@
 # verify-repo-integrity(1)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `verify-repo-integrity.py` — Run repository-wide integrity checks

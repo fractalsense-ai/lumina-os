@@ -1,5 +1,11 @@
 # Section 7 — Concepts
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Architectural principles, design frameworks, and system philosophy.
 
 | Concept | Description |

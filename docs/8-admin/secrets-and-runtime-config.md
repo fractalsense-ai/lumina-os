@@ -1,5 +1,11 @@
 # secrets-and-runtime-config
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Production-safe runtime configuration for Project Lumina.
 
 ## Goal

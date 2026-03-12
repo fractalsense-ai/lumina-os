@@ -1,5 +1,11 @@
 # yaml-to-json-converter(1)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `yaml-to-json-converter.py` — Convert domain-physics YAML to validated JSON

@@ -1,5 +1,11 @@
 # persistence_adapter(3)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `persistence_adapter.py` — Abstract persistence interface for runtime and CTL operations

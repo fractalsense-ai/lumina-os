@@ -1,5 +1,11 @@
 # ctl-commitment-validator(1)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `ctl-commitment-validator.py` — Commit and verify domain pack hashes in the Causal Trace Ledger

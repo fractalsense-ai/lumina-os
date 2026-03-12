@@ -1,5 +1,11 @@
 # installation-and-packaging
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 Installation and packaging workflows for Project Lumina.
 
 Before running live LLM mode, configure runtime secrets and environment settings: [secrets-and-runtime-config](../8-admin/secrets-and-runtime-config.md).

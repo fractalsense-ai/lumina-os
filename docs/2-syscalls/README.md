@@ -1,5 +1,11 @@
 # Section 2 — System Calls (API Reference)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 HTTP API endpoints exposed by the Lumina API server.
 
 | Endpoint | Method | Auth | Description |

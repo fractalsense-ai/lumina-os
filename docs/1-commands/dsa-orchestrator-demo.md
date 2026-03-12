@@ -1,5 +1,11 @@
 # dsa-orchestrator-demo(1)
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 ## NAME
 
 `dsa-orchestrator-demo.py` — Interactive D.S.A. orchestrator demonstration

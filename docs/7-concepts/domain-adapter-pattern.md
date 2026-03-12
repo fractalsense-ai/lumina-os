@@ -1,5 +1,11 @@
 # Domain Adapter Pattern
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 This document explains how domain packs extend the core engine's behaviour without modifying it. It is the canonical reference for any author adding computed signals, NLP pre-processing, or multi-step task logic to a new domain pack.
 
 ---

@@ -1,5 +1,11 @@
 # Section 1 — Commands
 
+**Version:** 1.0.0  
+**Status:** Active  
+**Last updated:** 2026-03-12  
+
+---
+
 CLI tools and utilities for domain pack management, CTL operations, and system verification.
 
 | Command | Description |
