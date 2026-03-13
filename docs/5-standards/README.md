@@ -21,7 +21,6 @@ Core specifications and protocol standards.
 | [evaluation-harness-v1](../../specs/evaluation-harness-v1.md) | Testing and evaluation harness |
 | [global-system-prompt-v1](../../specs/global-system-prompt-v1.md) | Global system prompt specification |
 | [orchestrator-system-prompt-v1](../../specs/orchestrator-system-prompt-v1.md) | Orchestrator prompt specification |
-
 | [document-versioning-policy](document-versioning-policy.md) | Version control standards for all Project Lumina artifacts |
 | [domain-library-lifecycle](domain-library-lifecycle.md) | Version lifecycle for domain packs and domain libraries |
 
