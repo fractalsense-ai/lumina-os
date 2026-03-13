@@ -383,6 +383,184 @@
         "tool_adapter"
       ],
       "example_in_context": "The education domain_lib exposes fluency_monitor and zpd_estimator; both are called by the education runtime adapter before each orchestrator turn."
+    },
+    {
+      "term": "novel_synthesis",
+      "definition": "A flag set when the reasoning engine identifies a non-obvious connection or approach that does not match any known pattern in the active domain physics. Requires two-key verification before the system records it as a validated innovation.",
+      "aliases": [
+        "novel synthesis",
+        "novel pattern",
+        "creative synthesis"
+      ],
+      "related_terms": [
+        "two_key_verification",
+        "invariant",
+        "escalation_trigger",
+        "domain_physics"
+      ],
+      "example_in_context": "The algebra domain's standard_method_preferred invariant fires with signal_type NOVEL_PATTERN when the subject uses an unrecognized solution method. The domain authority reviews and either verifies or rejects the synthesis."
+    },
+    {
+      "term": "two_key_verification",
+      "definition": "A verification gate requiring two independent confirmations before the system accepts a novel synthesis event. Key 1 is the LLM or domain adapter flagging novel_synthesis true. Key 2 is the Domain Authority (human-in-the-loop) confirming the logic is sound.",
+      "aliases": [
+        "two key verification",
+        "two-key gate",
+        "two key gate",
+        "dual key"
+      ],
+      "related_terms": [
+        "novel_synthesis",
+        "escalation_trigger",
+        "domain_authority",
+        "commitment_record"
+      ],
+      "example_in_context": "After the orchestrator flags a novel synthesis, an escalation record is created for domain authority review. The domain authority resolves it with a novel_synthesis_verified or novel_synthesis_rejected commitment record, completing the two-key gate."
+    },
+    {
+      "term": "model_id",
+      "definition": "The identifier of the LLM model used for a given turn, recorded in TraceEvent metadata for cross-domain performance benchmarking and model-to-domain optimization telemetry.",
+      "aliases": [
+        "model identifier",
+        "llm model id",
+        "language model id"
+      ],
+      "related_terms": [
+        "model_version",
+        "trace_event",
+        "novel_synthesis"
+      ],
+      "example_in_context": "A TraceEvent's metadata contains model_id \"claude-sonnet-4-20250514\" and model_version \"2025-05-14\", enabling the system to track which model produced novel synthesis events across domains."
+    },
+    {
+      "term": "model_version",
+      "definition": "The version or revision string of the LLM model used for a given turn, recorded alongside model_id in TraceEvent metadata for model drift detection and performance regression tracking.",
+      "aliases": [
+        "model version",
+        "llm version",
+        "model revision"
+      ],
+      "related_terms": [
+        "model_id",
+        "trace_event",
+        "novel_synthesis"
+      ],
+      "example_in_context": "When a provider updates a model, a drop in the verified novel synthesis rate for a domain may indicate capability regression. The model_version field pinpoints exactly which revision caused it."
+    },
+    {
+      "term": "slm",
+      "definition": "Small Language Model — a lightweight, locally-hosted language model used for low-weight tasks such as glossary definition rendering, domain physics interpretation (context compression), and admin command translation. Runs alongside the NLP pipeline to further reduce ambiguity before the LLM receives the assembled prompt packet.",
+      "aliases": [
+        "small language model",
+        "small model",
+        "local model",
+        "librarian model"
+      ],
+      "related_terms": [
+        "task_weight",
+        "compute_distribution",
+        "weight_boundary"
+      ],
+      "example_in_context": "When a user asks \"what is a coefficient?\", the glossary intercept matches the term and the SLM renders a fluent, contextualized definition — the LLM is never invoked."
+    },
+    {
+      "term": "task_weight",
+      "definition": "Classification of a prompt type as either low-weight (handled by the SLM) or high-weight (handled by the LLM). Low-weight includes definitions, formatting, field validation, physics interpretation, and admin commands. High-weight includes creative response generation, complex problem solving, and novel synthesis.",
+      "aliases": [
+        "task weight",
+        "weight class",
+        "prompt weight"
+      ],
+      "related_terms": [
+        "slm",
+        "compute_distribution",
+        "weight_boundary"
+      ],
+      "example_in_context": "A definition_lookup prompt type has task_weight LOW and routes to the SLM; an instruction prompt type has task_weight HIGH and routes to the LLM."
+    },
+    {
+      "term": "compute_distribution",
+      "definition": "The architectural principle of routing tasks to the most cost-effective compute tier. Low-weight tasks go to the SLM (cheaper, faster, local); high-weight tasks go to the LLM (more capable, cloud-hosted). This preserves the LLM's reasoning space by pre-digesting context and handling administrative work.",
+      "aliases": [
+        "compute segregation",
+        "model routing",
+        "weight routing"
+      ],
+      "related_terms": [
+        "slm",
+        "task_weight",
+        "weight_boundary"
+      ],
+      "example_in_context": "In an enterprise deployment with a small SLM cluster, sensor feed physics interpretation runs entirely on local SLMs; only complex diagnostic reasoning routes to the LLM."
+    },
+    {
+      "term": "weight_boundary",
+      "definition": "Configuration-level control over how much work the SLM handles. Three tiers — definitions_only (glossary lookups), definitions_and_physics (plus physics interpretation and context compression), full (plus admin command translation).",
+      "aliases": [
+        "weight boundary",
+        "slm boundary",
+        "compute boundary"
+      ],
+      "related_terms": [
+        "slm",
+        "task_weight",
+        "compute_distribution"
+      ],
+      "example_in_context": "The system physics slm_config.weight_boundary field is set to definitions_and_physics, enabling the SLM to match incoming sensor signals against domain invariants and compress context."
+    },
+    {
+      "term": "physics_interpreter",
+      "definition": "The SLM role that matches incoming signals (NLP anchors, sensor data, tool outputs) against domain physics (invariants, standing orders, glossary) to produce compressed context. Identifies which invariants are relevant, which glossary terms apply, and suggests pre-populated evidence fields — reducing the ambiguity the LLM must resolve.",
+      "aliases": [
+        "physics interpretation",
+        "context compressor",
+        "signal interpreter"
+      ],
+      "related_terms": [
+        "slm",
+        "domain_physics",
+        "invariant",
+        "context_compression"
+      ],
+      "example_in_context": "A soil moisture sensor reports 12%. The SLM physics interpreter matches this against the moisture_deficit invariant and the irrigation glossary term, producing a compressed context dict for the LLM."
+    },
+    {
+      "term": "command_translator",
+      "definition": "The SLM role that parses natural language admin instructions into structured system-level commands. The SLM only translates — all execution goes through existing admin endpoints with full RBAC enforcement. Unauthorized commands are rejected at the endpoint layer, not the SLM layer.",
+      "aliases": [
+        "command translation",
+        "admin translator",
+        "natural language commands"
+      ],
+      "related_terms": [
+        "slm",
+        "rbac",
+        "domain_authority"
+      ],
+      "example_in_context": "A domain authority says \"update the coefficient threshold in algebra to 0.8\". The SLM translates this to {operation: update_domain_physics, target: algebra, params: {updates: {coefficient_threshold: 0.8}}}. The update endpoint then checks can_govern_domain() before executing."
+    },
+    {
+      "term": "context_compression",
+      "definition": "The process of reducing raw incoming signals and domain physics into a compact, structured context dict before the LLM sees it. Performed by the SLM physics interpreter alongside the NLP pipeline. The result is a _slm_context metadata block in turn_data, similar to _nlp_anchors.",
+      "aliases": [
+        "context reduction",
+        "signal compression",
+        "pre-digestion"
+      ],
+      "related_terms": [
+        "slm",
+        "physics_interpreter",
+        "prompt_contract"
+      ],
+      "example_in_context": "The _slm_context block contains matched_invariants, relevant_glossary_terms, a one-sentence context_summary, and suggested_evidence_fields — giving the LLM a pre-digested view of what matters this turn."
     }
-  ]
+  ],
+  "slm_config": {
+    "enabled": true,
+    "default_provider": "local",
+    "weight_boundary": "definitions_and_physics",
+    "fallback_on_unavailable": "deterministic",
+    "local_endpoint": "http://localhost:11434",
+    "admin_command_translation": true
+  }
 }

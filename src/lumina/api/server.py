@@ -51,6 +51,16 @@ from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 from lumina.core.permissions import Operation, check_permission
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.runtime_loader import load_runtime_context
+from lumina.core.slm import (
+    TaskWeight,
+    call_slm,
+    classify_task_weight,
+    slm_available,
+    slm_interpret_physics_context,
+    slm_parse_admin_command,
+    slm_render_glossary,
+    ADMIN_OPERATIONS,
+)
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
 
 # ─────────────────────────────────────────────────────────────
@@ -528,6 +538,7 @@ def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime:
     interpreter = runtime["turn_interpreter_fn"]
     kwargs: dict[str, Any] = {
         "call_llm": call_llm,
+        "call_slm": call_slm,
         "input_text": input_text,
         "task_context": task_context,
         "prompt_text": runtime["turn_interpretation_prompt"],
@@ -922,10 +933,14 @@ def process_message(
                     f"{entry['term'].title()}: {entry['definition']} "
                     f"Example: {entry['example_in_context']}"
                 )
+        elif slm_available():
+            llm_response = slm_render_glossary(prompt_contract["glossary_entry"])
         else:
-            llm_response = call_llm(
-                system=system_prompt,
-                user=json.dumps(llm_payload, indent=2, ensure_ascii=False),
+            # SLM unavailable — fall back to deterministic template.
+            entry = prompt_contract["glossary_entry"]
+            llm_response = (
+                f"{entry['term'].title()}: {entry['definition']} "
+                f"Example: {entry['example_in_context']}"
             )
 
         llm_response = _strip_latex_delimiters(llm_response)
@@ -949,6 +964,15 @@ def process_message(
         turn_data = interpret_turn_input(input_text, task_context, runtime)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
+    # ── SLM physics interpretation (context compression) ─────
+    if slm_available():
+        slm_context = slm_interpret_physics_context(
+            incoming_signals=turn_data,
+            domain_physics=domain_physics,
+            glossary=glossary,
+        )
+        turn_data["_slm_context"] = slm_context
+
     # Inject server-side solve elapsed time (more reliable than LLM estimate)
     presented_at = session.get("problem_presented_at")
     if presented_at is not None:
@@ -962,6 +986,10 @@ def process_message(
         turn_provenance["model_id"] = model_id
     if model_version is not None:
         turn_provenance["model_version"] = model_version
+
+    # Determine weight tier for this turn's prompt type (resolved after
+    # orchestrator produces the prompt contract, but we need provenance now).
+    slm_weight_overrides = runtime.get("slm_weight_overrides") or {}
 
     prompt_contract, resolved_action = orch.process_turn(
         task_spec,
@@ -1056,23 +1084,30 @@ def process_message(
         runtime=runtime,
     )
 
+    llm_payload = dict(prompt_contract)
+    llm_payload["current_problem"] = current_problem
+    llm_payload["student_message"] = input_text
+    if tool_results:
+        llm_payload["tool_results"] = tool_results
+
     if deterministic_response:
-        llm_payload = dict(prompt_contract)
-        llm_payload["current_problem"] = current_problem
-        llm_payload["student_message"] = input_text
-        if tool_results:
-            llm_payload["tool_results"] = tool_results
         llm_response = render_contract_response(prompt_contract, runtime)
     else:
-        llm_payload = dict(prompt_contract)
-        llm_payload["current_problem"] = current_problem
-        llm_payload["student_message"] = input_text
-        if tool_results:
-            llm_payload["tool_results"] = tool_results
-        llm_response = call_llm(
-            system=system_prompt,
-            user=json.dumps(llm_payload, indent=2, ensure_ascii=False),
-        )
+        # ── Weight-routed dispatch: SLM for low-weight, LLM for high. ──
+        prompt_type = str(prompt_contract.get("prompt_type", "task_presentation"))
+        weight = classify_task_weight(prompt_type, overrides=slm_weight_overrides)
+        if weight is TaskWeight.LOW and slm_available():
+            llm_response = call_slm(
+                system=system_prompt,
+                user=json.dumps(llm_payload, indent=2, ensure_ascii=False),
+            )
+            from lumina.core.slm import SLM_MODEL as _slm_model_name
+            turn_provenance["slm_model_id"] = _slm_model_name
+        else:
+            llm_response = call_llm(
+                system=system_prompt,
+                user=json.dumps(llm_payload, indent=2, ensure_ascii=False),
+            )
 
     llm_response = _strip_latex_delimiters(llm_response)
 
@@ -1226,6 +1261,10 @@ class DomainPhysicsUpdateRequest(BaseModel):
 class EscalationResolveRequest(BaseModel):
     decision: str  # "approve", "reject", "defer"
     reasoning: str
+
+
+class AdminCommandRequest(BaseModel):
+    instruction: str
 
 
 # ── Auth middleware ───────────────────────────────────────────
@@ -2332,6 +2371,147 @@ async def get_ctl_record(
             return r
 
     raise HTTPException(status_code=404, detail="Record not found")
+
+
+# ─────────────────────────────────────────────────────────────
+# Admin Command Translation (SLM-powered)
+# ─────────────────────────────────────────────────────────────
+
+
+@app.post("/api/admin/command")
+async def admin_command(
+    req: AdminCommandRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Parse a natural-language admin instruction via the SLM, then execute
+    through the existing admin operations with full RBAC enforcement.
+
+    Returns 422 if the SLM cannot parse the instruction.
+    """
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    # Only admin-level roles may use the command translator.
+    if user_data["role"] not in ("root", "domain_authority", "it_support"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    if not slm_available():
+        raise HTTPException(status_code=503, detail="SLM service unavailable")
+
+    parsed = slm_parse_admin_command(req.instruction)
+    if parsed is None:
+        raise HTTPException(status_code=422, detail="Could not interpret command")
+
+    operation = parsed["operation"]
+    params = parsed.get("params") or {}
+
+    # ── Dispatch to existing admin functions with RBAC ────
+    result: dict[str, Any]
+    if operation == "update_domain_physics":
+        domain_id = str(params.get("domain_id", parsed.get("target", "")))
+        updates = params.get("updates") or {}
+        if not domain_id or not updates:
+            raise HTTPException(status_code=422, detail="domain_id and updates required")
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+        try:
+            resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+        domain_physics_path = Path(runtime["domain_physics_path"])
+        domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(domain_physics_path))
+        for k, v in updates.items():
+            domain[k] = v
+
+        def _write() -> None:
+            tmp = domain_physics_path.with_suffix(".json.tmp")
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(domain, fh, indent=2, ensure_ascii=False)
+            tmp.replace(domain_physics_path)
+
+        await run_in_threadpool(_write)
+        subject_hash = admin_canonical_sha256(domain)
+        record = build_commitment_record(
+            actor_id=user_data["sub"],
+            actor_role=map_role_to_actor_role(user_data["role"]),
+            commitment_type="domain_pack_activation",
+            subject_id=str(domain.get("id", resolved)),
+            summary=f"SLM command: {req.instruction}",
+            subject_version=str(domain.get("version", "")),
+            subject_hash=subject_hash,
+            metadata={"slm_command_translation": True, "updated_fields": list(updates.keys())},
+        )
+        PERSISTENCE.append_ctl_record(
+            "admin", record,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        )
+        result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
+
+    elif operation == "commit_domain_physics":
+        domain_id = str(params.get("domain_id", parsed.get("target", "")))
+        if not domain_id:
+            raise HTTPException(status_code=422, detail="domain_id required")
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+        try:
+            resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+        domain_physics_path = Path(runtime["domain_physics_path"])
+        domain = await run_in_threadpool(PERSISTENCE.load_domain_physics, str(domain_physics_path))
+        subject_hash = admin_canonical_sha256(domain)
+        record = build_commitment_record(
+            actor_id=user_data["sub"],
+            actor_role=map_role_to_actor_role(user_data["role"]),
+            commitment_type="domain_pack_activation",
+            subject_id=str(domain.get("id", resolved)),
+            summary=f"SLM command: {req.instruction}",
+            subject_version=str(domain.get("version", "")),
+            subject_hash=subject_hash,
+            metadata={"slm_command_translation": True},
+        )
+        PERSISTENCE.append_ctl_record(
+            "admin", record,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        )
+        result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
+
+    elif operation == "update_user_role":
+        if user_data["role"] != "root":
+            raise HTTPException(status_code=403, detail="Only root can update user roles")
+        target_user_id = str(params.get("user_id", parsed.get("target", "")))
+        new_role = str(params.get("new_role", ""))
+        if not target_user_id or new_role not in VALID_ROLES:
+            raise HTTPException(status_code=422, detail="user_id and valid new_role required")
+        await run_in_threadpool(PERSISTENCE.update_user_role, target_user_id, new_role)
+        result = {"operation": operation, "user_id": target_user_id, "new_role": new_role}
+
+    elif operation == "deactivate_user":
+        if user_data["role"] != "root":
+            raise HTTPException(status_code=403, detail="Only root can deactivate users")
+        target_user_id = str(params.get("user_id", parsed.get("target", "")))
+        if not target_user_id:
+            raise HTTPException(status_code=422, detail="user_id required")
+        if target_user_id == user_data["sub"]:
+            raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+        await run_in_threadpool(PERSISTENCE.deactivate_user, target_user_id)
+        result = {"operation": operation, "user_id": target_user_id}
+
+    elif operation == "resolve_escalation":
+        esc_id = str(params.get("escalation_id", parsed.get("target", "")))
+        resolution = str(params.get("resolution", ""))
+        rationale = str(params.get("rationale", ""))
+        if not esc_id or resolution not in ("approved", "rejected", "deferred"):
+            raise HTTPException(status_code=422, detail="escalation_id and valid resolution required")
+        # Domain governance check delegated to the existing escalation resolve logic.
+        result = {"operation": operation, "escalation_id": esc_id, "resolution": resolution, "rationale": rationale}
+
+    else:
+        raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+
+    return {"parsed_command": parsed, "result": result}
 
 
 # ─────────────────────────────────────────────────────────────

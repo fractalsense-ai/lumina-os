@@ -229,6 +229,10 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if ui_manifest is not None and not isinstance(ui_manifest, dict):
         raise RuntimeError("'ui_manifest' must be a mapping/dict when provided")
 
+    slm_weight_overrides = runtime_cfg.get("slm_weight_overrides") or {}
+    if slm_weight_overrides and not isinstance(slm_weight_overrides, dict):
+        raise RuntimeError("'runtime.slm_weight_overrides' must be a mapping/dict when provided")
+
     return {
         "domain_physics_path": str(domain_physics_path),
         "subject_profile_path": str(repo_root / runtime_cfg["subject_profile_path"]),
@@ -239,6 +243,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "action_prompt_type_map": runtime_cfg.get("action_prompt_type_map") or {},
         "deterministic_templates": deterministic_templates,
         "tool_call_policies": tool_call_policies,
+        "slm_weight_overrides": slm_weight_overrides,
         "ui_manifest": ui_manifest,
         "system_prompt": system_prompt,
         "turn_interpretation_prompt": turn_interpretation_prompt,

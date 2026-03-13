@@ -22,6 +22,8 @@ The **assembled prompt contract** is the "packet." It is built by stacking heade
 ├─────────────────────────────────────────────┤
 │  Domain Adapter — Input Normalization (A)   │  ← NLP classification + anchor extraction
 ├─────────────────────────────────────────────┤
+│  SLM Context Compression (optional)         │  ← physics interpretation + signal digest
+├─────────────────────────────────────────────┤
 │  Global Base Prompt                         │  ← universal rules  (the "IP header")
 ├─────────────────────────────────────────────┤
 │  Domain Physics                             │  ← domain policy layer header
@@ -55,6 +57,7 @@ Each layer in the assembly pipeline has a distinct role, a distinct owner, and a
 |---|-------|-------|------------|---------------------------|
 | 1 | **Input Interface** | External (caller) | Per-turn | Raw signal: chat message, sensor value, lab event, API payload |
 | 2 | **Domain Adapter A — Input Normalization** | Domain pack | Per-turn | NLP classification result; `_nlp_anchors`; structured evidence partial |
+| 2½ | **SLM Context Compression** (optional) | Core engine (SLM) | Per-turn | Matches incoming signals against domain physics; produces `_slm_context` (matched invariants, relevant glossary terms, context summary, suggested evidence fields). See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
 | 3 | **Global Base Prompt** | Core engine / system physics | Immutable per session | Universal rules that apply regardless of domain; "never act outside authorization"; append-only accountability; scope constraints |
 | 4 | **Domain Physics** | Domain Authority | Immutable per session | Domain-specific standing orders; invariants; escalation triggers; tool call policies; consent flags |
 | 5 | **Module State + Turn Data** | Core engine (from adapter outputs) | Mutable per turn | Current entity profile (ZPD position, fluency score, fatigue estimate); current task; turn number; NLP anchor lines |
@@ -149,7 +152,8 @@ The packet is carefully bounded. Some information is structurally hidden from th
 |-----------------|----------------|
 | Tool call dispatch parameters | Tool calls are policy mechanisms, not LLM decisions. The LLM should not know what tools were checked or what parameters they used — it confuses the separation between reasoning and verification. |
 | Domain physics enforcement logic | Whether the domain hash matched, whether a CommitmentRecord was found — these are infrastructure concerns. Exposing them would add noise without adding reasoning value. |
-| Glossary intercept matching | If the message was a known glossary term, the LLM never received the turn. The intercept returned a definition directly. |
+| Glossary intercept matching | If the message was a known glossary term, the LLM never received the turn. The intercept returned a definition directly (via SLM Librarian or deterministic template). |
+| SLM processing details | Which invariants the SLM matched, what context it compressed, its raw JSON output — the LLM sees only the final `_slm_context` summary, not the SLM's internal reasoning. See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
 | CTL write operations | Ledger writes happen after the LLM turn, as audit infrastructure. They are not inputs to reasoning. |
 | System-physics hash injection | The system-physics hash in CTL metadata (`system_physics_hash`) is a provenance record for the auditor, not reasoning context for the LLM. |
 | Caller identity and RBAC result | The LLM operates on pseudonymous session IDs only. Canonical identity, role, and permission check outcomes are resolved at the API layer before the prompt is assembled. |
@@ -166,6 +170,7 @@ This boundary is not an accident. The domain authority does not want the student
 - [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. pillars (Domain, State, Action) and turn sequence
 - [`docs/7-concepts/domain-adapter-pattern.md`](domain-adapter-pattern.md) — Phase A/ Phase B authoring contract; engine contract field reference
 - [`docs/7-concepts/nlp-semantic-router.md`](nlp-semantic-router.md) — Tier 1 domain classification and Tier 2 anchor extraction
+- [`docs/7-concepts/slm-compute-distribution.md`](slm-compute-distribution.md) — SLM compute distribution: Librarian, Physics Interpreter, Command Translator
 - [`standards/prompt-contract-schema-v1.json`](../../standards/prompt-contract-schema-v1.json) — JSON schema for the assembled prompt contract
 - [`specs/global-system-prompt-v1.md`](../../specs/global-system-prompt-v1.md) — Global Base Prompt specification (rendered view; source of truth is `cfg/system-physics.yaml`)
 - [`cfg/system-physics.yaml`](../../cfg/system-physics.yaml) — system physics: source of truth for global-layer rules and hash

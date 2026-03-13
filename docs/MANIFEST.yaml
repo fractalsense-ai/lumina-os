@@ -244,6 +244,14 @@ artifacts:
     last_updated: 2026-03-13
     sha256: pending
 
+  - path: docs/7-concepts/slm-compute-distribution.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-02
+    sha256: pending
+
   # ── Section 8: Administration ──────────────────────────────────────────────
 
   - path: docs/8-admin/README.md

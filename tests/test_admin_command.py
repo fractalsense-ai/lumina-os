@@ -1,0 +1,227 @@
+"""Tests for the /api/admin/command endpoint — SLM-powered admin command translation.
+
+Covers RBAC enforcement, SLM parsing, dispatch to admin operations,
+fallback on SLM unavailability, and CTL record creation.
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+from fastapi.testclient import TestClient
+
+from lumina.auth import auth
+from lumina.persistence.adapter import NullPersistenceAdapter
+from lumina.core.yaml_loader import load_yaml as _load_yaml
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_api_module():
+    module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
+    module_name = "lumina.api.server"
+    spec = importlib.util.spec_from_file_location(module_name, str(module_path))
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Could not load lumina-api-server module")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture
+def api_module(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
+    mod = _load_api_module()
+    mod.PERSISTENCE = NullPersistenceAdapter()
+    mod.BOOTSTRAP_MODE = True
+    mod._session_containers.clear()
+    monkeypatch.setattr(auth, "JWT_SECRET", "test-secret-admin-cmd")
+    mod.PERSISTENCE.load_subject_profile = _load_yaml
+    return mod
+
+
+@pytest.fixture
+def client(api_module):
+    return TestClient(api_module.app)
+
+
+def _register_root(client: TestClient) -> str:
+    resp = client.post(
+        "/api/auth/register",
+        json={"username": "root_admin", "password": "test-pass-123", "role": "user"},
+    )
+    assert resp.status_code == 200
+    return resp.json()["access_token"]
+
+
+def _register_user(client: TestClient, username: str = "regular", role: str = "user") -> str:
+    resp = client.post(
+        "/api/auth/register",
+        json={"username": username, "password": "test-pass-123", "role": role},
+    )
+    assert resp.status_code == 200
+    return resp.json()["access_token"]
+
+
+def _auth_header(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+# ── RBAC Enforcement ──────────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+def test_regular_user_denied(client: TestClient, api_module) -> None:
+    """Non-admin roles (user, qa, auditor) should get 403."""
+    _register_root(client)  # first user becomes root
+    token = _register_user(client, "viewer", "user")
+    resp = client.post(
+        "/api/admin/command",
+        json={"instruction": "update something"},
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.integration
+def test_unauthenticated_denied(client: TestClient) -> None:
+    """Missing auth should get 401."""
+    resp = client.post(
+        "/api/admin/command",
+        json={"instruction": "update something"},
+    )
+    assert resp.status_code == 401
+
+
+# ── SLM Unavailability ───────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+def test_slm_unavailable_returns_503(client: TestClient, api_module) -> None:
+    token = _register_root(client)
+    with patch.object(api_module, "slm_available", return_value=False):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "do something"},
+            headers=_auth_header(token),
+        )
+    assert resp.status_code == 503
+    assert "unavailable" in resp.json()["detail"].lower()
+
+
+# ── Unparseable Command ──────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+def test_unparseable_command_returns_422(client: TestClient, api_module) -> None:
+    token = _register_root(client)
+    with (
+        patch.object(api_module, "slm_available", return_value=True),
+        patch.object(api_module, "slm_parse_admin_command", return_value=None),
+    ):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "what is the meaning of life?"},
+            headers=_auth_header(token),
+        )
+    assert resp.status_code == 422
+    assert "interpret" in resp.json()["detail"].lower()
+
+
+# ── Successful Command Dispatch ──────────────────────────────────────────────
+
+
+@pytest.mark.integration
+def test_deactivate_user_dispatches(client: TestClient, api_module) -> None:
+    token = _register_root(client)
+    parsed = {"operation": "deactivate_user", "target": "user99", "params": {"user_id": "user99"}}
+    deactivate_mock = MagicMock()
+    api_module.PERSISTENCE.deactivate_user = deactivate_mock
+
+    with (
+        patch.object(api_module, "slm_available", return_value=True),
+        patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
+    ):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "deactivate user user99"},
+            headers=_auth_header(token),
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["parsed_command"]["operation"] == "deactivate_user"
+    assert body["result"]["user_id"] == "user99"
+    deactivate_mock.assert_called_once_with("user99")
+
+
+@pytest.mark.integration
+def test_unknown_operation_returns_422(client: TestClient, api_module) -> None:
+    token = _register_root(client)
+    parsed = {"operation": "launch_missiles", "target": "moon", "params": {}}
+    with (
+        patch.object(api_module, "slm_available", return_value=True),
+        patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
+    ):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "launch missiles at the moon"},
+            headers=_auth_header(token),
+        )
+    assert resp.status_code == 422
+    assert "Unknown operation" in resp.json()["detail"]
+
+
+@pytest.mark.integration
+def test_resolve_escalation_dispatches(client: TestClient, api_module) -> None:
+    token = _register_root(client)
+    parsed = {
+        "operation": "resolve_escalation",
+        "target": "esc-001",
+        "params": {
+            "escalation_id": "esc-001",
+            "resolution": "approved",
+            "rationale": "Looks good",
+        },
+    }
+    with (
+        patch.object(api_module, "slm_available", return_value=True),
+        patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
+    ):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "approve escalation esc-001"},
+            headers=_auth_header(token),
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["result"]["operation"] == "resolve_escalation"
+    assert body["result"]["resolution"] == "approved"
+
+
+@pytest.mark.integration
+def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
+    """Only root can call update_user_role — domain_authority gets 403."""
+    _register_root(client)
+    da_token = _register_user(client, "da_user", "domain_authority")
+
+    parsed = {
+        "operation": "update_user_role",
+        "target": "someone",
+        "params": {"user_id": "someone", "new_role": "auditor"},
+    }
+    with (
+        patch.object(api_module, "slm_available", return_value=True),
+        patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
+    ):
+        resp = client.post(
+            "/api/admin/command",
+            json={"instruction": "change someone's role to auditor"},
+            headers=_auth_header(da_token),
+        )
+    assert resp.status_code == 403

@@ -105,6 +105,10 @@
       "type": "array",
       "items": { "$ref": "#/$defs/glossary_entry" },
       "description": "Controlled vocabulary for Lumina infrastructure terms. Entries are surfaced via the glossary-intercept pipeline when admins or auditors query term definitions in the system domain."
+    },
+    "slm_config": {
+      "$ref": "#/$defs/slm_config",
+      "description": "Optional configuration for the Small Language Model (SLM) compute distribution layer. When present, enables SLM-routed handling of low-weight tasks (definitions, physics interpretation, admin command translation)."
     }
   },
   "$defs": {
@@ -230,6 +234,41 @@
         "example_in_context": {
           "type": "string",
           "description": "A concrete example using the term in a Lumina operational context."
+        }
+      }
+    },
+    "slm_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "description": "Configuration for the Small Language Model compute distribution layer.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether SLM routing is active. When false, all tasks route to LLM or deterministic templates."
+        },
+        "default_provider": {
+          "type": "string",
+          "enum": ["local", "openai", "anthropic"],
+          "description": "Default SLM provider. 'local' uses an Ollama-compatible endpoint (recommended); cloud providers as opt-in."
+        },
+        "weight_boundary": {
+          "type": "string",
+          "enum": ["definitions_only", "definitions_and_physics", "full"],
+          "description": "How much work the SLM handles. 'definitions_only': glossary lookups. 'definitions_and_physics': plus physics interpretation and context compression. 'full': plus admin command translation."
+        },
+        "fallback_on_unavailable": {
+          "type": "string",
+          "enum": ["deterministic", "llm"],
+          "description": "Behaviour when the SLM is unreachable. 'deterministic' uses template rendering (recommended — preserves compute separation). 'llm' escalates to the large model."
+        },
+        "local_endpoint": {
+          "type": "string",
+          "description": "URI of the local SLM endpoint (e.g. http://localhost:11434 for Ollama)."
+        },
+        "admin_command_translation": {
+          "type": "boolean",
+          "description": "Whether the SLM may parse natural-language admin instructions into structured commands. Requires 'full' weight_boundary."
         }
       }
     }
