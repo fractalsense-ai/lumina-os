@@ -176,7 +176,7 @@ def check_markdown_relative_links(errors: list[str]) -> None:
 
 
 def check_frontend_essentials(errors: list[str]) -> None:
-    frontend = REPO_ROOT / "front-end"
+    frontend = REPO_ROOT / "src" / "web"
     required = [
         "package.json",
         "tsconfig.json",
@@ -187,8 +187,7 @@ def check_frontend_essentials(errors: list[str]) -> None:
     ]
     for rel in required:
         if not (frontend / rel).exists():
-            errors.append(f"front-end missing required file: {rel}")
-
+                errors.append(f"src/web missing required file: {rel}")
 
 def check_domain_tool_adapter_linkage(errors: list[str]) -> None:
     module_physics_files = list((REPO_ROOT / "domain-packs").glob("*/*/domain-physics.json"))

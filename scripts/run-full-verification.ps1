@@ -66,7 +66,7 @@ if (-not (Test-Path $PythonExe)) {
 Write-Host "Python: $PythonExe"
 
 Write-Section "Secret Hygiene"
-& "reference-implementations/check-local-secret-hygiene.ps1"
+& "scripts/check-local-secret-hygiene.ps1"
 if ($LASTEXITCODE -ne 0) {
     throw "check-local-secret-hygiene.ps1 failed"
 }
@@ -98,7 +98,7 @@ if (-not $SkipOrchestratorDemo) {
 
 if (-not $SkipFrontend) {
     Write-Section "Front-End Build"
-    Push-Location "front-end"
+    Push-Location "src/web"
     try {
         npm.cmd install
         if ($LASTEXITCODE -ne 0) {

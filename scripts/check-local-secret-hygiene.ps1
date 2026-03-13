@@ -1,6 +1,4 @@
-param(
-    [string]$SecretFile = "front-end/lib/openaikey.md"
-)
+$SecretFile = "src/web/lib/openaikey.md"
 
 $ErrorActionPreference = "Stop"
 
