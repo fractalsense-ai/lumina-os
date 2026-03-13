@@ -1005,6 +1005,12 @@ def process_message(
         provenance_metadata=turn_provenance,
     )
 
+    # ── Override action to task_complete when the adapter signals problem_solved ──
+    # Reads only the engine contract field `problem_solved` — domain-agnostic.
+    if turn_data.get("problem_solved") is True:
+        resolved_action = "task_complete"
+        prompt_contract["prompt_type"] = "task_complete"
+
     reported_status = turn_data.get("problem_status")
     if isinstance(reported_status, str) and reported_status.strip():
         current_problem["status"] = reported_status.strip()

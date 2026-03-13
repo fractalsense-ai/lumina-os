@@ -174,6 +174,11 @@ def _evaluate_check_expr(check_expr: str, evidence: dict[str, Any]) -> bool | No
         field = tokens[0]
         if field not in evidence:
             return None
+        # Treat an explicit None value the same as an absent field: skip
+        # the invariant rather than coercing None to False and producing a
+        # false positive failure (e.g. equivalence_preserved=null from LLM).
+        if evidence[field] is None:
+            return None
         return bool(evidence[field])
 
     if len(tokens) == 3:

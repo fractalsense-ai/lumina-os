@@ -318,4 +318,18 @@ def interpret_turn_input(
         and evidence.get("step_count", 0) >= evidence.get("min_steps", 1)
     )
 
+    # When the problem is fully solved, equivalence must have been preserved
+    # throughout the solution (verified substitution logically implies this).
+    # Overriding here prevents a loose LLM judgement on worked notation from
+    # incorrectly firing the equivalence_preserved critical invariant on the
+    # same turn the student demonstrates a correct, verified solution.
+    if evidence["problem_solved"]:
+        evidence["equivalence_preserved"] = True
+
+    # If the LLM returned null for equivalence_preserved (e.g. no algebraic
+    # transformations were present), remove the key entirely so the orchestrator
+    # skips the invariant rather than the schema coercing null → false.
+    if evidence.get("equivalence_preserved") is None and "equivalence_preserved" in evidence:
+        del evidence["equivalence_preserved"]
+
     return evidence

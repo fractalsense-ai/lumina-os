@@ -152,7 +152,6 @@ runtime:
       default: 0
     equivalence_preserved:
       type: bool
-      default: false
     substitution_check:
       type: bool
       default: false
@@ -174,6 +173,7 @@ runtime:
     inject_domain_rule: inject_domain_rule
     advance_tier: task_presentation
     definition_lookup: definition_lookup
+    task_complete: task_complete
 
   deterministic_templates:
     hint: "Let's take one small step on {task_id}. Show the next equivalence-preserving move."
@@ -183,6 +183,7 @@ runtime:
     pause_or_break: "Let's pause briefly. When ready, we will continue with one smaller step."
     definition_lookup: "{term}: {definition} Example: {example_in_context}"
     zpd_intervene_or_escalate: "Let's pause and reset. We can continue with a smaller step once you're ready."
+    task_complete: "Correct! Now solve: {task_id}. Show each step."
     default: "Continue with {task_id}. Share your next step and we will verify it together."
 
   tool_call_policies:

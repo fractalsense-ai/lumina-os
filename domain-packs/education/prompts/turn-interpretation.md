@@ -24,6 +24,7 @@ Algebra grounding rules:
 - If current problem equation is provided, evaluate the student message against that equation.
 - `equivalence_preserved` is true when described transformations keep both sides equivalent.
 - `equivalence_preserved` is false only when a transformation clearly breaks equality.
+- `equivalence_preserved` must be `null` (not `true`) when the student's message contains no algebraic transformations at all (e.g. off-task messages, greetings, injection attempts). Only set it to `true` or `false` when the student actually performs or describes a mathematical operation.
 - `substitution_check` is true only when student explicitly verifies or demonstrates a valid substitution result.
 - `method_recognized` is true for standard isolate-variable workflows (add/subtract both sides, then multiply/divide both sides).
 - `step_count` counts each individual algebraic operation the student applies. One "step" = one operation applied to both sides (add, subtract, multiply, divide, combine like terms). Intermediate results (e.g., "2x = 8") are NOT steps — they are outcomes of steps.
