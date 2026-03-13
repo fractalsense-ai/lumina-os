@@ -47,7 +47,16 @@ Push-Location $repoRoot
 
 try {
     if (-not (Test-Path $PythonExe)) {
-        throw "Python executable not found at: $PythonExe"
+        $msg  = "Python executable not found at: $PythonExe`n"
+        $msg += "  Create a virtual environment first:`n"
+        $msg += "    python -m venv .venv  (standard)`n"
+        $msg += "    uv venv               (uv)`n"
+        $msg += "  Then install dependencies:`n"
+        $msg += "    .\.venv\Scripts\pip install -e .[dev]`n"
+        $msg += "  Or supply a custom Python via -PythonExe:`n"
+        $msg += "    .\scripts\seed-system-physics-ctl.ps1 -PythonExe C:\Python312\python.exe`n"
+        $msg += "  See docs/1-commands/installation-and-packaging.md for full setup instructions."
+        throw $msg
     }
     if (-not (Test-Path $SystemPhysicsFile)) {
         throw "system-physics.json not found at: $SystemPhysicsFile"
