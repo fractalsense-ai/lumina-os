@@ -100,6 +100,11 @@
           "description": "Whether internal confidence scores, private policy internals, or sensitive runtime state may be disclosed."
         }
       }
+    },
+    "glossary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/glossary_entry" },
+      "description": "Controlled vocabulary for Lumina infrastructure terms. Entries are surfaced via the glossary-intercept pipeline when admins or auditors query term definitions in the system domain."
     }
   },
   "$defs": {
@@ -196,6 +201,35 @@
         "sla_minutes": {
           "type": "integer",
           "description": "SLA for acknowledgement in minutes; breach is itself a reportable event in the system CTL"
+        }
+      }
+    },
+    "glossary_entry": {
+      "type": "object",
+      "required": ["term", "definition"],
+      "additionalProperties": false,
+      "properties": {
+        "term": {
+          "type": "string",
+          "description": "Canonical term (lowercase). The primary lookup key."
+        },
+        "definition": {
+          "type": "string",
+          "description": "Concise, administrator-appropriate definition of the infrastructure term."
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alternate forms an administrator or auditor might use."
+        },
+        "related_terms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Other glossary terms to surface alongside this definition."
+        },
+        "example_in_context": {
+          "type": "string",
+          "description": "A concrete example using the term in a Lumina operational context."
         }
       }
     }

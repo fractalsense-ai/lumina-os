@@ -32,3 +32,34 @@ domains:
       - harvest
       - irrigation
       - agriculture
+
+  system:
+    runtime_config_path: cfg/system-runtime-config.yaml
+    label: System — Lumina Infrastructure
+    description: >-
+      System domain for Project Lumina infrastructure queries.  Routes admin
+      and auditor questions about CTL records, domain physics, RBAC, policy
+      gates, and Lumina operational concepts to the system glossary.
+    keywords:
+      - ctl
+      - ledger
+      - commitment
+      - trace event
+      - escalation
+      - standing order
+      - invariant
+      - system physics
+      - domain physics
+      - domain pack
+      - domain authority
+      - meta authority
+      - domain registry
+      - pseudonymous
+      - rbac
+      - tool adapter
+      - orchestrator
+      - domain lib
+      - policy gate
+      - audit
+      - hash chain
+      - physics schema

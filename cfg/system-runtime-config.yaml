@@ -1,0 +1,25 @@
+# system-runtime-config.yaml — Stub runtime config for the system domain.
+#
+# WARNING: This is a ROUTING-ONLY stub.  The system domain is registered in
+# cfg/domain-registry.yaml to enable classify_domain() to route admin and
+# auditor queries about Lumina infrastructure terms to the system glossary.
+# Live session execution for the system domain is NOT yet implemented.
+#
+# Access is restricted to root to prevent accidental session creation.
+# A server that loads this config will refuse session requests unless the
+# calling principal holds the root role (RBAC level 0).
+#
+# See: docs/8-admin/system-domain-operations.md
+# ============================================================
+
+access_control:
+  required_role: root
+  reason: >-
+    System domain session execution is not yet implemented.  The registry
+    entry exists solely to surface system glossary terms via the
+    glossary-intercept pipeline and classify_domain() routing.
+
+# Placeholder — no modules, adapters, or domain physics in this stub.
+# Full system-domain session wiring is a follow-on implementation slice.
+adapters: []
+modules: []

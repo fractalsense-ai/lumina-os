@@ -166,7 +166,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 6a4d94c86a5cf586d75e5ca3c63339db91b59496e85326ef110aa4f78c5b0a43
+    sha256: a6a6221b14ae2d4091c5cd0c2e7075401598b4fbcb1d80d197d0e4393857838b
 
   - path: docs/5-standards/document-versioning-policy.md
     type: doc
@@ -244,7 +244,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 5c4db9d81c570fb92b5b349c24abb9d5145103eac7073b65494373405c1034e6
+    sha256: d21af68ef3fe1171e7a937bab4800328c94918f32dfa79f87afd3bbb4f8d6879
 
   - path: docs/8-admin/rbac-administration.md
     type: doc
@@ -261,6 +261,14 @@ artifacts:
     status: active
     last_updated: 2026-03-12
     sha256: 1286c4e4d5c6769313065acdc5e376519f3f4b92566dc2166150f055e9cb9bae
+
+  - path: docs/8-admin/system-domain-operations.md
+    type: doc
+    section: 8
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-13
+    sha256: c4e46d294c4018ebe01b4a938563c5190a7480e0e91a17c520ee0f953d86e19f
 
   # ── Specs ──────────────────────────────────────────────────────────────────
 
@@ -371,7 +379,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: a2fa16dc0f314b4c79df638f4f5046aa6f2a8cd6729684a8d5954134af434f5e
+    sha256: 9a1ed3e1a33aa7a40dcefd6d65aa3e5be2c4d7d711f097b062de5179b0ea3709
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
@@ -445,14 +453,14 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 52280d0cb65d8eed60e9127db3084972fcb53cfd2125d673bdea533fe0ce0f60
+    sha256: 769002cb83dffd7f6482cf55282546a4fa1dc7084be178adaf6d432c6f279852
 
   - path: cfg/system-physics.json
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 3ecff6ab535eb39c47167f201df9154ad0dd16802d491f30219512c1cf664639
+    sha256: cdc2a4879b7d14631e97a2a24aacc4fb611829262ae9c94d423e065d1746148e
 
   # ── Retrieval Schemas ──────────────────────────────────────────────────────
 

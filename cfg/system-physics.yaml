@@ -1,5 +1,5 @@
 # System Physics — Conversational Interface Layer
-# Version: 1.0.0
+# Version: 1.1.0
 # Conforms to: lumina-core-v1.0.0
 # Schema: standards/system-physics-schema-v1.json
 # ============================================================
@@ -19,7 +19,7 @@
 # ============================================================
 
 id: system/lumina/conversational-interface/v1
-version: "1.0.0"
+version: "1.1.0"
 
 meta_authority_id: root
 
@@ -189,3 +189,340 @@ ci_output_contract:
   grounding_requirement: must_derive_from_prompt_contract
   capability_claims: bounded_by_active_prompt_contract
   internal_state_disclosure: prohibited_unless_domain_permits
+
+# ────────────────────────────────────────────────────────────────────────────
+# Glossary — Lumina infrastructure controlled vocabulary
+# ────────────────────────────────────────────────────────────────────────────
+# Surfaced by the glossary-intercept pipeline when admins or auditors query
+# term definitions in the system domain.  Terms are lowercase; aliases list
+# alternate forms a human operator might use.
+
+glossary:
+
+  - term: commitment_record
+    definition: >-
+      A hash-chained ledger entry recording a policy decision, activation,
+      session lifecycle event, or permission change.  CommitmentRecords are
+      append-only and form the backbone of the Lumina audit trail.
+    aliases:
+      - commitment
+      - policy commitment
+    related_terms:
+      - causal_trace_ledger
+      - trace_event
+    example_in_context: >-
+      When a Domain Authority activates a new domain-physics version, the
+      runtime writes a commitment_record of type domain_physics_activation
+      to the system CTL.
+
+  - term: trace_event
+    definition: >-
+      A hash-chained ledger entry logged after each orchestrator turn.  It
+      carries provenance hashes — domain_physics_hash, system_physics_hash,
+      prompt_contract_hash — enabling full turn-level auditability.
+    aliases:
+      - trace
+      - ctl event
+    related_terms:
+      - causal_trace_ledger
+      - commitment_record
+    example_in_context: >-
+      Every time the orchestrator completes a turn it appends a trace_event
+      to the domain CTL that includes the SHA-256 of the active
+      system-physics.json.
+
+  - term: escalation_record
+    definition: >-
+      A hash-chained ledger entry created when the orchestrator cannot resolve
+      a situation within its authorised action space and must defer to a human
+      Meta Authority.
+    aliases:
+      - escalation
+    related_terms:
+      - escalation_trigger
+      - meta_authority
+      - causal_trace_ledger
+    example_in_context: >-
+      If all standing-order attempts are exhausted, an escalation_record is
+      appended to the CTL and a human Meta Authority is notified.
+
+  - term: causal_trace_ledger
+    definition: >-
+      The append-only, hash-chained log that records all decisions, outcomes,
+      escalations, and policy commitments.  Operates at both the system level
+      (LUMINA_CTL_DIR/system/) and per domain/session.
+    aliases:
+      - CTL
+      - ledger
+      - audit ledger
+    related_terms:
+      - commitment_record
+      - trace_event
+      - escalation_record
+    example_in_context: >-
+      An auditor can replay the full causal_trace_ledger for a session to
+      reconstruct every orchestrator decision from first principles.
+
+  - term: system_physics
+    definition: >-
+      The machine-readable policy layer governing the Conversational Interface
+      unconditionally — before and regardless of which domain is active.
+      Stored in cfg/system-physics.yaml (source) and cfg/system-physics.json
+      (compiled runtime form).
+    aliases:
+      - system physics
+      - global physics
+      - CI layer
+    related_terms:
+      - domain_physics
+      - invariant
+      - standing_order
+    example_in_context: >-
+      The system_physics file defines the no-deception invariant that the
+      orchestrator evaluates on every turn, in every domain.
+
+  - term: domain_physics
+    definition: >-
+      The machine-readable policy layer authored by a Domain Authority for a
+      specific domain module.  Defines standing orders, invariants, escalation
+      triggers, glossary, and tool adapters in scope for that domain.
+    aliases:
+      - domain physics
+    related_terms:
+      - system_physics
+      - domain_pack
+      - domain_authority
+    example_in_context: >-
+      The education domain_physics defines the scaffolding_only invariant;
+      if violated the standing order apply_zpdcorrection fires.
+
+  - term: prompt_contract
+    definition: >-
+      The assembled, layered input packet sent to the LLM at each orchestrator
+      turn.  Built from: Global Base Prompt + Domain Physics + Module State +
+      NLP anchors.  The LLM is constrained to this contract.
+    aliases:
+      - prompt contract
+      - prompt packet
+    related_terms:
+      - orchestrator
+      - tool_adapter
+    example_in_context: >-
+      The prompt_contract for a student session includes the ZPD state and
+      the domain glossary alongside the system physics output rules.
+
+  - term: standing_order
+    definition: >-
+      A bounded, pre-authorised automated response the orchestrator takes when
+      a specific invariant is violated.  Standing orders have a max_attempts
+      limit; exhaustion triggers escalation.
+    aliases:
+      - standing order
+    related_terms:
+      - invariant
+      - escalation_trigger
+    example_in_context: >-
+      The standing_order apply_safe_close fires up to 3 times when the
+      session_integrity_monitor invariant is violated before escalating.
+
+  - term: invariant
+    definition: >-
+      A system or domain rule the orchestrator evaluates on every turn.  When
+      violated, the associated standing order fires.  Critical invariants halt
+      autonomous action; warning invariants trigger correction.
+    aliases: []
+    related_terms:
+      - standing_order
+      - system_physics
+      - domain_physics
+    example_in_context: >-
+      The no_deception invariant in system_physics is severity: critical;
+      a violation immediately halts the turn and triggers human review.
+
+  - term: escalation_trigger
+    definition: >-
+      A condition defined in system or domain physics that causes the
+      orchestrator to defer to a human Meta Authority when it cannot resolve
+      the situation within its authorised action space.
+    aliases:
+      - escalation trigger
+    related_terms:
+      - escalation_record
+      - meta_authority
+      - standing_order
+    example_in_context: >-
+      The escalation_trigger repeated_invariant_violation fires when
+      max_attempts is exhausted and targets the domain_authority role.
+
+  - term: policy_commitment_gate
+    definition: >-
+      A startup check that verifies the SHA-256 hash of the active
+      domain-physics.json matches a CommitmentRecord in the CTL before any
+      session executes.  Prevents silently modified policies from taking effect.
+    aliases:
+      - policy gate
+      - commitment gate
+      - startup gate
+    related_terms:
+      - commitment_record
+      - causal_trace_ledger
+      - domain_physics
+    example_in_context: >-
+      The policy_commitment_gate halts server startup if the education
+      domain-physics.json hash is absent from the system CTL.
+
+  - term: domain_pack
+    definition: >-
+      A self-contained directory providing all domain-specific behaviour:
+      prompts, domain physics, tool adapters, runtime config, and optional
+      domain-lib components.  Loaded at server startup via
+      LUMINA_RUNTIME_CONFIG_PATH.
+    aliases:
+      - domain pack
+      - domain module
+    related_terms:
+      - domain_physics
+      - domain_authority
+      - domain_registry
+    example_in_context: >-
+      The domain-packs/education/ folder is the education domain_pack;
+      it contains the full physics, tools, and runtime config for the
+      tutoring domain.
+
+  - term: domain_authority
+    definition: >-
+      The human expert role (teacher, agronomist, clinician, operator) who
+      authors a domain pack and owns its domain physics.  The Domain Authority
+      is the ultimate decision-maker for their domain's rules.
+    aliases:
+      - domain authority
+      - DA
+    related_terms:
+      - meta_authority
+      - domain_pack
+      - domain_physics
+    example_in_context: >-
+      The domain_authority for the education pack may update the ZPD
+      thresholds in domain-physics.yaml; the change must be committed to
+      the CTL before it takes effect.
+
+  - term: meta_authority
+    definition: >-
+      The governance level above a Domain Authority.  Receives escalations,
+      approves scope changes, and can override or extend domain policies.  At
+      the system level, meta_authority is the root role.
+    aliases:
+      - meta authority
+      - MA
+    related_terms:
+      - domain_authority
+      - escalation_record
+      - escalation_trigger
+    example_in_context: >-
+      An escalation_record is routed to the meta_authority when the
+      orchestrator exhausts all standing-order attempts in a session.
+
+  - term: domain_registry
+    definition: >-
+      The YAML/JSON file (cfg/domain-registry.yaml) that maps domain
+      identifiers to runtime config paths and keyword lists, enabling
+      multi-domain routing via classify_domain().
+    aliases:
+      - domain registry
+      - registry
+    related_terms:
+      - domain_pack
+      - orchestrator
+    example_in_context: >-
+      When a user message arrives, classify_domain() consults the
+      domain_registry and returns the domain whose keyword list best
+      matches the message.
+
+  - term: pseudonymous_id
+    definition: >-
+      A session-scoped token used in place of canonical identity attributes
+      within the orchestration layer.  Canonical identity is held in a
+      separate access-controlled store; the AI layer operates only on
+      pseudonymous tokens.
+    aliases:
+      - pseudonymous id
+      - session token
+      - anon id
+    related_terms:
+      - rbac
+      - causal_trace_ledger
+    example_in_context: >-
+      The trace_event carries a pseudonymous_id, not the student's real
+      name, ensuring the CTL is auditable without exposing PII.
+
+  - term: rbac
+    definition: >-
+      Role-Based Access Control.  Lumina uses a chmod-style octal permission
+      model (rwx / owner / group / others) enforced on every API request via
+      JWT role claims.  Six roles: root, domain_authority, it_support, qa,
+      auditor, user.
+    aliases:
+      - role-based access control
+      - permissions
+      - roles
+    related_terms:
+      - pseudonymous_id
+      - domain_authority
+      - meta_authority
+    example_in_context: >-
+      An auditor role has read-only rbac permissions on CTL entries but
+      cannot activate or roll back domain physics.
+
+  - term: tool_adapter
+    definition: >-
+      A YAML-declared, Python-backed verifier called by the orchestrator's
+      policy system on specific resolved actions.  Tool adapters are the
+      deterministic verification layer — they override specific LLM-produced
+      evidence fields with verified values.
+    aliases:
+      - tool adapter
+      - adapter
+    related_terms:
+      - prompt_contract
+      - orchestrator
+      - domain_physics
+    example_in_context: >-
+      The check_zpd_position tool_adapter re-evaluates the student's ZPD
+      state from the domain-lib signal and writes the verified value into
+      the prompt contract before the LLM sees it.
+
+  - term: orchestrator
+    definition: >-
+      The D.S.A. (Domain–State–Action) engine inside the core runtime.
+      Assembles the prompt contract, invokes the LLM, runs tool-adapter
+      verification, evaluates invariants, and commits or escalates the
+      resulting decision.
+    aliases:
+      - DSA engine
+      - D.S.A. orchestrator
+      - core engine
+    related_terms:
+      - prompt_contract
+      - tool_adapter
+      - causal_trace_ledger
+    example_in_context: >-
+      The orchestrator evaluates every system_physics invariant after
+      each LLM response before committing the turn to the CTL.
+
+  - term: domain_lib
+    definition: >-
+      Domain-owned passive state estimators called by the runtime adapter
+      each turn to update mutable entity state (e.g., ZPD position, fluency
+      level, fatigue signal).  The core engine never calls domain-lib
+      components directly.
+    aliases:
+      - domain lib
+      - domain library
+    related_terms:
+      - domain_pack
+      - orchestrator
+      - tool_adapter
+    example_in_context: >-
+      The education domain_lib exposes fluency_monitor and zpd_estimator;
+      both are called by the education runtime adapter before each
+      orchestrator turn.
