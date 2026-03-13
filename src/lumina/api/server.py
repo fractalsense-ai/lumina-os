@@ -1036,6 +1036,7 @@ def process_message(
                         target_tier = tier_objs.get(next_tier, tiers[-1])
                         diff = (float(target_tier.get("min_difficulty", 0)) +
                                 float(target_tier.get("max_difficulty", 1))) / 2
+                        task_spec["nominal_difficulty"] = diff
                     else:
                         diff = float(task_spec.get("nominal_difficulty", 0.5))
                     current_problem = gen_fn(diff, tiers)

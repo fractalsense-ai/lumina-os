@@ -27,7 +27,7 @@ log = logging.getLogger("lumina-slm")
 # ─────────────────────────────────────────────────────────────
 
 SLM_PROVIDER: str = os.environ.get("LUMINA_SLM_PROVIDER", "local")
-SLM_MODEL: str = os.environ.get("LUMINA_SLM_MODEL", "phi-3")
+SLM_MODEL: str = os.environ.get("LUMINA_SLM_MODEL", "phi3")
 SLM_ENDPOINT: str = os.environ.get("LUMINA_SLM_ENDPOINT", "http://localhost:11434")
 SLM_TEMPERATURE: float = 0.2
 SLM_MAX_TOKENS: int = 512
@@ -303,8 +303,8 @@ def slm_interpret_physics_context(
             "context_summary": str(result.get("context_summary", "")),
             "suggested_evidence_fields": result.get("suggested_evidence_fields") or {},
         }
-    except Exception:
-        log.debug("SLM physics interpretation failed; returning empty context")
+    except Exception as exc:
+        log.warning("SLM physics interpretation failed (%s); returning empty context", exc)
         return _empty_physics_context()
 
 

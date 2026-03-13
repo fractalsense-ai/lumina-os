@@ -103,7 +103,7 @@ runtime:
     persistence_required: 3
     fluency_monitor:
       target_consecutive_successes: 3
-      time_threshold_seconds: 45
+      time_threshold_seconds: 120
       tier_progression:
         - tier_1
         - tier_2
