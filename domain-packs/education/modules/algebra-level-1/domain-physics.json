@@ -305,5 +305,13 @@
     "adapter/edu/algebra-parser/v1",
     "adapter/edu/calculator/v1",
     "adapter/edu/substitution-checker/v1"
-  ]
+  ],
+  "world_sim_override": {
+    "available_themes": [
+      "space_exploration",
+      "nature_and_outdoors",
+      "sports_and_games",
+      "general_math"
+    ]
+  }
 }

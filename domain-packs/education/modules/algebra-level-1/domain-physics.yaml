@@ -400,3 +400,19 @@ permissions:
       scope: ctl_records_only
     - role: user
       access: x
+
+# ── World-Sim Override ───────────────────────────────────────
+# Optional: narrows or overrides the domain-wide world_sim config
+# (from runtime-config.yaml) for this module specifically.
+# Omit entirely to inherit domain-wide defaults.
+
+world_sim_override:
+  # Algebra Level 1 works well with any of the available themes.
+  # No restriction on available_themes — all domain-wide themes are permitted.
+  # The default_theme fallback is intentionally not overridden here so that
+  # the domain-wide default (general_math) applies when no preference matches.
+  available_themes:
+    - space_exploration
+    - nature_and_outdoors
+    - sports_and_games
+    - general_math

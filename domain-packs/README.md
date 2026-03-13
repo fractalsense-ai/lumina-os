@@ -46,6 +46,10 @@ domain-packs/
 │   │   ├── problem_generator.py     ← generates next task spec (sets min_steps etc.)
 │   │   ├── fluency_monitor.py       ← domain-lib: fluency state estimator
 │   │   └── zpd_monitor_v0_2.py      ← domain-lib: ZPD state estimator
+│   ├── world-sim/              ← optional: persona layer (theme, consent, mastery surface)
+│   │   ├── world-sim-spec-v1.md     ← persona parameters: theme, setting, in-world labels
+│   │   ├── magic-circle-consent-v1.md  ← activation gate: consent required before persona starts
+│   │   └── artifact-and-mastery-spec-v1.md  ← reward surface: in-world artifact naming
 │   └─ modules/
 │       └─ algebra-level-1/        ← complete worked example
 │           ├─ domain-physics.yaml    (source — human-authored)
@@ -71,8 +75,11 @@ Domain packs use three distinct component types. They are different in how the c
 | **Tool adapters** | `modules/<module>/tool-adapters/` | Core engine (via `tool_call_policies`) | Active verifiers — deterministically check LLM proposals on specific actions |
 | **Domain library** | `domain-lib/` specs + `systools/` implementations | Runtime adapter (`runtime_adapters.py`) | Passive state estimators — ZPD, fluency, fatigue — never called directly by the engine |
 | **Runtime adapter** | `systools/runtime_adapters.py` | Core engine (`interpret_turn_input`) | Synthesis layer — runs NLP pre-processing (Phase A) and signal synthesis (Phase B), calls domain-lib internally, writes engine contract fields |
+| **World-sim persona** | `world-sim/` (optional) | Domain runtime adapter — selected once at session start in `build_initial_learning_state`; theme hint injected on every turn via `interpret_turn_input` | Narrative framing layer — cosmetic only; domain physics and invariants are unchanged. Three files: spec (parameters), consent (activation gate), mastery (reward surface). |
 
 See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adapter-pattern.md) for the full authoring guide including the engine contract field reference and the `problem_solved` / `problem_status` pattern.
+
+See [`docs/7-concepts/world-sim-persona-pattern.md`](../docs/7-concepts/world-sim-persona-pattern.md) for the full persona pattern reference, including static vs. dynamic theme selection, configuration layout, and the implementation checklist for adding a world-sim to a new domain.
 
 ---
 

@@ -2,9 +2,9 @@
 
 > **Domain scope:** This consent specification is for the education domain. Other domains may adapt this pattern with domain-appropriate language and thresholds.
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-13
 
 ---
 
@@ -18,6 +18,8 @@ In Project Lumina, the magic circle establishes:
 3. What data is collected
 4. How to exit at any time
 5. The scope of the domain
+
+> **The magic circle activates the persona.** A world simulation persona (see [`world-sim-spec-v1.md`](world-sim-spec-v1.md)) does not start until the magic circle is completed. The consent process is the boundary between ordinary interaction and immersive narrative framing. See [`docs/7-concepts/world-sim-persona-pattern.md`](../../../docs/7-concepts/world-sim-persona-pattern.md) for the generalized persona pattern.
 
 > **Domain Instantiation Note:** This specification uses domain-agnostic terms. Each domain pack instantiates the consent process using terminology appropriate to its context. For example, in the education domain the participant is called "student/learner," the guardian role is fulfilled by a parent or guardian, and the Domain Authority role is fulfilled by a teacher. In a medical domain, the participant is a patient, the guardian/proxy role is fulfilled by a healthcare proxy or next of kin (for incapacitated patients), and the Domain Authority role is fulfilled by a supervising clinician. In an operator safety domain, the participant is the operator and the briefing is a safety acknowledgement.
 

@@ -2,9 +2,9 @@
 
 > **Domain scope:** This specification defines how artifacts and mastery are recognized within the education domain. Other domains may adapt this pattern — for example, "certifications" in agriculture or "clinical competency records" in medical. The generic artifact *slot* in domain physics and the `OutcomeRecord` in the CTL are engine-level structural contracts; the *award process and rules* specified here are education-specific.
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-13
 
 ---
 
@@ -13,6 +13,8 @@
 **Artifacts** are domain-defined recognition items earned by entities when they demonstrate sustained competence in a defined skill set. They serve as clear, verifiable milestones rather than opaque scores.
 
 **Boss challenges** are high-stakes assessment tasks that gate artifact award — the entity must demonstrate mastery under conditions that test the skill comprehensively.
+
+> **Persona note:** Artifact in-world naming is part of the domain persona surface. The *display name* of an artifact may be replaced with an in-world equivalent (e.g., "Mission Clearance: Navigation Calculations" instead of "Linear Equations — Foundations") when a world-sim theme is active. The *functional definition* — mastery threshold, skills required, boss challenge pass condition — is invariant and is never changed by the persona framing. See [`world-sim-spec-v1.md`](world-sim-spec-v1.md) for how artifact framing is declared per theme.
 
 ---
 

@@ -20,6 +20,64 @@ runtime:
     - domain-packs/education/world-sim/world-sim-spec-v1.md
     - domain-packs/education/world-sim/artifact-and-mastery-spec-v1.md
 
+  world_sim:
+    enabled: true
+    default_theme: general_math
+    themes:
+      space_exploration:
+        setting_description: "You are the mission mathematician aboard the Helios research vessel. All problems are mission-critical calculations."
+        artifact_framing: mission_badge
+        task_framing: mission_briefing
+        exit_phrase: end mission
+        preference_keywords:
+          - space
+          - rockets
+          - astronaut
+          - astronauts
+          - nasa
+          - stars
+          - science fiction
+          - sci-fi
+          - galaxy
+          - planets
+      nature_and_outdoors:
+        setting_description: "You are a junior field scientist cataloguing discoveries at a nature reserve. Each problem is a measurement or calculation from your field notes."
+        artifact_framing: field_record
+        task_framing: field_observation
+        exit_phrase: end fieldwork
+        preference_keywords:
+          - nature
+          - animals
+          - outdoors
+          - wildlife
+          - hiking
+          - environment
+          - ecology
+          - plants
+          - biology
+      sports_and_games:
+        setting_description: "You are the team strategist and statistician for your school’s sports program. Every calculation helps your team perform better."
+        artifact_framing: team_achievement
+        task_framing: play_call
+        exit_phrase: end practice
+        preference_keywords:
+          - sport
+          - sports
+          - soccer
+          - basketball
+          - football
+          - baseball
+          - games
+          - gaming
+          - video games
+          - esports
+      general_math:
+        setting_description: "You are working through a set of math challenges."
+        artifact_framing: certificate
+        task_framing: problem
+        exit_phrase: exit session
+        preference_keywords: []
+
   pre_turn_checks:
     -
       id: consent_boundary

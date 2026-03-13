@@ -36,7 +36,53 @@ fluency_monitor_step_fn = _fluency_mod.fluency_monitor_step
 build_initial_fluency_state_fn = _fluency_mod.build_initial_fluency_state
 
 
-def build_initial_learning_state(profile: dict[str, Any]) -> Any:
+def select_world_sim_theme(
+    entity_profile: dict[str, Any],
+    world_sim_cfg: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Select the active world-sim theme for this session based on entity preferences.
+
+    Returns the matched theme config dict, or {} if world_sim is disabled or absent.
+    Selection order: first theme whose preference_keywords overlap with profile
+    likes, skipping any theme whose keywords overlap with dislikes. Falls back
+    to the default_theme when no preference match is found.
+    """
+    if not world_sim_cfg or not world_sim_cfg.get("enabled", False):
+        return {}
+
+    themes: dict[str, Any] = world_sim_cfg.get("themes") or {}
+    default_theme_id: str = world_sim_cfg.get("default_theme", "")
+
+    preferences = entity_profile.get("preferences") or {}
+    likes: list[str] = [str(v).lower() for v in (preferences.get("likes") or [])]
+    dislikes: list[str] = [str(v).lower() for v in (preferences.get("dislikes") or [])]
+
+    # Attempt preference-matched selection
+    for theme_id, theme_cfg in themes.items():
+        keywords: list[str] = [
+            str(kw).lower() for kw in (theme_cfg.get("preference_keywords") or [])
+        ]
+        if not keywords:
+            # Themes with no keywords are fallback-only; skip for active matching
+            continue
+        keyword_set = set(keywords)
+        if keyword_set & set(dislikes):
+            # Any overlap with dislikes disqualifies this theme
+            continue
+        if keyword_set & set(likes):
+            return {"theme_id": theme_id, **theme_cfg}
+
+    # Fall back to default_theme
+    if default_theme_id and default_theme_id in themes:
+        return {"theme_id": default_theme_id, **themes[default_theme_id]}
+
+    return {}
+
+
+def build_initial_learning_state(
+    profile: dict[str, Any],
+    world_sim_cfg: dict[str, Any] | None = None,
+) -> Any:
     """Build the education domain-lib state from profile learning_state."""
     learning_state = profile.get("learning_state") or {}
     affect = learning_state.get("affect") or {}
@@ -77,6 +123,11 @@ def build_initial_learning_state(profile: dict[str, Any]) -> Any:
     # Attach fluency state as a dynamic attribute so the composite
     # state object carries both ZPD learning state and fluency tracking.
     ls.fluency = FluencyState()  # type: ignore[attr-defined]
+
+    # Attach world-sim theme: selected once at session start and carried on
+    # the state object so the same theme is used consistently every turn.
+    ls.world_sim_theme = select_world_sim_theme(profile, world_sim_cfg)  # type: ignore[attr-defined]
+
     return ls
 
 
@@ -123,6 +174,7 @@ def interpret_turn_input(
     default_fields: dict[str, Any] | None = None,
     tool_fns: dict[str, Callable[..., Any]] | None = None,
     nlp_pre_interpreter_fn: Callable[..., Any] | None = None,
+    world_sim_theme: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     context_hint = ""
     if task_context.get("task_id"):
@@ -168,6 +220,17 @@ def interpret_turn_input(
                 lines.append(line)
             lines.append("Use these as starting values. Override if your analysis disagrees.")
             context_hint += "\n" + "\n".join(lines)
+
+    # ── World-sim persona context hint ─────────────────────────
+    if world_sim_theme:
+        setting = world_sim_theme.get("setting_description", "")
+        task_framing = world_sim_theme.get("task_framing", "problem")
+        artifact_framing = world_sim_theme.get("artifact_framing", "certificate")
+        context_hint += (
+            f"\n[World-Sim Active] Setting: {setting}"
+            f" Use in-world framing ('{task_framing}') for task labels."
+            f" Artifact framing: '{artifact_framing}'."
+        )
 
     # ── Deterministic algebra parser (primary source) ──────────
     parser_result: dict[str, Any] | None = None

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import json
 import logging
 import os
@@ -534,7 +535,7 @@ def render_contract_response(prompt_contract: dict[str, Any], runtime: dict[str,
         return template
 
 
-def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime: dict[str, Any]) -> dict[str, Any]:
+def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime: dict[str, Any], world_sim_theme: dict[str, Any] | None = None) -> dict[str, Any]:
     interpreter = runtime["turn_interpreter_fn"]
     kwargs: dict[str, Any] = {
         "call_llm": call_llm,
@@ -548,6 +549,8 @@ def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime:
     nlp_fn = runtime.get("nlp_pre_interpreter_fn")
     if nlp_fn is not None:
         kwargs["nlp_pre_interpreter_fn"] = nlp_fn
+    if world_sim_theme:
+        kwargs["world_sim_theme"] = world_sim_theme
     return interpreter(**kwargs)
 
 
@@ -743,7 +746,9 @@ def _build_domain_context(
     domain_step = runtime["domain_step_fn"]
     domain_params = dict(runtime["domain_step_params"])
 
-    initial_state = state_builder(profile)
+    _sb_sig = inspect.signature(state_builder)
+    _sb_kwargs = {"world_sim_cfg": runtime.get("world_sim")} if "world_sim_cfg" in _sb_sig.parameters else {}
+    initial_state = state_builder(profile, **_sb_kwargs)
 
     orch = DSAOrchestrator(
         domain_physics=domain,
@@ -961,7 +966,8 @@ def process_message(
     elif deterministic_response:
         turn_data = dict(runtime.get("turn_input_defaults") or {})
     else:
-        turn_data = interpret_turn_input(input_text, task_context, runtime)
+        world_sim_theme = getattr(orch.state, "world_sim_theme", {})
+        turn_data = interpret_turn_input(input_text, task_context, runtime, world_sim_theme=world_sim_theme)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
     # ── SLM physics interpretation (context compression) ─────

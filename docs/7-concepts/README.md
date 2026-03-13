@@ -1,8 +1,8 @@
 # Section 7 — Concepts
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-12  
+**Last updated:** 2026-03-13  
 
 ---
 
@@ -18,5 +18,6 @@ Architectural principles, design frameworks, and system philosophy.
 | [prompt-packet-assembly](prompt-packet-assembly.md) | How prompt contracts are assembled from layered components: layer reference table, input sources and telemetry, domain library tools, what the LLM sees vs. what is hidden |
 | [zero-trust-architecture](zero-trust-architecture.md) | Zero-trust posture across all Lumina layers: per-layer trust enforcement matrix, NIST SP 800-207 tenet mapping, OWASP Top 10 mapping, operational implications (fail-closed defaults, escalation, pseudonymity) |
 | [novel-synthesis-framework](novel-synthesis-framework.md) | Novel synthesis detection, two-key verification gate (LLM flags + domain authority confirms), model performance benchmarking via CTL telemetry, compute efficiency through glossary intercepts and grounding anchors |
+| [world-sim-persona-pattern](world-sim-persona-pattern.md) | The persona pattern: how domain packs wrap domain content in a narrative identity using the three-file world-sim composition (spec + consent + mastery). Static vs. dynamic theme selection, engine contract invariant, configuration reference, and implementation checklist for new domains. |
 
 These documents define the foundational design philosophy of Project Lumina. All implementation decisions trace back to these concepts.
