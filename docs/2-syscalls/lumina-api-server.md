@@ -40,6 +40,9 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `LUMINA_JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
 | `LUMINA_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed CORS origins |
 | `LUMINA_BOOTSTRAP_MODE` | `true` | First registered user auto-promoted to root |
+| `LUMINA_SLM_PROVIDER` | `local` | SLM backend: `local` (Ollama/llama.cpp), `openai`, or `anthropic` |
+| `LUMINA_SLM_MODEL` | `phi-3` | Model name forwarded to the SLM backend |
+| `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Base URL for the local provider; ignored for cloud providers |
 
 Notes:
 
@@ -61,12 +64,14 @@ Process a conversational turn through the D.S.A. pipeline.
 
 **Auth:** Optional Bearer token. When provided, module execute permission is checked against the resolved domain.
 
-**Pipeline:** Each turn passes through four stages before the orchestrator receives the evidence dict:
+**Pipeline:** Each turn passes through six stages before the orchestrator receives the evidence dict:
 
-1. **Glossary detection** — domain-defined vocabulary terms are matched in the raw message; a match short-circuits D.S.A. and returns an inline definition response directly.
+1. **Glossary detection** — domain-defined vocabulary terms are matched in the raw message; a match short-circuits D.S.A. and returns an inline definition response directly. When the SLM is available the Librarian role renders the definition; otherwise the `"{term}: {definition}"` deterministic template is used.
 2. **NLP pre-analysis** — `nlp_preprocess()` runs deterministic extraction (<1 ms) and appends `_nlp_anchors` to the LLM context hint; provides answer-match confidence, frustration markers, hint requests, and off-task ratio without blocking the LLM.
-3. **LLM turn interpreter** — receives the full message plus NLP anchor hints; produces structured evidence fields.
-4. **Domain adapter dispatch** — education domain algebra-parser override applies post-LLM for `solution_value`, `step_count`, and `equivalence_preserved`; agriculture and other adapters receive the same interface with no NLP kwargs injected.
+3. **SLM physics interpretation** — the SLM Physics Interpreter role compresses the session's domain context into a token-efficient summary that is prepended to the LLM prompt; skipped transparently when the SLM is unavailable.
+4. **LLM turn interpreter** — receives the full message plus NLP anchor hints and SLM-compressed physics context; produces structured evidence fields.
+5. **Domain adapter dispatch** — education domain algebra-parser override applies post-LLM for `solution_value`, `step_count`, and `equivalence_preserved`; agriculture and other adapters receive the same interface with no NLP kwargs injected.
+6. **Weight-routed response dispatch** — `classify_task_weight()` assigns LOW or HIGH weight to the resolved action; LOW-weight prompt types (definitions, confirmations) are served by the SLM, HIGH-weight types (explanations, scaffolding) go to the primary LLM.
 
 **Notes:** `domain_id` selects which domain context to use. When omitted, the default domain is used. Sessions are immutably bound to their initial domain.
 

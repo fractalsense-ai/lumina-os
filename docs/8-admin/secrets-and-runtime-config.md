@@ -123,6 +123,20 @@ instead of a single `LUMINA_RUNTIME_CONFIG_PATH`.
 
 Schema: `standards/domain-registry-schema-v1.json`
 
+## SLM configuration
+
+The SLM (Small Language Model) layer handles low-weight tasks — glossary rendering, physics context compression, and admin command translation — without consuming primary LLM quota. It is entirely optional; the server falls back to deterministic templates when the SLM is unavailable.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LUMINA_SLM_PROVIDER` | `local` | Backend: `local` (Ollama/llama.cpp), `openai`, or `anthropic` |
+| `LUMINA_SLM_MODEL` | `phi-3` | Model name forwarded to the provider |
+| `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Base URL for the local provider; ignored for cloud providers |
+
+Cloud SLM providers (`openai`, `anthropic`) reuse the same `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` secrets already required for the primary LLM — no additional key is needed.
+
+Full setup instructions including Ollama install steps and end-to-end verification: [installation-and-packaging — SLM setup](../1-commands/installation-and-packaging.md#slm-small-language-model-setup)
+
 ## Related docs
 
 - [installation-and-packaging](../1-commands/installation-and-packaging.md)

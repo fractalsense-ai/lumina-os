@@ -64,6 +64,120 @@ uv pip install -e ".[nlp,providers,sqlite]"
 | `sqlite` | `sqlalchemy[asyncio]`, `aiosqlite` | SQLite persistence backend |
 | `dev` | `pytest`, `pytest-cov` | Running the test suite |
 
+## SLM (Small Language Model) setup
+
+The SLM layer routes low-weight tasks (glossary rendering, physics context compression, admin command translation) away from the primary LLM. See [slm-compute-distribution](../7-concepts/slm-compute-distribution.md) for the full architecture.
+
+The SLM is **optional** — the system degrades gracefully to deterministic templates when it is unavailable. No SLM call ever blocks the primary chat pipeline.
+
+### Local provider (default — recommended for development)
+
+The local provider talks to any Ollama-compatible endpoint over HTTP. `httpx` is already installed as a core dependency; no additional Python package is needed.
+
+**Step 1 — Install Ollama:**
+
+```powershell
+# Windows — download the installer from https://ollama.com/download
+# or with winget:
+winget install Ollama.Ollama
+```
+
+```bash
+# macOS / Linux
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+**Step 2 — Pull the default model:**
+
+```bash
+ollama pull phi3
+```
+
+> `phi3` maps to `LUMINA_SLM_MODEL=phi-3` (the default). Any model name pulled in Ollama can be used by setting `LUMINA_SLM_MODEL` to the same name.
+
+**Step 3 — Start Ollama (if not already running as a background service):**
+
+```bash
+ollama serve
+# Listens on http://localhost:11434 by default
+```
+
+**Step 4 — Verify the endpoint is reachable:**
+
+```bash
+# Should return HTTP 200
+curl http://localhost:11434/
+
+# Or from Python:
+python -c "import httpx; r = httpx.get('http://localhost:11434/'); print(r.status_code)"
+```
+
+**Step 5 — (Optional) override the default model or port:**
+
+```powershell
+# PowerShell
+$env:LUMINA_SLM_PROVIDER = "local"
+$env:LUMINA_SLM_MODEL    = "phi3"                   # must match the name you pulled
+$env:LUMINA_SLM_ENDPOINT = "http://localhost:11434"
+```
+
+```bash
+# POSIX
+export LUMINA_SLM_PROVIDER=local
+export LUMINA_SLM_MODEL=phi3
+export LUMINA_SLM_ENDPOINT=http://localhost:11434
+```
+
+### Cloud SLM providers
+
+OpenAI and Anthropic can serve as the SLM backend using the same packages as the primary LLM. Install the `providers` extra if not already done:
+
+```bash
+pip install -e ".[providers]"
+```
+
+```bash
+export LUMINA_SLM_PROVIDER=openai       # or: anthropic
+export LUMINA_SLM_MODEL=gpt-4o-mini     # any model the SDK accepts
+export OPENAI_API_KEY=<your-key>        # or ANTHROPIC_API_KEY
+```
+
+### SLM environment variable reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LUMINA_SLM_PROVIDER` | `local` | Backend: `local`, `openai`, or `anthropic` |
+| `LUMINA_SLM_MODEL` | `phi-3` | Model name passed to the provider |
+| `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Ollama/llama.cpp base URL (local provider only) |
+
+### Testing SLM operation end-to-end
+
+With Ollama running and `phi3` pulled, start the API server and send a glossary query — the Librarian role should handle it via the SLM:
+
+```bash
+# Terminal 1 — start the server
+lumina-api
+
+# Terminal 2 — log in
+curl -sX POST http://localhost:8000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<pw>"}' | python -m json.tool
+
+# Send a glossary query (replace <token> with the access_token from login)
+curl -sX POST http://localhost:8000/api/chat \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' \
+  -d '{"session_id":"slm-test-1","message":"what is equivalence?"}' | python -m json.tool
+```
+
+When the SLM is active the definition response is more fluent than the bare `"{term}: {definition}"` deterministic fallback. Check server logs for `[lumina.core.slm]` lines — the absence of `SLM unavailable` warnings confirms the SLM handled the request.
+
+To verify weight-routed dispatch more directly: send any message that triggers a `definition_lookup` action and confirm `"prompt_type": "definition_lookup"` in the JSON response. LOW-weight prompt types are routed to the SLM; all instructional/corrective types go to the primary LLM.
+
+### Fallback behaviour
+
+If Ollama is not running or `phi3` is not pulled, **the server continues to operate normally**. Glossary responses fall back to the `"{term}: {definition}"` deterministic template, physics context compression is skipped, and admin command translation returns HTTP 503. No error is surfaced to the end user. The `[lumina.core.slm]` logger emits a `WARNING` level entry for each skipped SLM call.
+
 ## CLI entrypoints
 
 Available after editable install:

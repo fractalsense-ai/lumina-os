@@ -17,3 +17,15 @@ httpx>=0.27.0
 # Optional SQLite persistence backend (install when using LUMINA_PERSISTENCE_BACKEND=sqlite)
 # sqlalchemy[asyncio]>=2.0.0
 # aiosqlite>=0.20.0
+
+# SLM (Small Language Model) compute distribution layer
+# The local provider (default) uses httpx — already listed above — to call a local
+# Ollama/llama.cpp-compatible endpoint.  No extra Python package is needed.
+#   1. Install Ollama:  https://ollama.com/download  (or: winget install Ollama.Ollama)
+#   2. Pull the model:  ollama pull phi3
+#   3. Start Ollama:    ollama serve          (listens on http://localhost:11434)
+# Cloud SLM providers reuse the openai / anthropic packages already listed above.
+# Key env vars:
+#   LUMINA_SLM_PROVIDER   local | openai | anthropic   (default: local)
+#   LUMINA_SLM_MODEL      model name to pass the provider  (default: phi-3)
+#   LUMINA_SLM_ENDPOINT   Ollama base URL  (default: http://localhost:11434)
