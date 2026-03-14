@@ -1,8 +1,8 @@
 # installation-and-packaging
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-12  
+**Last updated:** 2026-03-14  
 
 ---
 
@@ -165,6 +165,7 @@ export OPENAI_API_KEY=<your-key>        # or ANTHROPIC_API_KEY
 | `LUMINA_SLM_PROVIDER` | `local` | Backend: `local`, `openai`, or `anthropic` |
 | `LUMINA_SLM_MODEL` | `phi-3` | Model name passed to the provider |
 | `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Ollama/llama.cpp base URL (local provider only) |
+| `LUMINA_SLM_TIMEOUT` | `60` | HTTP timeout in seconds for local SLM calls. Increase on modest hardware if physics interpretation times out |
 
 ### Testing SLM operation end-to-end
 

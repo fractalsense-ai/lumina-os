@@ -1,8 +1,8 @@
 # SLM Compute Distribution
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-04-02  
+**Last updated:** 2026-03-14  
 
 ---
 
@@ -138,6 +138,8 @@ The SLM layer supports three provider backends. Local is the default and recomme
 
 Set `LUMINA_SLM_PROVIDER` to select the backend. All providers use the same interface: system prompt + user payload → text response.
 
+The local provider HTTP timeout defaults to 60 seconds and can be overridden with the `LUMINA_SLM_TIMEOUT` environment variable. On modest hardware, physics interpretation prompts may need longer than the default — set `LUMINA_SLM_TIMEOUT=90` (or higher) if server logs show `SLM physics interpretation failed (timed out)` warnings.
+
 ### Enterprise scaling
 
 An enterprise deployment may run a small cluster of local SLMs behind a load balancer. The `LUMINA_SLM_ENDPOINT` configuration points to the balancer, and the SLM cluster handles all low-weight traffic. The LLM sees only high-weight, pre-digested prompts.
@@ -156,16 +158,18 @@ slm_config:
   fallback_on_unavailable: deterministic
   local_endpoint: "http://localhost:11434"
   admin_command_translation: true
+  timeout_seconds: 60
 ```
 
 | Field | Values | Meaning |
-|-------|--------|---------|
+|-------|--------|--------|
 | `enabled` | `true`/`false` | Master switch for SLM compute distribution |
 | `default_provider` | `local`, `openai`, `anthropic` | Which SLM backend to use |
 | `weight_boundary` | `definitions_only`, `definitions_and_physics`, `full` | How much work the SLM handles |
 | `fallback_on_unavailable` | `deterministic`, `llm` | What to do when SLM is unreachable. `deterministic` (recommended) uses templates; `llm` falls back to the LLM |
 | `local_endpoint` | URI string | Ollama/llama.cpp endpoint for local provider |
 | `admin_command_translation` | `true`/`false` | Whether the Command Translator role is enabled |
+| `timeout_seconds` | number (≥ 5) | HTTP timeout in seconds for local SLM calls. Override at runtime via `LUMINA_SLM_TIMEOUT`. Default: `60` |
 
 ---
 

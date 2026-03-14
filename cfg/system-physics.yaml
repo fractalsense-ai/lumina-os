@@ -754,3 +754,4 @@ slm_config:
   fallback_on_unavailable: deterministic
   local_endpoint: "http://localhost:11434"
   admin_command_translation: true
+  timeout_seconds: 60

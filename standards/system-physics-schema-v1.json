@@ -269,6 +269,11 @@
         "admin_command_translation": {
           "type": "boolean",
           "description": "Whether the SLM may parse natural-language admin instructions into structured commands. Requires 'full' weight_boundary."
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "minimum": 5,
+          "description": "HTTP timeout in seconds for local SLM calls. Higher values accommodate slower hardware or larger models. Override at runtime via LUMINA_SLM_TIMEOUT."
         }
       }
     }

@@ -21,6 +21,7 @@ from lumina.core.slm import (
     slm_interpret_physics_context,
     slm_parse_admin_command,
     slm_render_glossary,
+    SLM_TIMEOUT,
 )
 
 
@@ -391,3 +392,40 @@ class TestEmptyPhysicsContext:
         assert ctx["relevant_glossary_terms"] == []
         assert ctx["context_summary"] == ""
         assert ctx["suggested_evidence_fields"] == {}
+
+
+# ── SLM Timeout Configuration ────────────────────────────────────────────────
+
+
+class TestSlmTimeout:
+
+    @pytest.mark.unit
+    def test_default_timeout_is_60(self) -> None:
+        assert SLM_TIMEOUT == 60.0
+
+    @pytest.mark.unit
+    def test_timeout_env_var_override(self) -> None:
+        with patch.dict("os.environ", {"LUMINA_SLM_TIMEOUT": "90"}):
+            import importlib
+            import lumina.core.slm as slm_mod
+            importlib.reload(slm_mod)
+            assert slm_mod.SLM_TIMEOUT == 90.0
+            # Restore default
+        import importlib
+        import lumina.core.slm as slm_mod
+        importlib.reload(slm_mod)
+
+    @pytest.mark.unit
+    @patch("lumina.core.slm.SLM_PROVIDER", "local")
+    @patch("lumina.core.slm._validate_slm_provider")
+    def test_call_local_slm_uses_configured_timeout(self, _validate: Any) -> None:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "choices": [{"message": {"content": "test response"}}]
+        }
+        with patch("httpx.post", return_value=mock_resp) as mock_post:
+            from lumina.core.slm import _call_local_slm, SLM_TIMEOUT
+            _call_local_slm("system", "user")
+            call_kwargs = mock_post.call_args
+            assert call_kwargs.kwargs.get("timeout") == SLM_TIMEOUT

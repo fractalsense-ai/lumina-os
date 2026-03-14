@@ -29,6 +29,7 @@ log = logging.getLogger("lumina-slm")
 SLM_PROVIDER: str = os.environ.get("LUMINA_SLM_PROVIDER", "local")
 SLM_MODEL: str = os.environ.get("LUMINA_SLM_MODEL", "phi3")
 SLM_ENDPOINT: str = os.environ.get("LUMINA_SLM_ENDPOINT", "http://localhost:11434")
+SLM_TIMEOUT: float = float(os.environ.get("LUMINA_SLM_TIMEOUT", "60"))
 SLM_TEMPERATURE: float = 0.2
 SLM_MAX_TOKENS: int = 512
 
@@ -118,7 +119,7 @@ def _call_local_slm(system: str, user: str, model: str | None = None) -> str:
         "max_tokens": SLM_MAX_TOKENS,
     }
 
-    resp = httpx.post(url, json=payload, timeout=30.0)
+    resp = httpx.post(url, json=payload, timeout=SLM_TIMEOUT)
     resp.raise_for_status()
     data = resp.json()
     return data["choices"][0]["message"]["content"] or ""
