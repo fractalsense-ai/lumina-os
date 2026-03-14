@@ -52,6 +52,7 @@ _LOW_WEIGHT_TYPES: frozenset[str] = frozenset(
         "state_format",
         "admin_command",
         "field_validation",
+        "document_extraction",
     }
 )
 
@@ -371,8 +372,91 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
         "description": "Approve, reject, or defer an escalation.",
         "params_schema": {
             "escalation_id": "string",
-            "resolution": "string — one of: approved, rejected, deferred",
-            "rationale": "string — reason for resolution",
+            "resolution": "string -- one of: approved, rejected, deferred",
+            "rationale": "string -- reason for resolution",
+        },
+    },
+    {
+        "name": "ingest_document",
+        "description": "Upload and ingest a document into a domain module.",
+        "params_schema": {
+            "domain_id": "string -- target domain identifier",
+            "module_id": "string -- target module identifier (optional)",
+            "filename": "string -- name of the file to ingest",
+        },
+    },
+    {
+        "name": "list_ingestions",
+        "description": "List pending ingestion drafts for a domain.",
+        "params_schema": {
+            "domain_id": "string -- target domain identifier (optional)",
+            "status": "string -- filter by status (optional)",
+        },
+    },
+    {
+        "name": "review_ingestion",
+        "description": "Show SLM-generated interpretations for an ingestion.",
+        "params_schema": {
+            "ingestion_id": "string -- ingestion document ID",
+        },
+    },
+    {
+        "name": "approve_interpretation",
+        "description": "Approve a specific interpretation variant for an ingestion.",
+        "params_schema": {
+            "ingestion_id": "string -- ingestion document ID",
+            "interpretation_label": "string -- one of: strict, loose, hierarchical, default, or an interpretation ID",
+        },
+    },
+    {
+        "name": "reject_ingestion",
+        "description": "Reject an ingestion with a reason.",
+        "params_schema": {
+            "ingestion_id": "string -- ingestion document ID",
+            "reason": "string -- reason for rejection",
+        },
+    },
+    {
+        "name": "list_escalations",
+        "description": "List open escalation events.",
+        "params_schema": {
+            "domain_id": "string -- domain identifier (optional)",
+            "status": "string -- filter by status (optional, default: open)",
+        },
+    },
+    {
+        "name": "explain_reasoning",
+        "description": "Explain why the system made a specific decision or escalated an event.",
+        "params_schema": {
+            "event_id": "string -- CTL record ID or escalation ID to explain",
+        },
+    },
+    {
+        "name": "module_status",
+        "description": "Show the current status of a domain module.",
+        "params_schema": {
+            "module_id": "string -- module identifier",
+            "domain_id": "string -- domain identifier (optional)",
+        },
+    },
+    {
+        "name": "trigger_night_cycle",
+        "description": "Manually trigger the night cycle batch processing for a domain.",
+        "params_schema": {
+            "domain_id": "string -- domain identifier (optional, runs all if omitted)",
+            "tasks": "array of strings -- specific tasks to run (optional, runs all if omitted)",
+        },
+    },
+    {
+        "name": "night_cycle_status",
+        "description": "Check the status of the night cycle scheduler.",
+        "params_schema": {},
+    },
+    {
+        "name": "review_proposals",
+        "description": "Show pending night cycle proposals for review.",
+        "params_schema": {
+            "domain_id": "string -- domain identifier (optional)",
         },
     },
 ]

@@ -68,3 +68,85 @@ def test_check_permission_or_raise() -> None:
         check_permission_or_raise("u-x", "user", BASE_PERMS, Operation.EXECUTE)
 
     check_permission_or_raise("da_owner_001", "domain_authority", BASE_PERMS, Operation.EXECUTE)
+
+
+# ── Guest role (domain-scoped opt-in) ──────────────────────────
+
+GUEST_ENABLED_PERMS = {
+    **BASE_PERMS,
+    "guest_access": {"enabled": True, "permissions": "rx"},
+}
+
+GUEST_DISABLED_PERMS = {
+    **BASE_PERMS,
+    "guest_access": {"enabled": False, "permissions": "r"},
+}
+
+
+@pytest.mark.unit
+def test_guest_allowed_on_enabled_domain_read() -> None:
+    assert check_permission("guest_001", "guest", GUEST_ENABLED_PERMS, Operation.READ)
+
+
+@pytest.mark.unit
+def test_guest_allowed_on_enabled_domain_execute() -> None:
+    assert check_permission("guest_001", "guest", GUEST_ENABLED_PERMS, Operation.EXECUTE)
+
+
+@pytest.mark.unit
+def test_guest_denied_write_even_on_enabled_domain() -> None:
+    assert not check_permission("guest_001", "guest", GUEST_ENABLED_PERMS, Operation.WRITE)
+
+
+@pytest.mark.unit
+def test_guest_denied_on_disabled_domain() -> None:
+    assert not check_permission("guest_001", "guest", GUEST_DISABLED_PERMS, Operation.READ)
+
+
+@pytest.mark.unit
+def test_guest_denied_when_no_guest_access_block() -> None:
+    assert not check_permission("guest_001", "guest", BASE_PERMS, Operation.READ)
+
+
+@pytest.mark.unit
+def test_guest_read_only_domain() -> None:
+    perms = {**BASE_PERMS, "guest_access": {"enabled": True, "permissions": "r"}}
+    assert check_permission("guest_001", "guest", perms, Operation.READ)
+    assert not check_permission("guest_001", "guest", perms, Operation.EXECUTE)
+
+
+# ── Ingest permission (ACL-only) ──────────────────────────────
+
+INGEST_PERMS = {
+    **BASE_PERMS,
+    "acl": [
+        *BASE_PERMS["acl"],
+        {"role": "domain_authority", "access": "rwi"},
+        {"role": "user", "access": "ri", "scope": "lesson_plans_only"},
+    ],
+}
+
+
+@pytest.mark.unit
+def test_ingest_granted_via_acl() -> None:
+    assert check_permission("da_other", "domain_authority", INGEST_PERMS, Operation.INGEST)
+
+
+@pytest.mark.unit
+def test_ingest_granted_to_flagged_user() -> None:
+    assert check_permission("u-1", "user", INGEST_PERMS, Operation.INGEST)
+
+
+@pytest.mark.unit
+def test_ingest_denied_without_acl_entry() -> None:
+    assert not check_permission("u-1", "user", BASE_PERMS, Operation.INGEST)
+
+
+@pytest.mark.unit
+def test_ingest_denied_for_guest() -> None:
+    assert not check_permission("guest_001", "guest", INGEST_PERMS, Operation.INGEST)
+
+
+@pytest.mark.unit
+def test_root_always_bypasses_ingest() -> None:
+    assert check_permission("root_001", "root", BASE_PERMS, Operation.INGEST)

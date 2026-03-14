@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Body, Depends, FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
@@ -1187,6 +1187,7 @@ class ChatResponse(BaseModel):
     escalated: bool
     tool_results: list[dict[str, Any]] | None = None
     domain_id: str | None = None
+    structured_content: dict[str, Any] | None = None
 
 
 class ToolRequest(BaseModel):
@@ -1642,6 +1643,24 @@ async def login(req: LoginRequest) -> TokenResponse:
     )
 
 
+@app.get("/api/auth/guest-token", response_model=TokenResponse)
+async def guest_token() -> TokenResponse:
+    """Issue a short-lived JWT with the guest role.
+
+    No credentials required.  The guest role has Level-4 access; actual
+    module permissions are determined by each domain's ``guest_access``
+    block in its domain-physics document.
+    """
+    guest_id = f"guest_{uuid.uuid4().hex[:12]}"
+    token = create_jwt(
+        user_id=guest_id,
+        role="guest",
+        governed_modules=[],
+        ttl_minutes=30,
+    )
+    return TokenResponse(access_token=token, user_id=guest_id, role="guest")
+
+
 @app.post("/api/auth/refresh", response_model=TokenResponse)
 async def refresh(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -2094,6 +2113,481 @@ async def close_session(
 
 
 # ─────────────────────────────────────────────────────────────
+# Ingestion Endpoints
+# ─────────────────────────────────────────────────────────────
+
+# Lazy singleton — created on first use so config is loaded first.
+_INGEST_SERVICE: Any = None
+
+
+def _get_ingest_service() -> Any:
+    global _INGEST_SERVICE
+    if _INGEST_SERVICE is None:
+        from lumina.ingestion.service import IngestService
+
+        _INGEST_SERVICE = IngestService(
+            persistence_append=lambda sid, rec: PERSISTENCE.append_ctl_record(
+                sid, rec,
+                ledger_path=PERSISTENCE.get_ctl_ledger_path(sid, domain_id="_admin"),
+            ),
+            max_file_size_mb=10,
+        )
+    return _INGEST_SERVICE
+
+
+@app.post("/api/ingest/upload")
+async def ingest_upload(
+    file: UploadFile,
+    domain_id: str = Form(...),
+    module_id: str | None = Form(None),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Upload a document for ingestion into a domain module.
+
+    Requires ``ingest`` permission on the target module.
+    """
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    # RBAC: check ingest permission
+    try:
+        resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    except DomainNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+    domain_physics = await run_in_threadpool(
+        PERSISTENCE.load_domain_physics, runtime["domain_physics_path"]
+    )
+    perms = domain_physics.get("permissions", {})
+    perms["guest_access"] = domain_physics.get("guest_access")
+
+    if user_data["role"] != "root":
+        from lumina.core.permissions import Operation as PermOp, check_permission
+        if not check_permission(user_data["sub"], user_data["role"], perms, PermOp.INGEST):
+            raise HTTPException(status_code=403, detail="Ingest permission required")
+
+    # Detect content type from filename
+    filename = file.filename or "unknown"
+    content_type = _detect_content_type(filename)
+    if content_type is None:
+        raise HTTPException(status_code=400, detail=f"Unsupported file format: {filename}")
+
+    file_bytes = await file.read()
+    svc = _get_ingest_service()
+
+    try:
+        doc_id = svc.accept_document(
+            file_bytes=file_bytes,
+            filename=filename,
+            content_type=content_type,
+            actor_id=user_data["sub"],
+            domain_id=resolved,
+            module_id=module_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {"ingestion_id": doc_id, "status": "pending_extraction", "domain_id": resolved}
+
+
+@app.get("/api/ingest/{ingestion_id}")
+async def get_ingestion(
+    ingestion_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Retrieve an IngestionRecord with its interpretations."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    svc = _get_ingest_service()
+    record = svc.get_record(ingestion_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Ingestion not found")
+
+    # RBAC: any authenticated user with read on the domain can see the record
+    return record
+
+
+@app.post("/api/ingest/{ingestion_id}/extract")
+async def ingest_extract(
+    ingestion_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Trigger SLM extraction for an ingestion.
+
+    Returns immediately with the current status; extraction may still
+    be in progress for large documents.
+    """
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    svc = _get_ingest_service()
+    record = svc.get_record(ingestion_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Ingestion not found")
+
+    domain_id = record.get("domain_id", "")
+    try:
+        resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    except DomainNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+    domain_physics = await run_in_threadpool(
+        PERSISTENCE.load_domain_physics, runtime["domain_physics_path"]
+    )
+
+    ingestion_config = domain_physics.get("ingestion_config") or {}
+    max_interps = ingestion_config.get("max_interpretations", 3)
+
+    interpretations = await run_in_threadpool(
+        svc.extract_interpretations,
+        ingestion_id,
+        domain_physics,
+        domain_physics.get("glossary"),
+        None,
+        max_interps,
+    )
+
+    return {
+        "ingestion_id": ingestion_id,
+        "status": "extraction_complete",
+        "interpretation_count": len(interpretations),
+        "interpretations": interpretations,
+    }
+
+
+@app.post("/api/ingest/{ingestion_id}/review")
+async def ingest_review(
+    ingestion_id: str,
+    req: dict[str, Any] = Body(...),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Submit a review decision for an ingestion.
+
+    Body: ``{decision, selected_interpretation_id?, edits?, review_notes?}``
+    Requires ``domain_authority`` on the governed module.
+    """
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Domain authority required")
+
+    svc = _get_ingest_service()
+    record = svc.get_record(ingestion_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Ingestion not found")
+
+    if user_data["role"] == "domain_authority":
+        if not can_govern_domain(user_data, record.get("domain_id", "")):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+
+    decision = req.get("decision", "")
+    if decision not in ("approve", "reject", "edit"):
+        raise HTTPException(status_code=400, detail="decision must be approve, reject, or edit")
+
+    try:
+        updated = svc.review_interpretation(
+            ingestion_id=ingestion_id,
+            decision=decision,
+            reviewer_id=user_data["sub"],
+            selected_interpretation_id=req.get("selected_interpretation_id"),
+            edits=req.get("edits"),
+            review_notes=req.get("review_notes"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return updated
+
+
+@app.post("/api/ingest/{ingestion_id}/commit")
+async def ingest_commit(
+    ingestion_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Finalize and CTL-commit an approved ingestion."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Domain authority required")
+
+    svc = _get_ingest_service()
+    record = svc.get_record(ingestion_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Ingestion not found")
+
+    if user_data["role"] == "domain_authority":
+        if not can_govern_domain(user_data, record.get("domain_id", "")):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+
+    try:
+        result = svc.commit_ingestion(ingestion_id, user_data["sub"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return result
+
+
+@app.get("/api/ingest")
+async def list_ingestions(
+    domain_id: str | None = None,
+    status: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List ingestion records with optional filters."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    svc = _get_ingest_service()
+    records = svc.list_records(domain_id=domain_id, status=status, limit=limit, offset=offset)
+
+    # Scope DA to governed domains
+    if user_data["role"] == "domain_authority":
+        governed = user_data.get("governed_modules") or []
+        records = [r for r in records if r.get("domain_id") in governed]
+
+    return records
+
+
+def _detect_content_type(filename: str) -> str | None:
+    """Map filename extension to ingestion content type."""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    return {
+        "pdf": "pdf",
+        "docx": "docx",
+        "doc": "docx",
+        "md": "markdown",
+        "markdown": "markdown",
+        "txt": "markdown",
+        "csv": "csv",
+        "json": "json",
+        "yaml": "yaml",
+        "yml": "yaml",
+    }.get(ext)
+
+
+# ─────────────────────────────────────────────────────────────
+# Dashboard Endpoints
+# ─────────────────────────────────────────────────────────────
+
+
+@app.get("/api/dashboard/domains")
+async def dashboard_domains(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List domains visible to the current user with summary stats."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
+
+    all_domains = DOMAIN_REGISTRY.list_domains()
+
+    # Scope DA to governed domains
+    if user_data["role"] == "domain_authority":
+        governed = set(user_data.get("governed_modules") or [])
+        all_domains = [d for d in all_domains if d.get("domain_id") in governed]
+
+    results: list[dict[str, Any]] = []
+    for domain in all_domains:
+        domain_id = domain.get("domain_id", "")
+        # Escalation count for domain
+        try:
+            escalations = await run_in_threadpool(
+                PERSISTENCE.query_escalations,
+                domain_id=domain_id,
+                status="pending",
+            )
+            pending_escalations = len(escalations)
+        except Exception:
+            pending_escalations = 0
+
+        # Ingestion count
+        svc = _get_ingest_service()
+        pending_ingestions = len(svc.list_records(domain_id=domain_id, status="pending_extraction"))
+        review_ingestions = len(svc.list_records(domain_id=domain_id, status="extraction_complete"))
+
+        results.append({
+            "domain_id": domain_id,
+            "name": domain.get("name", domain_id),
+            "version": domain.get("version", "0.0.0"),
+            "pending_escalations": pending_escalations,
+            "pending_ingestions": pending_ingestions,
+            "review_ingestions": review_ingestions,
+        })
+
+    return results
+
+
+@app.get("/api/dashboard/telemetry")
+async def dashboard_telemetry(
+    domain_id: str | None = None,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Aggregate telemetry summary for the dashboard."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
+
+    # Query recent CTL records for stats
+    records = await run_in_threadpool(
+        PERSISTENCE.query_ctl_records,
+        domain_id=domain_id,
+    )
+
+    record_types: dict[str, int] = {}
+    for r in records:
+        rt = r.get("record_type", "unknown")
+        record_types[rt] = record_types.get(rt, 0) + 1
+
+    # Escalation summary
+    try:
+        escalations = await run_in_threadpool(
+            PERSISTENCE.query_escalations,
+            domain_id=domain_id,
+        )
+    except Exception:
+        escalations = []
+
+    pending = sum(1 for e in escalations if e.get("status") == "pending")
+    resolved = sum(1 for e in escalations if e.get("status") == "resolved")
+
+    return {
+        "total_ctl_records": len(records),
+        "record_type_counts": record_types,
+        "escalation_summary": {
+            "total": len(escalations),
+            "pending": pending,
+            "resolved": resolved,
+        },
+        "domain_filter": domain_id,
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# Night Cycle endpoints
+# ─────────────────────────────────────────────────────────────
+
+_NIGHT_SCHEDULER: Any = None
+
+
+def _get_night_scheduler() -> Any:
+    global _NIGHT_SCHEDULER
+    if _NIGHT_SCHEDULER is None:
+        from lumina.nightcycle.scheduler import NightCycleScheduler
+
+        nc_cfg: dict[str, Any] = {}
+        try:
+            import yaml as _yaml, pathlib as _pl
+
+            rt = _yaml.safe_load(
+                _pl.Path("cfg/system-runtime-config.yaml").read_text(encoding="utf-8")
+            )
+            nc_cfg = (rt or {}).get("night_cycle", {})
+        except Exception:
+            pass
+        _NIGHT_SCHEDULER = NightCycleScheduler(config=nc_cfg, persistence=PERSISTENCE)
+    return _NIGHT_SCHEDULER
+
+
+@app.post("/api/nightcycle/trigger")
+async def nightcycle_trigger(
+    req: dict[str, Any] = Body(default={}),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Manually trigger a night cycle run."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    scheduler = _get_night_scheduler()
+    task_names = req.get("tasks")
+    domain_ids = req.get("domain_ids")
+    run_id = scheduler.trigger_async(
+        actor_id=user_data["sub"],
+        task_names=task_names,
+        domain_ids=domain_ids,
+    )
+    return {"run_id": run_id, "status": "started"}
+
+
+@app.get("/api/nightcycle/status")
+async def nightcycle_status(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Get current night cycle status."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    if user_data["role"] not in ("root", "domain_authority", "auditor"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    return _get_night_scheduler().get_status()
+
+
+@app.get("/api/nightcycle/report/{run_id}")
+async def nightcycle_report(
+    run_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Get detailed night cycle report."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    report = _get_night_scheduler().get_report(run_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@app.get("/api/nightcycle/proposals")
+async def nightcycle_proposals(
+    domain_id: str | None = None,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> list[dict[str, Any]]:
+    """List pending night cycle proposals."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    return _get_night_scheduler().get_pending_proposals(domain_id=domain_id)
+
+
+@app.post("/api/nightcycle/proposals/{proposal_id}/resolve")
+async def nightcycle_resolve_proposal(
+    proposal_id: str,
+    req: dict[str, Any] = Body(...),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Approve or reject a night cycle proposal."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    if user_data["role"] not in ("root", "domain_authority"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    action = req.get("action")
+    if action not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail="action must be 'approved' or 'rejected'")
+
+    found = _get_night_scheduler().resolve_proposal(proposal_id, action)
+    if not found:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    return {"proposal_id": proposal_id, "status": action}
+
+
+# ─────────────────────────────────────────────────────────────
 # Admin Endpoints — Phase 3: Audit & Escalation
 # ─────────────────────────────────────────────────────────────
 
@@ -2522,6 +3016,116 @@ async def admin_command(
             raise HTTPException(status_code=422, detail="escalation_id and valid resolution required")
         # Domain governance check delegated to the existing escalation resolve logic.
         result = {"operation": operation, "escalation_id": esc_id, "resolution": resolution, "rationale": rationale}
+
+    # ── Ingestion & dashboard operations (Phase 4) ──
+    elif operation == "list_ingestions":
+        domain_id = str(params.get("domain_id", "")) or None
+        status_filter = str(params.get("status", "")) or None
+        svc = _get_ingest_service()
+        records = svc.list_records(domain_id=domain_id, status=status_filter, limit=20)
+        if user_data["role"] == "domain_authority":
+            governed = user_data.get("governed_modules") or []
+            records = [r for r in records if r.get("domain_id") in governed]
+        result = {"operation": operation, "count": len(records), "records": records}
+
+    elif operation == "review_ingestion":
+        ingestion_id = str(params.get("ingestion_id", parsed.get("target", "")))
+        if not ingestion_id:
+            raise HTTPException(status_code=422, detail="ingestion_id required")
+        svc = _get_ingest_service()
+        record = svc.get_record(ingestion_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Ingestion not found")
+        result = {"operation": operation, "record": record}
+
+    elif operation == "approve_interpretation":
+        ingestion_id = str(params.get("ingestion_id", parsed.get("target", "")))
+        interp_id = str(params.get("interpretation_id", ""))
+        if not ingestion_id or not interp_id:
+            raise HTTPException(status_code=422, detail="ingestion_id and interpretation_id required")
+        if user_data["role"] not in ("root", "domain_authority"):
+            raise HTTPException(status_code=403, detail="Domain authority required")
+        svc = _get_ingest_service()
+        try:
+            updated = svc.review_interpretation(
+                ingestion_id, decision="approve", reviewer_id=user_data["sub"],
+                selected_interpretation_id=interp_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        result = {"operation": operation, "status": updated["status"], "ingestion_id": ingestion_id}
+
+    elif operation == "reject_ingestion":
+        ingestion_id = str(params.get("ingestion_id", parsed.get("target", "")))
+        reason = str(params.get("reason", params.get("rationale", "")))
+        if not ingestion_id:
+            raise HTTPException(status_code=422, detail="ingestion_id required")
+        if user_data["role"] not in ("root", "domain_authority"):
+            raise HTTPException(status_code=403, detail="Domain authority required")
+        svc = _get_ingest_service()
+        try:
+            updated = svc.review_interpretation(
+                ingestion_id, decision="reject", reviewer_id=user_data["sub"],
+                review_notes=reason,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        result = {"operation": operation, "status": updated["status"], "ingestion_id": ingestion_id}
+
+    elif operation == "list_escalations":
+        domain_id = str(params.get("domain_id", "")) or None
+        escalations = await run_in_threadpool(
+            PERSISTENCE.query_escalations,
+            domain_id=domain_id,
+            status="pending",
+        )
+        if user_data["role"] == "domain_authority":
+            governed = user_data.get("governed_modules") or []
+            escalations = [e for e in escalations if e.get("domain_pack_id") in governed]
+        result = {"operation": operation, "count": len(escalations), "escalations": escalations}
+
+    elif operation == "explain_reasoning":
+        event_id = str(params.get("event_id", parsed.get("target", "")))
+        if not event_id:
+            raise HTTPException(status_code=422, detail="event_id required")
+        records = await run_in_threadpool(PERSISTENCE.query_ctl_records)
+        target = [r for r in records if r.get("record_id") == event_id]
+        if not target:
+            raise HTTPException(status_code=404, detail="CTL record not found")
+        result = {"operation": operation, "record": target[0]}
+
+    elif operation == "module_status":
+        domain_id = str(params.get("domain_id", parsed.get("target", "")))
+        if not domain_id:
+            raise HTTPException(status_code=422, detail="domain_id required")
+        try:
+            resolved = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        runtime = DOMAIN_REGISTRY.get_runtime_context(resolved)
+        domain = await run_in_threadpool(
+            PERSISTENCE.load_domain_physics, runtime["domain_physics_path"]
+        )
+        result = {
+            "operation": operation,
+            "domain_id": resolved,
+            "version": domain.get("version"),
+            "modules": [m.get("module_id") for m in (domain.get("modules") or [])],
+        }
+
+    elif operation in ("trigger_night_cycle", "night_cycle_status", "review_proposals"):
+        scheduler = _get_night_scheduler()
+        if operation == "trigger_night_cycle":
+            if user_data["role"] not in ("root", "domain_authority"):
+                raise HTTPException(status_code=403, detail="Insufficient permissions")
+            run_id = scheduler.trigger_async(actor_id=user_data["sub"])
+            result = {"operation": operation, "run_id": run_id, "status": "started"}
+        elif operation == "night_cycle_status":
+            result = scheduler.get_status()
+            result["operation"] = operation
+        else:  # review_proposals
+            proposals = scheduler.get_pending_proposals(domain_id=resolved)
+            result = {"operation": operation, "proposals": proposals, "count": len(proposals)}
 
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")

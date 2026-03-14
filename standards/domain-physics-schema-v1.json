@@ -95,6 +95,59 @@
     "permissions": {
       "$ref": "rbac-permission-schema-v1.json",
       "description": "chmod-style permission block controlling read, write, and execute access to this module. See rbac-permission-schema-v1.json for the full schema."
+    },
+    "guest_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, users with the guest role may access this module according to the permissions string. When false or omitted, guests are denied all access."
+        },
+        "permissions": {
+          "type": "string",
+          "pattern": "^[rx]{1,2}$",
+          "default": "r",
+          "description": "Permission characters granted to guest users: r (read) and/or x (execute). Guests may never write."
+        }
+      },
+      "description": "Optional domain-scoped access policy for the guest role (RBAC Level 4). Each domain opts in independently. Omit entirely or set enabled=false to deny guest access."
+    },
+    "ingestion_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, the document ingestion pipeline is available for this module."
+        },
+        "max_file_size_mb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10,
+          "description": "Maximum upload file size in megabytes."
+        },
+        "accepted_formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["pdf", "docx", "markdown", "csv", "json", "yaml"]
+          },
+          "default": ["pdf", "docx", "markdown", "csv", "json", "yaml"],
+          "description": "Document formats accepted by the ingestion pipeline."
+        },
+        "max_interpretations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3,
+          "description": "Maximum number of SLM interpretation variants to generate for ambiguous content."
+        }
+      },
+      "description": "Configuration for the document ingestion pipeline. Controls which formats are accepted, size limits, and SLM interpretation parameters."
     }
   },
   "$defs": {

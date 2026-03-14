@@ -25,7 +25,8 @@
         "it_support",
         "qa",
         "auditor",
-        "user"
+        "user",
+        "guest"
       ],
       "description": "Role name that maps to the group permission bits. Any authenticated user with this role receives the group-level access defined by the middle octal digit."
     },
@@ -51,14 +52,15 @@
             "it_support",
             "qa",
             "auditor",
-            "user"
+            "user",
+            "guest"
           ],
           "description": "Canonical role ID receiving the access grant."
         },
         "access": {
           "type": "string",
-          "pattern": "^[rwx]{1,3}$",
-          "description": "Permission characters granted: any combination of r (read), w (write), x (execute). Example: 'rx' grants read and execute."
+          "pattern": "^[rwxi]{1,4}$",
+          "description": "Permission characters granted: any combination of r (read), w (write), x (execute), i (ingest). Example: 'rx' grants read and execute; 'rwi' grants read, write, and ingest."
         },
         "scope": {
           "type": "string",

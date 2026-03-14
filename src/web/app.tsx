@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Shield, PaperPlaneRight, User, Robot, SignOut } from '@phosphor-icons/react'
+import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { motion, AnimatePresence } from 'framer-motion'
+import { DashboardPage } from '@/components/dashboard/DashboardPage'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -23,6 +24,10 @@ type ApiChatResponse = {
   action: string
   prompt_type: string
   escalated: boolean
+  structured_content?: {
+    type: string
+    data: unknown
+  }
 }
 
 interface UiManifest {
@@ -336,7 +341,80 @@ function LoadingIndicator() {
   )
 }
 
-function ChatInterface({ manifest, auth, onLogout }: { manifest: UiManifest; auth: AuthState; onLogout: () => void }) {
+function AppHeader({
+  manifest,
+  auth,
+  onLogout,
+  showDashboard,
+  view,
+  onViewChange,
+}: {
+  manifest: UiManifest
+  auth: AuthState
+  onLogout: () => void
+  showDashboard: boolean
+  view: 'chat' | 'dashboard'
+  onViewChange: (v: 'chat' | 'dashboard') => void
+}) {
+  return (
+    <header className="border-b border-border bg-card px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
+            {manifest.title}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
+            {manifest.subtitle}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {showDashboard && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewChange(view === 'chat' ? 'dashboard' : 'chat')}
+              title={view === 'chat' ? 'Dashboard' : 'Back to Chat'}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+            >
+              <Gauge size={18} />
+              <span className="hidden sm:inline text-sm">
+                {view === 'chat' ? 'Dashboard' : 'Chat'}
+              </span>
+            </Button>
+          )}
+          <span className="text-sm text-muted-foreground hidden sm:block">
+            {auth.username}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onLogout}
+            title="Sign out"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <SignOut size={20} />
+          </Button>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function ChatInterface({
+  manifest,
+  auth,
+  onLogout,
+  showDashboard,
+  view,
+  onViewChange,
+}: {
+  manifest: UiManifest
+  auth: AuthState
+  onLogout: () => void
+  showDashboard: boolean
+  view: 'chat' | 'dashboard'
+  onViewChange: (v: 'chat' | 'dashboard') => void
+}) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -401,32 +479,14 @@ function ChatInterface({ manifest, auth, onLogout }: { manifest: UiManifest; aut
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
-              {manifest.title}
-            </h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
-              {manifest.subtitle}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {auth.username}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onLogout}
-              title="Sign out"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <SignOut size={20} />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        manifest={manifest}
+        auth={auth}
+        onLogout={onLogout}
+        showDashboard={showDashboard}
+        view={view}
+        onViewChange={onViewChange}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <ScrollArea className="flex-1 px-6">
@@ -490,6 +550,8 @@ function App() {
     return window.localStorage.getItem('lumina.consent_given') === 'true'
   })
   const [manifest, setManifest] = useState<UiManifest>(DEFAULT_MANIFEST)
+  const [view, setView] = useState<'chat' | 'dashboard'>('chat')
+  const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'domain_authority')
 
   // Validate stored token against /api/auth/me on mount; clear if stale
   useEffect(() => {
@@ -538,7 +600,32 @@ function App() {
     return <ConsentScreen manifest={manifest} onConsent={() => setConsentGiven(true)} />
   }
 
-  return <ChatInterface manifest={manifest} auth={auth} onLogout={handleLogout} />
+  if (view === 'dashboard' && showDashboard) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AppHeader
+          manifest={manifest}
+          auth={auth}
+          onLogout={handleLogout}
+          showDashboard={showDashboard}
+          view={view}
+          onViewChange={setView}
+        />
+        <DashboardPage auth={auth} />
+      </div>
+    )
+  }
+
+  return (
+    <ChatInterface
+      manifest={manifest}
+      auth={auth}
+      onLogout={handleLogout}
+      showDashboard={showDashboard}
+      view={view}
+      onViewChange={setView}
+    />
+  )
 }
 
 export default App

@@ -23,3 +23,23 @@ access_control:
 # Full system-domain session wiring is a follow-on implementation slice.
 adapters: []
 modules: []
+
+# ── Night Cycle Configuration ────────────────────────────────
+# Configurable batch processing for deferred heavy operations.
+# DA can override schedule via API or chat ("trigger night cycle").
+night_cycle:
+  enabled: true
+  schedule: "0 2 * * *"          # cron: 2 AM daily
+  manual_trigger: true            # allow DA to trigger via API/chat
+  tasks:
+    - glossary_expansion
+    - glossary_pruning
+    - rejection_corpus_alignment
+    - cross_module_consistency
+    - knowledge_graph_rebuild
+    - pacing_heuristic_recompute
+    - domain_physics_constraint_refresh
+    - slm_hint_generation
+    - telemetry_summary_refresh
+  max_duration_minutes: 240
+  notify_on_completion: true

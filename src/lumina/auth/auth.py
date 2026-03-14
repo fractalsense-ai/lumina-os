@@ -29,7 +29,7 @@ JWT_ISSUER: str = "lumina"
 
 # Valid Lumina roles (see specs/rbac-spec-v1.md)
 VALID_ROLES: frozenset[str] = frozenset(
-    {"root", "domain_authority", "it_support", "qa", "auditor", "user"}
+    {"root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"}
 )
 
 # In-memory set of revoked token JTIs.  Cleared on server restart

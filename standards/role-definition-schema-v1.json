@@ -15,7 +15,8 @@
         "it_support",
         "qa",
         "auditor",
-        "user"
+        "user",
+        "guest"
       ],
       "description": "Unique canonical identifier for the role."
     },
@@ -26,7 +27,7 @@
     "hierarchy_level": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 3,
+      "maximum": 4,
       "description": "Position in the role hierarchy. 0 = highest (root), 3 = lowest (user). Peers share the same level."
     },
     "description": {

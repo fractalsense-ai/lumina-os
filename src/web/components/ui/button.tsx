@@ -2,12 +2,13 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  size?: 'default' | 'icon' | 'lg'
+  size?: 'default' | 'sm' | 'icon' | 'lg'
   variant?: 'default' | 'ghost' | 'outline' | 'destructive' | 'secondary' | 'link'
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {
   default: 'h-10 px-4 py-2',
+  sm: 'h-8 px-3 py-1 text-xs',
   icon: 'h-10 w-10',
   lg: 'h-11 px-6 py-3',
 }
