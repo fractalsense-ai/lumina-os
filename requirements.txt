@@ -7,7 +7,7 @@ python-multipart>=0.0.18
 # NLP sentence splitting — optional, requires Python <=3.13
 # (spaCy 3.x uses the pydantic.v1 shim which is broken on Python 3.14+;
 #  the runtime falls back to regex sentence splitting when spaCy is unavailable)
-# On Python <=3.13: pip install spacy>=3.7.0 && python -m spacy download en_core_web_sm
+# On Python <=3.13: pip install spacy>=3.7.0 && spacy download en_core_web_sm
 # Upgrade to en_core_web_md for richer vectors when needed.
 # spacy>=3.7.0
 

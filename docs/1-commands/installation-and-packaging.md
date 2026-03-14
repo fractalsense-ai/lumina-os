@@ -34,22 +34,38 @@ uv venv && uv pip install -r requirements-dev.txt
 
 Use editable install when you want command entrypoints and local package iteration.
 
+First, create and activate a venv. On Windows, use the `py` launcher to pin a specific Python version — this is required when installing the `nlp` extra, since spaCy is not yet compatible with Python 3.14+:
+
+```powershell
+# Windows (PowerShell)
+py -3.13 -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+```bash
+# macOS / Linux
+python3.13 -m venv .venv
+source .venv/bin/activate
+```
+
+Once the venv is active, use plain `pip` — not `python -m pip`:
+
 ```bash
 # Minimal (FastAPI + uvicorn only)
-python -m pip install -e .
+pip install -e .
 
-# With NLP support (spaCy glossary detection) — Python 3.12/3.13 only
-python -m pip install -e ".[nlp]"
-python -m spacy download en_core_web_sm
+# With NLP support (spaCy glossary detection) — requires Python 3.12 or 3.13 venv (see above)
+pip install -e ".[nlp]"
+spacy download en_core_web_sm
 
 # With LLM providers (OpenAI + Anthropic)
-python -m pip install -e ".[providers]"
+pip install -e ".[providers]"
 
 # With SQLite persistence backend
-python -m pip install -e ".[sqlite]"
+pip install -e ".[sqlite]"
 
 # Full — all extras
-python -m pip install -e ".[nlp,providers,sqlite]"
+pip install -e ".[nlp,providers,sqlite]"
 
 # uv equivalents (prefix with `uv pip`)
 uv pip install -e ".[nlp,providers,sqlite]"
@@ -59,7 +75,7 @@ uv pip install -e ".[nlp,providers,sqlite]"
 
 | Extra | Installs | When needed |
 |-------|----------|-------------|
-| `nlp` | `spacy>=3.7.0` | Glossary-term detection in turn data — **requires Python 3.12 or 3.13** (spaCy is not yet compatible with Python 3.14+) |
+| `nlp` | `spacy>=3.7.0` | Glossary-term detection in turn data — **create your venv with `py -3.13` or `py -3.12`** (spaCy is not yet compatible with Python 3.14+) |
 | `providers` | `openai`, `anthropic` | Live LLM mode |
 | `sqlite` | `sqlalchemy[asyncio]`, `aiosqlite` | SQLite persistence backend |
 | `dev` | `pytest`, `pytest-cov` | Running the test suite |

@@ -229,10 +229,13 @@ Install and packaging workflows are documented in [`docs/1-commands/installation
 
 ```bash
 # 1. Create a virtual environment
-python -m venv .venv
-source .venv/bin/activate  # or .\.venv\Scripts\activate on Windows
+# Windows — use the py launcher to pin a specific version (required for the nlp extra):
+#   py -3.13 -m venv .venv && .venv\Scripts\Activate.ps1
+# macOS / Linux:
+python3 -m venv .venv
+source .venv/bin/activate
 
-# 2. Install runtime dependencies
+# 2. Install runtime dependencies (once venv is active, use plain pip)
 pip install -r requirements.txt
 
 # 3. Set the runtime config (required — no silent defaults)
