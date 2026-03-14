@@ -170,20 +170,21 @@ export OPENAI_API_KEY=<your-key>        # or ANTHROPIC_API_KEY
 
 With Ollama running and `phi3` pulled, start the API server and send a glossary query — the Librarian role should handle it via the SLM:
 
-```bash
+```powershell
 # Terminal 1 — start the server
 lumina-api
 
-# Terminal 2 — log in
-curl -sX POST http://localhost:8000/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"<pw>"}' | python -m json.tool
+# Terminal 2 — log in and capture the token
+$response = Invoke-RestMethod -Uri 'http://localhost:8000/api/auth/login' `
+  -Method POST -ContentType 'application/json' `
+  -Body '{"username":"admin","password":"<pw>"}'
+$token = $response.token
 
-# Send a glossary query (replace <token> with the access_token from login)
-curl -sX POST http://localhost:8000/api/chat \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer <token>' \
-  -d '{"session_id":"slm-test-1","message":"what is equivalence?"}' | python -m json.tool
+# Send a glossary query
+Invoke-RestMethod -Uri 'http://localhost:8000/api/chat' `
+  -Method POST -ContentType 'application/json' `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{"session_id":"slm-test-1","message":"what is equivalence?"}'
 ```
 
 When the SLM is active the definition response is more fluent than the bare `"{term}: {definition}"` deterministic fallback. Check server logs for `[lumina.core.slm]` lines — the absence of `SLM unavailable` warnings confirms the SLM handled the request.
