@@ -365,7 +365,7 @@ LLM dispatch
 
 - [`domain-adapter-pattern(7)`](domain-adapter-pattern.md) — Engine contract fields, three-layer distinction, Phase A/B lifecycle
 - [`nlp-semantic-router(7)`](nlp-semantic-router.md) — Two-tier NLP architecture, glossary intercept
-- [`dsa-framework-v1`](../../specs/dsa-framework-v1.md) — D.S.A. orchestrator specification
+- [`dsa-framework-v1`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema underlying the PPA orchestrator
 - [`trace-event-schema`](../../ledger/trace-event-schema.json) — TraceEvent schema with `novel_synthesis_flagged` event type and `model_id`/`model_version` metadata keys
 - [`commitment-record-schema`](../../ledger/commitment-record-schema.json) — CommitmentRecord with `novel_synthesis_verified` / `novel_synthesis_rejected` types
 - [`escalation-record-schema`](../../ledger/escalation-record-schema.json) — EscalationRecord with `novel_synthesis_review` trigger type

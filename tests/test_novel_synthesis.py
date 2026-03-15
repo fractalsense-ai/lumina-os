@@ -47,11 +47,11 @@ def _make_profile() -> dict[str, Any]:
 
 
 def _make_orchestrator(domain: dict[str, Any], **kwargs: Any):
-    from lumina.orchestrator.dsa_orchestrator import DSAOrchestrator
+    from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
     tmp = tempfile.mkdtemp()
     ledger = Path(tmp) / "test-session.jsonl"
-    return DSAOrchestrator(
+    return PPAOrchestrator(
         domain_physics=domain,
         subject_profile=_make_profile(),
         ledger_path=str(ledger),

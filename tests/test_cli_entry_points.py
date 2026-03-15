@@ -88,7 +88,7 @@ def test_orchestrator_demo_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
     monkeypatch.setattr(cli_mod, "_run_systool", lambda s: calls.append(s))
     orchestrator_demo()
-    assert calls == ["dsa_demo.py"]
+    assert calls == ["ppa_demo.py"]
 
 
 # ── ctl_validate() ────────────────────────────────────────────────────────────

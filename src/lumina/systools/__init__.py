@@ -13,7 +13,7 @@ resolved actions.  These are the system-level analogue of domain tool-adapters.
   yaml_converter.py       compile YAML source files to JSON
   ctl_validator.py        validate CTL hash-chain integrity
   security_freeze.py      freeze / audit security-sensitive config state
-  dsa_demo.py             deterministic D.S.A. demo runner (dev tool)
+  ppa_demo.py             deterministic PPA orchestrator demo runner (dev tool)
 
 ──────────────────────────────────────────────────────────────────────────────
 CATEGORY 2 — PASSIVE HARDWARE PROBES  (lib-invoked only)

@@ -23,7 +23,7 @@ Documentation is organized using the UNIX man-page section convention.
 
 ## Quick Start
 
-1. **Concepts** — Read [principles](../specs/principles-v1.md) and the [D.S.A. framework](../specs/dsa-framework-v1.md)
+1. **Concepts** — Read [principles](../specs/principles-v1.md) and the [D.S.A. structural schema](../specs/dsa-framework-v1.md) underlying PPA
 2. **Standards** — Review [lumina-core](../standards/lumina-core-v1.md) and [RBAC](../specs/rbac-spec-v1.md)
 3. **Formats** — Understand [domain-physics schema](../standards/domain-physics-schema-v1.json) and [prompt-contract schema](../standards/prompt-contract-schema-v1.json)
 4. **Commands** — Start with [installation and packaging](1-commands/installation-and-packaging.md), then use the [YAML converter](1-commands/yaml-to-json-converter.md) and [CTL validator](1-commands/ctl-commitment-validator.md)

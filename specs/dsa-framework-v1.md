@@ -2,7 +2,9 @@
 
 **Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-08
+**Last updated:** 2026-03-15
+
+> **Relationship to PPA:** The D.S.A. Framework is the *structural contract schema* that the Prompt Packet Assembly (PPA) engine uses to assemble each prompt packet. D.S.A. defines the three-pillar model (Domain, State, Action) that governs what goes into the packet; PPA is the mechanism that reads those pillars and produces the assembled `prompt_contract` sent to the LLM. See [`docs/7-concepts/prompt-packet-assembly.md`](../docs/7-concepts/prompt-packet-assembly.md) for the PPA assembly process.
 
 ---
 

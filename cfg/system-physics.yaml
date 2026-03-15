@@ -498,7 +498,7 @@ glossary:
       verification, evaluates invariants, and commits or escalates the
       resulting decision.
     aliases:
-      - DSA engine
+      - PPA engine
       - D.S.A. orchestrator
       - core engine
     related_terms:

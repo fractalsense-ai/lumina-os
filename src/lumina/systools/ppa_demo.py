@@ -1,5 +1,5 @@
 """
-dsa-orchestrator-demo.py — Project Lumina D.S.A. Orchestrator End-to-End Demo
+ppa-orchestrator-demo.py — Project Lumina Prompt Packet Assembly (PPA) Orchestrator End-to-End Demo
 
 Runs a scripted 10-turn algebra session showing the full D.S.A. loop:
   Domain Physics → ZPD Monitor → CTL → Prompt Contract
@@ -43,14 +43,14 @@ sys.path.insert(0, os.path.dirname(__file__))
 import importlib.util as _ilu
 
 _orch_spec = _ilu.spec_from_file_location(
-    "dsa_orchestrator",
-    os.path.join(os.path.dirname(__file__), "dsa-orchestrator.py"),
+    "ppa_orchestrator",
+    os.path.join(os.path.dirname(__file__), "ppa-orchestrator.py"),
 )
 _orch_mod = _ilu.module_from_spec(_orch_spec)  # type: ignore[arg-type]
-sys.modules["dsa_orchestrator"] = _orch_mod
+sys.modules["ppa_orchestrator"] = _orch_mod
 _orch_spec.loader.exec_module(_orch_mod)  # type: ignore[union-attr]
 
-DSAOrchestrator = _orch_mod.DSAOrchestrator
+PPAOrchestrator = _orch_mod.PPAOrchestrator
 load_domain_physics = _orch_mod.load_domain_physics
 hash_record = _orch_mod.hash_record
 
@@ -67,7 +67,7 @@ load_yaml = _yaml_mod.load_yaml
 
 # Import the education-domain ZPD monitor.
 # The engine no longer loads this automatically; the education integration layer
-# (i.e. this demo) wires it up explicitly and passes it to DSAOrchestrator.
+# (i.e. this demo) wires it up explicitly and passes it to PPAOrchestrator.
 # A non-education domain pack (e.g. agriculture) would simply omit these lines.
 _zpd_spec = _ilu.spec_from_file_location(
     "zpd_monitor",
@@ -529,7 +529,7 @@ def _print_invariant_results(results: list[dict[str, Any]]) -> None:
 
 def run_demo() -> None:
     _sep("═")
-    print("  Project Lumina — D.S.A. Orchestrator Demo (v0.1.0)")
+    print("  Project Lumina — PPA Orchestrator Demo (v0.2.0)")
     print("  Domain: Algebra Level 1  |  Student: Alice (example)")
     _sep("═")
 
@@ -573,7 +573,7 @@ def run_demo() -> None:
     # and initial_state, and the engine would skip the domain-lib step entirely.
     session_id = str(uuid.uuid4())
     initial_state = _build_learning_state_from_profile(profile)
-    orch = DSAOrchestrator(
+    orch = PPAOrchestrator(
         domain_physics=domain,
         subject_profile=profile,
         ledger_path=ledger_path,

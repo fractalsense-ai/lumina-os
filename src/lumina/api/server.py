@@ -70,7 +70,7 @@ from lumina.systools.manifest_integrity import check_manifest_report, regen_mani
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-from lumina.orchestrator.dsa_orchestrator import DSAOrchestrator
+from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
 # ─────────────────────────────────────────────────────────────
 # Configuration
@@ -752,7 +752,7 @@ def _build_domain_context(
     _sb_kwargs = {"world_sim_cfg": runtime.get("world_sim")} if "world_sim_cfg" in _sb_sig.parameters else {}
     initial_state = state_builder(profile, **_sb_kwargs)
 
-    orch = DSAOrchestrator(
+    orch = PPAOrchestrator(
         domain_physics=domain,
         subject_profile=profile,
         ledger_path=str(ledger_path),
@@ -900,7 +900,7 @@ def process_message(
     model_version: str | None = None,
 ) -> dict[str, Any]:
     session = get_or_create_session(session_id, domain_id=domain_id, user=user)
-    orch: DSAOrchestrator = session["orchestrator"]
+    orch: PPAOrchestrator = session["orchestrator"]
     task_spec: dict[str, Any] = session["task_spec"]
     current_problem: dict[str, Any] = session["current_problem"]
 

@@ -8,7 +8,7 @@
 
 TCP/IP assembles packets from layered protocols — each layer adds its headers, the payload travels through, and checksums verify integrity. Lumina OS does the same thing for LLMs.
 
-The **D.S.A. engine** assembles a **dynamic prompt contract** from layered components — global rules, domain policy, module state, and turn context. Only what is needed is added at each layer. The LLM processes this contract. Tool-adapters verify the output. The Causal Trace Ledger logs the decision.
+The **PPA (Prompt Packet Assembly) engine** assembles a **dynamic prompt contract** from layered components — global rules, domain policy, module state, and turn context. Only what is needed is added at each layer. The LLM processes this contract. Tool-adapters verify the output. The Causal Trace Ledger logs the decision.
 
 The LLM is the **processing unit**, not the authority. The input interface is the **surface**, not the system — it can be a chat session, a sensor feed, a lab instrument stream, or any structured event source. Everything surrounding the probabilistic LLM is **deterministic and verifiable**.
 
@@ -66,7 +66,7 @@ The Lumina OS core engine is **fully domain-agnostic**. All domain-specific beha
 
 ---
 
-## The D.S.A. Engine
+## Prompt Packet Assembly (PPA)
 
 Every turn follows a strict, auditable sequence:
 
@@ -78,7 +78,7 @@ Every turn follows a strict, auditable sequence:
 6. **Commit / escalate** — verified decisions are committed; violations escalate to a human; novel synthesis events require a two-key gate (LLM flags → Domain Authority confirms or rejects)
 7. **Trace (CTL)** — the decision is logged to the append-only ledger
 
-The D.S.A. model is the contract materialization of this sequence:
+The **D.S.A. structural schema** is the contract model behind PPA. Three pillars define every session contract:
 
 | Pillar | Name | Role | Mutability |
 |--------|------|------|------------|
@@ -86,9 +86,9 @@ The D.S.A. model is the contract materialization of this sequence:
 | **S**  | State | Compact entity profile updated from structured evidence | Mutable |
 | **A**  | Action | Bounded response produced by the orchestrator | Constrained by Domain |
 
-The orchestrator assembles a dynamic prompt contract from these components. The LLM is constrained to that contract, tool-adapters verify its output, and the resulting decision is committed or escalated and written to CTL.
+The PPA orchestrator assembles a dynamic prompt contract from these D.S.A. components. The LLM is constrained to that contract, tool-adapters verify its output, and the resulting decision is committed or escalated and written to CTL.
 
-See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full specification and [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) for CTL protocol.
+See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full D.S.A. structural specification and [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) for CTL protocol.
 
 ---
 
@@ -189,7 +189,7 @@ project-lumina/
 │   │   ├── api/                ← FastAPI server and route handlers
 │   │   ├── auth/               ← authentication and token management
 │   │   ├── cli/                ← command-line interface
-│   │   ├── core/               ← orchestrator, DSA engine, prompt assembly
+│   │   ├── core/               ← orchestrator, PPA engine, prompt assembly
 │   │   ├── ctl/                ← Causal Trace Ledger writer
 │   │   ├── orchestrator/       ← turn pipeline and commitment gating
 │   │   ├── persistence/        ← storage adapters (SQLite, filesystem)
@@ -204,7 +204,7 @@ project-lumina/
 │       ├── modules/            ← worked module packs
 │       ├── prompts/            ← domain physics and prompt templates
 │       └── systools/           ← domain-specific tool adapters
-├── specs/                      ← architecture specifications (DSA, principles, prompts)
+├── specs/                      ← architecture specifications (PPA framework, principles, prompts)
 ├── standards/                  ← universal engine schemas and contracts
 ├── ledger/                     ← CTL JSON schemas (trace events, commitments, escalations)
 ├── governance/                 ← policy templates and role definitions
@@ -298,7 +298,7 @@ See [`docs/1-commands/`](docs/1-commands/README.md) for detailed command referen
 ### Explore the architecture
 
 1. [`specs/principles-v1.md`](specs/principles-v1.md) — the non-negotiables
-2. [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — the D.S.A. framework specification
+2. [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — the D.S.A. structural schema (Domain, State, Action) underlying PPA
 3. [`domain-packs/education/cfg/runtime-config.yaml`](domain-packs/education/cfg/runtime-config.yaml) — how a domain owns its runtime behavior
 4. [`domain-packs/education/modules/algebra-level-1/`](domain-packs/education/modules/algebra-level-1/) — a complete worked domain pack (education)
 5. [`domain-packs/agriculture/modules/operations-level-1/`](domain-packs/agriculture/modules/operations-level-1/) — a sensor/field operations domain pack

@@ -14,5 +14,5 @@ CLI tools and utilities for domain pack management, CTL operations, and system v
 | [yaml-to-json-converter](yaml-to-json-converter.md) | Convert domain-physics YAML to validated JSON |
 | [ctl-commitment-validator](ctl-commitment-validator.md) | Commit and verify domain pack hashes in the CTL |
 | [verify-repo-integrity](verify-repo-integrity.md) | Run repository-wide integrity checks |
-| [dsa-orchestrator-demo](dsa-orchestrator-demo.md) | Interactive D.S.A. orchestrator demonstration |
+| [ppa-orchestrator-demo](ppa-orchestrator-demo.md) | Interactive PPA orchestrator demonstration |
 | [system-domain-operations](../8-admin/system-domain-operations.md) | System-physics activation, CTL seeding (`seed-system-physics-ctl.ps1`), and rollback procedure |

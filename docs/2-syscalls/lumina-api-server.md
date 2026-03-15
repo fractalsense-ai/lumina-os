@@ -161,4 +161,4 @@ List all registered users (password hashes excluded).
 
 ## SEE ALSO
 
-[dsa-framework](../../specs/dsa-framework-v1.md), [rbac-spec](../../specs/rbac-spec-v1.md), [auth(3)](../3-functions/auth.md)
+[dsa-framework](../../specs/dsa-framework-v1.md) (D.S.A. structural schema underlying PPA), [rbac-spec](../../specs/rbac-spec-v1.md), [auth(3)](../3-functions/auth.md)

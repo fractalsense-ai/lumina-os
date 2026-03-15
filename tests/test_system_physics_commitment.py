@@ -6,8 +6,8 @@ Covers:
   2. FilesystemPersistenceAdapter correctly detects missing commitment
   3. FilesystemPersistenceAdapter detects present commitment after append
   4. Appended system CTL record forms a valid hash chain
-  5. DSAOrchestrator injects system_physics_hash into TraceEvent metadata
-  6. DSAOrchestrator injects system_physics_hash into EscalationRecord metadata
+  5. PPAOrchestrator injects system_physics_hash into TraceEvent metadata
+  6. PPAOrchestrator injects system_physics_hash into EscalationRecord metadata
 """
 
 from __future__ import annotations
@@ -131,18 +131,18 @@ def test_filesystem_system_ctl_chain_valid(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────
-# Test 5: DSAOrchestrator injects hash into TraceEvent metadata
+# Test 5: PPAOrchestrator injects hash into TraceEvent metadata
 # ─────────────────────────────────────────────────────────────
 
 def test_orchestrator_trace_event_hash_injection(tmp_path):
     """system_physics_hash is present in TraceEvent.metadata after a turn."""
-    from lumina.orchestrator.dsa_orchestrator import DSAOrchestrator
+    from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
     domain = _minimal_domain()
     profile = _minimal_profile()
 
     fake_hash = "f" * 64
-    orch = DSAOrchestrator(
+    orch = PPAOrchestrator(
         domain_physics=domain,
         subject_profile=profile,
         ledger_path=str(tmp_path / "test.jsonl"),
@@ -165,18 +165,18 @@ def test_orchestrator_trace_event_hash_injection(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────
-# Test 6: DSAOrchestrator injects hash into EscalationRecord metadata
+# Test 6: PPAOrchestrator injects hash into EscalationRecord metadata
 # ─────────────────────────────────────────────────────────────
 
 def test_orchestrator_escalation_hash_injection(tmp_path):
     """system_physics_hash is present in EscalationRecord.metadata."""
-    from lumina.orchestrator.dsa_orchestrator import DSAOrchestrator
+    from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
     domain = _minimal_domain()
     profile = _minimal_profile()
 
     fake_hash = "0" * 64
-    orch = DSAOrchestrator(
+    orch = PPAOrchestrator(
         domain_physics=domain,
         subject_profile=profile,
         ledger_path=str(tmp_path / "test2.jsonl"),

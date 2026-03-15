@@ -27,7 +27,7 @@ def verify() -> None:
 
 
 def orchestrator_demo() -> None:
-    _run_systool("dsa_demo.py")
+    _run_systool("ppa_demo.py")
 
 
 def ctl_validate() -> None:

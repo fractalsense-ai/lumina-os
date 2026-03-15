@@ -191,5 +191,5 @@ The NLP layer influences the **quality of the LLM's input**. It does not influen
 - [`cfg/domain-registry.yaml`](../../cfg/domain-registry.yaml) — domain keyword lists; default domain configuration
 - [`docs/7-concepts/domain-adapter-pattern.md`](domain-adapter-pattern.md) — Phase A NLP pre-processing and Phase B signal synthesis lifecycle
 - [`domain-packs/education/systools/nlp_pre_interpreter.py`](../../domain-packs/education/systools/nlp_pre_interpreter.py) — education domain pre-interpreter (reference implementation)
-- [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. engine and orchestrator specification
+- [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema and PPA orchestrator specification
 - [`standards/domain-registry-schema-v1.json`](../../standards/domain-registry-schema-v1.json) — schema for `cfg/domain-registry.yaml` including `keywords` field definition

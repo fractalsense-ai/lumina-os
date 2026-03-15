@@ -167,7 +167,7 @@ This boundary is not an accident. The domain authority does not want the student
 ## SEE ALSO
 
 - [`README.md`](../../README.md) — top-level packet assembly diagram and TCP/IP metaphor
-- [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. pillars (Domain, State, Action) and turn sequence
+- [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema (Domain, State, Action pillars) and turn sequence that PPA assembles into each prompt packet
 - [`docs/7-concepts/domain-adapter-pattern.md`](domain-adapter-pattern.md) — Phase A/ Phase B authoring contract; engine contract field reference
 - [`docs/7-concepts/nlp-semantic-router.md`](nlp-semantic-router.md) — Tier 1 domain classification and Tier 2 anchor extraction
 - [`docs/7-concepts/slm-compute-distribution.md`](slm-compute-distribution.md) — SLM compute distribution: Librarian, Physics Interpreter, Command Translator

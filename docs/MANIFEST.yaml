@@ -56,12 +56,12 @@ artifacts:
     last_updated: 2026-03-12
     sha256: 656a337ca277c7c72b5c346753ff028f8a42ac8f0cad4fe654445cb5854b85df
 
-  - path: docs/1-commands/dsa-orchestrator-demo.md
+  - path: docs/1-commands/ppa-orchestrator-demo.md
     type: doc
     section: 1
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-12
+    last_updated: 2026-03-15
     sha256: 22ca15e2a714fde800b787c3683b5f9848e063c64986d872865b463be9e1acdd
 
   - path: docs/1-commands/integrity-check.md

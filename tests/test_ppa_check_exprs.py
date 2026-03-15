@@ -1,4 +1,4 @@
-"""Tests for DSAOrchestrator check expression evaluation functions.
+"""Tests for PPAOrchestrator check expression evaluation functions.
 
 Covers _parse_check_literal (int, float paths) and _evaluate_check_expr
 (!=, >=, <=, >, <, unknown operator, field-ref RHS, malformed expressions).
@@ -6,7 +6,7 @@ Covers _parse_check_literal (int, float paths) and _evaluate_check_expr
 from __future__ import annotations
 
 import pytest
-from lumina.orchestrator.dsa_orchestrator import _evaluate_check_expr, _parse_check_literal
+from lumina.orchestrator.ppa_orchestrator import _evaluate_check_expr, _parse_check_literal
 
 
 # ── _parse_check_literal ──────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 """
-dsa-orchestrator.py — Project Lumina D.S.A. Orchestrator Reference Implementation
+ppa-orchestrator.py — Project Lumina Prompt Packet Assembly (PPA) Orchestrator
 
-Version: 0.2.0
+Version: 0.3.0
 Conforms to: specs/dsa-framework-v1.md
                          standards/causal-trace-ledger-v1.md
 
@@ -47,14 +47,14 @@ Design constraints:
         them in via ``domain_lib_step_fn`` / ``initial_state``.
 
 Usage:
-        from dsa_orchestrator import DSAOrchestrator, load_domain_physics
+        from ppa_orchestrator import PPAOrchestrator, load_domain_physics
         from yaml_loader import load_yaml
         domain = load_domain_physics("domain-packs/education/modules/algebra-level-1/domain-physics.json")
         profile = load_yaml("domain-packs/education/modules/algebra-level-1/example-student-alice.yaml")
         # For a domain with no domain lib:
-        orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl")
+        orch = PPAOrchestrator(domain, profile, ledger_path="session.jsonl")
         # For the education domain example, wire up the ZPD monitor externally:
-        orch = DSAOrchestrator(domain, profile, ledger_path="session.jsonl",
+        orch = PPAOrchestrator(domain, profile, ledger_path="session.jsonl",
                                                      domain_lib_step_fn=zpd_monitor_step, initial_state=initial_learning_state)
         contract, action = orch.process_turn(task_spec, evidence)
 """
@@ -74,7 +74,7 @@ from typing import Any, Callable
 # Logging
 # ─────────────────────────────────────────────────────────────
 
-log = logging.getLogger("dsa_orchestrator")
+log = logging.getLogger("ppa_orchestrator")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -223,10 +223,10 @@ _DEFAULT_ACTION_TO_PROMPT_TYPE: dict[str | None, str] = {
 
 
 # ─────────────────────────────────────────────────────────────
-# DSAOrchestrator
+# PPAOrchestrator
 # ─────────────────────────────────────────────────────────────
 
-class DSAOrchestrator:
+class PPAOrchestrator:
     """
     D.S.A. Action layer orchestrator.
 
