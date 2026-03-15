@@ -164,7 +164,8 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     domain_prompt = domain_prompt_path.read_text(encoding="utf-8")
     turn_interpretation_prompt = turn_prompt_path.read_text(encoding="utf-8")
 
-    system_prompt = f"{global_prompt.strip()}\n\n# DOMAIN CONFIGURATION\n{domain_prompt.strip()}"
+    from lumina.core.persona_builder import build_system_prompt, PersonaContext
+    system_prompt = build_system_prompt(PersonaContext.CONVERSATIONAL, domain_override=domain_prompt.strip())
     domain_physics = json.loads(domain_physics_path.read_text(encoding="utf-8"))
     if not isinstance(domain_physics, dict):
         raise RuntimeError("Configured domain physics JSON must parse to an object")

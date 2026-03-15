@@ -19,6 +19,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from lumina.core.persona_builder import PersonaContext, build_system_prompt
 from lumina.nightcycle.report import Proposal
 
 log = logging.getLogger("lumina-logic-scraper")
@@ -279,11 +280,7 @@ class LogicScraper:
         prior_summaries: list[str] = []
         flagged_items: list[dict[str, Any]] = []
 
-        system_prompt = (
-            "You are a domain expert providing novel approaches. "
-            "Do not repeat ideas already presented. "
-            "Focus on practical, evidence-based suggestions."
-        )
+        system_prompt = build_system_prompt(PersonaContext.LOGIC_SCRAPER)
 
         for i in range(n):
             augmented = _build_augmented_prompt(

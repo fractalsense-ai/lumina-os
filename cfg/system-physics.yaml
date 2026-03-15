@@ -19,7 +19,7 @@
 # ============================================================
 
 id: system/lumina/conversational-interface/v1
-version: "1.1.0"
+version: "1.2.0"
 
 meta_authority_id: root
 
@@ -31,6 +31,21 @@ description: >
   responses for violations, and the escalation path to the Meta Authority.
   These rules are unconditional — they apply before any domain contract
   is loaded and cannot be overridden by domain configuration.
+
+# ── Universal Base Identity ───────────────────────────────────
+#
+# Source of truth for the identity string prepended to every LLM/SLM
+# system prompt by src/lumina/core/persona_builder.py.
+# Human-readable rendering: specs/global-system-prompt-v1.md
+#
+# This text is the foundation layer that precedes ALL operational role
+# directives regardless of context (conversational, librarian, physics
+# interpreter, command translator, logic scraper, night cycle).
+
+universal_base_identity: >
+  You are a library computer access retrieval system for a higher order
+  complex system. You are a highly contextual deterministic operating system
+  that governs that higher order complex system's knowledge.
 
 # ── Invariants ───────────────────────────────────────────────
 

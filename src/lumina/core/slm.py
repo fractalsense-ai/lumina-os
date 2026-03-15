@@ -20,6 +20,8 @@ import logging
 import os
 from typing import Any
 
+from lumina.core.persona_builder import PersonaContext, build_system_prompt
+
 log = logging.getLogger("lumina-slm")
 
 # ─────────────────────────────────────────────────────────────
@@ -223,38 +225,16 @@ def call_slm(system: str, user: str, model: str | None = None) -> str:
 # Role 1 — Librarian: Glossary Response Rendering
 # ─────────────────────────────────────────────────────────────
 
-_LIBRARIAN_SYSTEM_PROMPT = (
-    "You are a domain librarian. "
-    "Provide clear, concise definitions using ONLY the provided glossary entry. "
-    "Include the example and mention related terms naturally. "
-    "Do not fabricate information beyond what is provided. "
-    "Keep the response to 2-3 sentences."
-)
-
 
 def slm_render_glossary(glossary_entry: dict[str, Any]) -> str:
     """Use the SLM to render a fluent glossary definition response."""
     user_payload = json.dumps(glossary_entry, indent=2, ensure_ascii=False)
-    return call_slm(system=_LIBRARIAN_SYSTEM_PROMPT, user=user_payload)
+    return call_slm(system=build_system_prompt(PersonaContext.LIBRARIAN), user=user_payload)
 
 
 # ─────────────────────────────────────────────────────────────
 # Role 2 — Physics Interpreter: Context Compression
 # ─────────────────────────────────────────────────────────────
-
-_PHYSICS_INTERPRETER_PROMPT = (
-    "You are a domain physics interpreter for a structured orchestration system. "
-    "Given incoming signals (NLP anchors, sensor data, tool outputs) and domain physics rules "
-    "(invariants, standing orders, glossary), identify which invariants and glossary terms "
-    "are relevant to the current input. Compress the context into a concise summary.\n\n"
-    "Respond in JSON only with this structure:\n"
-    "{\n"
-    '  "matched_invariants": ["invariant_id_1", ...],\n'
-    '  "relevant_glossary_terms": ["term1", ...],\n'
-    '  "context_summary": "One-sentence summary of what the input means in domain context",\n'
-    '  "suggested_evidence_fields": {"field_name": value, ...}\n'
-    "}"
-)
 
 
 def slm_interpret_physics_context(
@@ -289,7 +269,7 @@ def slm_interpret_physics_context(
     )
 
     try:
-        raw = call_slm(system=_PHYSICS_INTERPRETER_PROMPT, user=user_payload)
+        raw = call_slm(system=build_system_prompt(PersonaContext.PHYSICS_INTERPRETER), user=user_payload)
         # Strip markdown fences if present.
         text = raw.strip()
         if text.startswith("```"):
@@ -323,18 +303,6 @@ def _empty_physics_context() -> dict[str, Any]:
 # Role 3 — Command Translator: Admin Command Parsing
 # ─────────────────────────────────────────────────────────────
 
-_COMMAND_TRANSLATOR_PROMPT = (
-    "You are a system command interpreter for a structured orchestration platform. "
-    "Parse the user instruction into a structured operation using ONLY the operations "
-    "from the provided list. If the instruction does not match any available operation, "
-    "return null.\n\n"
-    "Respond in JSON only with this structure (or null):\n"
-    "{\n"
-    '  "operation": "operation_name",\n'
-    '  "target": "target_resource_identifier",\n'
-    '  "params": { ... }\n'
-    "}"
-)
 
 # Operations available for SLM command translation.
 ADMIN_OPERATIONS: list[dict[str, Any]] = [
@@ -479,7 +447,7 @@ def slm_parse_admin_command(
     )
 
     try:
-        raw = call_slm(system=_COMMAND_TRANSLATOR_PROMPT, user=user_payload)
+        raw = call_slm(system=build_system_prompt(PersonaContext.COMMAND_TRANSLATOR), user=user_payload)
         text = raw.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[-1]
