@@ -1,0 +1,55 @@
+{
+  "schema_id": "lumina:evidence:education:v1",
+  "version": "1.0",
+  "domain_id": "domain/lumina/education/v1",
+  "description": "Evidence field vocabulary for the Lumina education domain (algebra level 1). Captures per-turn pedagogical signals used by the ZPD monitor to assess mastery, affect, and engagement. Universal base fields (response_latency_sec, off_task_ratio) are included for completeness.",
+  "fields": {
+    "response_latency_sec": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Wall-clock seconds from prompt delivery to response receipt. Universal base field."
+    },
+    "off_task_ratio": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of the response that does not engage with the current task. 0.0 = fully on-task, 1.0 = fully off-task. Universal base field."
+    },
+    "correctness": {
+      "type": ["string", "null"],
+      "enum": ["correct", "incorrect", "partial", null],
+      "description": "Whether the subject's answer is correct, incorrect, or partially correct. Null when correctness cannot be determined (e.g. open-ended turns)."
+    },
+    "hint_used": {
+      "type": ["boolean", "null"],
+      "description": "True if the subject's message explicitly requested or acknowledged a hint."
+    },
+    "frustration_marker_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Count of frustration signals detected in the subject's message (keyword hits, ALL_CAPS, excessive punctuation, short-frustrated patterns)."
+    },
+    "repeated_error": {
+      "type": ["boolean", "null"],
+      "description": "True if the same error type was made in consecutive turns."
+    },
+    "step_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Number of distinct algebraic transformation steps shown in the subject's response."
+    },
+    "min_steps": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Minimum number of steps required for a correct solution to this task (from curriculum)."
+    },
+    "solution_value": {
+      "type": ["number", "string", "null"],
+      "description": "The numeric or symbolic value extracted from the subject's proposed solution."
+    },
+    "equivalence_preserved": {
+      "type": ["boolean", "null"],
+      "description": "True if each transformation step in the response preserves algebraic equivalence."
+    }
+  }
+}

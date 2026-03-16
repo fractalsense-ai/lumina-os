@@ -77,10 +77,22 @@
       "additionalProperties": { "type": "object" },
       "description": "Optional subsystem configuration blocks, keyed by subsystem ID. Each value is a free-form object of parameters specific to that subsystem (e.g. {\"zpd_monitor\": {\"min_challenge\": 0.3, ...}} for education, or {\"soil_health_monitor\": {...}} for agriculture). Omit entirely for domains that use no configurable subsystems."
     },
-    "evidence_summary_types": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "List of evidence summary types produced in this domain"
+    "evidence_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path from the domain module directory to the evidence-schema.json file."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+          "description": "Version of the evidence schema. Must match the 'version' field in the referenced evidence-schema.json."
+        }
+      },
+      "required": ["path", "version"],
+      "description": "Reference to the domain module's evidence schema declaration file. See standards/domain-evidence-extension-v1.md for the Domain Evidence Extension standard."
     },
     "tool_adapters": {
       "type": "array",

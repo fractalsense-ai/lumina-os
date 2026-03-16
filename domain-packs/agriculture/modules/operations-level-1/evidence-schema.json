@@ -1,0 +1,28 @@
+{
+  "schema_id": "lumina:evidence:agriculture:v1",
+  "version": "1.0",
+  "domain_id": "domain/lumina/agriculture/v1",
+  "description": "Evidence field vocabulary for the Lumina agriculture operations domain. Captures per-turn operational signals used by the soil health monitor to assess task accuracy and engagement. Universal base fields (response_latency_sec, off_task_ratio) are included for completeness.",
+  "fields": {
+    "response_latency_sec": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Wall-clock seconds from prompt delivery to response receipt. Universal base field."
+    },
+    "off_task_ratio": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of the response that does not engage with the operational task. 0.0 = fully on-task, 1.0 = fully off-task. Universal base field."
+    },
+    "within_tolerance": {
+      "type": ["boolean", "null"],
+      "description": "True if the subject's reported sensor reading or operational decision falls within the acceptable tolerance range for the current task."
+    },
+    "step_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Number of discrete operational steps or sensor readings provided in the subject's response."
+    }
+  }
+}

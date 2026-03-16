@@ -268,6 +268,14 @@ artifacts:
     last_updated: 2026-03-15
     sha256: pending
 
+  - path: docs/7-concepts/domain-evidence-extension.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-15
+    sha256: e54f105a33beb7d0cfbb51ea7a6092e9ca7d02482ec23e6b2a8b4cbfb50a3c54
+
   # ── Section 8: Administration ──────────────────────────────────────────────
 
   - path: docs/8-admin/README.md
@@ -385,10 +393,10 @@ artifacts:
 
   - path: standards/causal-trace-ledger-v1.md
     type: standard
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-02
-    sha256: bc3d44486b25a3aa2fcef22f0c13bc1fbb0d09b3288c6e3ef2d3b7418b2cf27a
+    last_updated: 2026-03-15
+    sha256: e43aaebdbc7633fca25ab14086a6960f1a0b0381b34ac2ec6536c4a371f8e5f5
 
   - path: standards/domain-state-lib-contract-v1.md
     type: standard
@@ -397,14 +405,28 @@ artifacts:
     last_updated: 2026-03-08
     sha256: b024bbd2e0a295dd960aabb13f2fe9559c997e1c85c782ba0f6585effbd275f1
 
+  - path: standards/domain-evidence-extension-v1.md
+    type: standard
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-15
+    sha256: 9d7861d2a56cbf1069934ad9ad84625ac9c85c9335083ded4f4eed7d69b04a01
+
   # ── Standards (JSON Schemas) ───────────────────────────────────────────────
 
   - path: standards/domain-physics-schema-v1.json
     type: schema
+    doc_version: 1.1.0
+    status: active
+    last_updated: 2026-03-15
+    sha256: 80e8b9dd7d2d0ac8ca2e10dedd0e747e2e2d7ca722314bcc64c47dcd83826179
+
+  - path: standards/domain-evidence-schema-v1.json
+    type: schema
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-03-08
-    sha256: e2f09b45db7c1e2c1e2be4a670b5ff9e3460e4b9acf36cdd8bf496b08fd70a10
+    last_updated: 2026-03-15
+    sha256: 7f4fd587e0223ade279e898c14b300e8e2705b38367afa2b8eea7d8a1ee7a74b
 
   - path: standards/system-physics-schema-v1.json
     type: schema
@@ -473,10 +495,10 @@ artifacts:
 
   - path: ledger/trace-event-schema.json
     type: schema
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-12
-    sha256: 45e161257775ab3009997d9692580f6f5b82f1e72f43220371fd8bf224ca4093
+    last_updated: 2026-03-15
+    sha256: fcfe7346624008c1a75d0ef65f405b1f5e97cd666e4e96481e93979246364289
 
   # ── System Config ─────────────────────────────────────────────────────────
 

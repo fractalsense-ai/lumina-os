@@ -254,17 +254,11 @@ subsystem_configs:
       min_difficulty: 0.65
       max_difficulty: 1.0
 
-# ── Evidence Summary Types ───────────────────────────────────
+# ── Evidence Schema ───────────────────────────────────────────
 
-evidence_summary_types:
-  - step_diff_summary        # tracks transformation steps applied
-  - illegal_ops_summary      # flags any illegal mathematical operations
-  - verification_summary     # substitution check result
-  - method_summary           # whether the method matches standard patterns
-  - step_count_summary       # count of distinct steps shown
-  - affect_summary           # frustration marker count, off_task_ratio
-  - zpd_drift_summary        # outside_pct, consecutive_outside, frustration_flag
-  - fluency_summary          # consecutive_correct, current_tier, solve_elapsed_sec
+evidence_schema:
+  path: "evidence-schema.json"
+  version: "1.0"
 
 # ── Glossary ─────────────────────────────────────────────────
 

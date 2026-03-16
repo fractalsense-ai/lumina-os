@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/domain-evidence-schema-v1.json",
+  "title": "Domain Evidence Schema V1",
+  "description": "Meta-schema for Project Lumina domain evidence declarations. Each domain module's evidence-schema.json must conform to this schema. See standards/domain-evidence-extension-v1.md for the authoritative specification.",
+  "type": "object",
+  "required": ["schema_id", "version", "domain_id", "fields"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {
+      "type": "string",
+      "pattern": "^lumina:evidence:[a-z0-9_-]+:v[0-9]+$",
+      "description": "Globally unique identifier for this evidence schema declaration. Format: lumina:evidence:{domain-name}:v{major}"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semantic version of this evidence schema declaration."
+    },
+    "domain_id": {
+      "type": "string",
+      "description": "The domain physics ID this schema belongs to. Must match the domain-physics 'id' field."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this evidence schema captures."
+    },
+    "fields": {
+      "type": "object",
+      "description": "Map of field_name to a JSON Schema fragment describing that field. Universal base fields (response_latency_sec, off_task_ratio) MAY be included here for completeness but are always valid regardless. Field names beginning with underscore (_) are reserved for system use.",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "description": "Field names must be lowercase snake_case and must not start with an underscore."
+      },
+      "additionalProperties": {
+        "type": "object",
+        "description": "A JSON Schema fragment describing the field. At minimum, 'type' should be specified.",
+        "properties": {
+          "type": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "enum":        { "type": "array" },
+          "minimum":     { "type": "number" },
+          "maximum":     { "type": "number" },
+          "description": { "type": "string" }
+        }
+      }
+    }
+  }
+}

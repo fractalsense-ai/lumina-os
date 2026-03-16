@@ -36,9 +36,10 @@
       "drift_threshold": 0.4
     }
   },
-  "evidence_summary_types": [
-    "ops_signal_summary"
-  ],
+  "evidence_schema": {
+    "path": "evidence-schema.json",
+    "version": "1.0"
+  },
   "tool_adapters": [
     "adapter/agri/collar-sensor/v1"
   ],

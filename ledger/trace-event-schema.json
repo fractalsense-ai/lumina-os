@@ -96,7 +96,17 @@
     "evidence_summary": {
       "type": ["object", "null"],
       "additionalProperties": true,
-      "description": "Structured evidence summary for this turn. Field vocabulary is domain-owned; no raw text or transcript content."
+      "properties": {
+        "_domain": {
+          "type": "string",
+          "description": "The domain physics ID that produced this evidence summary."
+        },
+        "_schema_version": {
+          "type": "string",
+          "description": "Version of the domain's evidence-schema.json in effect when this record was created."
+        }
+      },
+      "description": "Structured evidence summary for this turn. Uses the standard Domain Evidence Extension envelope: _domain and _schema_version (reserved keys), response_latency_sec and off_task_ratio (universal base), plus domain-specific fields declared in the module's evidence-schema.json. No raw text or transcript content. See standards/domain-evidence-extension-v1.md."
     },
     "state_snapshot_hash": {
       "type": ["string", "null"],

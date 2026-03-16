@@ -1,8 +1,8 @@
 # Causal Trace Ledger (CTL) — V1 Specification
 
-**Version:** 1.0.0  
-**Status:** Active  
-**Last updated:** 2026-03-02
+**Version:** 1.1.0
+**Status:** Active
+**Last updated:** 2026-03-15
 
 ---
 
@@ -78,19 +78,18 @@ Records a single decision or observation during an active session.
   "standing_order_id": "<string | null>",
   "decision": "<string>",
   "evidence_summary": {
-    "correctness": "<correct | incorrect | partial | null>",
-    "hint_used": "<boolean | null>",
+    "_domain": "<domain-physics-id>",
+    "_schema_version": "<semver>",
     "response_latency_sec": "<float | null>",
-    "frustration_marker_count": "<int | null>",
-    "repeated_error": "<boolean | null>",
-    "off_task_ratio": "<float | null>"
+    "off_task_ratio": "<float | null>",
+    "...": "<domain-specific fields declared in evidence-schema.json>"
   },
   "state_snapshot_hash": "<sha256-hex-of-compressed-state>",
   "metadata": {}
 }
 ```
 
-`evidence_summary` field vocabulary is domain-owned. The keys above are an education-domain example only; other domain packs may emit different structured keys.
+`evidence_summary` uses a standard envelope format. The keys `_domain` and `_schema_version` are reserved. `response_latency_sec` and `off_task_ratio` are universal base fields expected from all domains. All other fields are domain-owned and declared in the module's `evidence-schema.json`. See **[Domain Evidence Extensions](#domain-evidence-extensions)** and [`standards/domain-evidence-extension-v1.md`](domain-evidence-extension-v1.md) for the complete specification.
 
 **When to emit:**
 - Invariant check result (pass or fail)
@@ -188,6 +187,26 @@ Records an escalation event — when the orchestrator could not stabilize and pa
 
 ---
 
+## Domain Evidence Extensions
+
+The `evidence_summary` field in `TraceEvent` and `EscalationRecord` uses a standard envelope format defined in [`standards/domain-evidence-extension-v1.md`](domain-evidence-extension-v1.md). Key points:
+
+**Envelope layout:**
+
+| Key | Reserved? | Description |
+|-----|-----------|-------------|
+| `_domain` | Yes | Domain physics ID that produced this record |
+| `_schema_version` | Yes | Version of the domain's `evidence-schema.json` |
+| `response_latency_sec` | No (universal base) | Turn response latency in seconds |
+| `off_task_ratio` | No (universal base) | Fraction of response off-task (0.0–1.0) |
+| *domain fields* | No (domain-owned) | Declared in the module's `evidence-schema.json` |
+
+**Domain declarations:** Each domain module declares its evidence field vocabulary in an `evidence-schema.json` file placed alongside its `domain-physics.json`. The `domain-physics` file references it via `evidence_schema.path`. The meta-schema that all `evidence-schema.json` files must conform to is [`standards/domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json).
+
+**Schema enforcement:** The core CTL JSON Schema (`ledger/trace-event-schema.json`) accepts any object or null for `evidence_summary` — it does not enforce individual field names. Domain-level field validation is performed offline by audit tooling using the declared `evidence-schema.json`.
+
+---
+
 ## Hash Chaining
 
 The first record in a ledger uses `"prev_record_hash": "genesis"`. Each subsequent record sets `prev_record_hash` to the SHA-256 hex digest of the full JSON serialization of the previous record (canonical JSON: keys sorted, no whitespace).
@@ -217,7 +236,7 @@ def verify_chain(records: list) -> bool:
 
 - **No raw text**: Content fields must use hashes + external pointers, not inline text
 - **Pseudonymous IDs only**: `actor_id`, `subject_id` are pseudonymous tokens
-- **Evidence summary only**: `evidence_summary` uses structured, domain-owned fields (for example correctness, latency) and never quotes from the subject
+- **Evidence summary only**: `evidence_summary` uses a standard envelope with domain-owned structured fields (response_latency_sec, off_task_ratio, plus domain-specific fields) and never quotes from the subject. See [`standards/domain-evidence-extension-v1.md`](domain-evidence-extension-v1.md).
 - **Mastery deltas only**: `mastery_delta` records how mastery changed, not what was said
 
 ---
@@ -234,3 +253,5 @@ CTL records are retained for the duration of the institution's data retention po
 - [`../ledger/commitment-record-schema.json`](../ledger/commitment-record-schema.json)
 - [`../ledger/trace-event-schema.json`](../ledger/trace-event-schema.json)
 - [`../ledger/escalation-record-schema.json`](../ledger/escalation-record-schema.json)
+- [`domain-evidence-extension-v1.md`](domain-evidence-extension-v1.md) — Domain Evidence Extension standard
+- [`domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json) — Meta-schema for domain evidence declarations

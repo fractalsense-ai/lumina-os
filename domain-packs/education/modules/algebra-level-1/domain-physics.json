@@ -205,16 +205,10 @@
       }
     ]
   },
-  "evidence_summary_types": [
-    "step_diff_summary",
-    "illegal_ops_summary",
-    "verification_summary",
-    "method_summary",
-    "step_count_summary",
-    "affect_summary",
-    "zpd_drift_summary",
-    "fluency_summary"
-  ],
+  "evidence_schema": {
+    "path": "evidence-schema.json",
+    "version": "1.0"
+  },
   "glossary": [
     {
       "term": "variable",
