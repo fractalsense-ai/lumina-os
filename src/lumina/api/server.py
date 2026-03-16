@@ -999,13 +999,17 @@ def process_message(
         turn_data = turn_data_override
     elif deterministic_response:
         turn_data = dict(runtime.get("turn_input_defaults") or {})
+    elif runtime.get("local_only"):
+        # local_only domains (e.g. system) skip external LLM classification entirely.
+        turn_data = dict(runtime.get("turn_input_defaults") or {})
     else:
         world_sim_theme = getattr(orch.state, "world_sim_theme", {})
         turn_data = interpret_turn_input(input_text, task_context, runtime, world_sim_theme=world_sim_theme)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
     # ── SLM physics interpretation (context compression) ─────
-    if slm_available():
+    # Skipped for local_only domains — turn data is already fully structured.
+    if not runtime.get("local_only") and slm_available():
         slm_context = slm_interpret_physics_context(
             incoming_signals=turn_data,
             domain_physics=domain_physics,
@@ -1154,6 +1158,17 @@ def process_message(
             )
             from lumina.core.slm import SLM_MODEL as _slm_model_name
             turn_provenance["slm_model_id"] = _slm_model_name
+        elif runtime.get("local_only"):
+            # local_only domains never call an external LLM regardless of weight tier.
+            if slm_available():
+                llm_response = call_slm(
+                    system=system_prompt,
+                    user=json.dumps(llm_payload, indent=2, ensure_ascii=False),
+                )
+                from lumina.core.slm import SLM_MODEL as _slm_model_name
+                turn_provenance["slm_model_id"] = _slm_model_name
+            else:
+                llm_response = render_contract_response(prompt_contract, runtime)
         else:
             llm_response = call_llm(
                 system=system_prompt,

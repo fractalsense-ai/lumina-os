@@ -12,6 +12,12 @@ runtime:
       - root
       - it_support
 
+  # System domain never routes to an external LLM.  All turn interpretation
+  # and response generation uses the local SLM (Ollama) only, with deterministic
+  # fallback when the SLM is unavailable.  Physics context compression is also
+  # skipped — system turn data is already fully structured.
+  local_only: true
+
   default_task_spec:
     task_id: system-query-001
     nominal_difficulty: 0.0
