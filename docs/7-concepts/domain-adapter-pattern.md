@@ -59,14 +59,17 @@ Both examples live entirely in their respective domain packs. The engine sees th
 
 Domain packs are authors of three distinct types of components. These are often confused; understanding the distinction is essential before writing a runtime adapter.
 
-### 1. Tool Adapters (`modules/<module>/tool-adapters/`)
+### 1. Tool Adapters (`systools/tool_adapters.py` or `modules/<module>/tool-adapters/`)
 
-**Active verifiers** declared in YAML and backed by Python functions. They are called by the core engine's policy system (`apply_tool_call_policy`) on specific resolved actions — for example, calling the substitution checker when the orchestrator resolves `request_verification_retry`.
+**Active verifiers** that produce structured data on demand. There are two kinds:
 
-- Declared in `domain-packs/<domain>/modules/<module>/tool-adapters/*.yaml`
-- Registered in `cfg/runtime-config.yaml` under `tool_call_policies`
-- Called **by the orchestrator**, not by the adapter
+- **Policy-driven tool adapters** — declared in YAML under `modules/<module>/tool-adapters/` and registered in `cfg/runtime-config.yaml` under `tool_call_policies`. Called by the core engine's policy system (`apply_tool_call_policy`) on specific resolved actions.
+- **Direct tool adapters** — defined in `systools/tool_adapters.py` and registered in `cfg/runtime-config.yaml` under `adapters.tools`. Called directly by the runtime adapter (or by operator tooling) rather than by the orchestrator's policy system. Used for read-only data retrieval where policy-level gating is unnecessary.
+
+In both cases:
 - Should be **pure and deterministic**: same inputs → same outputs
+- Must take `payload: dict` and return `dict`
+- Must not import from `src/lumina/` (keeps the domain pack self-contained)
 
 ### 2. Domain Library (`domain-lib/`)
 
@@ -236,3 +239,56 @@ domain-packs/education/
         ├── algebra-parser-adapter-v1.yaml      ← active tool: called by policy
         └── substitution-checker-adapter-v1.yaml
 ```
+
+---
+
+## Reference: System Domain Adapter Structure
+
+The system domain (`domain/sys/system-core/v1`) serves the special `system` role (root operators). It has no generative task: it is a read-only introspection surface for the Lumina OS runtime itself. This makes it a useful reference for the **minimal viable domain pack** pattern.
+
+```
+domain-packs/system/
+├── cfg/
+│   └── runtime-config.yaml          ← local_only: true; slm_weight_overrides;
+│                                       adapters.tools; deterministic_templates
+└── systools/
+    ├── runtime_adapters.py           ← Phase A + Phase B; populates command_dispatch
+    └── tool_adapters.py              ← direct tool adapters (no modules/ layer needed)
+```
+
+### `local_only: true`
+
+The system domain sets `local_only: true` in its `runtime-config.yaml`. This flag is propagated by `load_runtime_context()` and causes `process_message()` to route the turn through the SLM rather than the LLM. **An external LLM is never called for system-domain turns** — this enforces a security boundary that prevents operational metadata (session IDs, physics hashes, escalation records) from being sent to third-party inference services.
+
+If the SLM is unavailable, the turn resolves through the domain's `deterministic_templates` in the runtime config. The LLM is not used as a fallback.
+
+```yaml
+# domain-packs/system/cfg/runtime-config.yaml (excerpt)
+local_only: true
+
+deterministic_templates:
+  system_command:    "Command received. Processing via system tools."
+  system_status:     "System status: all subsystems nominal."
+  system_diagnostic: "Diagnostic check complete. No anomalies detected."
+  system_general:    "System acknowledged."
+```
+
+### No `modules/` layer
+
+The system domain does not use the policy-driven tool adapter pattern. Its tool adapters are direct call adapters registered under `adapters.tools` and called from `interpret_turn_input` when `command_dispatch` carries a known operation name. This is appropriate for domains whose tools are pure read-only queries — no state is mutated, so policy gating adds no value.
+
+### Action codes
+
+The system domain's `system_domain_step` maps `query_type` evidence to six action codes:
+
+| `query_type` | Action code |
+|---|---|
+| `admin_command` | `system_command` |
+| `status_query` | `system_status` |
+| `diagnostic` | `system_diagnostic` |
+| `config_review` | `system_config_review` |
+| `out_of_domain` | `out_of_domain` |
+| anything else | `system_general` |
+
+If `command_dispatch` is non-null in evidence (populated by `slm_parse_admin_command`), it overrides the `query_type` mapping and forces `system_command` regardless of the classified type.
+

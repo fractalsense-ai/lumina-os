@@ -126,6 +126,42 @@ When an authorized admin issues a natural language instruction (e.g., "update th
 
 ---
 
+### D.4 Local-Only Domains — Full SLM Pipeline
+
+Domains that declare `local_only: true` in their `runtime-config.yaml` bypass the weight-based routing table entirely. **Every turn in a `local_only` domain runs through the SLM regardless of task weight.** The LLM is never invoked.
+
+**Why it exists:** The system domain (`domain/sys/system-core/v1`) manages internal Lumina OS state. Sending system-domain turns to an external LLM would leak operational metadata (session IDs, domain physics hashes, escalation records) to a third-party service — a security boundary violation. `local_only` enforces this constraint in the runtime loader, not in application logic.
+
+**How it works:**
+
+```
+                ┌──────────────────────────────────────┐
+                │  domain runtime-config.yaml           │
+                │  local_only: true                      │
+                └──────────────┬───────────────────────┘
+                               │ load_runtime_context()
+                               ▼
+                ┌──────────────────────────────────────┐
+                │  server.py  process_message()         │
+                │  if local_only:                        │
+                │    call_fn = call_slm                  │
+                │    else: call_fn = call_llm (normal)   │
+                └──────────────┬───────────────────────┘
+                               │
+                               ▼
+                  SLM ──────────────────► deterministic fallback
+                  (Ollama local)            (if SLM unavailable)
+                  never ──────────────────► external LLM
+```
+
+**Fallback behaviour in `local_only` domains:** If the SLM is unavailable, the turn resolves through deterministic templates defined in `deterministic_templates` inside the domain's `runtime-config.yaml`. The external LLM is **never** used as a fallback for `local_only` domains — this would defeat the security guarantee.
+
+**`slm_weight_overrides` interaction:** A `local_only` domain should still define `slm_weight_overrides` for all its action types. These overrides are used by operator tooling (e.g., capacity planning, cost projection) that queries the weight table to estimate SLM load. They do not change the routing — in a `local_only` domain the SLM is always called — but they should accurately reflect the computational budget of each action type. The system domain sets all its types to `low` because its actions are structured queries, not generative tasks.
+
+**Enabling `local_only`:** Set `local_only: true` at the root of the domain's `runtime-config.yaml`. The runtime loader propagates it as a boolean in the `runtime_ctx` dict. No kernel changes are needed.
+
+---
+
 ## E. Provider Architecture
 
 The SLM layer supports three provider backends. Local is the default and recommended configuration.

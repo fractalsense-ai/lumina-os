@@ -33,6 +33,61 @@ runtime:
     subtitle: "System — Infrastructure Interface"
     domain_label: "System"
 
+  # All system action types use the SLM (low weight).  The built-in
+  # classify_task_weight table does not include these action codes, so they
+  # would default to HIGH (→ LLM) without these overrides.
+  slm_weight_overrides:
+    system_command: low
+    system_status: low
+    system_diagnostic: low
+    system_config_review: low
+    system_general: low
+    out_of_domain: low
+    task_presentation: low
+    general: low
+
+  # Maps orchestrator action codes to prompt type strings used in weight
+  # classification and deterministic template lookup.
+  action_prompt_type_map:
+    system_command:      system_command
+    system_status:       system_status
+    system_diagnostic:   system_diagnostic
+    system_config_review: system_config_review
+    system_general:      system_general
+    out_of_domain:       out_of_domain
+    task_presentation:   system_general
+
+  # Deterministic fallback templates used when the SLM is unavailable.
+  # The key matches the prompt type from action_prompt_type_map.
+  deterministic_templates:
+    system_command: "Command acknowledged. SLM unavailable - please retry or use the /api/admin/* endpoints directly."
+    system_status: "Status query received. SLM unavailable - system status cannot be summarised. Raw data accessible via admin API."
+    system_diagnostic: "Diagnostic request received. SLM unavailable - narrative unavailable. Inspect CTL records via /api/admin/ctl."
+    system_config_review: "Configuration review requested. SLM unavailable - review narrative unavailable. See cfg/ directory."
+    system_general: "Message received. SLM unavailable - general responses cannot be generated at this time."
+    out_of_domain: "That topic is outside the system domain. Please direct operational questions to the appropriate domain session."
+
+  turn_input_schema:
+    query_type:
+      type: string
+      enum: [admin_command, status_query, diagnostic, config_review, out_of_domain, glossary_lookup, general]
+      default: general
+    target_component:
+      type: string
+      nullable: true
+      default: null
+    off_task_ratio:
+      type: number
+      default: 0.0
+    response_latency_sec:
+      type: number
+      default: 5.0
+    command_dispatch:
+      type: object
+      nullable: true
+      description: "Structured command from slm_parse_admin_command. Null when no parseable command was detected."
+      default: null
+
 adapters:
   state_builder:
     module_path: domain-packs/system/systools/runtime_adapters.py
@@ -45,3 +100,24 @@ adapters:
   turn_interpreter:
     module_path: domain-packs/system/systools/runtime_adapters.py
     callable: interpret_turn_input
+
+  tools:
+    list_domains:
+      module_path: domain-packs/system/systools/tool_adapters.py
+      callable: list_domains
+
+    show_domain_physics:
+      module_path: domain-packs/system/systools/tool_adapters.py
+      callable: show_domain_physics
+
+    module_status:
+      module_path: domain-packs/system/systools/tool_adapters.py
+      callable: module_status
+
+    list_escalations:
+      module_path: domain-packs/system/systools/tool_adapters.py
+      callable: list_escalations
+
+    list_ctl_records:
+      module_path: domain-packs/system/systools/tool_adapters.py
+      callable: list_ctl_records

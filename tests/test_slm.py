@@ -70,6 +70,17 @@ class TestClassifyTaskWeight:
     def test_empty_string_defaults_to_high(self) -> None:
         assert classify_task_weight("") is TaskWeight.HIGH
 
+    @pytest.mark.unit
+    def test_system_command_defaults_to_high(self) -> None:
+        # system_command is a system-domain type; without slm_weight_overrides from
+        # the domain runtime-config it falls through to HIGH (the safe default).
+        assert classify_task_weight("system_command") is TaskWeight.HIGH
+
+    @pytest.mark.unit
+    def test_system_status_defaults_to_high(self) -> None:
+        # system_status is a system-domain type; without overrides it is HIGH.
+        assert classify_task_weight("system_status") is TaskWeight.HIGH
+
 
 class TestWeightOverrides:
 
