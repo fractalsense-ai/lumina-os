@@ -148,14 +148,25 @@ def test_deactivate_user_dispatches(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_available", return_value=True),
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
-        resp = client.post(
+        # Stage the command.
+        stage_resp = client.post(
             "/api/admin/command",
             json={"instruction": "deactivate user user99"},
             headers=_auth_header(token),
         )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["parsed_command"]["operation"] == "deactivate_user"
+    assert stage_resp.status_code == 200
+    staged_id = stage_resp.json()["staged_id"]
+    assert stage_resp.json()["staged_command"]["operation"] == "deactivate_user"
+
+    # Human accepts the staged command.
+    resolve_resp = client.post(
+        f"/api/admin/command/{staged_id}/resolve",
+        json={"action": "accept"},
+        headers=_auth_header(token),
+    )
+    assert resolve_resp.status_code == 200
+    body = resolve_resp.json()
+    assert body["action"] == "accept"
     assert body["result"]["user_id"] == "user99"
     deactivate_mock.assert_called_once_with("user99")
 
@@ -193,20 +204,30 @@ def test_resolve_escalation_dispatches(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_available", return_value=True),
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
-        resp = client.post(
+        # Stage the command.
+        stage_resp = client.post(
             "/api/admin/command",
             json={"instruction": "approve escalation esc-001"},
             headers=_auth_header(token),
         )
-    assert resp.status_code == 200
-    body = resp.json()
+    assert stage_resp.status_code == 200
+    staged_id = stage_resp.json()["staged_id"]
+
+    # Human accepts the staged command.
+    resolve_resp = client.post(
+        f"/api/admin/command/{staged_id}/resolve",
+        json={"action": "accept"},
+        headers=_auth_header(token),
+    )
+    assert resolve_resp.status_code == 200
+    body = resolve_resp.json()
     assert body["result"]["operation"] == "resolve_escalation"
     assert body["result"]["resolution"] == "approved"
 
 
 @pytest.mark.integration
 def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
-    """Only root can call update_user_role — domain_authority gets 403."""
+    """Only root can call update_user_role — domain_authority stages OK but gets 403 on resolve."""
     _register_root(client)
     da_token = _register_user(client, "da_user", "domain_authority")
 
@@ -219,9 +240,18 @@ def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_available", return_value=True),
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
-        resp = client.post(
+        stage_resp = client.post(
             "/api/admin/command",
             json={"instruction": "change someone's role to auditor"},
             headers=_auth_header(da_token),
         )
-    assert resp.status_code == 403
+    assert stage_resp.status_code == 200
+    staged_id = stage_resp.json()["staged_id"]
+
+    # domain_authority cannot execute update_user_role — RBAC fires at resolve time.
+    resolve_resp = client.post(
+        f"/api/admin/command/{staged_id}/resolve",
+        json={"action": "accept"},
+        headers=_auth_header(da_token),
+    )
+    assert resolve_resp.status_code == 403

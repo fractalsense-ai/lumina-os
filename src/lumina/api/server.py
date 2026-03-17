@@ -1384,6 +1384,11 @@ class AdminCommandRequest(BaseModel):
     instruction: str
 
 
+class CommandResolveRequest(BaseModel):
+    action: str  # "accept" | "reject" | "modify"
+    modified_schema: dict[str, Any] | None = None
+
+
 class LogicScrapeRequest(BaseModel):
     prompt: str
     iterations: int | None = None
@@ -2992,39 +2997,43 @@ async def get_ctl_record(
 
 
 # ─────────────────────────────────────────────────────────────
-# Admin Command Translation (SLM-powered)
+# Admin Command Translation (SLM-powered, HITL-gated)
 # ─────────────────────────────────────────────────────────────
 
+# All operations the SLM may produce; unknown operations are rejected at stage time.
+_KNOWN_OPERATIONS: frozenset[str] = frozenset({
+    "update_domain_physics",
+    "commit_domain_physics",
+    "update_user_role",
+    "deactivate_user",
+    "resolve_escalation",
+    "list_ingestions",
+    "review_ingestion",
+    "approve_interpretation",
+    "reject_ingestion",
+    "list_escalations",
+    "explain_reasoning",
+    "module_status",
+    "trigger_night_cycle",
+    "night_cycle_status",
+    "review_proposals",
+})
 
-@app.post("/api/admin/command")
-async def admin_command(
-    req: AdminCommandRequest,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+
+async def _execute_admin_operation(
+    user_data: dict[str, Any],
+    parsed: dict[str, Any],
+    original_instruction: str,
 ) -> dict[str, Any]:
-    """Parse a natural-language admin instruction via the SLM, then execute
-    through the existing admin operations with full RBAC enforcement.
+    """Execute a pre-validated, human-approved admin operation.
 
-    Returns 422 if the SLM cannot parse the instruction.
+    RBAC is fully enforced here; caller must have already resolved the staged
+    command via the /resolve endpoint.
     """
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-
-    # Only admin-level roles may use the command translator.
-    if user_data["role"] not in ("root", "domain_authority", "it_support"):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    if not slm_available():
-        raise HTTPException(status_code=503, detail="SLM service unavailable")
-
-    parsed = slm_parse_admin_command(req.instruction)
-    if parsed is None:
-        raise HTTPException(status_code=422, detail="Could not interpret command")
-
     operation = parsed["operation"]
     params = parsed.get("params") or {}
-
-    # ── Dispatch to existing admin functions with RBAC ────
     result: dict[str, Any]
+
     if operation == "update_domain_physics":
         domain_id = str(params.get("domain_id", parsed.get("target", "")))
         updates = params.get("updates") or {}
@@ -3055,7 +3064,7 @@ async def admin_command(
             actor_role=map_role_to_actor_role(user_data["role"]),
             commitment_type="domain_pack_activation",
             subject_id=str(domain.get("id", resolved)),
-            summary=f"SLM command: {req.instruction}",
+            summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True, "updated_fields": list(updates.keys())},
@@ -3085,7 +3094,7 @@ async def admin_command(
             actor_role=map_role_to_actor_role(user_data["role"]),
             commitment_type="domain_pack_activation",
             subject_id=str(domain.get("id", resolved)),
-            summary=f"SLM command: {req.instruction}",
+            summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True},
@@ -3123,10 +3132,8 @@ async def admin_command(
         rationale = str(params.get("rationale", ""))
         if not esc_id or resolution not in ("approved", "rejected", "deferred"):
             raise HTTPException(status_code=422, detail="escalation_id and valid resolution required")
-        # Domain governance check delegated to the existing escalation resolve logic.
         result = {"operation": operation, "escalation_id": esc_id, "resolution": resolution, "rationale": rationale}
 
-    # ── Ingestion & dashboard operations (Phase 4) ──
     elif operation == "list_ingestions":
         domain_id = str(params.get("domain_id", "")) or None
         status_filter = str(params.get("status", "")) or None
@@ -3233,13 +3240,263 @@ async def admin_command(
             result = scheduler.get_status()
             result["operation"] = operation
         else:  # review_proposals
-            proposals = scheduler.get_pending_proposals(domain_id=resolved)
+            resolved_id = str(params.get("domain_id", parsed.get("target", "")))
+            proposals = scheduler.get_pending_proposals(domain_id=resolved_id)
             result = {"operation": operation, "proposals": proposals, "count": len(proposals)}
 
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
 
-    return {"parsed_command": parsed, "result": result}
+    return result
+
+
+@app.post("/api/admin/command")
+async def admin_command(
+    req: AdminCommandRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Stage a natural-language admin instruction for human review.
+
+    The SLM parses the instruction into a structured command and stores it
+    in the staging store.  Nothing is executed.  The caller receives a
+    ``staged_id`` that must be passed to ``POST /api/admin/command/{staged_id}/resolve``
+    together with an Accept / Reject / Modify decision before any action occurs.
+
+    Returns 422 if the SLM cannot parse the instruction or the operation is unknown.
+    """
+    _purge_expired_staged_commands()
+
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority", "it_support"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    if not slm_available():
+        raise HTTPException(status_code=503, detail="SLM service unavailable")
+
+    parsed = slm_parse_admin_command(req.instruction)
+    if parsed is None:
+        raise HTTPException(status_code=422, detail="Could not interpret command")
+
+    operation = parsed.get("operation", "")
+    if operation not in _KNOWN_OPERATIONS:
+        raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+
+    staged_id = str(uuid.uuid4())
+    expires_at = time.time() + _STAGED_CMD_TTL_SECONDS
+
+    # Write the "staged" CTL record immediately so even rejected commands are auditable.
+    stage_record = build_commitment_record(
+        actor_id=user_data["sub"],
+        actor_role=map_role_to_actor_role(user_data["role"]),
+        commitment_type="hitl_command_staged",
+        subject_id=staged_id,
+        summary=f"HITL staged: {req.instruction[:200]}",
+        subject_version=None,
+        subject_hash=None,
+        metadata={
+            "staged_id": staged_id,
+            "parsed_command": parsed,
+            "original_instruction": req.instruction,
+        },
+    )
+    PERSISTENCE.append_ctl_record(
+        "admin", stage_record,
+        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+    )
+
+    entry: dict[str, Any] = {
+        "staged_id": staged_id,
+        "actor_id": user_data["sub"],
+        "actor_role": user_data["role"],
+        "parsed_command": parsed,
+        "original_instruction": req.instruction,
+        "staged_at": time.time(),
+        "expires_at": expires_at,
+        "ctl_stage_record_id": stage_record["record_id"],
+        "resolved": False,
+    }
+    with _STAGED_COMMANDS_LOCK:
+        _STAGED_COMMANDS[staged_id] = entry
+
+    return {
+        "staged_id": staged_id,
+        "staged_command": parsed,
+        "original_instruction": req.instruction,
+        "expires_at": expires_at,
+        "ctl_stage_record_id": stage_record["record_id"],
+    }
+
+
+@app.post("/api/admin/command/{staged_id}/resolve")
+async def admin_command_resolve(
+    staged_id: str,
+    req: CommandResolveRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Human resolution gate for a staged admin command.
+
+    ``action`` must be one of:
+    - ``"accept"``  — execute the command exactly as the SLM parsed it.
+    - ``"reject"``  — discard the command; nothing is executed.
+    - ``"modify"``  — replace the parsed schema with ``modified_schema``, then execute.
+
+    Only the original actor may resolve their own staged commands, **except** that
+    ``root`` may resolve any staged command regardless of who staged it.
+
+    Each resolution path writes its own CTL record (``hitl_command_accepted``,
+    ``hitl_command_rejected``, or ``hitl_command_modified``).
+    """
+    # Note: do NOT call _purge_expired_staged_commands() here — we need the entry
+    # to still be present so we can return 410 rather than 404 for expired commands.
+
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    if user_data["role"] not in ("root", "domain_authority", "it_support"):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    if req.action not in _HITL_VALID_ACTIONS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid action '{req.action}'. Must be one of: accept, reject, modify",
+        )
+
+    with _STAGED_COMMANDS_LOCK:
+        entry = _STAGED_COMMANDS.get(staged_id)
+
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Staged command not found")
+
+    if entry["expires_at"] < time.time():
+        with _STAGED_COMMANDS_LOCK:
+            _STAGED_COMMANDS.pop(staged_id, None)
+        raise HTTPException(status_code=410, detail="Staged command has expired")
+
+    if entry["resolved"]:
+        raise HTTPException(status_code=409, detail="Staged command has already been resolved")
+
+    # Ownership check: only the original actor or root may resolve.
+    if user_data["role"] != "root" and entry["actor_id"] != user_data["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized to resolve this staged command")
+
+    # Mark consumed immediately to prevent double-resolution (optimistic under the lock).
+    with _STAGED_COMMANDS_LOCK:
+        if _STAGED_COMMANDS.get(staged_id, {}).get("resolved"):
+            raise HTTPException(status_code=409, detail="Staged command has already been resolved")
+        _STAGED_COMMANDS[staged_id]["resolved"] = True
+
+    actor_role = map_role_to_actor_role(user_data["role"])
+    parsed = entry["parsed_command"]
+    original_instruction = entry["original_instruction"]
+
+    if req.action == "reject":
+        record = build_commitment_record(
+            actor_id=user_data["sub"],
+            actor_role=actor_role,
+            commitment_type="hitl_command_rejected",
+            subject_id=staged_id,
+            summary=f"HITL rejected: {original_instruction[:200]}",
+            subject_version=None,
+            subject_hash=None,
+            metadata={
+                "staged_id": staged_id,
+                "ctl_stage_record_id": entry["ctl_stage_record_id"],
+                "parsed_command": parsed,
+            },
+        )
+        PERSISTENCE.append_ctl_record(
+            "admin", record,
+            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+        )
+        return {
+            "staged_id": staged_id,
+            "action": "reject",
+            "ctl_record_id": record["record_id"],
+        }
+
+    if req.action == "modify":
+        if not req.modified_schema or not isinstance(req.modified_schema, dict):
+            raise HTTPException(status_code=422, detail="modified_schema is required for 'modify' action")
+        modified_op = req.modified_schema.get("operation", "")
+        if modified_op not in _KNOWN_OPERATIONS:
+            raise HTTPException(status_code=422, detail=f"Unknown operation in modified_schema: {modified_op}")
+        delta = _compute_schema_delta(parsed, req.modified_schema)
+        parsed = req.modified_schema
+        commitment_type: str = "hitl_command_modified"
+        metadata: dict[str, Any] = {
+            "staged_id": staged_id,
+            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "delta": delta,
+            "modified_schema": parsed,
+        }
+    else:  # accept
+        commitment_type = "hitl_command_accepted"
+        metadata = {
+            "staged_id": staged_id,
+            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "parsed_command": parsed,
+        }
+
+    # Execute under the resolver's identity (full RBAC re-validation inside).
+    exec_result = await _execute_admin_operation(user_data, parsed, original_instruction)
+
+    record = build_commitment_record(
+        actor_id=user_data["sub"],
+        actor_role=actor_role,
+        commitment_type=commitment_type,
+        subject_id=staged_id,
+        summary=f"HITL {req.action}: {original_instruction[:200]}",
+        subject_version=None,
+        subject_hash=None,
+        metadata=metadata,
+    )
+    PERSISTENCE.append_ctl_record(
+        "admin", record,
+        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+    )
+
+    return {
+        "staged_id": staged_id,
+        "action": req.action,
+        "parsed_command": parsed,
+        "result": exec_result,
+        "ctl_record_id": record["record_id"],
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# HITL Staging Store — in-memory, single-process scope
+# ─────────────────────────────────────────────────────────────
+
+# Staged commands awaiting human resolution (keyed by staged_id).
+_STAGED_COMMANDS: dict[str, dict[str, Any]] = {}
+_STAGED_COMMANDS_LOCK = threading.Lock()
+_STAGED_CMD_TTL_SECONDS: int = int(os.environ.get("LUMINA_STAGED_CMD_TTL_SECONDS", "300"))
+
+_HITL_VALID_ACTIONS: frozenset[str] = frozenset({"accept", "reject", "modify"})
+
+
+def _purge_expired_staged_commands() -> None:
+    """Remove expired staged commands (called lazily on each stage/resolve call)."""
+    now = time.time()
+    with _STAGED_COMMANDS_LOCK:
+        expired = [sid for sid, entry in _STAGED_COMMANDS.items() if entry["expires_at"] < now]
+        for sid in expired:
+            del _STAGED_COMMANDS[sid]
+
+
+def _compute_schema_delta(original: dict[str, Any], modified: dict[str, Any]) -> dict[str, Any]:
+    """Return a shallow diff of two parsed-command dicts (operation/target/params)."""
+    delta: dict[str, Any] = {}
+    all_keys = set(original) | set(modified)
+    for key in all_keys:
+        orig_val = original.get(key)
+        mod_val = modified.get(key)
+        if orig_val != mod_val:
+            delta[key] = {"from": orig_val, "to": mod_val}
+    return delta
 
 
 # ─────────────────────────────────────────────────────────────
