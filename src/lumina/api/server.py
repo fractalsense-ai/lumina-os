@@ -559,7 +559,7 @@ def render_contract_response(prompt_contract: dict[str, Any], runtime: dict[str,
         return template
 
 
-def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime: dict[str, Any], world_sim_theme: dict[str, Any] | None = None) -> dict[str, Any]:
+def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime: dict[str, Any], world_sim_theme: dict[str, Any] | None = None, mud_world_state: dict[str, Any] | None = None) -> dict[str, Any]:
     interpreter = runtime["turn_interpreter_fn"]
     kwargs: dict[str, Any] = {
         "call_llm": call_llm,
@@ -577,6 +577,8 @@ def interpret_turn_input(input_text: str, task_context: dict[str, Any], runtime:
         kwargs["nlp_pre_interpreter_fn"] = nlp_fn
     if world_sim_theme:
         kwargs["world_sim_theme"] = world_sim_theme
+    if mud_world_state and "mud_world_state" in _interp_sig.parameters:
+        kwargs["mud_world_state"] = mud_world_state
     return interpreter(**kwargs)
 
 
@@ -786,6 +788,9 @@ def _build_domain_context(
     _sb_kwargs: dict[str, Any] = {}
     if "world_sim_cfg" in _sb_sig.parameters:
         _sb_kwargs["world_sim_cfg"] = runtime.get("world_sim")
+    if "mud_world_cfg" in _sb_sig.parameters:
+        _world_sim = runtime.get("world_sim") or {}
+        _sb_kwargs["mud_world_cfg"] = _world_sim.get("mud_world_builder") or None
     if "tiers" in _sb_sig.parameters:
         _tiers = domain.get("subsystem_configs", {}).get("equation_difficulty_tiers") or []
         _ps_task = ps.get("task_spec") or runtime.get("default_task_spec") or {}
@@ -894,7 +899,11 @@ def get_or_create_session(
 
     # ── New session ──────────────────────────────────────────
     resolved_domain_id = DOMAIN_REGISTRY.resolve_domain_id(domain_id)
-    ctx = _build_domain_context(session_id, resolved_domain_id, user=user)
+    # Restore persisted context so the student continues with the same equation
+    # even if the session was evicted from memory (idle timeout / restart).
+    _persisted = PERSISTENCE.load_session_state(session_id) or {}
+    _persisted_ctx = (_persisted.get("contexts") or {}).get(resolved_domain_id) or None
+    ctx = _build_domain_context(session_id, resolved_domain_id, persisted_state=_persisted_ctx, user=user)
 
     container = SessionContainer(active_domain_id=resolved_domain_id, user=user)
     container.contexts[resolved_domain_id] = ctx
@@ -1014,7 +1023,8 @@ def process_message(
         turn_data = dict(runtime.get("turn_input_defaults") or {})
     else:
         world_sim_theme = getattr(orch.state, "world_sim_theme", {})
-        turn_data = interpret_turn_input(input_text, task_context, runtime, world_sim_theme=world_sim_theme)
+        mud_world_state = getattr(orch.state, "mud_world_state", {})
+        turn_data = interpret_turn_input(input_text, task_context, runtime, world_sim_theme=world_sim_theme, mud_world_state=mud_world_state)
     turn_data = _normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
     # ── SLM physics interpretation (context compression) ─────

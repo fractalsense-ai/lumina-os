@@ -234,6 +234,24 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if slm_weight_overrides and not isinstance(slm_weight_overrides, dict):
         raise RuntimeError("'runtime.slm_weight_overrides' must be a mapping/dict when provided")
 
+    # Load world_sim config and eagerly resolve mud-world template list so that
+    # generate_mud_world() receives a pre-populated cfg["templates"] list at
+    # session initialisation time (avoids a file-read per state-builder call).
+    _world_sim_cfg: dict[str, Any] | None = runtime_cfg.get("world_sim") or None
+    if _world_sim_cfg is not None:
+        import copy as _copy
+        _world_sim_cfg = _copy.deepcopy(_world_sim_cfg)
+        _mud_builder = _world_sim_cfg.get("mud_world_builder") or {}
+        _tpl_rel = _mud_builder.get("templates_path", "")
+        if _tpl_rel and not _mud_builder.get("templates"):
+            _tpl_path = repo_root / _tpl_rel
+            if _tpl_path.exists():
+                import yaml as _yaml
+                with open(str(_tpl_path), encoding="utf-8") as _fh:
+                    _tpl_data = _yaml.safe_load(_fh) or {}
+                _mud_builder["templates"] = _tpl_data.get("templates") or []
+                _world_sim_cfg["mud_world_builder"] = _mud_builder
+
     return {
         "domain_physics_path": str(domain_physics_path),
         "subject_profile_path": str(repo_root / runtime_cfg["subject_profile_path"]),
@@ -255,4 +273,5 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "turn_interpreter_fn": turn_interpreter_fn,
         "nlp_pre_interpreter_fn": nlp_pre_interpreter_fn,
         "tool_fns": tool_fns,
+        "world_sim": _world_sim_cfg,
     }
