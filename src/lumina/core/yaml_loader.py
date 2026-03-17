@@ -9,7 +9,8 @@ Usage:
     from yaml_loader import load_yaml
     profile = load_yaml("path/to/profile.yaml")
 
-The parser handles nested dicts, lists, inline sequences, scalar types
+The parser handles nested dicts, lists, block mappings as list items,
+inline sequences, scalar types
 (bool, int, float, null, string), and inline comments.  It is sufficient
 for any conforming Project Lumina profile or domain-pack YAML file.
 """
@@ -116,6 +117,36 @@ def _parse_yaml_lines(lines: list[str], pos: list[int]) -> Any:
             item_str = stripped[2:].strip()
             pos[0] += 1
             if item_str:
+                # Detect block mapping as list item: "- key: val" followed by
+                # indented continuation fields ("key2: val2") at a depth greater
+                # than the current list's base_indent.  This handles the standard
+                # YAML pattern where a sequence contains multi-field mappings.
+                colon_idx = item_str.find(":")
+                has_mapping_key = (
+                    colon_idx > 0
+                    and not item_str.startswith('"')
+                    and not item_str.startswith("'")
+                    and not item_str.startswith("[")
+                )
+                if has_mapping_key:
+                    peek = pos[0]
+                    while peek < len(lines) and not lines[peek].strip():
+                        peek += 1
+                    if peek < len(lines):
+                        pk_line = lines[peek]
+                        pk_stripped = pk_line.lstrip()
+                        pk_ind = len(pk_line) - len(pk_stripped) if pk_stripped else -1
+                        if pk_ind > base_indent and not pk_stripped.startswith("- "):
+                            first_key = item_str[:colon_idx].strip()
+                            first_val_str = item_str[colon_idx + 1:].strip()
+                            first_val = _parse_yaml_scalar(first_val_str) if first_val_str else None
+                            sub = _parse_yaml_lines(lines, pos)
+                            if isinstance(sub, dict):
+                                sub[first_key] = first_val
+                                result.append(sub)
+                            else:
+                                result.append(_parse_yaml_scalar(item_str))
+                            continue
                 result.append(_parse_yaml_scalar(item_str))
             else:
                 # Nested mapping/sequence after bare dash

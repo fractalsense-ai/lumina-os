@@ -246,9 +246,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         if _tpl_rel and not _mud_builder.get("templates"):
             _tpl_path = repo_root / _tpl_rel
             if _tpl_path.exists():
-                import yaml as _yaml
-                with open(str(_tpl_path), encoding="utf-8") as _fh:
-                    _tpl_data = _yaml.safe_load(_fh) or {}
+                _tpl_data = load_yaml(_tpl_path)
                 _mud_builder["templates"] = _tpl_data.get("templates") or []
                 _world_sim_cfg["mud_world_builder"] = _mud_builder
 

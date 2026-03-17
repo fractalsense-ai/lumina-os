@@ -53,6 +53,7 @@ from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 from lumina.core.permissions import Operation, check_permission
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.runtime_loader import load_runtime_context
+from lumina.core.yaml_loader import load_yaml
 from lumina.core.slm import (
     TaskWeight,
     call_slm,
@@ -2599,12 +2600,8 @@ def _get_night_scheduler() -> Any:
 
         nc_cfg: dict[str, Any] = {}
         try:
-            import yaml as _yaml, pathlib as _pl
-
-            rt = _yaml.safe_load(
-                _pl.Path("cfg/system-runtime-config.yaml").read_text(encoding="utf-8")
-            )
-            nc_cfg = (rt or {}).get("night_cycle", {})
+            rt = load_yaml(Path("cfg/system-runtime-config.yaml"))
+            nc_cfg = rt.get("night_cycle", {})
         except Exception:
             pass
         _NIGHT_SCHEDULER = NightCycleScheduler(config=nc_cfg, persistence=PERSISTENCE)
