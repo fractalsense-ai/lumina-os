@@ -242,10 +242,18 @@ def domain_step(
         state.mud_world_state = prev_mud_world_state  # type: ignore[attr-defined]
 
     # 2. Fluency monitor (secondary)
+    # Map the universal base field response_latency_sec to the education-domain
+    # evidence field solve_elapsed_sec so the fluency time gate works correctly.
+    # The core injects response_latency_sec at request arrival (before any
+    # LLM/SLM calls) making it an accurate measure of the student's net pace.
+    fluency_evidence = dict(evidence)
+    if "solve_elapsed_sec" not in fluency_evidence and "response_latency_sec" in fluency_evidence:
+        fluency_evidence["solve_elapsed_sec"] = fluency_evidence["response_latency_sec"]
+
     fluency_state: FluencyState = getattr(state, "fluency", prev_fluency)
     fluency_params = params.get("fluency_monitor") or {}
     fluency_state, fluency_decision = fluency_monitor_step_fn(
-        fluency_state, task_spec, evidence, params=fluency_params,
+        fluency_state, task_spec, fluency_evidence, params=fluency_params,
     )
     state.fluency = fluency_state  # type: ignore[attr-defined]
 

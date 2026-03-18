@@ -89,7 +89,7 @@ Default values defined in `DEFAULT_PARAMS`; overridden per-domain from `runtime-
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `target_consecutive_successes` | `3` | Number of consecutive correct solves required to advance |
-| `time_threshold_seconds` | `45.0` | Maximum seconds per solve to count toward the streak |
+| `time_threshold_seconds` | `45.0` | Maximum **student net response time** per solve to count toward the streak. Measured from when the previous problem response was fully delivered to when the student's answer was received by the server — excludes all server-side LLM/SLM inference latency. Domain adapters are responsible for supplying this as `solve_elapsed_sec` (mapped from the core-injected `response_latency_sec` universal base field). |
 | `tier_progression` | `["tier_1", "tier_2", "tier_3"]` | Ordered list of tier IDs |
 
 Runtime config example (education domain):

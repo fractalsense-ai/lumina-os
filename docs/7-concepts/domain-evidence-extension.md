@@ -49,7 +49,7 @@ Reserved keys allow audit tooling to identify which domain evidence schema to va
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `response_latency_sec` | `number \| null` | Wall-clock seconds from prompt to response |
+| `response_latency_sec` | `number \| null` | Seconds from when the previous response was fully delivered to when the student's reply was received by the server. Captured at request arrival, before any server-side LLM or SLM processing, so it reflects student-paced response time only. |
 | `off_task_ratio` | `number \| null` | Fraction of response not engaging the current task (0.0–1.0) |
 
 These fields are expected from all domains. They are observable without domain semantics and enable cross-domain analytics (e.g. comparing engagement patterns across departments or cohorts).

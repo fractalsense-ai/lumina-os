@@ -48,6 +48,15 @@ def process_message(
     model_version: str | None = None,
 ) -> dict[str, Any]:
     session = get_or_create_session(session_id, domain_id=domain_id, user=user)
+
+    # ── Capture student solve time at request arrival ─────────
+    # Must be read before any LLM/SLM calls so server-side inference
+    # latency is not counted against the student's response time.
+    _presented_at = session.get("problem_presented_at")
+    _student_elapsed: float | None = (
+        time.time() - _presented_at if _presented_at is not None else None
+    )
+
     orch: PPAOrchestrator = session["orchestrator"]
     task_spec: dict[str, Any] = session["task_spec"]
     current_problem: dict[str, Any] = session["current_problem"]
@@ -146,13 +155,12 @@ def process_message(
         )
         turn_data["_slm_context"] = slm_context
 
-    # Inject server-side solve elapsed time
-    presented_at = session.get("problem_presented_at")
-    if presented_at is not None:
-        _elapsed = time.time() - presented_at
-        if (runtime.get("tool_fns") or {}).get("generate_problem") is not None:
-            turn_data["solve_elapsed_sec"] = _elapsed
-        turn_data["response_latency_sec"] = _elapsed
+    # Inject the universal base field response_latency_sec (sampled at request
+    # arrival, before any LLM/SLM calls — excludes server-side inference latency).
+    # Domain adapters are responsible for mapping this to any domain-specific
+    # timing fields (e.g. solve_elapsed_sec in the education domain).
+    if _student_elapsed is not None:
+        turn_data["response_latency_sec"] = _student_elapsed
 
     log.info("[%s] Turn Data: %s", session_id, json.dumps(turn_data, default=str))
 
@@ -180,6 +188,7 @@ def process_message(
         current_problem["status"] = reported_status.strip()
 
     # ── Fluency-gated problem advancement ─────────────────────
+    _new_problem_presented = False
     fluency_decision = {}
     domain_lib_decision = getattr(orch, "last_domain_lib_decision", None) or {}
     if isinstance(domain_lib_decision.get("fluency"), dict):
@@ -206,7 +215,7 @@ def process_message(
                     current_problem = gen_fn(diff, domain)
             except Exception:
                 log.warning("Problem generation on advance failed", exc_info=True)
-        session["problem_presented_at"] = time.time()
+        _new_problem_presented = True
 
     session["current_problem"] = current_problem
     session["turn_count"] += 1
@@ -311,6 +320,17 @@ def process_message(
             )
 
     llm_response = strip_latex_delimiters(llm_response)
+
+    # ── Reset problem_presented_at after response is ready ───
+    # Timestamp is anchored to when the outgoing response is fully built so
+    # the next turn's solve_elapsed_sec excludes this turn's LLM latency.
+    # Also reset on task_presentation turns (new problem being introduced).
+    if _new_problem_presented or resolved_action == "task_presentation":
+        _response_sent_at = time.time()
+        session["problem_presented_at"] = _response_sent_at
+        _c = _session_containers.get(session_id)
+        if _c is not None:
+            _c.active_context.problem_presented_at = _response_sent_at
 
     log.info("[%s] Response length: %s chars", session_id, len(llm_response))
 
