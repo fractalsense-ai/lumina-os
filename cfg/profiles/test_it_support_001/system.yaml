@@ -1,12 +1,12 @@
-# operator-profile.yaml — Default system-operator entity profile
-# Used as the subject_profile for system domain sessions.
-# This is a structural template; real operator state is not tracked
-# across sessions in the same way as learner state.
+# operator-profile.yaml — System-operator entity profile template
+# Copied to cfg/profiles/{user_id}/system.yaml on first system domain session.
+# operator_id and display_name are populated at runtime from the user's JWT sub.
+# Real operator state is not tracked across sessions the way learner state is.
 # ============================================================
 
-operator_id: "system_operator_template"
+operator_id: null
 domain_id: "domain/sys/system-core/v1"
-display_name: "System Operator"
+display_name: null
 
 preferences:
   explanation_style: technical

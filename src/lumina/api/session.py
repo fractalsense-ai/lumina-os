@@ -1,0 +1,359 @@
+"""Session management: DomainContext, SessionContainer, and session lifecycle."""
+
+from __future__ import annotations
+
+import inspect
+import logging
+import time
+from pathlib import Path
+from typing import Any
+
+from lumina.api import config as _cfg
+from lumina.api.config import _ensure_user_profile
+from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
+
+log = logging.getLogger("lumina-api")
+
+import os
+
+# Maximum number of domain contexts per session (prevents context-thrashing)
+_MAX_CONTEXTS_PER_SESSION = int(os.environ.get("LUMINA_MAX_CONTEXTS_PER_SESSION", "10"))
+
+
+# ─────────────────────────────────────────────────────────────
+# Policy commitment helpers
+# ─────────────────────────────────────────────────────────────
+
+def _policy_commitment_payload(runtime: dict[str, Any]) -> dict[str, Any]:
+    provenance = dict(runtime.get("runtime_provenance") or {})
+    return {
+        "subject_id": str(provenance.get("domain_pack_id", "")),
+        "subject_version": str(provenance.get("domain_pack_version", "")),
+        "subject_hash": str(provenance.get("domain_physics_hash", "")),
+    }
+
+
+def _assert_policy_commitment(runtime: dict[str, Any]) -> None:
+    if not _cfg.ENFORCE_POLICY_COMMITMENT:
+        return
+    payload = _policy_commitment_payload(runtime)
+    if not payload["subject_id"] or not payload["subject_hash"]:
+        raise RuntimeError("Runtime provenance missing subject_id/subject_hash for policy commitment enforcement")
+    has_commitment = _cfg.PERSISTENCE.has_policy_commitment(
+        subject_id=payload["subject_id"],
+        subject_version=payload.get("subject_version") or None,
+        subject_hash=payload["subject_hash"],
+    )
+    if not has_commitment:
+        raise RuntimeError(
+            "Policy commitment mismatch: active module domain-physics hash is not CTL-committed. "
+            "Commit the module domain-physics.json hash before activation."
+        )
+
+
+def _assert_system_physics_commitment() -> None:
+    if not _cfg.ENFORCE_POLICY_COMMITMENT:
+        return
+    if _cfg.SYSTEM_PHYSICS_HASH is None:
+        return
+    if not _cfg.PERSISTENCE.has_system_physics_commitment(_cfg.SYSTEM_PHYSICS_HASH):
+        raise RuntimeError(
+            "System-physics commitment missing: the active system-physics.json hash is not present in "
+            "the system CTL. Run scripts/seed-system-physics-ctl.ps1 before starting the server."
+        )
+
+
+# ─────────────────────────────────────────────────────────────
+# Default problem generator
+# ─────────────────────────────────────────────────────────────
+
+def _default_current_problem(task_spec: dict[str, Any], runtime: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Create a session-scoped problem via the domain-registered generator."""
+    if runtime is not None:
+        gen_fn = (runtime.get("tool_fns") or {}).get("generate_problem")
+        if gen_fn is not None:
+            try:
+                difficulty = float(task_spec.get("nominal_difficulty", 0.5))
+                subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
+                return gen_fn(difficulty, subsystem_configs)
+            except Exception:
+                log.warning("Problem generator unavailable; falling back to task_spec")
+    current_problem = task_spec.get("current_problem")
+    if isinstance(current_problem, dict):
+        return dict(current_problem)
+    return {
+        "task_id": str(task_spec.get("task_id", "task")),
+        "status": "in_progress",
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# Domain context & session container classes
+# ─────────────────────────────────────────────────────────────
+
+class DomainContext:
+    """Isolated per-domain state within a session."""
+
+    __slots__ = (
+        "orchestrator",
+        "task_spec",
+        "current_problem",
+        "turn_count",
+        "domain_id",
+        "problem_presented_at",
+        "subject_profile_path",
+    )
+
+    def __init__(
+        self,
+        orchestrator: Any,
+        task_spec: dict[str, Any],
+        current_problem: dict[str, Any],
+        turn_count: int,
+        domain_id: str,
+        problem_presented_at: float,
+        subject_profile_path: str = "",
+    ) -> None:
+        self.orchestrator = orchestrator
+        self.task_spec = task_spec
+        self.current_problem = current_problem
+        self.turn_count = turn_count
+        self.domain_id = domain_id
+        self.problem_presented_at = problem_presented_at
+        self.subject_profile_path = subject_profile_path
+
+    def to_session_dict(self) -> dict[str, Any]:
+        return {
+            "orchestrator": self.orchestrator,
+            "task_spec": self.task_spec,
+            "current_problem": self.current_problem,
+            "turn_count": self.turn_count,
+            "domain_id": self.domain_id,
+            "problem_presented_at": self.problem_presented_at,
+        }
+
+    def sync_from_dict(self, d: dict[str, Any]) -> None:
+        self.task_spec = d["task_spec"]
+        self.current_problem = d["current_problem"]
+        self.turn_count = d["turn_count"]
+        if "problem_presented_at" in d:
+            self.problem_presented_at = d["problem_presented_at"]
+
+
+class SessionContainer:
+    """Holds isolated domain contexts for a single session."""
+
+    __slots__ = ("active_domain_id", "contexts", "user", "last_activity")
+
+    def __init__(self, active_domain_id: str, user: dict[str, Any] | None = None) -> None:
+        self.active_domain_id = active_domain_id
+        self.contexts: dict[str, DomainContext] = {}
+        self.user = user
+        self.last_activity: float = time.time()
+
+    @property
+    def active_context(self) -> DomainContext:
+        return self.contexts[self.active_domain_id]
+
+
+# Global session store
+_session_containers: dict[str, SessionContainer] = {}
+
+
+# ─────────────────────────────────────────────────────────────
+# Session lifecycle functions
+# ─────────────────────────────────────────────────────────────
+
+def _build_domain_context(
+    session_id: str,
+    resolved_domain_id: str,
+    persisted_state: dict[str, Any] | None = None,
+    user: dict[str, Any] | None = None,
+) -> DomainContext:
+    """Construct a fresh DomainContext for a domain (shared by create + switch)."""
+    runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(resolved_domain_id)
+    _assert_policy_commitment(runtime)
+    domain_physics_path = Path(runtime["domain_physics_path"])
+
+    if user is not None:
+        domain_key = resolved_domain_id.split("/")[0] if "/" in resolved_domain_id else resolved_domain_id
+        subject_profile_path = Path(
+            _ensure_user_profile(
+                user_id=str(user["sub"]),
+                domain_key=domain_key,
+                template_path=str(runtime["subject_profile_path"]),
+            )
+        )
+    else:
+        subject_profile_path = Path(runtime["subject_profile_path"])
+
+    profile = _cfg.PERSISTENCE.load_subject_profile(str(subject_profile_path))
+    _module_map = runtime.get("module_map") or {}
+    _profile_domain_id = profile.get("domain_id") or profile.get("subject_domain_id")
+    if _profile_domain_id and _profile_domain_id in _module_map:
+        domain_physics_path = Path(_module_map[_profile_domain_id]["domain_physics_path"])
+
+    domain = _cfg.PERSISTENCE.load_domain_physics(str(domain_physics_path))
+    ledger_path = _cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=resolved_domain_id)
+    ps = persisted_state or {}
+
+    state_builder = runtime["state_builder_fn"]
+    domain_step = runtime["domain_step_fn"]
+    domain_params = dict(runtime["domain_step_params"])
+
+    _sb_sig = inspect.signature(state_builder)
+    _sb_kwargs: dict[str, Any] = {}
+    if "world_sim_cfg" in _sb_sig.parameters:
+        _sb_kwargs["world_sim_cfg"] = runtime.get("world_sim")
+    if "mud_world_cfg" in _sb_sig.parameters:
+        _world_sim = runtime.get("world_sim") or {}
+        _sb_kwargs["mud_world_cfg"] = _world_sim.get("mud_world_builder") or None
+    if "tiers" in _sb_sig.parameters:
+        _tiers = domain.get("subsystem_configs", {}).get("equation_difficulty_tiers") or []
+        _ps_task = ps.get("task_spec") or runtime.get("default_task_spec") or {}
+        _sb_kwargs["tiers"] = _tiers
+        _sb_kwargs["tier_progression"] = [str(t.get("tier_id", "")) for t in _tiers]
+        _sb_kwargs["nominal_difficulty"] = float(_ps_task.get("nominal_difficulty", 0.5))
+    initial_state = state_builder(profile, **_sb_kwargs)
+
+    orch = PPAOrchestrator(
+        domain_physics=domain,
+        subject_profile=profile,
+        ledger_path=str(ledger_path),
+        session_id=session_id,
+        domain_lib_step_fn=lambda state, task, ev: domain_step(state, task, ev, domain_params),
+        initial_state=initial_state,
+        action_prompt_type_map=runtime.get("action_prompt_type_map") or {},
+        policy_commitment=_policy_commitment_payload(runtime),
+        ctl_append_callback=lambda sid, record: _cfg.PERSISTENCE.append_ctl_record(
+            sid, record, ledger_path=str(ledger_path),
+        ),
+        system_physics_hash=_cfg.SYSTEM_PHYSICS_HASH,
+    )
+
+    default_task_spec = dict(runtime["default_task_spec"])
+    task_spec = dict(ps.get("task_spec") or default_task_spec)
+    current_problem = dict(ps.get("current_problem") or _default_current_problem(task_spec, runtime))
+    turn_count = int(ps.get("turn_count") or 0)
+    standing_order_attempts = ps.get("standing_order_attempts") or {}
+    if not isinstance(standing_order_attempts, dict):
+        standing_order_attempts = {}
+    orch.set_standing_order_attempts(standing_order_attempts)
+
+    return DomainContext(
+        orchestrator=orch,
+        task_spec=task_spec,
+        current_problem=current_problem,
+        turn_count=turn_count,
+        domain_id=resolved_domain_id,
+        problem_presented_at=time.time(),
+        subject_profile_path=str(subject_profile_path),
+    )
+
+
+def _persist_session_container(session_id: str, container: SessionContainer) -> None:
+    """Persist all domain contexts in a session container."""
+    contexts_state: dict[str, Any] = {}
+    for did, ctx in container.contexts.items():
+        contexts_state[did] = {
+            "task_spec": ctx.task_spec,
+            "current_problem": ctx.current_problem,
+            "turn_count": ctx.turn_count,
+            "standing_order_attempts": ctx.orchestrator.get_standing_order_attempts(),
+            "domain_id": did,
+        }
+    _cfg.PERSISTENCE.save_session_state(
+        session_id,
+        {
+            "active_domain_id": container.active_domain_id,
+            "contexts": contexts_state,
+        },
+    )
+
+
+def get_or_create_session(
+    session_id: str,
+    domain_id: str | None = None,
+    user: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a legacy-shaped session dict for the requested domain context."""
+    if session_id in _session_containers:
+        container = _session_containers[session_id]
+        resolved = domain_id or container.active_domain_id
+
+        if resolved != container.active_domain_id:
+            previous_domain = container.active_domain_id
+            if resolved in container.contexts:
+                container.active_domain_id = resolved
+                log.info("[%s] Reactivated domain context: %s", session_id, resolved)
+            else:
+                if len(container.contexts) >= _MAX_CONTEXTS_PER_SESSION:
+                    raise RuntimeError(
+                        f"Session '{session_id}' has reached the maximum of "
+                        f"{_MAX_CONTEXTS_PER_SESSION} domain contexts."
+                    )
+                resolved_domain_id_checked = _cfg.DOMAIN_REGISTRY.resolve_domain_id(resolved)
+                ctx = _build_domain_context(session_id, resolved_domain_id_checked, user=container.user)
+                container.contexts[resolved_domain_id_checked] = ctx
+                container.active_domain_id = resolved_domain_id_checked
+                log.info("[%s] Created new domain context: %s", session_id, resolved_domain_id_checked)
+                _persist_session_container(session_id, container)
+
+            _cfg.PERSISTENCE.append_ctl_record(
+                session_id,
+                {
+                    "event": "domain_switch",
+                    "from_domain": previous_domain,
+                    "to_domain": container.active_domain_id,
+                    "timestamp": time.time(),
+                    "session_id": session_id,
+                },
+                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+            )
+
+        return container.active_context.to_session_dict()
+
+    # New session
+    resolved_domain_id = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    _persisted = _cfg.PERSISTENCE.load_session_state(session_id) or {}
+    _persisted_ctx = (_persisted.get("contexts") or {}).get(resolved_domain_id) or None
+    ctx = _build_domain_context(session_id, resolved_domain_id, persisted_state=_persisted_ctx, user=user)
+
+    container = SessionContainer(active_domain_id=resolved_domain_id, user=user)
+    container.contexts[resolved_domain_id] = ctx
+    _session_containers[session_id] = container
+
+    _persist_session_container(session_id, container)
+    log.info("Created new session: %s (domain=%s)", session_id, resolved_domain_id)
+    return container.active_context.to_session_dict()
+
+
+def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: str = "normal", close_reason: str | None = None) -> None:
+    """Close a session: write CommitmentRecords and remove from memory."""
+    from lumina.ctl.admin_operations import build_commitment_record
+
+    container = _session_containers.get(session_id)
+    if container is None:
+        return
+
+    for did, ctx in container.contexts.items():
+        record = build_commitment_record(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            commitment_type="session_close",
+            subject_id=session_id,
+            summary=f"Session closed ({close_type}): domain {did}",
+            close_type=close_type,
+            close_reason=close_reason,
+            metadata={"domain_id": did, "turn_count": ctx.turn_count},
+        )
+        try:
+            _cfg.PERSISTENCE.append_ctl_record(
+                session_id, record,
+                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=did),
+            )
+        except Exception:
+            log.debug("Could not write session_close record for %s/%s", session_id, did)
+
+    _persist_session_container(session_id, container)
+    del _session_containers[session_id]

@@ -40,3 +40,6 @@ src/web/*.tsbuildinfo
 src/web/coverage/
 src/web/test-results/
 src/web/lib/openaikey.md
+
+# test artifacts
+cfg/profiles/

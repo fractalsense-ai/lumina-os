@@ -12,6 +12,8 @@ from fastapi.testclient import TestClient
 from lumina.auth import auth
 from lumina.persistence.adapter import NullPersistenceAdapter
 from lumina.core.yaml_loader import load_yaml as _load_yaml
+from lumina.core.domain_registry import DomainRegistry
+from lumina.core.runtime_loader import load_runtime_context
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,6 +40,14 @@ def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     mod.PERSISTENCE = NullPersistenceAdapter()
     mod.BOOTSTRAP_MODE = False
     mod.PERSISTENCE.load_subject_profile = _load_yaml
+
+    # Force a fresh multi-domain DomainRegistry so the test is not affected
+    # by whichever DomainRegistry was cached in lumina.api.config on first import.
+    mod.DOMAIN_REGISTRY = DomainRegistry(
+        repo_root=_REPO_ROOT,
+        registry_path="cfg/domain-registry.yaml",
+        load_runtime_context_fn=load_runtime_context,
+    )
 
     # Disable SLM so tests don't require a live Ollama instance
     monkeypatch.setattr(mod, "slm_available", lambda: False)

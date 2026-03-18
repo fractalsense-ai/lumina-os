@@ -1,36 +1,33 @@
-# Student Profile — Alice (Example)
-# Domain: Algebra Level 1 (v0.2.0)
-# Note: This is an example profile for testing and demonstration.
-# All identifiers are fictional.
+# Student Profile Template — Algebra Level 1
+# Conforms to: domain-packs/education/schemas/student-profile-schema-v1.json
+# ============================================================
+# Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
+# with the student's assigned pseudonymous token.
 # ============================================================
 
-student_id: "a3f8c2e1b4d7f9a0c5e2b8d1a6f3c7e4"
+student_id: "<PSEUDONYMOUS_ID>"
 domain_id: "domain/edu/algebra-level-1/v1"
-display_name: "Alice"
+display_name: null  # Optional nickname; not required
 
 # ── Preferences (IMMERSION ONLY — never affects grading) ────
 preferences:
-  interests:
-    - space
-    - astronomy
-    - cooking
-  dislikes:
-    - sports_themes
+  interests: []
+  dislikes: []
   preferred_explanation_style: step_by_step
   language: en
 
-# ── Learning State ───────────────────────────────────────────
+# ── Learning State (initial defaults) ───────────────────────
 learning_state:
   affect:
-    salience: 0.7     # Generally engaged
-    valence: 0.2      # Slightly positive
-    arousal: 0.6      # Moderately activated
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
 
   mastery:
-    solve_one_variable: 0.52   # Developing — correct with some support
-    check_equivalence: 0.45    # Early stage — still making equivalence errors
-    show_work_steps: 0.60      # Reasonably consistent at showing steps
-    verify_solution: 0.38      # Weak — often skips verification
+    equivalence_preserved: 0.0
+    no_illegal_operations: 0.0
+    solution_verifies: 0.0
+    show_work_minimum: 0.0
 
   challenge_band:
     min_challenge: 0.3
@@ -38,29 +35,33 @@ learning_state:
 
   recent_window:
     window_turns: 10
-    attempts: 4
+    attempts: 0
     consecutive_incorrect: 0
-    hint_count: 2
-    outside_pct: 0.2          # 2 of 10 turns outside challenge band — minor
+    hint_count: 0
+    outside_pct: 0.0
     consecutive_outside: 0
-    outside_flags: [false, false, true, false, false, false, false, false, true, false]
+    outside_flags: []
 
-  challenge: 0.55             # Current task is in-band
-  uncertainty: 0.4            # Moderate uncertainty
+  challenge: 0.3   # Start at the low end of the challenge band
+  uncertainty: 0.8  # High initial uncertainty — we don't know the student yet
 
-  updated_utc: "2026-03-01T15:30:00Z"
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null
 
 # ── Session History ──────────────────────────────────────────
 session_history:
-  total_sessions: 3
-  last_session_utc: "2026-03-01T15:30:00Z"
-  total_turns: 31
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
 
 # ── Consent ──────────────────────────────────────────────────
 consent:
-  magic_circle_accepted: true
-  consent_timestamp_utc: "2026-02-20T09:00:00Z"
-  consent_version: "1.0.0"
-  guardian_consent: true   # Alice is 12; parental consent obtained
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
 
-updated_utc: "2026-03-01T15:30:00Z"
+updated_utc: null
