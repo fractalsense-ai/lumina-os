@@ -1,8 +1,8 @@
 # SLM Compute Distribution
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-14  
+**Last updated:** 2026-03-18  
 
 ---
 
@@ -142,7 +142,7 @@ Domains that declare `local_only: true` in their `runtime-config.yaml` bypass th
                                │ load_runtime_context()
                                ▼
                 ┌──────────────────────────────────────┐
-                │  server.py  process_message()         │
+                │  processing.py  process_message()     │
                 │  if local_only:                        │
                 │    call_fn = call_slm                  │
                 │    else: call_fn = call_llm (normal)   │

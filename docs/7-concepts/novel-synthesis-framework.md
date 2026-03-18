@@ -1,8 +1,8 @@
 # Novel Synthesis Framework
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-13  
+**Last updated:** 2026-03-18  
 
 ---
 
@@ -142,7 +142,7 @@ The novel synthesis framework interacts with two existing efficiency mechanisms:
 
 ### Stage 2 Intercept — Glossary Lookups
 
-When a user asks "what is a variable?" in the algebra domain, the glossary intercept pipeline (`_detect_glossary_query` in `src/lumina/api/server.py`) returns the deterministic definition immediately. This saves 100% of LLM compute for known terms — the LLM is never invoked.
+When a user asks "what is a variable?" in the algebra domain, the glossary intercept pipeline (`detect_glossary_query` in `src/lumina/api/utils/glossary.py`) returns the deterministic definition immediately. This saves 100% of LLM compute for known terms — the LLM is never invoked.
 
 Novel synthesis, by definition, is what the glossary **cannot** handle. It is the complement of deterministic lookup: when no known pattern matches, the system falls through to the LLM for creative reasoning.
 

@@ -1,24 +1,53 @@
 # lumina-api-server(2)
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-12  
+**Last updated:** 2026-03-18  
 
 ---
 
 ## NAME
 
-`lumina-api-server.py` — Project Lumina Integration Server
+`lumina-api-server` — Project Lumina Integration Server
 
 ## SYNOPSIS
 
 ```bash
-python reference-implementations/lumina-api-server.py
+# Module invocation
+python -m lumina.api.server
+
+# Installed entrypoint (after pip install)
+lumina-api
 ```
 
 ## DESCRIPTION
 
 Generic runtime host for D.S.A. orchestration with built-in JWT authentication. Loads runtime behavior from domain-owned config, keeps the core server free of domain-specific logic, and routes each turn through orchestrator prompt contracts and CTL.
+
+`src/lumina/api/server.py` is a **thin app factory** (~200 lines). All business logic is distributed across dedicated sub-modules:
+
+| Module | Responsibility |
+|--------|---------------|
+| `config.py` | Env-var singletons: `DOMAIN_REGISTRY`, `PERSISTENCE`, feature flags |
+| `session.py` | `SessionContainer`, `DomainContext`, `get_or_create_session` |
+| `models.py` | Pydantic request/response models |
+| `middleware.py` | JWT bearer scheme, `require_auth`, `require_role` |
+| `llm.py` | `call_llm` — provider dispatch (OpenAI / Anthropic) |
+| `processing.py` | `process_message` — six-stage per-turn pipeline |
+| `runtime_helpers.py` | `render_contract_response`, `invoke_runtime_tool` |
+| `utils/text.py` | LaTeX regex helpers, `strip_latex_delimiters` |
+| `utils/glossary.py` | `detect_glossary_query`, per-domain definition cache |
+| `utils/coercion.py` | `normalize_turn_data`, field-type coercers |
+| `utils/templates.py` | Template rendering for tool-call policy strings |
+| `routes/chat.py` | `POST /api/chat` |
+| `routes/auth.py` | Auth and user-management endpoints |
+| `routes/admin.py` | Escalation, audit, manifest, and HITL admin-command endpoints |
+| `routes/ctl.py` | CTL record-browsing endpoints |
+| `routes/domain.py` | Domain-pack lifecycle and session-close endpoints |
+| `routes/ingestion.py` | Document ingestion pipeline endpoints |
+| `routes/system.py` | Health, domain listing, tool adapter, CTL validate |
+| `routes/dashboard.py` | Governance dashboard data endpoints |
+| `routes/nightcycle.py` | Night-cycle trigger, status, and proposal endpoints |
 
 ## ENVIRONMENT
 
@@ -43,6 +72,9 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `LUMINA_SLM_PROVIDER` | `local` | SLM backend: `local` (Ollama/llama.cpp), `openai`, or `anthropic` |
 | `LUMINA_SLM_MODEL` | `phi-3` | Model name forwarded to the SLM backend |
 | `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Base URL for the local provider; ignored for cloud providers |
+| `LUMINA_SESSION_IDLE_TIMEOUT_MINUTES` | `30` | Reap sessions idle longer than this value; `0` disables idle reaping |
+| `LUMINA_STAGED_CMD_TTL_SECONDS` | `300` | TTL for HITL-staged admin commands before they expire |
+| `LUMINA_MAX_CONTEXTS_PER_SESSION` | `10` | Maximum number of per-domain contexts a single session may hold |
 
 Notes:
 
@@ -73,7 +105,7 @@ Process a conversational turn through the D.S.A. pipeline.
 5. **Domain adapter dispatch** — education domain algebra-parser override applies post-LLM for `solution_value`, `step_count`, and `equivalence_preserved`; agriculture and other adapters receive the same interface with no NLP kwargs injected.
 6. **Weight-routed response dispatch** — `classify_task_weight()` assigns LOW or HIGH weight to the resolved action; LOW-weight prompt types (definitions, confirmations) are served by the SLM, HIGH-weight types (explanations, scaffolding) go to the primary LLM.
 
-**Notes:** `domain_id` selects which domain context to use. When omitted, the default domain is used. Sessions are immutably bound to their initial domain.
+**Notes:** `domain_id` selects which domain context to use. When omitted, the default domain is used. Each session maintains an isolated `DomainContext` per domain; a single session may span multiple domains up to `LUMINA_MAX_CONTEXTS_PER_SESSION`.
 
 ---
 
@@ -115,6 +147,100 @@ Validate CTL hash-chain integrity. Optional `session_id` query parameter.
 
 ---
 
+### GET /api/ctl/records
+
+List CTL commitment records. Query parameters: `session_id`, `record_type`, `limit`, `offset`.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+
+---
+
+### GET /api/ctl/sessions
+
+List session IDs that have CTL records.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+
+---
+
+### GET /api/ctl/records/{record_id}
+
+Retrieve a single CTL commitment record by ID.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+
+---
+
+### GET /api/escalations
+
+List escalation records. Query parameters: `status`, `domain_id`, `limit`, `offset`.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`, `domain_authority` (scoped to governed modules).
+
+---
+
+### POST /api/escalations/{escalation_id}/resolve
+
+Resolve an open escalation with a decision.
+
+**Request:** `EscalationResolveRequest` — `decision` (`approve` | `reject` | `defer`), `notes`
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
+
+### GET /api/audit/log
+
+Return audit log entries. Query parameters: `actor_id`, `record_type`, `domain_id`, `limit`, `offset`.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+
+---
+
+### GET /api/manifest/check
+
+Verify that all artifacts listed in `docs/MANIFEST.yaml` have matching sha256 digests on disk.
+
+**Response:** `ManifestCheckResponse` — `ok`, `mismatches` (list of `{path, expected, actual}`).
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`.
+
+---
+
+### POST /api/manifest/regen
+
+Recompute sha256 digests for all artifacts in `docs/MANIFEST.yaml` and write them back to the file.
+
+**Response:** `ManifestRegenResponse` — `updated_count`, `manifest_path`.
+
+**Auth:** Bearer token required. Role: `root`.
+
+---
+
+### POST /api/admin/command
+
+Parse and stage a natural-language admin instruction via the SLM. Returns a `staged_id` that must be resolved before the command executes (**HITL gate**).
+
+**Request:** `AdminCommandRequest` — `instruction`
+
+**Response:** `staged_id`, `staged_command` (parsed operation dict), `original_instruction`, `expires_at`, `ctl_stage_record_id`
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+
+**Notes:** Staged commands expire after `LUMINA_STAGED_CMD_TTL_SECONDS` seconds. Each staging is recorded in the admin CTL ledger before the response is returned.
+
+---
+
+### POST /api/admin/command/{staged_id}/resolve
+
+Accept, reject, or modify a previously staged admin command.
+
+**Request:** `CommandResolveRequest` — `action` (`accept` | `reject` | `modify`), `override_params` (optional)
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`. Non-root users may only resolve their own staged commands.
+
+---
+
 ### POST /api/auth/register
 
 Register a new user account.
@@ -132,6 +258,14 @@ Register a new user account.
 Authenticate with username/password and receive a JWT.
 
 **Request:** `LoginRequest` — `username`, `password`
+
+**Response:** `TokenResponse`
+
+---
+
+### GET /api/auth/guest-token
+
+Issue a short-lived (30 min) guest JWT. No credentials required. Guest tokens carry the `guest` role.
 
 **Response:** `TokenResponse`
 
@@ -157,8 +291,190 @@ Return the profile of the currently authenticated user.
 
 List all registered users (password hashes excluded).
 
-**Auth:** Bearer token required. Only `root` and `it_support` roles.
+**Auth:** Bearer token required. Roles: `root`, `it_support`.
+
+---
+
+### PATCH /api/auth/users/{user_id}
+
+Update a user's role or governed modules.
+
+**Request:** `UserUpdateRequest` — `role` (optional), `governed_modules` (optional)
+
+**Auth:** Bearer token required. Role: `root`.
+
+---
+
+### DELETE /api/auth/users/{user_id}
+
+Delete a user account.
+
+**Auth:** Bearer token required. Role: `root`.
+
+---
+
+### POST /api/auth/revoke
+
+Add the caller's current JWT to the server-side revocation list.
+
+**Auth:** Bearer token required.
+
+---
+
+### POST /api/auth/password-reset
+
+Reset a user's password. Root may reset any user; non-root may only reset their own.
+
+**Request:** `PasswordResetRequest` — `user_id`, `new_password`
+
+**Auth:** Bearer token required.
+
+---
+
+### POST /api/domain-pack/commit
+
+Commit a domain-physics hash to the CTL, establishing the authoritative version for a domain.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
+
+---
+
+### GET /api/domain-pack/{domain_id}/history
+
+Return the CTL commitment history for a domain's physics hash.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `qa`, `auditor`.
+
+---
+
+### PATCH /api/domain-pack/{domain_id}/physics
+
+Apply a live patch to a domain's physics document and auto-commit a new CTL record.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
+
+---
+
+### POST /api/session/{session_id}/close
+
+Explicitly close a session, flushing its CTL ledger and releasing memory.
+
+**Auth:** Bearer token required. Users may close their own sessions; `root` and `it_support` may close any session.
+
+---
+
+### POST /api/ingest/upload
+
+Upload a document artifact and open an ingestion record.
+
+**Response:** `ingestion_id`, `status: pending`
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+
+---
+
+### GET /api/ingest/{ingestion_id}
+
+Return the status and metadata for an ingestion record.
+
+**Auth:** Bearer token required.
+
+---
+
+### POST /api/ingest/{ingestion_id}/extract
+
+Trigger SLM-based entity and glossary extraction from the uploaded document.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
+
+### POST /api/ingest/{ingestion_id}/review
+
+Submit a human review decision on extracted content before commit.
+
+**Request:** `IngestionReviewRequest` — `approved_entries`, `rejected_entries`, `notes`
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
+
+### POST /api/ingest/{ingestion_id}/commit
+
+Finalize an ingestion: write approved entries to the domain physics and record the CTL commitment.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
+
+### GET /api/ingest
+
+List ingestion records. Query parameters: `domain_id`, `status`, `limit`, `offset`.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`, `qa`.
+
+---
+
+### GET /api/dashboard/domains
+
+Return per-domain summary telemetry (turn count, escalation rate, last active timestamp).
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+
+---
+
+### GET /api/dashboard/telemetry
+
+Return aggregate system telemetry (active sessions, pending escalations, ingestion queue depth, last night-cycle run).
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+
+---
+
+### POST /api/nightcycle/trigger
+
+Trigger an immediate night-cycle batch run for one or all domains.
+
+**Request:** `NightcycleTriggerRequest` — `domain_id` (optional; omit for all domains)
+
+**Auth:** Bearer token required. Role: `root`.
+
+---
+
+### GET /api/nightcycle/status
+
+Return the status of the most recent night-cycle run.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+
+---
+
+### GET /api/nightcycle/report/{run_id}
+
+Return the full report for a completed night-cycle run.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`, `qa`.
+
+---
+
+### GET /api/nightcycle/proposals
+
+List pending night-cycle proposals (glossary additions/prunings, consistency fixes) awaiting domain-authority review.
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
+
+### POST /api/nightcycle/proposals/{proposal_id}/resolve
+
+Accept or reject a night-cycle proposal.
+
+**Request:** `ProposalResolveRequest` — `decision` (`accept` | `reject`), `notes`
+
+**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+---
 
 ## SEE ALSO
 
-[dsa-framework](../../specs/dsa-framework-v1.md) (D.S.A. structural schema underlying PPA), [rbac-spec](../../specs/rbac-spec-v1.md), [auth(3)](../3-functions/auth.md)
+[dsa-framework](../../specs/dsa-framework-v1.md) (D.S.A. structural schema underlying PPA), [rbac-spec](../../specs/rbac-spec-v1.md), [auth(3)](../3-functions/auth.md), [api-server-architecture](../7-concepts/api-server-architecture.md)

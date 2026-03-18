@@ -93,10 +93,10 @@ artifacts:
   - path: docs/2-syscalls/lumina-api-server.md
     type: doc
     section: 2
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-12
-    sha256: 5574e252a83e2222ffb89bfee8b5165f6b692b92c5d2665c3c7c83468929c4e8
+    last_updated: 2026-03-18
+    sha256: pending
 
   # ── Section 3: Functions ───────────────────────────────────────────────────
 
@@ -199,18 +199,18 @@ artifacts:
   - path: docs/7-concepts/README.md
     type: doc
     section: 7
-    doc_version: 1.0.0
+    doc_version: 1.3.0
     status: active
-    last_updated: 2026-03-12
-    sha256: 7d9c579e95d83037a07aa8eaa99b79176f62cdea6d2d26c4d88fb88ad32e66cc
+    last_updated: 2026-03-18
+    sha256: pending
 
   - path: docs/7-concepts/domain-adapter-pattern.md
     type: doc
     section: 7
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-12
-    sha256: 5b0ec2fb8d29819ff391a8b864d5d1c6de925abfe0ae1adcf85f07eaeab50275
+    last_updated: 2026-03-18
+    sha256: pending
 
   - path: docs/7-concepts/nlp-semantic-router.md
     type: doc
@@ -239,17 +239,25 @@ artifacts:
   - path: docs/7-concepts/novel-synthesis-framework.md
     type: doc
     section: 7
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-13
+    last_updated: 2026-03-18
     sha256: pending
 
   - path: docs/7-concepts/slm-compute-distribution.md
     type: doc
     section: 7
+    doc_version: 1.2.0
+    status: active
+    last_updated: 2026-03-18
+    sha256: pending
+
+  - path: docs/7-concepts/api-server-architecture.md
+    type: doc
+    section: 7
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-04-02
+    last_updated: 2026-03-18
     sha256: pending
 
   - path: docs/7-concepts/cross-domain-synthesis.md
