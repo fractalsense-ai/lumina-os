@@ -18,8 +18,10 @@ _QUERY_TYPE_ACTION_MAP: dict[str, str] = {
 }
 
 # query_types that are candidates for structured command dispatch.
+# Only write/mutation intents route to slm_parse_admin_command — read-only
+# query types (status_query, diagnostic) must not trigger mutation dispatch.
 _COMMAND_DISPATCH_TYPES: frozenset[str] = frozenset(
-    {"admin_command", "status_query", "config_review", "diagnostic"}
+    {"admin_command", "config_review"}
 )
 
 

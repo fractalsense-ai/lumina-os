@@ -84,6 +84,10 @@ class LearningState:
 # Default Parameters
 # ─────────────────────────────────────────────────────────────
 
+# Tolerance added to challenge-band boundaries to prevent floating-point jitter
+# at the edges from falsely registering as outside-band.
+_ZPD_TOLERANCE: float = 0.01
+
 DEFAULT_PARAMS: dict[str, Any] = {
     "minor_drift_threshold": 0.3,
     "major_drift_threshold": 0.5,
@@ -310,6 +314,13 @@ def update_zpd_window(
     hint_used = bool((evidence or {}).get("hint_used", False))
     correctness = (evidence or {}).get("correctness", None)
 
+    # Off-task turns (greetings, meta-questions) should not count against the
+    # ZPD window — the student hasn't attempted anything, so recording
+    # outside_band=True would unfairly accumulate toward drift detection.
+    off_task_ratio = float((evidence or {}).get("off_task_ratio", 0.0))
+    if off_task_ratio >= 0.8:
+        outside_band = False
+
     # Update outside_flags rolling window (most recent first)
     new_flags = [outside_band] + list(recent.outside_flags)
     new_flags = new_flags[:window_turns]
@@ -435,7 +446,10 @@ def zpd_monitor_step(
     # 5. Determine if challenge is outside the challenge band
     zpd_min = float(state.challenge_band.get("min_challenge", 0.3))
     zpd_max = float(state.challenge_band.get("max_challenge", 0.7))
-    outside_band = new_challenge < zpd_min or new_challenge > zpd_max
+    outside_band = (
+        new_challenge < zpd_min - _ZPD_TOLERANCE
+        or new_challenge > zpd_max + _ZPD_TOLERANCE
+    )
 
     # 6. Update ZPD rolling window
     new_window = update_zpd_window(state.recent_window, outside_band, evidence, p)

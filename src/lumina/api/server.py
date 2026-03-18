@@ -1054,7 +1054,8 @@ def process_message(
     presented_at = session.get("problem_presented_at")
     if presented_at is not None:
         _elapsed = time.time() - presented_at
-        turn_data["solve_elapsed_sec"] = _elapsed
+        if (runtime.get("tool_fns") or {}).get("generate_problem") is not None:
+            turn_data["solve_elapsed_sec"] = _elapsed
         # response_latency_sec measures wall-clock time from prompt delivery to
         # response receipt — the same interval as solve_elapsed_sec.
         turn_data["response_latency_sec"] = _elapsed
@@ -1112,9 +1113,9 @@ def process_message(
                         task_spec["nominal_difficulty"] = diff
                     else:
                         diff = float(task_spec.get("nominal_difficulty", 0.5))
-                    current_problem = gen_fn(diff, tiers)
+                    current_problem = gen_fn(diff, domain)
             except Exception:
-                log.warning("Problem generation on advance failed")
+                log.warning("Problem generation on advance failed", exc_info=True)
         session["problem_presented_at"] = time.time()
 
     session["current_problem"] = current_problem

@@ -255,3 +255,73 @@ def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
         headers=_auth_header(da_token),
     )
     assert resolve_resp.status_code == 403
+
+
+# ── Dispatch-type classification unit tests ───────────────────────────────────
+# These tests exercise the system runtime adapter directly to verify that
+# read-only query types (status_query, diagnostic) no longer trigger
+# slm_parse_admin_command, while admin_command still does.
+
+import json as _json
+import sys as _sys
+from pathlib import Path as _Path
+
+_SYS_ADAPTER_DIR = _Path(__file__).resolve().parent.parent / "domain-packs" / "system" / "systools"
+if str(_SYS_ADAPTER_DIR) not in _sys.path:
+    _sys.path.insert(0, str(_SYS_ADAPTER_DIR))
+
+from runtime_adapters import interpret_turn_input, _COMMAND_DISPATCH_TYPES  # noqa: E402
+
+
+def _make_llm(query_type: str):
+    """Return a fake call_llm that always classifies the input as query_type."""
+    def call_llm(system: str, user: str, model: str | None) -> str:
+        return _json.dumps({
+            "query_type": query_type,
+            "target_component": None,
+            "off_task_ratio": 0.0,
+            "response_latency_sec": 1.0,
+        })
+    return call_llm
+
+
+class TestCommandDispatchTypes:
+
+    def test_status_query_not_in_dispatch_set(self):
+        """status_query must have been removed from _COMMAND_DISPATCH_TYPES."""
+        assert "status_query" not in _COMMAND_DISPATCH_TYPES
+
+    def test_diagnostic_not_in_dispatch_set(self):
+        """diagnostic must have been removed from _COMMAND_DISPATCH_TYPES."""
+        assert "diagnostic" not in _COMMAND_DISPATCH_TYPES
+
+    def test_admin_command_in_dispatch_set(self):
+        assert "admin_command" in _COMMAND_DISPATCH_TYPES
+
+    def test_config_review_in_dispatch_set(self):
+        assert "config_review" in _COMMAND_DISPATCH_TYPES
+
+    def test_status_query_produces_null_command_dispatch(self):
+        """status_query classified turn must not trigger slm_parse_admin_command.
+
+        Since status_query is no longer in _COMMAND_DISPATCH_TYPES the code
+        takes the else-branch unconditionally and sets command_dispatch=None
+        without ever touching the SLM layer.
+        """
+        evidence = interpret_turn_input(
+            call_llm=_make_llm("status_query"),
+            input_text="what is the current system status?",
+            task_context={},
+            prompt_text="",
+        )
+        assert evidence["command_dispatch"] is None
+
+    def test_diagnostic_produces_null_command_dispatch(self):
+        """diagnostic classified turn must not trigger slm_parse_admin_command."""
+        evidence = interpret_turn_input(
+            call_llm=_make_llm("diagnostic"),
+            input_text="something seems broken",
+            task_context={},
+            prompt_text="",
+        )
+        assert evidence["command_dispatch"] is None

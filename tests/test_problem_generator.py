@@ -173,3 +173,27 @@ class TestGenerateTier3:
         p = generate_problem(0.8, {"equation_difficulty_tiers": TIERS})
         assert p["equation_type"] == "multi_step_linear"
         assert p["difficulty_tier"] == "tier_3"
+
+
+# ── Call-convention regression — subsystem_configs must be a dict ────────────
+
+
+class TestGenerateProblemCallConvention:
+    """Regression tests for the server.py advance-block argument type bug.
+
+    generate_problem expects subsystem_configs to be a dict containing the
+    'equation_difficulty_tiers' key. Passing the tier list directly (as the
+    buggy server.py code did via `gen_fn(diff, tiers)`) must raise an
+    AttributeError so the mistake is caught immediately at call sites.
+    """
+
+    def test_dict_call_succeeds(self):
+        """Correct call convention: wrap tiers inside the subsystem_configs dict."""
+        p = generate_problem(0.5, {"equation_difficulty_tiers": TIERS})
+        assert "equation" in p
+        assert "expected_answer" in p
+
+    def test_list_call_raises_attribute_error(self):
+        """Passing the raw tier list (old buggy path) must raise AttributeError."""
+        with pytest.raises(AttributeError):
+            generate_problem(0.5, TIERS)  # type: ignore[arg-type]
