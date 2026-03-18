@@ -32,7 +32,7 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `session.py` | `SessionContainer`, `DomainContext`, `get_or_create_session` |
 | `models.py` | Pydantic request/response models |
 | `middleware.py` | JWT bearer scheme, `require_auth`, `require_role` |
-| `llm.py` | `call_llm` — provider dispatch (OpenAI / Anthropic) |
+| `llm.py` | `call_llm` — provider dispatch (`openai`, `anthropic`, `local`, `google`, `azure`, `mistral`) |
 | `processing.py` | `process_message` — six-stage per-turn pipeline |
 | `runtime_helpers.py` | `render_contract_response`, `invoke_runtime_tool` |
 | `utils/text.py` | LaTeX regex helpers, `strip_latex_delimiters` |
@@ -53,11 +53,22 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LUMINA_LLM_PROVIDER` | `openai` | LLM backend: `openai` or `anthropic` (used for live mode) |
+| `LUMINA_LLM_PROVIDER` | `openai` | LLM backend: `openai`, `anthropic`, `local`, `google`, `azure`, or `mistral` |
 | `LUMINA_OPENAI_MODEL` | `gpt-4o` | OpenAI model name |
 | `LUMINA_ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | Anthropic model name |
+| `LUMINA_LLM_MODEL` | `llama3` | Model name for the `local` provider |
+| `LUMINA_LLM_ENDPOINT` | `http://localhost:11434` | Base URL for the `local` provider (Ollama/vLLM/LM Studio/TGI/OpenRouter) |
+| `LUMINA_LLM_TIMEOUT` | `120` | HTTP timeout in seconds for the `local` provider |
+| `LUMINA_GOOGLE_MODEL` | `gemini-2.0-flash` | Gemini model name for the `google` provider |
+| `LUMINA_AZURE_OPENAI_ENDPOINT` | — | Azure OpenAI resource endpoint (required for `azure` provider) |
+| `LUMINA_AZURE_OPENAI_DEPLOYMENT` | — | Azure OpenAI deployment name (required for `azure` provider) |
+| `LUMINA_AZURE_OPENAI_API_VERSION` | `2024-08-01-preview` | Azure OpenAI API version |
+| `LUMINA_MISTRAL_MODEL` | `mistral-large-latest` | Mistral model name for the `mistral` provider |
 | `OPENAI_API_KEY` | — | Required when `LUMINA_LLM_PROVIDER=openai` and live mode is used |
 | `ANTHROPIC_API_KEY` | — | Required when `LUMINA_LLM_PROVIDER=anthropic` and live mode is used |
+| `GOOGLE_API_KEY` | — | Required when `LUMINA_LLM_PROVIDER=google` |
+| `AZURE_OPENAI_API_KEY` | — | Required when `LUMINA_LLM_PROVIDER=azure` |
+| `MISTRAL_API_KEY` | — | Required when `LUMINA_LLM_PROVIDER=mistral` |
 | `LUMINA_RUNTIME_CONFIG_PATH` | — | Override path to runtime-config.yaml (single-domain mode) |
 | `LUMINA_DOMAIN_REGISTRY_PATH` | — | Path to domain-registry.yaml (multi-domain mode) |
 | `LUMINA_PERSISTENCE_BACKEND` | `filesystem` | `filesystem` or `sqlite` |

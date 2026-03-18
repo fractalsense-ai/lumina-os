@@ -30,6 +30,18 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 LLM_PROVIDER = os.environ.get("LUMINA_LLM_PROVIDER", "openai")
 OPENAI_MODEL = os.environ.get("LUMINA_OPENAI_MODEL", "gpt-4o")
 ANTHROPIC_MODEL = os.environ.get("LUMINA_ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+# ── Local / self-hosted (Ollama, vLLM, LM Studio, TGI, OpenRouter) ──────────
+LLM_MODEL = os.environ.get("LUMINA_LLM_MODEL", "llama3")
+LLM_ENDPOINT = os.environ.get("LUMINA_LLM_ENDPOINT", "http://localhost:11434")
+LLM_TIMEOUT = float(os.environ.get("LUMINA_LLM_TIMEOUT", "120"))
+# ── Google Gemini ─────────────────────────────────────────────────────────────
+GOOGLE_MODEL = os.environ.get("LUMINA_GOOGLE_MODEL", "gemini-2.0-flash")
+# ── Azure OpenAI ─────────────────────────────────────────────────────────────
+AZURE_OPENAI_ENDPOINT = os.environ.get("LUMINA_AZURE_OPENAI_ENDPOINT", "")
+AZURE_OPENAI_DEPLOYMENT = os.environ.get("LUMINA_AZURE_OPENAI_DEPLOYMENT", "")
+AZURE_OPENAI_API_VERSION = os.environ.get("LUMINA_AZURE_OPENAI_API_VERSION", "2024-08-01-preview")
+# ── Mistral AI ────────────────────────────────────────────────────────────────
+MISTRAL_MODEL = os.environ.get("LUMINA_MISTRAL_MODEL", "mistral-large-latest")
 RUNTIME_CONFIG_PATH = os.environ.get("LUMINA_RUNTIME_CONFIG_PATH")
 _explicit_registry = os.environ.get("LUMINA_DOMAIN_REGISTRY_PATH")
 DOMAIN_REGISTRY_PATH: str | None = (

@@ -15,8 +15,9 @@ Use environment injection for secrets in staging/production, never committed sec
 ## Runtime modes
 
 - Deterministic mode: no provider API key required (`deterministic_response=true`).
-- Live LLM mode: provider API key is required (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`).
+- Live LLM mode: provider API key is required for cloud providers (see below).
 - Live mode guardrail: runtime rejects live provider calls when the selected provider key is missing.
+- Local/self-hosted mode (`LUMINA_LLM_PROVIDER=local`): no API key required; connects to Ollama, vLLM, LM Studio, TGI, OpenRouter, or any OpenAI-compatible cluster endpoint.
 
 ## Required production variables
 
@@ -27,11 +28,14 @@ Conditionally required:
 
 - `OPENAI_API_KEY` when `LUMINA_LLM_PROVIDER=openai`
 - `ANTHROPIC_API_KEY` when `LUMINA_LLM_PROVIDER=anthropic`
+- `GOOGLE_API_KEY` when `LUMINA_LLM_PROVIDER=google`
+- `AZURE_OPENAI_API_KEY` + `LUMINA_AZURE_OPENAI_ENDPOINT` + `LUMINA_AZURE_OPENAI_DEPLOYMENT` when `LUMINA_LLM_PROVIDER=azure`
+- `MISTRAL_API_KEY` when `LUMINA_LLM_PROVIDER=mistral`
 
 ## Recommended production variables
 
 - `LUMINA_LLM_PROVIDER`
-- `LUMINA_OPENAI_MODEL` or `LUMINA_ANTHROPIC_MODEL`
+- `LUMINA_OPENAI_MODEL`, `LUMINA_ANTHROPIC_MODEL`, `LUMINA_LLM_MODEL`, `LUMINA_GOOGLE_MODEL`, or `LUMINA_MISTRAL_MODEL` (depending on selected provider)
 - `LUMINA_ENFORCE_POLICY_COMMITMENT=true`
 - `LUMINA_BOOTSTRAP_MODE=false`
 - `LUMINA_CORS_ORIGINS`
