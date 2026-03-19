@@ -1,8 +1,8 @@
 # lumina-api-server(2)
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-18  
+**Last updated:** 2026-03-19  
 
 ---
 
@@ -33,8 +33,9 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `models.py` | Pydantic request/response models |
 | `middleware.py` | JWT bearer scheme, `require_auth`, `require_role` |
 | `llm.py` | `call_llm` — provider dispatch (`openai`, `anthropic`, `local`, `google`, `azure`, `mistral`) |
-| `processing.py` | `process_message` — six-stage per-turn pipeline |
+| `processing.py` | `process_message` — six-stage per-turn pipeline; frozen-session gate |
 | `runtime_helpers.py` | `render_contract_response`, `invoke_runtime_tool` |
+| `core/session_unlock.py` | In-memory OTP PIN store for session unlock |
 | `utils/text.py` | LaTeX regex helpers, `strip_latex_delimiters` |
 | `utils/glossary.py` | `detect_glossary_query`, per-domain definition cache |
 | `utils/coercion.py` | `normalize_turn_data`, field-type coercers |
@@ -86,6 +87,7 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `LUMINA_SESSION_IDLE_TIMEOUT_MINUTES` | `30` | Reap sessions idle longer than this value; `0` disables idle reaping |
 | `LUMINA_STAGED_CMD_TTL_SECONDS` | `300` | TTL for HITL-staged admin commands before they expire |
 | `LUMINA_MAX_CONTEXTS_PER_SESSION` | `10` | Maximum number of per-domain contexts a single session may hold |
+| `LUMINA_UNLOCK_PIN_TTL_SECONDS` | `900` | TTL in seconds for in-memory session-unlock OTP PINs |
 
 Notes:
 
@@ -117,6 +119,12 @@ Process a conversational turn through the D.S.A. pipeline.
 6. **Weight-routed response dispatch** — `classify_task_weight()` assigns LOW or HIGH weight to the resolved action; LOW-weight prompt types (definitions, confirmations) are served by the SLM, HIGH-weight types (explanations, scaffolding) go to the primary LLM.
 
 **Notes:** `domain_id` selects which domain context to use. When omitted, the default domain is used. Each session maintains an isolated `DomainContext` per domain; a single session may span multiple domains up to `LUMINA_MAX_CONTEXTS_PER_SESSION`.
+
+**Frozen-session behaviour:** When a `SessionContainer` has `frozen=True` (set by a teacher-initiated escalation resolve with `generate_pin=true`), the chat pipeline is short-circuited before the six stages run:
+
+- Any message that is **not** a valid 6-digit PIN returns `{"action": "session_frozen", "escalated": true, "response": "This session is temporarily locked pending teacher review."}` with HTTP 200.
+- A message that is exactly 6 digits and **matches the stored OTP** for this session unfreezes the session and returns `{"action": "session_unlocked", "escalated": false, "response": "Session unlocked. You may continue."}` with HTTP 200. The PIN is consumed on first use.
+- A message that is 6 digits but does **not** match (wrong PIN, expired PIN, or no PIN stored) is treated as a normal frozen message and returns `session_frozen`.
 
 ---
 
@@ -194,9 +202,37 @@ List escalation records. Query parameters: `status`, `domain_id`, `limit`, `offs
 
 Resolve an open escalation with a decision.
 
-**Request:** `EscalationResolveRequest` — `decision` (`approve` | `reject` | `defer`), `notes`
+**Request:** `EscalationResolveRequest`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `decision` | `string` | required | `"approve"`, `"reject"`, or `"defer"` |
+| `reasoning` | `string` | required | Free-text rationale recorded in the CTL |
+| `generate_pin` | `bool` | `false` | When `true`, generates a 6-digit OTP, freezes the session, and returns `unlock_pin` in the response |
+| `intervention_notes` | `string \| null` | `null` | Free-text intervention notes appended to the student's `intervention_history` in their profile |
+| `generate_proposal` | `bool` | `false` | Marks the intervention notes entry for night-cycle proposal generation |
+
+**Response:** `{record_id, escalation_id, decision}` plus `unlock_pin` (6-digit string) when `generate_pin=true`.
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+
+**Notes:** Setting `generate_pin=true` both generates the PIN (stored in memory, TTL from `LUMINA_UNLOCK_PIN_TTL_SECONDS`) and atomically sets `SessionContainer.frozen=True` for the session. The teacher delivers the PIN to the student out-of-band. See [escalation-pin-unlock](../8-admin/escalation-pin-unlock.md) for the full workflow.
+
+---
+
+### POST /api/sessions/{session_id}/unlock
+
+Unfreeze a frozen session by submitting the OTP PIN issued during escalation resolve.
+
+**Request:** `SessionUnlockRequest` — `pin` (string, exactly 6 digits)
+
+**Response:** `{session_id, unlocked: true}`
+
+**Auth:** Bearer token required. Any authenticated user may call this endpoint.
+
+**Errors:** `403` when the PIN is invalid, expired, or no PIN is pending for this session.
+
+**Notes:** For in-chat PIN entry (student submits the 6-digit PIN as a chat message) see the frozen-session behaviour note on `POST /api/chat`. Both paths consume the PIN on first use.
 
 ---
 

@@ -1,0 +1,30 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\dxn00\Lumina\project-lumina
+configfile: pytest.ini
+plugins: anyio-4.12.1, cov-7.0.0
+collected 29 items
+
+tests\test_escalation_unlock.py .............................            [100%]
+
+============================== warnings summary ===============================
+tests/test_escalation_unlock.py: 18 warnings
+  C:\Users\dxn00\Lumina\project-lumina\src\lumina\api\server.py:195: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_escalation_unlock.py: 18 warnings
+  C:\Users\dxn00\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\applications.py:4599: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 29 passed, 36 warnings in 242.32s (0:04:02) =================

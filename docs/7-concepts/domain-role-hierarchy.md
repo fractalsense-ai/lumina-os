@@ -1,8 +1,8 @@
 # Domain Role Hierarchy
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Active
-**Last updated:** 2026-03-15
+**Last updated:** 2026-03-19
 
 ---
 
@@ -152,7 +152,7 @@ Domain roles are purely additive. They can grant access that the system role alo
 | Domain Role | Level | System Mapping | Access | Description |
 |-------------|-------|----------------|--------|-------------|
 | *(Domain Authority)* | *0* | *domain_authority* | *rwx* | Department head — implicit ceiling |
-| `teacher` | 1 | `domain_authority` | rwx | Instructor, receives escalations, can assign TAs and students |
+| `teacher` | 1 | `domain_authority` | rwx | Instructor; receives escalations; can assign TAs and students; may freeze/unfreeze student sessions via PIN unlock |
 | `teaching_assistant` | 2 | `user` | rx | Support staff, can view student progress and issue hints |
 | `student` | 3 | `user` | x | Learner, execute sessions only |
 
@@ -201,6 +201,25 @@ The `scoped_capabilities` field provides domain-specific boolean flags that go b
 
 Capabilities are free-form and domain-defined. They are not enforced by the permission checker itself but by domain-specific code paths (e.g., the escalation engine checks `receive_escalations` to determine who receives escalation packets).
 
+### Smart escalation routing via `receive_escalations`
+
+When `receive_escalations: true` is set on a domain role and a student profile's `assigned_teacher_id` is populated with the actor ID of a user holding that role, the orchestrator automatically populates `escalation_target_id` in every escalation record written for that student. This routes the escalation directly to the named teacher in dashboards and notification systems without requiring manual triage.
+
+`assigned_room_id` in the student profile is also carried into the escalation record as `assigned_room_id`, giving classroom-level context to multi-room deployments. See [escalation-pin-unlock](../8-admin/escalation-pin-unlock.md) for the full teacher-student freeze/unlock workflow.
+
+---
+
+## Student Profile Assignment Fields
+
+The education domain student profile (`domain-packs/education/schemas/student-profile-schema-v1.json`) includes two fields that connect students to their domain role holders:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `assigned_teacher_id` | `string \| null` | Actor ID of the teacher responsible for this student. Populated at registration or role-assignment time. Used by the orchestrator to set `escalation_target_id` in escalation records. |
+| `assigned_room_id` | `string \| null` | Classroom or cohort identifier. Carried into escalation records for routing and reporting. |
+
+These fields are set by the Domain Authority (or a teacher with `may_assign_domain_roles: true`) when assigning a student role. They are stored in the persistence backend alongside the rest of the student profile and are read by `ppa_orchestrator._write_escalation_record()` at escalation time.
+
 ---
 
 ## Role Assignment
@@ -247,4 +266,5 @@ This design is implemented in `DomainRegistry.resolve_default_for_user()` in `sr
 - [`docs/3-functions/permissions.md`](../3-functions/permissions.md) — Permission checker function reference
 - [`docs/3-functions/auth.md`](../3-functions/auth.md) — JWT authentication (domain_roles claim)
 - [`docs/8-admin/rbac-administration.md`](../8-admin/rbac-administration.md) — Role management procedures
+- [`docs/8-admin/escalation-pin-unlock.md`](../8-admin/escalation-pin-unlock.md) — Teacher-initiated session freeze and PIN unlock workflow
 - [`docs/7-concepts/zero-trust-architecture.md`](zero-trust-architecture.md) — Zero-trust architecture

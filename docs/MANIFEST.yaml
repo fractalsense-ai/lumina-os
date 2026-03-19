@@ -93,9 +93,9 @@ artifacts:
   - path: docs/2-syscalls/lumina-api-server.md
     type: doc
     section: 2
-    doc_version: 1.1.0
+    doc_version: 1.2.0
     status: active
-    last_updated: 2026-03-18
+    last_updated: 2026-03-19
     sha256: pending
 
   # ── Section 3: Functions ───────────────────────────────────────────────────
@@ -287,10 +287,10 @@ artifacts:
   - path: docs/7-concepts/domain-role-hierarchy.md
     type: doc
     section: 7
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-15
-    sha256: 9572224f888a965b84ac6a15d9624de7fbcf37d04aa86b67b62bc411399c7fcc
+    last_updated: 2026-03-19
+    sha256: pending
 
   # ── Section 8: Administration ──────────────────────────────────────────────
 
@@ -325,6 +325,14 @@ artifacts:
     status: active
     last_updated: 2026-03-13
     sha256: c4e46d294c4018ebe01b4a938563c5190a7480e0e91a17c520ee0f953d86e19f
+
+  - path: docs/8-admin/escalation-pin-unlock.md
+    type: doc
+    section: 8
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-19
+    sha256: pending
 
   # ── Specs ──────────────────────────────────────────────────────────────────
 
