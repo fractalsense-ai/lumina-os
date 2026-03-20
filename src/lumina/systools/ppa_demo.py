@@ -2,7 +2,7 @@
 ppa-orchestrator-demo.py — Project Lumina Prompt Packet Assembly (PPA) Orchestrator End-to-End Demo
 
 Runs a scripted 10-turn algebra session showing the full D.S.A. loop:
-  Domain Physics → ZPD Monitor → CTL → Prompt Contract
+  Domain Physics → ZPD Monitor → System Log → Prompt Contract
 
 Each turn prints:
   - Invariant check results (pass/fail per invariant)
@@ -12,7 +12,7 @@ Each turn prints:
   - A simulated student-facing response based on prompt_type
 
 The session includes a deliberate escalation event (frustration +
-major ZPD drift).  After all turns the CTL hash chain is verified and
+major ZPD drift).  After all turns the System Logs hash chain is verified and
 a session summary is printed.
 
 Run:
@@ -83,17 +83,17 @@ RecentWindow = _zpd_mod.RecentWindow
 LearningState = _zpd_mod.LearningState
 zpd_monitor_step = _zpd_mod.zpd_monitor_step
 
-# Also grab the CTL chain verifier from ctl-commitment-validator.py
-_ctl_spec = _ilu.spec_from_file_location(
-    "ctl_validator",
-    os.path.join(os.path.dirname(__file__), "ctl-commitment-validator.py"),
+# Also grab the System Logs chain verifier from system-log-validator.py
+_log_spec = _ilu.spec_from_file_location(
+    "system_log_validator",
+    os.path.join(os.path.dirname(__file__), "system-log-validator.py"),
 )
-_ctl_mod = _ilu.module_from_spec(_ctl_spec)  # type: ignore[arg-type]
-sys.modules["ctl_validator"] = _ctl_mod
-_ctl_spec.loader.exec_module(_ctl_mod)  # type: ignore[union-attr]
+_log_mod = _ilu.module_from_spec(_log_spec)  # type: ignore[arg-type]
+sys.modules["system_log_validator"] = _log_mod
+_log_spec.loader.exec_module(_log_mod)  # type: ignore[union-attr]
 
-verify_chain = _ctl_mod.verify_chain
-load_ledger = _ctl_mod.load_ledger
+verify_chain = _log_mod.verify_chain
+load_ledger = _log_mod.load_ledger
 
 
 # ─────────────────────────────────────────────────────────────
@@ -561,11 +561,11 @@ def run_demo() -> None:
 
     # ── Temp ledger ───────────────────────────────────────────
     ledger_file = tempfile.NamedTemporaryFile(
-        mode="w", suffix="-ctl-demo.jsonl", delete=False, encoding="utf-8"
+        mode="w", suffix="-log-demo.jsonl", delete=False, encoding="utf-8"
     )
     ledger_path = Path(ledger_file.name)
     ledger_file.close()
-    print(f"\nCTL ledger: {ledger_path}\n")
+    print(f"\nSystem Log ledger: {ledger_path}\n")
 
     # ── Create orchestrator (writes CommitmentRecord) ─────────
     # Wire up the education-domain ZPD monitor explicitly.
@@ -618,7 +618,7 @@ def run_demo() -> None:
         if zpd_decision.get("tier") in ("minor", "major"):
             total_drift_events += 1
         escalation_records = [
-            r for r in orch.ctl_records
+            r for r in orch.log_records
             if r.get("record_type") == "EscalationRecord"
         ]
         if len(escalation_records) > total_escalations:
@@ -677,8 +677,8 @@ def run_demo() -> None:
 
         _sep()
 
-    # ── CTL chain verification ────────────────────────────────
-    print("\nVerifying CTL hash chain...")
+    # ── System Log chain verification ────────────────────────────────
+    print("\nVerifying System Log hash chain...")
     records = load_ledger(ledger_path)
     result = verify_chain(records)
     if result["intact"]:
@@ -695,7 +695,7 @@ def run_demo() -> None:
     _sep("═")
     print(f"  Session ID  : {session_id[:8]}...")
     print(f"  Turns run   : {len(TURNS)}")
-    print(f"  CTL records : {len(records)}")
+    print(f"  System Log records : {len(records)}")
     print()
     print("  Mastery deltas (initial → final):")
     for skill in sorted(initial_mastery):
@@ -706,7 +706,7 @@ def run_demo() -> None:
         print(f"    {skill:<26} {init_v:.3f} → {final_v:.3f}  {arrow}{abs(delta):.3f}")
     print()
 
-    # Count event types in CTL
+    # Count event types in System Log
     trace_events = [r for r in records if r.get("record_type") == "TraceEvent"]
     escalation_records = [r for r in records if r.get("record_type") == "EscalationRecord"]
     commitment_records = [r for r in records if r.get("record_type") == "CommitmentRecord"]

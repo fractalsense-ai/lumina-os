@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # World-Sim as Domain Persona — Pattern Reference
 
 **Version:** 1.0.0
@@ -128,7 +133,7 @@ The world-sim persona never alters what the core engine enforces. The following 
 - Invariant checks run identically in-world and out-of-world
 - Mastery thresholds and proficiency calculations are unchanged
 - Consent, escalation, and exit clause mechanics are unchanged
-- The CTL records functional outcomes, not narrative content
+- The System Logs records functional outcomes, not narrative content
 - Assessment is based on verifiable domain outcomes (see `domain-adapter-pattern.md`), never on behavioral inference or narrative engagement
 
 The AI may use in-world language to communicate constraint violations. The underlying check is identical:

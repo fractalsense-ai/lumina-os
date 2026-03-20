@@ -98,10 +98,10 @@ If validation passes, the JSON file is written alongside the YAML.
 
 ### Step 3: Commit the Hash
 
-Before the domain pack is used operationally, commit its hash to the CTL:
+Before the domain pack is used operationally, commit its hash to the System Logs:
 
 ```bash
-python reference-implementations/ctl-commitment-validator.py \
+python reference-implementations/system-log-validator.py \
   --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger path/to/ledger.jsonl
@@ -205,7 +205,7 @@ Other domains should define their own subsystem config blocks under `subsystem_c
 A session may span multiple Domain Profiles if the Meta Authority authorizes it. In this case:
 - Each domain has its own invariant set
 - The session's escalation policy is the union of both domains' escalation triggers
-- The CTL records which domain was active for each TraceEvent
+- The System Logs records which domain was active for each TraceEvent
 
 Multi-domain sessions are advanced usage and require explicit Meta Authority approval in the session's CommitmentRecord.
 
@@ -228,7 +228,7 @@ permissions:
       scope: evaluation_only
     - role: auditor
       access: r
-      scope: ctl_records_only
+      scope: log_records_only
     - role: user
       access: x
 ```
@@ -237,7 +237,7 @@ permissions:
 
 | Bit | Value | Meaning |
 |-----|-------|---------|
-| r | 4 | Read domain physics, session data, CTL records |
+| r | 4 | Read domain physics, session data, System Log records |
 | w | 2 | Author or modify domain packs, invariants, standing orders |
 | x | 1 | Run sessions, trigger tool adapters |
 

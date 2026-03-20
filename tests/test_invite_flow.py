@@ -451,7 +451,7 @@ class TestInviteUserHITLCommand:
                     },
                 },
                 "resolved": False,
-                "ctl_stage_record_id": f"ctl-{uuid.uuid4().hex[:8]}",
+                "log_stage_record_id": f"ctl-{uuid.uuid4().hex[:8]}",
                 "expires_at": time.time() + 600,
             }
 
@@ -497,7 +497,7 @@ class TestInviteUserHITLCommand:
                     },
                 },
                 "resolved": False,
-                "ctl_stage_record_id": f"ctl-{uuid.uuid4().hex[:8]}",
+                "log_stage_record_id": f"ctl-{uuid.uuid4().hex[:8]}",
                 "expires_at": time.time() + 600,
             }
 

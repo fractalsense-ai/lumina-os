@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Novel Synthesis Framework
 
 **Version:** 1.1.0  
@@ -20,7 +25,7 @@ Novel synthesis tracking solves this by:
 
 1. **Isolating the signal from noise** — only flagged, non-obvious connections enter the verification pipeline.
 2. **Requiring human confirmation** — the system never self-validates innovation; a domain authority must turn the second key.
-3. **Recording lean metadata** — the system CTL stores only the audit trail (domain, model, timestamp, verdict), not the raw content.
+3. **Recording lean metadata** — the system log stores only the audit trail (domain, model, timestamp, verdict), not the raw content.
 4. **Enabling model benchmarking** — by correlating novel synthesis rates with model identity, the system builds a performance heatmap across domains.
 
 ---
@@ -107,7 +112,7 @@ The system does **not** learn the new concept until Key 2 turns. This prevents h
   ┌───────│─────────────────────│────────────────│──────────┐   │
   │       │    SYSTEM BOUNDARY  │                │          │   │
   │       ▼                     ▼                ▼          │   │
-  │  TraceEvent            System CTL records verdict       │   │
+  │  TraceEvent            System System Log records verdict       │   │
   │  metadata:             + model_id + model_version       │   │
   │    model_id            + domain_pack_id                 │   │
   │    model_version                                        │   │
@@ -128,7 +133,7 @@ The system boundary tracks model identity without inspecting domain logic. Every
 | `model_version` | Per-request (`ChatRequest.model_version`) | Model revision/version string |
 | `novel_synthesis_signal` | Orchestrator (from failing invariant `signal_type`) | Presence indicates Key 1 has turned |
 
-The system CTL stores only the **metadata** for the audit — not the raw synthesis content. This creates a reproducible "Map of Innovation" without bloating the system ledger:
+The system log stores only the **metadata** for the audit — not the raw synthesis content. This creates a reproducible "Map of Innovation" without bloating the system ledger:
 
 - **Tag:** `NOVEL_SYNTHESIS` (the `novel_synthesis_signal` value in TraceEvent metadata)
 - **Metadata:** `domain_pack_id`, `model_id`, `model_version`, `timestamp_utc`
@@ -203,7 +208,7 @@ The two-key gate protects against **model collapse**. If a new model version sta
 
 - Flag the model version as unreliable for that domain.
 - Alert the Meta Authority to consider rolling back to a known stable version.
-- Provide evidence for the rollback decision via the CTL audit trail.
+- Provide evidence for the rollback decision via the System Logs audit trail.
 
 The signal: if the `novel_synthesis_rejected` rate increases significantly after a model update, the provider may have degraded the model's reasoning capabilities. The system catches this immediately because the system-level ledger shows a dip in verified innovation alongside the model version change.
 
@@ -326,7 +331,7 @@ Before the SLM forwards a datastream to the LLM, it performs a similarity check 
 | **No match** | Datastream proceeds to LLM normally |
 | **Match above replay threshold** | SLM serves the verified insight directly; LLM is not invoked; TraceEvent `metadata` carries `synthesis_replay: true` |
 
-The `synthesis_replay: true` tag in TraceEvent `metadata` ensures the CTL audit trail captures the efficiency gain without losing traceability — an auditor can trace back to the original `novel_synthesis_verified` CommitmentRecord via the corpus entry's `record_id`.
+The `synthesis_replay: true` tag in TraceEvent `metadata` ensures the System Logs audit trail captures the efficiency gain without losing traceability — an auditor can trace back to the original `novel_synthesis_verified` CommitmentRecord via the corpus entry's `record_id`.
 
 ### Replay Threshold
 

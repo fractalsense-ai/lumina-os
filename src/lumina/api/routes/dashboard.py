@@ -72,7 +72,7 @@ async def dashboard_telemetry(
     if user_data["role"] not in ("root", "domain_authority"):
         raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
 
-    records = await run_in_threadpool(_cfg.PERSISTENCE.query_ctl_records, domain_id=domain_id)
+    records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records, domain_id=domain_id)
 
     record_types: dict[str, int] = {}
     for r in records:
@@ -90,7 +90,7 @@ async def dashboard_telemetry(
     resolved = sum(1 for e in escalations if e.get("status") == "resolved")
 
     return {
-        "total_ctl_records": len(records),
+        "total_log_records": len(records),
         "record_type_counts": record_types,
         "escalation_summary": {
             "total": len(escalations),

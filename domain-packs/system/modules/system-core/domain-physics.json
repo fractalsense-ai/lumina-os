@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "domain": "system",
   "label": "Lumina System Core",
-  "description": "System-administration domain covering Lumina OS internals: CTL, RBAC, domain physics, domain packs, system physics, policy gates, and operational monitoring.",
+  "description": "System-administration domain covering Lumina OS internals: System Log, RBAC, domain physics, domain packs, system physics, policy gates, and operational monitoring.",
 
   "permissions": {
     "mode": "770",
@@ -21,7 +21,7 @@
     "audit",
     "rbac_inspection",
     "domain_physics_review",
-    "ctl_review",
+    "log_review",
     "session_diagnostics",
     "user_management",
     "domain_authority_onboarding",
@@ -57,7 +57,7 @@
         "3. Deliver the setup_url to the incoming DA via the user_management_sop flow.",
         "4. After the DA activates their account, optionally assign domain-scoped roles via PATCH /api/auth/users/{id} with domain_roles.",
         "5. Confirm module access by asking the DA to run a GET /api/admin/command (module_status) for each governed module.",
-        "6. Write a CTL commitment record documenting the onboarding decision.",
+        "6. Write a System Log commitment record documenting the onboarding decision.",
         "Alternatively, use the system domain chat interface: type 'invite domain authority <username> for module <module_id>' to stage the invite through the HITL command flow."
       ],
       "notes": [
@@ -72,15 +72,15 @@
       "description": "Standard operating procedure for reviewing and resolving open escalation events.",
       "steps": [
         "1. Run GET /api/admin/escalations (or list_escalations via chat) to view pending escalations.",
-        "2. For each escalation, review the CTL trace to understand the triggering condition.",
+        "2. For each escalation, review the System Logs trace to understand the triggering condition.",
         "3. Issue POST /api/admin/escalations/{id}/resolve with decision (approve/reject/defer), reasoning, and optional intervention_notes.",
         "4. If the escalation involves a frozen student session, set generate_pin=true to issue a PIN the student can enter to self-unlock.",
         "5. If the teacher recorded intervention_notes, optionally set generate_proposal=true to trigger a domain-physics update proposal.",
-        "6. Confirm the escalation record status transitions to resolved in the CTL."
+        "6. Confirm the escalation record status transitions to resolved in the System Logs."
       ],
       "notes": [
         "Escalations older than the SLA threshold should be reviewed first.",
-        "intervention_notes are written to the CTL as an immutable audit record and should describe what real-world action was taken.",
+        "intervention_notes are written to the System Logs as an immutable audit record and should describe what real-world action was taken.",
         "Escalations cannot be deleted — only resolved or deferred."
       ]
     }
@@ -99,29 +99,29 @@
       "condition": "An invite_user command was resolved via the HITL flow but user creation failed (e.g. username collision, persistence error), leaving no pending user record.",
       "target_role": "root",
       "sla_minutes": 15,
-      "recommended_action": "Inspect the CTL admin ledger for error details, resolve the conflict (rename or remove the duplicate username), and re-issue the invite."
+      "recommended_action": "Inspect the System Logs admin ledger for error details, resolve the conflict (rename or remove the duplicate username), and re-issue the invite."
     }
   ],
 
   "glossary": [
-    { "term": "ctl",                "definition": "Causal Trace Ledger — the append-only, hash-chained record of all domain-session trace events and commitment records." },
-    { "term": "commitment_record",  "definition": "A CTL record that marks a durable system decision: domain-physics activation, role change, escalation, or night-cycle outcome." },
-    { "term": "trace_event",        "definition": "A single LLM-driven turn record in the CTL, capturing input evidence, state delta, and the system-physics hash active at the time." },
+    { "term": "ctl",                "definition": "System Logs — the append-only, hash-chained record of all domain-session trace events and commitment records." },
+    { "term": "commitment_record",  "definition": "A System Log record that marks a durable system decision: domain-physics activation, role change, escalation, or night-cycle outcome." },
+    { "term": "trace_event",        "definition": "A single LLM-driven turn record in the System Logs, capturing input evidence, state delta, and the system-physics hash active at the time." },
     { "term": "system_physics",     "definition": "The machine-readable global invariant layer (cfg/system-physics.yaml / .json) that constrains every domain session regardless of which domain is active." },
     { "term": "domain_physics",     "definition": "A domain-pack JSON file defining the module's topics, glossary, standing orders, escalation conditions, and artifacts." },
     { "term": "domain_pack",        "definition": "A self-contained module bundle (cfg, prompts, domain-lib, systools, modules) that implants a domain into the Lumina runtime." },
     { "term": "domain_authority",   "definition": "A role with authoring rights over one or more governed modules; highest ceiling for domain-scoped operations." },
     { "term": "meta_authority",     "definition": "The cross-domain governance layer above a Domain Authority; approves cross-domain synthesis and standing-order conflicts." },
     { "term": "policy_gate",        "definition": "A hard invariant in system physics that cannot be overridden by any domain pack; violated by a session → escalation." },
-    { "term": "hash_chain",         "definition": "The linked sequence of record_hash values in the CTL that provides tamper-evidence across all ledger entries." },
+    { "term": "hash_chain",         "definition": "The linked sequence of record_hash values in the System Logs that provides tamper-evidence across all ledger entries." },
     { "term": "rbac",               "definition": "Role-Based Access Control — Lumina's permission model combining chmod-style octal modes with optional extended ACLs." },
     { "term": "domain_registry",    "definition": "cfg/domain-registry.yaml — the file that maps domain_id keys to their runtime-config paths and routing metadata." },
     { "term": "standing_order",     "definition": "A persistent instruction authored by a Domain Authority that survives across session turns until explicitly revoked." },
-    { "term": "escalation",         "definition": "A domain-session signal that exceeds a policy-gate threshold; surfaces to Meta Authority and writes an escalation record to the CTL." },
+    { "term": "escalation",         "definition": "A domain-session signal that exceeds a policy-gate threshold; surfaces to Meta Authority and writes an escalation record to the System Logs." },
     { "term": "night_cycle",        "definition": "A configurable off-hours batch pass that performs glossary expansion, constraint refresh, and knowledge-graph rebuilds for a domain." },
     { "term": "tool_adapter",       "definition": "A domain-pack module that exposes a callable to the Lumina orchestrator as a named tool during a session." },
     { "term": "domain_lib",         "definition": "A domain-pack library of pure functions available to systools adapters without LLM involvement." },
-    { "term": "pseudonymous_id",    "definition": "The opaque, non-reversible identifier stored in the CTL in place of a real user identifier." },
+    { "term": "pseudonymous_id",    "definition": "The opaque, non-reversible identifier stored in the System Logs in place of a real user identifier." },
     { "term": "ingestion_pipeline", "definition": "The upload → extract → SLM-interpret → DA-review → commit workflow for importing external content into a domain pack." },
     { "term": "governed_modules",   "definition": "The list of module IDs (e.g. domain/edu/algebra-level-1/v1) that a domain_authority has authoring and approval rights over.  Required at invite time; cannot be empty for the domain_authority role." },
     { "term": "invite_token",       "definition": "A single-use, URL-safe token generated when an admin invites a new user.  Embedded in the setup_url; consumed by POST /api/auth/setup-password to activate the account.  Expires after LUMINA_INVITE_TOKEN_TTL_SECONDS (default 24 h)." },

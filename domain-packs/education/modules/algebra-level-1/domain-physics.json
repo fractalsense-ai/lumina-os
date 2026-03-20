@@ -339,7 +339,7 @@
           "receive_escalations": false,
           "view_student_progress": true,
           "issue_hints": true,
-          "view_ctl_records": true,
+          "view_log_records": true,
           "modify_domain_physics": false
         }
       },
@@ -367,7 +367,7 @@
       {
         "domain_role": "teaching_assistant",
         "access": "r",
-        "scope": "ctl_records_own_students"
+        "scope": "log_records_own_students"
       }
     ]
   }

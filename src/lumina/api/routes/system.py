@@ -1,4 +1,4 @@
-"""System endpoints: health, domains, domain-info, tool invocation, CTL validation."""
+"""System endpoints: health, domains, domain-info, tool invocation, System Log validation."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_role
-from lumina.api.models import CtlValidateResponse, ToolRequestWithDomain, ToolResponse
+from lumina.api.models import SystemLogValidateResponse, ToolRequestWithDomain, ToolResponse
 from lumina.api.runtime_helpers import invoke_runtime_tool
 from lumina.core.domain_registry import DomainNotFoundError
 from lumina.core.permissions import Operation, check_permission
@@ -81,17 +81,17 @@ async def run_tool(
     return ToolResponse(tool_id=tool_id, result=result)
 
 
-@router.get("/api/ctl/validate", response_model=CtlValidateResponse)
-async def validate_ctl(
+@router.get("/api/system-log/validate", response_model=SystemLogValidateResponse)
+async def validate_system_log(
     session_id: str | None = None,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> CtlValidateResponse:
+) -> SystemLogValidateResponse:
     user = await get_current_user(credentials)
     if user is not None:
         require_role(user, "root", "domain_authority", "qa", "auditor")
     try:
-        result = await run_in_threadpool(_cfg.PERSISTENCE.validate_ctl_chain, session_id)
+        result = await run_in_threadpool(_cfg.PERSISTENCE.validate_log_chain, session_id)
     except Exception as exc:
-        log.exception("CTL validation failed")
+        log.exception("System Log validation failed")
         raise HTTPException(status_code=500, detail=str(exc))
-    return CtlValidateResponse(result=result)
+    return SystemLogValidateResponse(result=result)

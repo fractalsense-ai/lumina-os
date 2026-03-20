@@ -5,23 +5,23 @@ from lumina.persistence.adapter import NullPersistenceAdapter
 
 
 @pytest.mark.unit
-def test_get_ctl_ledger_path_with_domain_id():
+def test_get_log_ledger_path_with_domain_id():
     adapter = NullPersistenceAdapter()
-    result = adapter.get_ctl_ledger_path("sess-123", domain_id="math")
+    result = adapter.get_log_ledger_path("sess-123", domain_id="math")
     assert result == "session-sess-123-math.jsonl"
 
 
 @pytest.mark.unit
-def test_get_ctl_ledger_path_without_domain_id():
+def test_get_log_ledger_path_without_domain_id():
     adapter = NullPersistenceAdapter()
-    result = adapter.get_ctl_ledger_path("sess-123")
+    result = adapter.get_log_ledger_path("sess-123")
     assert result == "session-sess-123.jsonl"
 
 
 @pytest.mark.unit
-def test_get_ctl_ledger_path_domain_id_none_explicit():
+def test_get_log_ledger_path_domain_id_none_explicit():
     adapter = NullPersistenceAdapter()
-    result = adapter.get_ctl_ledger_path("sess-456", domain_id=None)
+    result = adapter.get_log_ledger_path("sess-456", domain_id=None)
     assert result == "session-sess-456.jsonl"
 
 
@@ -138,18 +138,18 @@ def test_list_users_excludes_password_hash():
 
 
 @pytest.mark.unit
-def test_validate_ctl_chain_with_session_id():
+def test_validate_log_chain_with_session_id():
     adapter = NullPersistenceAdapter()
-    result = adapter.validate_ctl_chain(session_id="sess-99")
+    result = adapter.validate_log_chain(session_id="sess-99")
     assert result["scope"] == "session"
     assert result["session_id"] == "sess-99"
     assert result["intact"] is True
 
 
 @pytest.mark.unit
-def test_validate_ctl_chain_all_sessions():
+def test_validate_log_chain_all_sessions():
     adapter = NullPersistenceAdapter()
-    result = adapter.validate_ctl_chain()
+    result = adapter.validate_log_chain()
     assert result["scope"] == "all"
     assert result["intact"] is True
 

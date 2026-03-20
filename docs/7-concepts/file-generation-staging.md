@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # File Generation & Staging
 
 > **Architecture layer**: Tier 3 — Execution (actuator isolation)
@@ -24,7 +29,7 @@ pipeline for any file that an LLM wants to create or modify:
 ### Why?
 
 1. **Safety** — LLM hallucinations never reach the filesystem.
-2. **Auditability** — Every file operation has a CTL commitment record.
+2. **Auditability** — Every file operation has a System Log commitment record.
 3. **Reversibility** — Rejected files stay in staging for investigation.
 4. **Consistency** — Templates enforce structural invariants that the LLM
    cannot violate.
@@ -37,11 +42,11 @@ Central orchestrator for the stage → review → write lifecycle.
 
 | Method | Description |
 |--------|-------------|
-| `stage_file(payload, template_id, actor_id)` | Validates payload against template requirements, writes JSON envelope to `data/staging/{uuid}.json`, creates CTL `hitl_command_staged` record. |
+| `stage_file(payload, template_id, actor_id)` | Validates payload against template requirements, writes JSON envelope to `data/staging/{uuid}.json`, creates System Log `hitl_command_staged` record. |
 | `list_staged(actor_id=None)` | Lists all pending envelopes (optionally filtered by actor). |
 | `get_staged(staged_id)` | Loads a single envelope by UUID. |
-| `approve_staged(staged_id, approver_id, target_overrides)` | Writes the file to its final path via `write_from_template`, creates CTL `hitl_command_accepted` record. |
-| `reject_staged(staged_id, approver_id, reason)` | Marks envelope as rejected, creates CTL `hitl_command_rejected` record. |
+| `approve_staged(staged_id, approver_id, target_overrides)` | Writes the file to its final path via `write_from_template`, creates System Log `hitl_command_accepted` record. |
+| `reject_staged(staged_id, approver_id, reason)` | Marks envelope as rejected, creates System Log `hitl_command_rejected` record. |
 
 ### TemplateRegistry (`src/lumina/staging/template_registry.py`)
 
@@ -82,7 +87,7 @@ Each staged file is persisted as a JSON envelope:
   "approver_id": null,
   "resolved_at": null,
   "final_path": null,
-  "ctl_record_id": "uuid"
+  "log_record_id": "uuid"
 }
 ```
 
@@ -98,9 +103,9 @@ Schema: `standards/staged-file-schema-v1.json`
 | POST | `/api/staging/{staged_id}/approve` | root, domain_authority | Approve and write |
 | POST | `/api/staging/{staged_id}/reject` | root, domain_authority | Reject staged file |
 
-## CTL Integration
+## System Log Integration
 
-Every state transition produces a CTL `CommitmentRecord`:
+Every state transition produces a System Log `CommitmentRecord`:
 
 | Transition | commitment_type |
 |------------|-----------------|

@@ -121,14 +121,14 @@ def test_tool_invalid_tool_id_returns_400(client: TestClient) -> None:
 
 
 @pytest.mark.integration
-def test_ctl_validate_role_gating(client: TestClient) -> None:
+def test_system_log_validate_role_gating(client: TestClient) -> None:
     user_token = _register_and_login(client, "regular_user", "user")
     root_token = _register_and_login(client, "root_user", "root")
 
-    denied = client.get("/api/ctl/validate", headers={"Authorization": f"Bearer {user_token}"})
+    denied = client.get("/api/system-log/validate", headers={"Authorization": f"Bearer {user_token}"})
     assert denied.status_code == 403
 
-    allowed = client.get("/api/ctl/validate", headers={"Authorization": f"Bearer {root_token}"})
+    allowed = client.get("/api/system-log/validate", headers={"Authorization": f"Bearer {root_token}"})
     assert allowed.status_code == 200
     assert allowed.json()["result"]["intact"] is True
 

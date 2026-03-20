@@ -10,7 +10,7 @@ regen  Recompute all SHA-256 hashes and rewrite docs/MANIFEST.yaml in-place.
        Preserves comments, formatting, and all non-hash fields.
        Also updates the top-level last_updated date to today.
 
-Domain-pack artifact integrity is managed by the Causal Trace Ledger (CTL),
+Domain-pack artifact integrity is managed by the System Logs,
 not by this tool.
 """
 from __future__ import annotations

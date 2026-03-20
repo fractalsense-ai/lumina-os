@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # integrity-check(1)
 
 **Version:** 1.0.0  
@@ -47,8 +52,8 @@ into sync.
 `PENDING` entries are expected during initial bootstrapping or when a new artifact entry
 has been added but not yet hashed. Resolve them by running `manifest-regenerate(1)`.
 
-Domain-pack artifact integrity is managed by the Causal Trace Ledger (CTL), not by
-this tool. See `ctl-commitment-validator(1)`.
+Domain-pack artifact integrity is managed by the System Logs, not by
+this tool. See `system-log-validator(1)`.
 
 ## EXIT CODES
 
@@ -68,7 +73,7 @@ this tool. See `ctl-commitment-validator(1)`.
 
 This is a read-only operation. It does not modify `docs/MANIFEST.yaml` or any artifact on disk.
 Auditors may use this tool to verify manifest integrity as part of compliance reviews, consistent
-with their read-only access to CTL records and audit logs.
+with their read-only access to System Log records and audit logs.
 
 The `user` and `it_support` roles are excluded — manifest inspection is a governance-level read.
 
@@ -78,4 +83,4 @@ The `user` and `it_support` roles are excluded — manifest inspection is a gove
 
 ## SEE ALSO
 
-[manifest-regenerate(1)](manifest-regenerate.md), [verify-repo-integrity(1)](verify-repo-integrity.md), [artifact-manifest-format(4)](../4-formats/artifact-manifest-format.md), [ctl-commitment-validator(1)](ctl-commitment-validator.md)
+[manifest-regenerate(1)](manifest-regenerate.md), [verify-repo-integrity(1)](verify-repo-integrity.md), [artifact-manifest-format(4)](../4-formats/artifact-manifest-format.md), [system-log-validator(1)](system-log-validator.md)

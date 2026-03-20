@@ -32,13 +32,14 @@ from lumina.auth.auth import (
     revoke_token_jti,
     verify_password,
 )
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     build_domain_role_assignment,
     build_domain_role_revocation,
     build_trace_event,
     can_govern_domain,
     map_role_to_actor_role,
 )
+from lumina.system_log.commit_guard import requires_log_commit
 from lumina.core.email_sender import send_invite_email
 from lumina.core.invite_store import generate_invite_token, validate_invite_token
 
@@ -48,6 +49,7 @@ router = APIRouter()
 
 
 @router.post("/api/auth/register", response_model=TokenResponse)
+@requires_log_commit
 async def register(req: RegisterRequest) -> TokenResponse:
     if req.role not in VALID_ROLES:
         raise HTTPException(status_code=400, detail=f"Invalid role: {req.role}")
@@ -76,6 +78,21 @@ async def register(req: RegisterRequest) -> TokenResponse:
     )
 
     token = create_jwt(user_id=user_id, role=role, governed_modules=req.governed_modules or [])
+
+    event = build_trace_event(
+        session_id="admin",
+        actor_id=user_id,
+        event_type="other",
+        decision="user_registered",
+        evidence_summary={"user_id": user_id, "username": req.username, "role": role},
+    )
+    try:
+        _cfg.PERSISTENCE.append_log_record(
+            "admin", event,
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write user_registered trace event")
 
     log.info("Registered user %s (%s) with role %s", req.username, user_id, role)
     return TokenResponse(access_token=token, user_id=user_id, role=role)
@@ -171,6 +188,7 @@ async def list_all_users(
 
 
 @router.patch("/api/auth/users/{user_id}", response_model=UserResponse)
+@requires_log_commit
 async def update_user(
     user_id: str,
     req: UpdateUserRequest,
@@ -219,12 +237,12 @@ async def update_user(
                     prev_role=prev_role,
                 )
                 try:
-                    _cfg.PERSISTENCE.append_ctl_record(
+                    _cfg.PERSISTENCE.append_log_record(
                         "admin", record,
-                        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+                        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
                     )
                 except Exception:
-                    log.debug("Could not write domain_role_revocation CTL record")
+                    log.debug("Could not write domain_role_revocation System Log record")
             record = build_domain_role_assignment(
                 actor_id=user_data["sub"],
                 actor_role=map_role_to_actor_role(user_data["role"]),
@@ -233,12 +251,12 @@ async def update_user(
                 domain_role=domain_role,
             )
             try:
-                _cfg.PERSISTENCE.append_ctl_record(
+                _cfg.PERSISTENCE.append_log_record(
                     "admin", record,
-                    ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
                 )
             except Exception:
-                log.debug("Could not write domain_role_assignment CTL record")
+                log.debug("Could not write domain_role_assignment System Log record")
 
     if new_role != old_role:
         event = build_trace_event(
@@ -253,9 +271,9 @@ async def update_user(
             },
         )
         try:
-            _cfg.PERSISTENCE.append_ctl_record(
+            _cfg.PERSISTENCE.append_log_record(
                 "admin", event,
-                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
             )
         except Exception:
             log.debug("Could not write role_change trace event")
@@ -270,6 +288,7 @@ async def update_user(
 
 
 @router.delete("/api/auth/users/{user_id}", status_code=204)
+@requires_log_commit
 async def delete_user(
     user_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -293,15 +312,16 @@ async def delete_user(
         evidence_summary={"target_user_id": user_id},
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write user_deactivated trace event")
 
 
 @router.post("/api/auth/revoke", status_code=200)
+@requires_log_commit
 async def revoke_token(
     req: RevokeRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -324,9 +344,9 @@ async def revoke_token(
         evidence_summary={"target_user_id": req.user_id or user_data["sub"]},
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write token_revoked trace event")
@@ -335,6 +355,7 @@ async def revoke_token(
 
 
 @router.post("/api/auth/password-reset", status_code=200)
+@requires_log_commit
 async def password_reset(
     req: PasswordResetRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -362,9 +383,9 @@ async def password_reset(
         evidence_summary={"target_user_id": target_user_id},
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write password_reset trace event")
@@ -376,6 +397,7 @@ async def password_reset(
 
 
 @router.post("/api/auth/invite", response_model=UserInvitationResponse)
+@requires_log_commit
 async def invite_user(
     req: InviteUserRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -443,9 +465,9 @@ async def invite_user(
         },
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write user_invited trace event")
@@ -463,6 +485,7 @@ async def invite_user(
 
 
 @router.post("/api/auth/setup-password", response_model=TokenResponse)
+@requires_log_commit
 async def setup_password(req: SetupPasswordRequest) -> TokenResponse:
     """Activate a pending user account by setting a password.
 
@@ -497,9 +520,9 @@ async def setup_password(req: SetupPasswordRequest) -> TokenResponse:
         evidence_summary={"user_id": user_id},
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write account_activated trace event")

@@ -1,27 +1,52 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/invite-user.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "invite_user",
   "description": "Invite a new user to the platform with a specified role.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "invite_user" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "invite_user"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["username", "role"],
+      "required": [
+        "username",
+        "role"
+      ],
       "additionalProperties": false,
       "properties": {
-        "username": { "type": "string", "minLength": 1 },
+        "username": {
+          "type": "string",
+          "minLength": 1
+        },
         "role": {
           "type": "string",
-          "enum": ["root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"]
+          "enum": [
+            "root",
+            "domain_authority",
+            "it_support",
+            "qa",
+            "auditor",
+            "user",
+            "guest"
+          ]
         },
         "governed_modules": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Module IDs the new domain_authority may govern."
         }
       }

@@ -62,7 +62,7 @@ runtime:
   deterministic_templates:
     system_command: "Command acknowledged. SLM unavailable - please retry or use the /api/admin/* endpoints directly."
     system_status: "Status query received. SLM unavailable - system status cannot be summarised. Raw data accessible via admin API."
-    system_diagnostic: "Diagnostic request received. SLM unavailable - narrative unavailable. Inspect CTL records via /api/admin/ctl."
+    system_diagnostic: "Diagnostic request received. SLM unavailable - narrative unavailable. Inspect System Log records via /api/admin/ctl."
     system_config_review: "Configuration review requested. SLM unavailable - review narrative unavailable. See cfg/ directory."
     system_general: "Message received. SLM unavailable - general responses cannot be generated at this time."
     out_of_domain: "That topic is outside the system domain. Please direct operational questions to the appropriate domain session."
@@ -118,6 +118,6 @@ adapters:
       module_path: domain-packs/system/systools/tool_adapters.py
       callable: list_escalations
 
-    list_ctl_records:
+    list_log_records:
       module_path: domain-packs/system/systools/tool_adapters.py
-      callable: list_ctl_records
+      callable: list_log_records

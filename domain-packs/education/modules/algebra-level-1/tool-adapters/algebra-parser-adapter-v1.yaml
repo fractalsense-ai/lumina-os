@@ -93,7 +93,7 @@ authorization:
     - orchestrator
   requires_entity_consent: false
   max_calls_per_session: 100
-  logged_in_ctl: true
+  logged_in_system_log: true
 
 error_handling:
   on_failure: fallback_to_standing_order

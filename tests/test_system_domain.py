@@ -9,8 +9,8 @@ Covers:
 - tool_adapters: list_domains
 - tool_adapters: show_domain_physics (valid and invalid domain_id)
 - tool_adapters: module_status
-- tool_adapters: list_escalations (empty CTL, filtered)
-- tool_adapters: list_ctl_records (pagination, record_type filter)
+- tool_adapters: list_escalations (empty System Log, filtered)
+- tool_adapters: list_log_records (pagination, record_type filter)
 """
 from __future__ import annotations
 
@@ -28,8 +28,12 @@ import pytest
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SYSTOOLS = _REPO_ROOT / "domain-packs" / "system" / "systools"
-if str(_SYSTOOLS) not in sys.path:
-    sys.path.insert(0, str(_SYSTOOLS))
+# Ensure system systools path is FIRST so it takes precedence
+if str(_SYSTOOLS) in sys.path:
+    sys.path.remove(str(_SYSTOOLS))
+sys.path.insert(0, str(_SYSTOOLS))
+# Evict any cached tool_adapters from a different domain pack
+sys.modules.pop("tool_adapters", None)
 
 from runtime_adapters import (  # noqa: E402
     build_system_state,
@@ -37,7 +41,7 @@ from runtime_adapters import (  # noqa: E402
     system_domain_step,
 )
 from tool_adapters import (  # noqa: E402
-    list_ctl_records,
+    list_log_records,
     list_domains,
     list_escalations,
     module_status,
@@ -348,20 +352,20 @@ class TestModuleStatus:
 
 
 # ===========================================================================
-# tool_adapters — list_escalations  (uses a temp CTL dir)
+# tool_adapters — list_escalations  (uses a temp System Log dir)
 # ===========================================================================
 
 
 @pytest.fixture()
-def tmp_ctl_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Create a temporary CTL directory and point tool_adapters at it."""
+def tmp_log_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Create a temporary System Log directory and point tool_adapters at it."""
     import tool_adapters as ta  # already on sys.path
-    monkeypatch.setattr(ta, "_CTL_DIR", tmp_path)
+    monkeypatch.setattr(ta, "_LOG_DIR", tmp_path)
     return tmp_path
 
 
-def _write_records(ctl_dir: Path, session_id: str, records: list[dict[str, Any]]) -> None:
-    ledger = ctl_dir / f"session-{session_id}.jsonl"
+def _write_records(log_dir: Path, session_id: str, records: list[dict[str, Any]]) -> None:
+    ledger = log_dir / f"session-{session_id}.jsonl"
     with open(ledger, "w", encoding="utf-8") as fh:
         for rec in records:
             fh.write(json.dumps(rec) + "\n")
@@ -370,114 +374,114 @@ def _write_records(ctl_dir: Path, session_id: str, records: list[dict[str, Any]]
 class TestListEscalations:
 
     @pytest.mark.unit
-    def test_empty_ctl_returns_empty_list(self, tmp_ctl_dir: Path) -> None:
+    def test_empty_ctl_returns_empty_list(self, tmp_log_dir: Path) -> None:
         result = list_escalations({})
         assert result["escalations"] == []
         assert result["count"] == 0
 
     @pytest.mark.unit
-    def test_returns_escalation_records(self, tmp_ctl_dir: Path) -> None:
+    def test_returns_escalation_records(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "EscalationRecord", "session_id": "s1",
              "timestamp_utc": "2026-03-17T01:00:00Z", "domain_id": "education"},
             {"record_type": "TraceEvent", "session_id": "s1",
              "timestamp_utc": "2026-03-17T01:01:00Z"},
         ]
-        _write_records(tmp_ctl_dir, "s1", records)
+        _write_records(tmp_log_dir, "s1", records)
         result = list_escalations({})
         assert result["count"] == 1
         assert result["escalations"][0]["record_type"] == "EscalationRecord"
 
     @pytest.mark.unit
-    def test_limit_is_respected(self, tmp_ctl_dir: Path) -> None:
+    def test_limit_is_respected(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "EscalationRecord", "session_id": f"s{i}",
              "timestamp_utc": f"2026-03-17T0{i}:00:00Z"}
             for i in range(5)
         ]
-        _write_records(tmp_ctl_dir, "bulk", records)
+        _write_records(tmp_log_dir, "bulk", records)
         result = list_escalations({"limit": 2})
         assert result["count"] == 2
 
     @pytest.mark.unit
-    def test_domain_id_filter(self, tmp_ctl_dir: Path) -> None:
+    def test_domain_id_filter(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "EscalationRecord", "domain_id": "education",
              "timestamp_utc": "2026-03-17T01:00:00Z"},
             {"record_type": "EscalationRecord", "domain_id": "agriculture",
              "timestamp_utc": "2026-03-17T01:01:00Z"},
         ]
-        _write_records(tmp_ctl_dir, "s2", records)
+        _write_records(tmp_log_dir, "s2", records)
         result = list_escalations({"domain_id": "education"})
         assert result["count"] == 1
         assert result["escalations"][0]["domain_id"] == "education"
 
     @pytest.mark.unit
-    def test_results_are_most_recent_first(self, tmp_ctl_dir: Path) -> None:
+    def test_results_are_most_recent_first(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "EscalationRecord", "timestamp_utc": "2026-03-17T01:00:00Z", "label": "older"},
             {"record_type": "EscalationRecord", "timestamp_utc": "2026-03-17T03:00:00Z", "label": "newer"},
         ]
-        _write_records(tmp_ctl_dir, "s3", records)
+        _write_records(tmp_log_dir, "s3", records)
         result = list_escalations({})
         assert result["escalations"][0]["label"] == "newer"
 
 
 # ===========================================================================
-# tool_adapters — list_ctl_records
+# tool_adapters — list_log_records
 # ===========================================================================
 
 
-class TestListCtlRecords:
+class TestListSystemLogRecords:
 
     @pytest.mark.unit
-    def test_empty_ctl_returns_empty_list(self, tmp_ctl_dir: Path) -> None:
-        result = list_ctl_records({})
+    def test_empty_ctl_returns_empty_list(self, tmp_log_dir: Path) -> None:
+        result = list_log_records({})
         assert result["records"] == []
 
     @pytest.mark.unit
-    def test_returns_all_record_types_by_default(self, tmp_ctl_dir: Path) -> None:
+    def test_returns_all_record_types_by_default(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "TraceEvent", "timestamp_utc": "2026-03-17T01:00:00Z"},
             {"record_type": "CommitmentRecord", "timestamp_utc": "2026-03-17T01:01:00Z"},
             {"record_type": "EscalationRecord", "timestamp_utc": "2026-03-17T01:02:00Z"},
         ]
-        _write_records(tmp_ctl_dir, "s1", records)
-        result = list_ctl_records({})
+        _write_records(tmp_log_dir, "s1", records)
+        result = list_log_records({})
         assert result["count"] == 3
 
     @pytest.mark.unit
-    def test_record_type_filter(self, tmp_ctl_dir: Path) -> None:
+    def test_record_type_filter(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "TraceEvent", "timestamp_utc": "2026-03-17T01:00:00Z"},
             {"record_type": "CommitmentRecord", "timestamp_utc": "2026-03-17T01:01:00Z"},
         ]
-        _write_records(tmp_ctl_dir, "s1", records)
-        result = list_ctl_records({"record_type": "TraceEvent"})
+        _write_records(tmp_log_dir, "s1", records)
+        result = list_log_records({"record_type": "TraceEvent"})
         assert result["count"] == 1
         assert result["records"][0]["record_type"] == "TraceEvent"
 
     @pytest.mark.unit
-    def test_session_id_filter(self, tmp_ctl_dir: Path) -> None:
-        _write_records(tmp_ctl_dir, "session-a", [
+    def test_session_id_filter(self, tmp_log_dir: Path) -> None:
+        _write_records(tmp_log_dir, "session-a", [
             {"record_type": "TraceEvent", "session_id": "session-a",
              "timestamp_utc": "2026-03-17T01:00:00Z"},
         ])
-        _write_records(tmp_ctl_dir, "session-b", [
+        _write_records(tmp_log_dir, "session-b", [
             {"record_type": "TraceEvent", "session_id": "session-b",
              "timestamp_utc": "2026-03-17T01:01:00Z"},
         ])
-        result = list_ctl_records({"session_id": "session-a"})
+        result = list_log_records({"session_id": "session-a"})
         assert result["count"] == 1
         assert result["records"][0]["session_id"] == "session-a"
 
     @pytest.mark.unit
-    def test_limit_capped_at_200(self, tmp_ctl_dir: Path) -> None:
+    def test_limit_capped_at_200(self, tmp_log_dir: Path) -> None:
         records = [
             {"record_type": "TraceEvent", "timestamp_utc": "2026-03-17T01:00:00Z"}
             for _ in range(10)
         ]
-        _write_records(tmp_ctl_dir, "bulk", records)
-        result = list_ctl_records({"limit": 500})
+        _write_records(tmp_log_dir, "bulk", records)
+        result = list_log_records({"limit": 500})
         # limit is capped at 200; we only wrote 10 so all 10 come back
         assert result["count"] == 10

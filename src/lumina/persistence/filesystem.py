@@ -7,6 +7,7 @@ from typing import Any
 
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.yaml_loader import load_yaml
+from lumina.system_log.commit_guard import notify_log_commit
 
 
 # ─────────────────────────────────────────────────────────────
@@ -80,11 +81,11 @@ def _dump_yaml(data: Any) -> str:
 class FilesystemPersistenceAdapter(PersistenceAdapter):
     """Filesystem-backed persistence preserving current reference behavior."""
 
-    def __init__(self, repo_root: Path, ctl_dir: Path) -> None:
+    def __init__(self, repo_root: Path, log_dir: Path) -> None:
         self.repo_root = repo_root
-        self.ctl_dir = ctl_dir
-        self.session_dir = self.ctl_dir / "sessions"
-        self.ctl_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir = log_dir
+        self.session_dir = self.log_dir / "sessions"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.session_dir.mkdir(parents=True, exist_ok=True)
         self._load_yaml = load_yaml
 
@@ -103,17 +104,18 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
             fh.write(_dump_yaml(data))
         tmp.replace(target)
 
-    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:
-            return str(self.ctl_dir / f"session-{session_id}-{domain_id}.jsonl")
-        return str(self.ctl_dir / f"session-{session_id}.jsonl")
+            return str(self.log_dir / f"session-{session_id}-{domain_id}.jsonl")
+        return str(self.log_dir / f"session-{session_id}.jsonl")
 
-    def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
-        target_path = Path(ledger_path) if ledger_path else Path(self.get_ctl_ledger_path(session_id))
+    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+        target_path = Path(ledger_path) if ledger_path else Path(self.get_log_ledger_path(session_id))
         target_path.parent.mkdir(parents=True, exist_ok=True)
         with open(target_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
             fh.write("\n")
+        notify_log_commit()
 
     def load_session_state(self, session_id: str) -> dict[str, Any] | None:
         path = self.session_dir / f"session-{session_id}.json"
@@ -130,17 +132,17 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
             json.dump(state, fh, indent=2, ensure_ascii=False)
         tmp.replace(path)
 
-    def list_ctl_session_ids(self) -> list[str]:
+    def list_log_session_ids(self) -> list[str]:
         ids: list[str] = []
-        for p in sorted(self.ctl_dir.glob("session-*.jsonl")):
+        for p in sorted(self.log_dir.glob("session-*.jsonl")):
             name = p.name
             if name.startswith("session-") and name.endswith(".jsonl"):
                 ids.append(name[len("session-") : -len(".jsonl")])
         return ids
 
-    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
         if session_id is not None:
-            records = self._load_ledger_records(Path(self.get_ctl_ledger_path(session_id)))
+            records = self._load_ledger_records(Path(self.get_log_ledger_path(session_id)))
             result = self._verify_records(records)
             return {
                 "scope": "session",
@@ -150,14 +152,14 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
 
         results: list[dict[str, Any]] = []
         all_intact = True
-        for sid in self.list_ctl_session_ids():
-            records = self._load_ledger_records(Path(self.get_ctl_ledger_path(sid)))
+        for sid in self.list_log_session_ids():
+            records = self._load_ledger_records(Path(self.get_log_ledger_path(sid)))
             result = self._verify_records(records)
             all_intact = all_intact and bool(result.get("intact"))
             results.append({"session_id": sid, **result})
 
-        # Also verify the system-physics CTL chain
-        sys_path = Path(self.get_system_ctl_ledger_path())
+        # Also verify the system-physics System Log chain
+        sys_path = Path(self.get_system_log_ledger_path())
         sys_records = self._load_ledger_records(sys_path)
         sys_result = self._verify_records(sys_records)
         all_intact = all_intact and bool(sys_result.get("intact"))
@@ -176,8 +178,8 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         subject_version: str | None,
         subject_hash: str,
     ) -> bool:
-        for sid in self.list_ctl_session_ids():
-            records = self._load_ledger_records(Path(self.get_ctl_ledger_path(sid)))
+        for sid in self.list_log_session_ids():
+            records = self._load_ledger_records(Path(self.get_log_ledger_path(sid)))
             for record in records:
                 if record.get("record_type") != "CommitmentRecord":
                     continue
@@ -190,11 +192,11 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
                     return True
         return False
 
-    def get_system_ctl_ledger_path(self) -> str:
-        return str(self.ctl_dir / "system" / "system.jsonl")
+    def get_system_log_ledger_path(self) -> str:
+        return str(self.log_dir / "system" / "system.jsonl")
 
     def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
-        path = Path(self.get_system_ctl_ledger_path())
+        path = Path(self.get_system_log_ledger_path())
         for record in self._load_ledger_records(path):
             if record.get("record_type") != "CommitmentRecord":
                 continue
@@ -204,12 +206,13 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
                 return True
         return False
 
-    def append_system_ctl_record(self, record: dict[str, Any]) -> None:
-        target_path = Path(self.get_system_ctl_ledger_path())
+    def append_system_log_record(self, record: dict[str, Any]) -> None:
+        target_path = Path(self.get_system_log_ledger_path())
         target_path.parent.mkdir(parents=True, exist_ok=True)
         with open(target_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
             fh.write("\n")
+        notify_log_commit()
 
     def _load_ledger_records(self, path: Path) -> list[dict[str, Any]]:
         if not path.exists():
@@ -276,7 +279,7 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
     # ── User / Auth persistence (file-backed) ────────────────
 
     def _users_path(self) -> Path:
-        return self.ctl_dir / "users.json"
+        return self.log_dir / "users.json"
 
     def _load_users(self) -> dict[str, dict[str, Any]]:
         path = self._users_path()
@@ -380,7 +383,7 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         self._save_users(users)
         return {k: v for k, v in users[user_id].items() if k != "password_hash"}
 
-    def query_ctl_records(
+    def query_log_records(
         self,
         session_id: str | None = None,
         record_type: str | None = None,
@@ -393,17 +396,17 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         if session_id:
             sids = [session_id]
         else:
-            sids = self.list_ctl_session_ids()
+            sids = self.list_log_session_ids()
         for sid in sids:
             # Try domain-specific ledgers if domain_id filter is set
             if domain_id:
-                path = Path(self.get_ctl_ledger_path(sid, domain_id=domain_id))
+                path = Path(self.get_log_ledger_path(sid, domain_id=domain_id))
             else:
-                path = Path(self.get_ctl_ledger_path(sid))
+                path = Path(self.get_log_ledger_path(sid))
             records = self._load_ledger_records(path)
             # Also load domain-specific ledgers when no domain_id filter
             if not domain_id:
-                for p in sorted(self.ctl_dir.glob(f"session-{sid}-*.jsonl")):
+                for p in sorted(self.log_dir.glob(f"session-{sid}-*.jsonl")):
                     if p.name != path.name:
                         records.extend(self._load_ledger_records(p))
             all_records.extend(records)
@@ -420,11 +423,11 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
 
         return filtered[offset : offset + limit]
 
-    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+    def list_log_sessions_summary(self) -> list[dict[str, Any]]:
         summaries: list[dict[str, Any]] = []
         seen_sessions: dict[str, dict[str, Any]] = {}
 
-        for p in sorted(self.ctl_dir.glob("session-*.jsonl")):
+        for p in sorted(self.log_dir.glob("session-*.jsonl")):
             name = p.name
             if not name.startswith("session-") or not name.endswith(".jsonl"):
                 continue
@@ -472,7 +475,7 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        records = self.query_ctl_records(record_type="EscalationRecord")
+        records = self.query_log_records(record_type="EscalationRecord")
         if status:
             records = [r for r in records if r.get("status") == status]
         if domain_id:
@@ -480,5 +483,5 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         return records[offset : offset + limit]
 
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
-        records = self.query_ctl_records(record_type="CommitmentRecord")
+        records = self.query_log_records(record_type="CommitmentRecord")
         return [r for r in records if r.get("subject_id") == subject_id]

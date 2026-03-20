@@ -1,20 +1,34 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/review-ingestion.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "review_ingestion",
   "description": "Retrieve details of an ingestion record for review.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "review_ingestion" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "review_ingestion"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["ingestion_id"],
+      "required": [
+        "ingestion_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "ingestion_id": { "type": "string", "minLength": 1 }
+        "ingestion_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

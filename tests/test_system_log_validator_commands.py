@@ -1,4 +1,4 @@
-"""Additional tests for lumina.systools.ctl_validator: command functions and utilities."""
+"""Additional tests for lumina.systools.system_log_validator: command functions and utilities."""
 from __future__ import annotations
 
 import argparse
@@ -10,8 +10,8 @@ from typing import Any
 
 import pytest
 
-import lumina.systools.ctl_validator as ctl_mod
-from lumina.systools.ctl_validator import (
+import lumina.systools.system_log_validator as ctl_mod
+from lumina.systools.system_log_validator import (
     canonical_file_hash,
     canonical_json,
     cmd_commit,
@@ -295,32 +295,32 @@ def test_cmd_print_ledger_escalation_record(tmp_path: Path, capsys: pytest.Captu
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_intact(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    system_dir = ctl_dir / "system"
+    log_dir = tmp_path / "ctl"
+    system_dir = log_dir / "system"
     system_dir.mkdir(parents=True)
     ledger = system_dir / "system.jsonl"
     r1 = {"record_type": "CommitmentRecord", "record_id": "s1", "prev_record_hash": "genesis"}
     append_record(ledger, r1)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=None)
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=None)
     result = cmd_verify_system_chain(args)
     assert result == 0
 
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_empty(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    (ctl_dir / "system").mkdir(parents=True)
+    log_dir = tmp_path / "ctl"
+    (log_dir / "system").mkdir(parents=True)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=None)
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=None)
     result = cmd_verify_system_chain(args)
     assert result == 0
 
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_broken(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    system_dir = ctl_dir / "system"
+    log_dir = tmp_path / "ctl"
+    system_dir = log_dir / "system"
     system_dir.mkdir(parents=True)
     ledger = system_dir / "system.jsonl"
     r1 = {"record_type": "CommitmentRecord", "record_id": "s1", "prev_record_hash": "genesis"}
@@ -328,15 +328,15 @@ def test_cmd_verify_system_chain_broken(tmp_path: Path) -> None:
     append_record(ledger, r1)
     append_record(ledger, r2)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=None)
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=None)
     result = cmd_verify_system_chain(args)
     assert result == 1
 
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_with_physics_file_found(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    system_dir = ctl_dir / "system"
+    log_dir = tmp_path / "ctl"
+    system_dir = log_dir / "system"
     system_dir.mkdir(parents=True)
     ledger = system_dir / "system.jsonl"
     physics = tmp_path / "system-physics.json"
@@ -352,14 +352,14 @@ def test_cmd_verify_system_chain_with_physics_file_found(tmp_path: Path) -> None
     }
     append_record(ledger, r1)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=str(physics))
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=str(physics))
     assert cmd_verify_system_chain(args) == 0
 
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_with_physics_file_missing_hash(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    system_dir = ctl_dir / "system"
+    log_dir = tmp_path / "ctl"
+    system_dir = log_dir / "system"
     system_dir.mkdir(parents=True)
     ledger = system_dir / "system.jsonl"
     physics = tmp_path / "system-physics.json"
@@ -369,15 +369,15 @@ def test_cmd_verify_system_chain_with_physics_file_missing_hash(tmp_path: Path) 
            "commitment_type": "system_physics_activation", "subject_hash": "different_hash"}
     append_record(ledger, r1)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=str(physics))
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=str(physics))
     assert cmd_verify_system_chain(args) == 1
 
 
 @pytest.mark.unit
 def test_cmd_verify_system_chain_physics_file_not_found(tmp_path: Path) -> None:
-    ctl_dir = tmp_path / "ctl"
-    (ctl_dir / "system").mkdir(parents=True)
+    log_dir = tmp_path / "ctl"
+    (log_dir / "system").mkdir(parents=True)
 
-    args = argparse.Namespace(ctl_dir=str(ctl_dir), system_physics_file=str(tmp_path / "nope.json"))
+    args = argparse.Namespace(log_dir=str(log_dir), system_physics_file=str(tmp_path / "nope.json"))
     result = cmd_verify_system_chain(args)
     assert result == 1

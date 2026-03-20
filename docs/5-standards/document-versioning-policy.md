@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # document-versioning-policy(5)
 
 **Version:** 1.0.0  
@@ -110,7 +115,7 @@ The following table maps artifact type to the events that trigger each version b
 Each artifact's SHA-256 hash is recorded in `docs/MANIFEST.yaml`. The hash covers the raw file
 bytes at the time of the last write.
 
-Hash records follow the same philosophy as `CommitmentRecord` entries in the CTL: the hash lives
+Hash records follow the same philosophy as `CommitmentRecord` entries in the System Logs: the hash lives
 externally in an authoritative ledger, not embedded in the file itself — embedding would create
 a self-referential bootstrap problem.
 

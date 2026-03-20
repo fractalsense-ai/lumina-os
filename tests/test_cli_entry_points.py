@@ -11,7 +11,7 @@ from lumina.cli.cli import (
     _repo_root,
     _run_systool,
     api,
-    ctl_validate,
+    system_log_validate,
     integrity_check,
     manifest_regen,
     orchestrator_demo,
@@ -91,15 +91,15 @@ def test_orchestrator_demo_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     assert calls == ["ppa_demo.py"]
 
 
-# ── ctl_validate() ────────────────────────────────────────────────────────────
+# ── system_log_validate() ────────────────────────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_ctl_validate_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_system_log_validate_delegates(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
     monkeypatch.setattr(cli_mod, "_run_systool", lambda s: calls.append(s))
-    ctl_validate()
-    assert calls == ["ctl_validator.py"]
+    system_log_validate()
+    assert calls == ["system_log_validator.py"]
 
 
 # ── security_freeze() ─────────────────────────────────────────────────────────

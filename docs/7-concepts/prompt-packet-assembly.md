@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Prompt Packet Assembly
 
 **Version:** 1.0.0
@@ -38,7 +43,7 @@ The **assembled prompt contract** is the "packet." It is built by stacking heade
 ├─────────────────────────────────────────────┤
 │  Domain Adapter — Signal Synthesis (B)      │  ← computes engine contract fields
 ├─────────────────────────────────────────────┤
-│  CTL (Causal Trace Ledger)                  │  ← structured event + decision logging
+│  System Log (System Logs)                  │  ← structured event + decision logging
 └─────────────────────────────────────────────┘
 ```
 
@@ -65,11 +70,11 @@ Each layer in the assembly pipeline has a distinct role, a distinct owner, and a
 | 6 | **LLM** | External LLM provider | — | Probabilistic response — never trusted as sole authority |
 | 7 | **Tool-Adapter Verification** | Domain pack (policy-driven) | Per-turn | Deterministic override of specific LLM-produced fields (e.g., algebra parser replaces `correctness`) |
 | 8 | **Domain Adapter B — Signal Synthesis** | Domain pack | Per-turn | Engine contract fields (`problem_solved`, `problem_status`); final `evidence` dict |
-| 9 | **CTL** | Core engine | Append-only | Hash-chained trace event logging the decision, provenance hashes, and outcome |
+| 9 | **System Log** | Core engine | Append-only | Hash-chained trace event logging the decision, provenance hashes, and outcome |
 
 ### What "immutable per session" means
 
-Domain Physics and the Global Base Prompt are loaded once at session start and hash-committed via the policy commitment gate. They cannot be changed mid-session. If the active domain-physics hash does not match the committed CTL `CommitmentRecord`, the session does not start. This ensures the LLM's operating rules cannot be silently swapped mid-turn.
+Domain Physics and the Global Base Prompt are loaded once at session start and hash-committed via the policy commitment gate. They cannot be changed mid-session. If the active domain-physics hash does not match the committed System Log `CommitmentRecord`, the session does not start. This ensures the LLM's operating rules cannot be silently swapped mid-turn.
 
 ---
 
@@ -154,8 +159,8 @@ The packet is carefully bounded. Some information is structurally hidden from th
 | Domain physics enforcement logic | Whether the domain hash matched, whether a CommitmentRecord was found — these are infrastructure concerns. Exposing them would add noise without adding reasoning value. |
 | Glossary intercept matching | If the message was a known glossary term, the LLM never received the turn. The intercept returned a definition directly (via SLM Librarian or deterministic template). |
 | SLM processing details | Which invariants the SLM matched, what context it compressed, its raw JSON output — the LLM sees only the final `_slm_context` summary, not the SLM's internal reasoning. See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
-| CTL write operations | Ledger writes happen after the LLM turn, as audit infrastructure. They are not inputs to reasoning. |
-| System-physics hash injection | The system-physics hash in CTL metadata (`system_physics_hash`) is a provenance record for the auditor, not reasoning context for the LLM. |
+| System Log write operations | Ledger writes happen after the LLM turn, as audit infrastructure. They are not inputs to reasoning. |
+| System-physics hash injection | The system-physics hash in System Log metadata (`system_physics_hash`) is a provenance record for the auditor, not reasoning context for the LLM. |
 | Caller identity and RBAC result | The LLM operates on pseudonymous session IDs only. Canonical identity, role, and permission check outcomes are resolved at the API layer before the prompt is assembled. |
 | Raw telemetry before normalization | Sensor readings, raw event payloads, and protocol frames are normalized by Domain Adapter A before the Global Base Prompt layer. The LLM receives structured signals, not raw instrument data. |
 | Conversation transcripts | No raw transcript is stored or re-injected. The LLM receives structured state and signals, not a replay of prior turns in free text. |
@@ -174,4 +179,4 @@ This boundary is not an accident. The domain authority does not want the student
 - [`standards/prompt-contract-schema-v1.json`](../../standards/prompt-contract-schema-v1.json) — JSON schema for the assembled prompt contract
 - [`specs/global-system-prompt-v1.md`](../../specs/global-system-prompt-v1.md) — Global Base Prompt specification (rendered view; source of truth is `cfg/system-physics.yaml`)
 - [`cfg/system-physics.yaml`](../../cfg/system-physics.yaml) — system physics: source of truth for global-layer rules and hash
-- [`standards/lumina-core-v1.md`](../../standards/lumina-core-v1.md) — provenance metadata fields in CTL TraceEvents; system physics hash injection
+- [`standards/lumina-core-v1.md`](../../standards/lumina-core-v1.md) — provenance metadata fields in System Log TraceEvents; system physics hash injection

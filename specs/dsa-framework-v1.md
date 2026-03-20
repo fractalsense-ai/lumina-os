@@ -55,9 +55,9 @@ The Domain is the **immutable ruleset** for a session. It is authored by the Dom
 
 Domains are authored in YAML (human-readable) and converted to JSON (machine-queryable) using the `yaml-to-json-converter.py` reference tool. Both files are committed to Git; the JSON is the authoritative machine-readable form.
 
-The domain pack's current hash must be committed to the CTL as a `CommitmentRecord` before the pack is used operationally.
+The domain pack's current hash must be committed to the System Logs as a `CommitmentRecord` before the pack is used operationally.
 At runtime, session startup should enforce this as a gate: if the active module hash has no matching commitment, autonomous execution is blocked.
-Material domain-policy updates require semantic version update, YAML->JSON regeneration, and a new CTL commitment of the updated JSON hash before activation.
+Material domain-policy updates require semantic version update, YAML->JSON regeneration, and a new System Log commitment of the updated JSON hash before activation.
 
 ---
 
@@ -107,8 +107,8 @@ Each domain defines its own evidence schema and runtime pipeline (for example, a
 ### State Storage
 
 - The compressed state is stored in the entity profile (YAML)
-- A hash of the state is committed to the CTL as part of each `TraceEvent`
-- The full state object is not stored in the CTL (only its hash)
+- A hash of the state is committed to the System Logs as part of each `TraceEvent`
+- The full state object is not stored in the System Logs (only its hash)
 
 ---
 
@@ -167,12 +167,12 @@ One turn of a D.S.A. session:
 7. [Domain/Action] Orchestrator evaluates module invariants and state signals, then resolves standing order/escalation decisions
 8. [Action] Decision tier calculated: ok / minor / major / escalate
 9. [Action] Standing order applied if needed
-10. [CTL] TraceEvent appended (state hash + decision + evidence summary + provenance hash lineage)
+10. [System Log] TraceEvent appended (state hash + decision + evidence summary + provenance hash lineage)
 11. [Action] Response generated (grounded, within Domain scope)
 12. -> repeat from step 3
 ```
 
-Provenance hash lineage fields recorded in CTL metadata (when applicable):
+Provenance hash lineage fields recorded in System Log metadata (when applicable):
 - Runtime policy/prompt hashes: `domain_physics_hash`, `global_prompt_hash`, `domain_prompt_hash`, `turn_interpretation_prompt_hash`, `system_prompt_hash`
 - Runtime policy identity: `domain_pack_id`, `domain_pack_version`
 - Turn/prompt hashes: `turn_data_hash`, `prompt_contract_hash`

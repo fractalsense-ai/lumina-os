@@ -1,12 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/ledger/causal-trace-ledger-schema-v1.json",
-  "title": "Causal Trace Ledger Schema V1",
-  "description": "Top-level schema for a Project Lumina CTL record. Every record written to the ledger must be one of the defined record types.",
+  "$id": "https://projectlumina.org/ledger/system-log-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "title": "System Log Schema V1",
+  "description": "Top-level schema for a Project Lumina System Log record. Every record written to the ledger must be one of the defined record types.",
   "oneOf": [
-    { "$ref": "commitment-record-schema.json" },
-    { "$ref": "trace-event-schema.json" },
-    { "$ref": "escalation-record-schema.json" },
+    { "$ref": "commitment-record-schema-v1.json" },
+    { "$ref": "trace-event-schema-v1.json" },
+    { "$ref": "escalation-record-schema-v1.json" },
     {
       "type": "object",
       "required": ["record_type", "record_id", "prev_record_hash", "timestamp_utc"],

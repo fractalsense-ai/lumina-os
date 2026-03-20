@@ -1,4 +1,4 @@
-"""Extended tests for lumina.systools.ctl_validator — edge cases not yet covered.
+"""Extended tests for lumina.systools.system_log_validator — edge cases not yet covered.
 
 Covers:
   - load_ledger with invalid JSON (sys.exit path)
@@ -16,8 +16,8 @@ from unittest.mock import patch
 
 import pytest
 
-import lumina.systools.ctl_validator as ctl_mod
-from lumina.systools.ctl_validator import (
+import lumina.systools.system_log_validator as ctl_mod
+from lumina.systools.system_log_validator import (
     append_record,
     canonical_file_hash,
     cmd_rollback,
@@ -283,14 +283,14 @@ def test_main_rollback(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_main_verify_system_chain(tmp_path: Path) -> None:
     """main() with --verify-system-chain on empty dir exits with code 0."""
-    ctl_dir = tmp_path / "ctl"
-    system_dir = ctl_dir / "system"
+    log_dir = tmp_path / "log"
+    system_dir = log_dir / "system"
     system_dir.mkdir(parents=True)
     ledger = system_dir / "system.jsonl"
     ledger.write_text("", encoding="utf-8")
     with patch(
         "sys.argv",
-        ["ctl_validator", "--verify-system-chain", "--ctl-dir", str(ctl_dir)],
+        ["system_log_validator", "--verify-system-chain", "--log-dir", str(log_dir)],
     ):
         with pytest.raises(SystemExit) as exc_info:
             ctl_mod.main()

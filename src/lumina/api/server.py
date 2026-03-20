@@ -4,7 +4,7 @@ lumina-api-server.py — Project Lumina Integration Server
 Generic runtime host for D.S.A. orchestration:
 - Loads runtime behavior from domain-owned config
 - Keeps core server free of domain-specific prompt/state logic
-- Routes each turn through orchestrator prompt contracts and CTL
+- Routes each turn through orchestrator prompt contracts and System Log
 
 Architecture: thin app factory that assembles routers from sub-modules.
 All business logic lives in dedicated modules under lumina.api.*.
@@ -64,7 +64,7 @@ log = logging.getLogger("lumina-api")
 from lumina.api.config import (  # noqa: E402
     BOOTSTRAP_MODE,
     CORS_ORIGINS,
-    CTL_DIR,
+    LOG_DIR,
     DOMAIN_REGISTRY,
     DOMAIN_REGISTRY_PATH,
     LLM_PROVIDER,
@@ -125,7 +125,7 @@ from lumina.api.routes.admin import (  # noqa: E402
 )
 from lumina.api.routes.auth import router as auth_router  # noqa: E402
 from lumina.api.routes.chat import router as chat_router  # noqa: E402
-from lumina.api.routes.ctl import router as ctl_router  # noqa: E402
+from lumina.api.routes.system_log import router as ctl_router  # noqa: E402
 from lumina.api.routes.dashboard import router as dashboard_router  # noqa: E402
 from lumina.api.routes.domain import router as domain_router  # noqa: E402
 from lumina.api.routes.domain_roles import router as domain_roles_router  # noqa: E402
@@ -226,7 +226,7 @@ if __name__ == "__main__":
             log.info("  Domain: %s (%s)%s", d["domain_id"], d["label"], " [default]" if d["is_default"] else "")
     else:
         log.info("Single-domain mode: %s", RUNTIME_CONFIG_PATH)
-    log.info("CTL directory: %s", CTL_DIR)
+    log.info("System Log directory: %s", LOG_DIR)
     log.info("Bootstrap mode: %s", BOOTSTRAP_MODE)
     log.info("CORS origins: %s", CORS_ORIGINS)
     uvicorn.run(app, host="0.0.0.0", port=port)

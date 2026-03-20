@@ -78,21 +78,21 @@ Generated on demand for a Domain Authority. Reviews how their domain pack is per
 ## Discrepancy Resolution Workflow
 
 A discrepancy is any situation where:
-- A CTL record hash chain is broken
-- An entity profile hash does not match the CTL commitment
+- A System Log record hash chain is broken
+- An entity profile hash does not match the System Logs commitment
 - An escalation outcome does not match the CommitmentRecord
 - A domain pack hash at session time does not match the committed hash
 
 ### Resolution Steps
 
 1. **Detection**: The discrepancy is detected (during audit, session open, or chain verification)
-2. **Record**: A `TraceEvent` with `event_type: discrepancy_detected` is appended to the CTL, including:
+2. **Record**: A `TraceEvent` with `event_type: discrepancy_detected` is appended to the System Logs, including:
    - What was expected
    - What was found
    - The affected record IDs
 3. **Freeze**: The affected session or domain pack is frozen (no new sessions using it)
 4. **Escalate**: An `EscalationRecord` is created and sent to the Meta Authority
-5. **Review**: The Meta Authority reviews the CTL records and external evidence
+5. **Review**: The Meta Authority reviews the System Logs records and external evidence
 6. **Resolve**: The Meta Authority commits a `CommitmentRecord` with:
    - Resolution decision
    - Whether the discrepancy was a system error, misconfiguration, or security event
@@ -122,12 +122,12 @@ A discrepancy is any situation where:
 
 ## Report Retention
 
-Reports are derived views of the CTL — they are not independently stored. The CTL is the record of truth. Reports may be cached for performance but the cache is advisory. If a cached report and the CTL disagree, the CTL is authoritative.
+Reports are derived views of the System Logs — they are not independently stored. The System Logs is the record of truth. Reports may be cached for performance but the cache is advisory. If a cached report and the System Logs disagree, the System Logs is authoritative.
 
 ---
 
 ## References
 
 - [`audit-log-spec-v1.md`](audit-log-spec-v1.md) — audit log format
-- [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) — CTL specification
+- [`../standards/system-log-v1.md`](../standards/system-log-v1.md) — System Log specification
 - [`../governance/audit-and-rollback.md`](../governance/audit-and-rollback.md) — rollback procedures

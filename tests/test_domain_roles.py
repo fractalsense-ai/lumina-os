@@ -29,7 +29,7 @@ EDU_PERMS = {
     "group": "domain_authority",
     "acl": [
         {"role": "qa", "access": "rx", "scope": "evaluation_only"},
-        {"role": "auditor", "access": "r", "scope": "ctl_records_only"},
+        {"role": "auditor", "access": "r", "scope": "log_records_only"},
         {"role": "user", "access": "x"},
     ],
 }
@@ -75,7 +75,7 @@ EDU_DOMAIN_ROLES = {
         {
             "domain_role": "teaching_assistant",
             "access": "r",
-            "scope": "ctl_records_own_students",
+            "scope": "log_records_own_students",
         },
     ],
 }

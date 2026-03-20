@@ -2,7 +2,7 @@
 service.py — Document Ingestion Service
 
 Orchestrates the full ingestion lifecycle:
-  upload -> extract -> interpret (SLM) -> review (DA) -> commit (CTL)
+  upload -> extract -> interpret (SLM) -> review (DA) -> commit (System Log)
 
 RBAC: ``ingest`` permission required to upload.  Domain authority
 on the governed module required to review and commit.
@@ -223,7 +223,7 @@ class IngestService:
         ingestion_id: str,
         actor_id: str,
     ) -> dict[str, Any]:
-        """Finalize an approved ingestion: convert YAML to JSON, hash, CTL commit.
+        """Finalize an approved ingestion: convert YAML to JSON, hash, System Log commit.
 
         Returns a dict with ``committed_hash`` and ``record_id``.
         """
@@ -264,9 +264,9 @@ class IngestService:
         record["committed_hash"] = committed_hash
         record["status"] = "committed"
 
-        # Write CTL commitment record if persistence is wired
+        # Write System Log commitment record if persistence is wired
         if self._persistence_append:
-            from lumina.ctl.admin_operations import build_commitment_record
+            from lumina.system_log.admin_operations import build_commitment_record
             commitment = build_commitment_record(
                 actor_id=actor_id,
                 actor_role="domain_authority",
@@ -285,7 +285,7 @@ class IngestService:
             try:
                 self._persistence_append("admin", commitment)
             except Exception as exc:
-                log.warning("Failed to write ingestion CTL record: %s", exc)
+                log.warning("Failed to write ingestion System Log record: %s", exc)
 
         log.info(
             "Ingestion committed: doc=%s hash=%s",

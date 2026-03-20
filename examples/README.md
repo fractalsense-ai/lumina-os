@@ -8,7 +8,7 @@ This directory contains worked examples of Project Lumina interaction loops.
 
 | File | Description |
 |------|-------------|
-| `causal-learning-trace-example.json` | CTL records from a real (simulated) 5-turn algebra session |
+| `causal-learning-trace-example.json` | System Log records from a real (simulated) 5-turn algebra session |
 | `escalation-example-packet.yaml` | A complete escalation packet for a major ZPD drift event |
 
 ---
@@ -28,7 +28,7 @@ This walkthrough traces a single turn of an algebra session with student Alice.
 
 **1. Load and verify domain pack**
 
-The orchestrator loads module `domain-physics.json` as machine-authoritative policy truth and verifies its SHA-256 hash against the `CommitmentRecord` in the CTL. If the hash doesn't match, the session is frozen.
+The orchestrator loads module `domain-physics.json` as machine-authoritative policy truth and verifies its SHA-256 hash against the `CommitmentRecord` in the System Logs. If the hash doesn't match, the session is frozen.
 
 **2. Task presentation**
 
@@ -79,7 +79,7 @@ The orchestrator evaluates module invariants from `domain-physics.json` against 
 
 Orchestrator response: *"Great — x=5 is correct! But I need to see your work. Can you show me at least 3 steps? Start from 3x + 7 = 22 and show each transformation."*
 
-**9. CTL TraceEvent written**
+**9. System Log TraceEvent written**
 
 ```json
 {
@@ -117,7 +117,7 @@ x = 5
 
 **12. All invariants pass**
 
-No standing orders needed. CTL `TraceEvent` written with `decision: "all_invariants_pass"`.
+No standing orders needed. System Log `TraceEvent` written with `decision: "all_invariants_pass"`.
 
 **13. Mastery update**
 
@@ -133,6 +133,6 @@ Alice earned a `+0.10` mastery boost on `solve_one_variable`. The orchestrator p
 
 1. **The answer being correct doesn't mean all invariants pass.** `show_work_minimum` fired even though the answer was right.
 2. **Standing orders have limited attempts.** If Alice had refused to show her work 3 times, the orchestrator would have escalated to the teacher.
-3. **The CTL only records structured telemetry.** Neither Alice's problem response nor the AI's reply is stored. Only hashes and decision summaries are written.
+3. **The System Logs only records structured telemetry.** Neither Alice's problem response nor the AI's reply is stored. Only hashes and decision summaries are written.
 4. **World simulation is transparent.** The "space mission" framing changes how the problem is presented but not what is checked.
 5. **Mastery increases correctly.** Since Alice was correct and showed her work without hints, she gets the full `+0.10` mastery boost.

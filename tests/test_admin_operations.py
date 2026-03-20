@@ -1,4 +1,4 @@
-"""Tests for lumina.ctl.admin_operations — CTL record builder functions.
+"""Tests for lumina.system_log.admin_operations — System Log record builder functions.
 
 Covers _utc_now_iso, _canonical_sha256 (dict path), build_trace_event,
 build_commitment_record (all optional fields), can_govern_domain, and
@@ -12,7 +12,7 @@ import json
 
 import pytest
 
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     _canonical_sha256,
     _utc_now_iso,
     build_commitment_record,

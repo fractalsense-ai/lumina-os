@@ -10,8 +10,8 @@ from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 @pytest.fixture
 def fs_adapter(tmp_path: Path) -> FilesystemPersistenceAdapter:
     repo_root = Path(__file__).resolve().parents[1]
-    ctl_dir = tmp_path / "ctl"
-    return FilesystemPersistenceAdapter(repo_root=repo_root, ctl_dir=ctl_dir)
+    log_dir = tmp_path / "ctl"
+    return FilesystemPersistenceAdapter(repo_root=repo_root, log_dir=log_dir)
 
 
 @pytest.mark.unit
@@ -53,7 +53,7 @@ def test_filesystem_session_state_roundtrip(fs_adapter: FilesystemPersistenceAda
 @pytest.mark.unit
 def test_filesystem_ctl_chain_validation(fs_adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-chain"
-    ledger = fs_adapter.get_ctl_ledger_path(sid)
+    ledger = fs_adapter.get_log_ledger_path(sid)
 
     r1 = {
         "record_type": "TraceEvent",
@@ -61,7 +61,7 @@ def test_filesystem_ctl_chain_validation(fs_adapter: FilesystemPersistenceAdapte
         "prev_record_hash": "genesis",
         "event_type": "turn",
     }
-    fs_adapter.append_ctl_record(sid, r1, ledger)
+    fs_adapter.append_log_record(sid, r1, ledger)
 
     r2 = {
         "record_type": "TraceEvent",
@@ -69,8 +69,8 @@ def test_filesystem_ctl_chain_validation(fs_adapter: FilesystemPersistenceAdapte
         "prev_record_hash": fs_adapter._hash_record(r1),
         "event_type": "turn",
     }
-    fs_adapter.append_ctl_record(sid, r2, ledger)
+    fs_adapter.append_log_record(sid, r2, ledger)
 
-    result = fs_adapter.validate_ctl_chain(sid)
+    result = fs_adapter.validate_log_chain(sid)
     assert result["intact"] is True
     assert result["records_checked"] == 2

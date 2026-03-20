@@ -1,4 +1,4 @@
-# Causal Trace Ledger (CTL) — V1 Specification
+# System Logs — V1 Specification
 
 **Version:** 1.1.0
 **Status:** Active
@@ -8,11 +8,11 @@
 
 ## Overview
 
-The **Causal Trace Ledger (CTL)** is the append-only accountability layer for all Project Lumina sessions. It records what happened and what the system decided — not what was said.
+The **System Logs** is the append-only accountability layer for all Project Lumina sessions. It records what happened and what the system decided — not what was said.
 
-**Core constraint:** The CTL does not store transcripts. It stores structured decision telemetry, hashes of content, and pointers to external (encrypted, ephemeral) stores.
+**Core constraint:** The System Logs does not store transcripts. It stores structured decision telemetry, hashes of content, and pointers to external (encrypted, ephemeral) stores.
 
-The CTL exists for diagnosis, not accusation. Its purpose is to enable:
+The System Logs exists for diagnosis, not accusation. Its purpose is to enable:
 - Post-hoc audit of system decisions
 - Escalation packet assembly
 - Domain Authority review of session outcomes
@@ -24,9 +24,9 @@ The CTL exists for diagnosis, not accusation. Its purpose is to enable:
 
 1. **Append-only**: Records are never modified or deleted. Corrections are new records that reference the prior record.
 2. **Hash-chained**: Each record includes the SHA-256 hash of the previous record in the ledger, enabling tamper detection.
-3. **No transcripts at rest**: Raw conversation content is never written to the CTL. Content-bearing fields store hashes + pointers only.
+3. **No transcripts at rest**: Raw conversation content is never written to the System Logs. Content-bearing fields store hashes + pointers only.
 4. **Pseudonymous**: Actor identifiers are pseudonymous tokens. Real-identity mapping is held by the institution in a separate, access-controlled system.
-5. **Structured telemetry only**: All values in CTL records are machine-parseable structured fields.
+5. **Structured telemetry only**: All values in System Log records are machine-parseable structured fields.
 
 ---
 
@@ -203,7 +203,7 @@ The `evidence_summary` field in `TraceEvent` and `EscalationRecord` uses a stand
 
 **Domain declarations:** Each domain module declares its evidence field vocabulary in an `evidence-schema.json` file placed alongside its `domain-physics.json`. The `domain-physics` file references it via `evidence_schema.path`. The meta-schema that all `evidence-schema.json` files must conform to is [`standards/domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json).
 
-**Schema enforcement:** The core CTL JSON Schema (`ledger/trace-event-schema.json`) accepts any object or null for `evidence_summary` — it does not enforce individual field names. Domain-level field validation is performed offline by audit tooling using the declared `evidence-schema.json`.
+**Schema enforcement:** The core System Log JSON Schema (`ledger/trace-event-schema.json`) accepts any object or null for `evidence_summary` — it does not enforce individual field names. Domain-level field validation is performed offline by audit tooling using the declared `evidence-schema.json`.
 
 ---
 
@@ -243,13 +243,13 @@ def verify_chain(records: list) -> bool:
 
 ## Retention Policy
 
-CTL records are retained for the duration of the institution's data retention policy, as set by the Meta Authority. Minimum retention is 90 days for audit purposes. The CTL may be archived but not deleted during the retention window.
+System Log records are retained for the duration of the institution's data retention policy, as set by the Meta Authority. Minimum retention is 90 days for audit purposes. The System Logs may be archived but not deleted during the retention window.
 
 ---
 
 ## Related Schemas
 
-- [`../ledger/causal-trace-ledger-schema-v1.json`](../ledger/causal-trace-ledger-schema-v1.json)
+- [`../ledger/system-log-schema-v1.json`](../ledger/system-log-schema-v1.json)
 - [`../ledger/commitment-record-schema.json`](../ledger/commitment-record-schema.json)
 - [`../ledger/trace-event-schema.json`](../ledger/trace-event-schema.json)
 - [`../ledger/escalation-record-schema.json`](../ledger/escalation-record-schema.json)

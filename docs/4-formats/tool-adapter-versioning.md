@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # tool-adapter-versioning(4)
 
 **Version:** 1.0.0  
@@ -63,14 +68,14 @@ should be retained and its status updated to `superseded` in the pack's `MANIFES
 
 ---
 
-## RELATIONSHIP TO CTL COMMITMENT RECORDS
+## RELATIONSHIP TO System Log COMMITMENT RECORDS
 
-A `CommitmentRecord` in the CTL records the SHA-256 of `domain-physics.json` at the time of
-domain activation. Tool adapter versions are not independently committed to the CTL; however,
+A `CommitmentRecord` in the System Logs records the SHA-256 of `domain-physics.json` at the time of
+domain activation. Tool adapter versions are not independently committed to the System Logs; however,
 any change to an adapter that is embedded in or referenced by `domain-physics.json` changes that
 file's content and therefore its hash.
 
-This creates an indirect but auditable version trace: the CTL chain records when a new
+This creates an indirect but auditable version trace: the System Logs chain records when a new
 domain-physics hash (which reflects the adapter change) was committed and by whom. See
 [domain-library-lifecycle(5)](../5-standards/domain-library-lifecycle.md) for the full
 commitment trigger table.
@@ -83,5 +88,5 @@ commitment trigger table.
 [artifact-manifest-format(4)](artifact-manifest-format.md),
 [document-versioning-policy(5)](../5-standards/document-versioning-policy.md),
 [domain-library-lifecycle(5)](../5-standards/domain-library-lifecycle.md),
-[ctl-commitment-validator(1)](../1-commands/ctl-commitment-validator.md),
+[system-log-validator(1)](../1-commands/system-log-validator.md),
 [domain-adapter-pattern(7)](../7-concepts/domain-adapter-pattern.md)

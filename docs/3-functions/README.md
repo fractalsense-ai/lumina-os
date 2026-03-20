@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Section 3 — Functions (Library Reference)
 
 **Version:** 1.0.0  

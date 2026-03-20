@@ -1,7 +1,7 @@
 """Tests for the document ingestion pipeline.
 
 Covers: extractors, interpreter (with mock SLM), IngestService lifecycle,
-RBAC gating, multi-interpretation review, and CTL commitment.
+RBAC gating, multi-interpretation review, and System Log commitment.
 """
 
 from __future__ import annotations

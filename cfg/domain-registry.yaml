@@ -1,5 +1,8 @@
 # domain-registry.yaml — Multi-domain registry for Project Lumina
 #
+# version: 1.0.0
+# last_updated: 2026-03-20
+#
 # Maps each domain_id to its runtime-config.yaml path.
 # Set LUMINA_DOMAIN_REGISTRY_PATH to this file to enable multi-domain routing.
 # When a domain registry is active, requests specify domain_id to select a domain.
@@ -57,7 +60,7 @@ domains:
     label: System — Lumina Infrastructure
     description: >-
       System domain for Project Lumina infrastructure queries.  Routes admin
-      and operator questions about CTL records, domain physics, RBAC, policy
+      and operator questions about System Log records, domain physics, RBAC, policy
       gates, and Lumina operational concepts.  Only root and it_support roles
       may execute sessions in this domain.
     module_prefix: sys

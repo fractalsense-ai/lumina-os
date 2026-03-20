@@ -15,7 +15,7 @@ Key scenarios:
   - Invalid action returns 422
   - Modify without modified_schema returns 422
   - Modify with unknown operation in modified_schema returns 422
-  - CTL records are written for staged, accepted, rejected, and modified paths
+  - System Log records are written for staged, accepted, rejected, and modified paths
   - Root can resolve any user's staged command
 """
 from __future__ import annotations
@@ -152,7 +152,7 @@ def test_stage_returns_staged_id_and_no_execution(client: TestClient, api_module
     assert "staged_id" in body
     assert body["staged_command"]["operation"] == "deactivate_user"
     assert "expires_at" in body
-    assert "ctl_stage_record_id" in body
+    assert "log_stage_record_id" in body
     # Critical: execution must NOT have happened at stage time.
     deactivate_mock.assert_not_called()
 
@@ -198,7 +198,7 @@ def test_accept_executes_and_returns_result(client: TestClient, api_module) -> N
     assert body["action"] == "accept"
     assert body["staged_id"] == staged_id
     assert body["result"]["user_id"] == "user77"
-    assert "ctl_record_id" in body
+    assert "log_record_id" in body
     deactivate_mock.assert_called_once_with("user77")
 
 
@@ -224,7 +224,7 @@ def test_reject_does_not_execute(client: TestClient, api_module) -> None:
     body = resp.json()
     assert body["action"] == "reject"
     assert body["staged_id"] == staged_id
-    assert "ctl_record_id" in body
+    assert "log_record_id" in body
     # Execution must NOT have happened.
     deactivate_mock.assert_not_called()
 
@@ -253,7 +253,7 @@ def test_modify_executes_modified_schema(client: TestClient, api_module) -> None
     body = resp.json()
     assert body["action"] == "modify"
     assert body["result"]["user_id"] == "user22"
-    assert "ctl_record_id" in body
+    assert "log_record_id" in body
     deactivate_mock.assert_called_once_with("user22")
 
 
@@ -419,22 +419,22 @@ def test_invalid_action_returns_422(client: TestClient, api_module) -> None:
     assert resp.status_code == 422
 
 
-# ── CTL record assertions ─────────────────────────────────────────────────────
+# ── System Log record assertions ─────────────────────────────────────────────────────
 
 
 @pytest.mark.integration
 def test_ctl_staged_record_written_on_stage(client: TestClient, api_module) -> None:
-    """A hitl_command_staged CTL record must be written when a command is staged."""
+    """A hitl_command_staged System Log record must be written when a command is staged."""
     token = _register_root(client)
-    ctl_records: list[dict] = []
+    log_records: list[dict] = []
 
-    orig_append = api_module.PERSISTENCE.append_ctl_record
+    orig_append = api_module.PERSISTENCE.append_log_record
 
     def _capture(record_type, record, **kwargs):
-        ctl_records.append(record)
+        log_records.append(record)
         return orig_append(record_type, record, **kwargs)
 
-    api_module.PERSISTENCE.append_ctl_record = _capture
+    api_module.PERSISTENCE.append_log_record = _capture
 
     parsed = {"operation": "deactivate_user", "target": "u1", "params": {"user_id": "u1"}}
     with (
@@ -448,23 +448,23 @@ def test_ctl_staged_record_written_on_stage(client: TestClient, api_module) -> N
         )
     assert resp.status_code == 200
 
-    staged_types = [r.get("commitment_type") for r in ctl_records]
+    staged_types = [r.get("commitment_type") for r in log_records]
     assert "hitl_command_staged" in staged_types
 
 
 @pytest.mark.integration
 def test_ctl_accepted_record_written_on_accept(client: TestClient, api_module) -> None:
-    """A hitl_command_accepted CTL record must be written when a command is accepted."""
+    """A hitl_command_accepted System Log record must be written when a command is accepted."""
     token = _register_root(client)
-    ctl_records: list[dict] = []
+    log_records: list[dict] = []
 
-    orig_append = api_module.PERSISTENCE.append_ctl_record
+    orig_append = api_module.PERSISTENCE.append_log_record
 
     def _capture(record_type, record, **kwargs):
-        ctl_records.append(record)
+        log_records.append(record)
         return orig_append(record_type, record, **kwargs)
 
-    api_module.PERSISTENCE.append_ctl_record = _capture
+    api_module.PERSISTENCE.append_log_record = _capture
 
     parsed = {"operation": "deactivate_user", "target": "u2", "params": {"user_id": "u2"}}
     staged_id = _stage_via_module(client, api_module, token, parsed)
@@ -476,23 +476,23 @@ def test_ctl_accepted_record_written_on_accept(client: TestClient, api_module) -
     )
     assert resp.status_code == 200
 
-    commit_types = [r.get("commitment_type") for r in ctl_records]
+    commit_types = [r.get("commitment_type") for r in log_records]
     assert "hitl_command_accepted" in commit_types
 
 
 @pytest.mark.integration
 def test_ctl_rejected_record_written_on_reject(client: TestClient, api_module) -> None:
-    """A hitl_command_rejected CTL record must be written when a command is rejected."""
+    """A hitl_command_rejected System Log record must be written when a command is rejected."""
     token = _register_root(client)
-    ctl_records: list[dict] = []
+    log_records: list[dict] = []
 
-    orig_append = api_module.PERSISTENCE.append_ctl_record
+    orig_append = api_module.PERSISTENCE.append_log_record
 
     def _capture(record_type, record, **kwargs):
-        ctl_records.append(record)
+        log_records.append(record)
         return orig_append(record_type, record, **kwargs)
 
-    api_module.PERSISTENCE.append_ctl_record = _capture
+    api_module.PERSISTENCE.append_log_record = _capture
 
     parsed = {"operation": "deactivate_user", "target": "u3", "params": {"user_id": "u3"}}
     staged_id = _stage_via_module(client, api_module, token, parsed)
@@ -504,5 +504,5 @@ def test_ctl_rejected_record_written_on_reject(client: TestClient, api_module) -
     )
     assert resp.status_code == 200
 
-    commit_types = [r.get("commitment_type") for r in ctl_records]
+    commit_types = [r.get("commitment_type") for r in log_records]
     assert "hitl_command_rejected" in commit_types

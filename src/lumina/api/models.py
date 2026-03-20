@@ -46,9 +46,9 @@ class ToolRequestWithDomain(BaseModel):
     domain_id: str | None = None
 
 
-# ── CTL / Manifest ───────────────────────────────────────────
+# ── System Log / Manifest ───────────────────────────────────────────
 
-class CtlValidateResponse(BaseModel):
+class SystemLogValidateResponse(BaseModel):
     result: dict[str, Any]
 
 

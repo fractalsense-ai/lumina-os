@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def adapter(tmp_path: Path) -> FilesystemPersistenceAdapter:
-    return FilesystemPersistenceAdapter(repo_root=REPO_ROOT, ctl_dir=tmp_path / "ctl")
+    return FilesystemPersistenceAdapter(repo_root=REPO_ROOT, log_dir=tmp_path / "ctl")
 
 
 # ── _yaml_scalar ──────────────────────────────────────────────────────────────
@@ -194,43 +194,43 @@ def test_save_subject_profile_content(adapter: FilesystemPersistenceAdapter, tmp
     assert "score: 90" in content
 
 
-# ── get_ctl_ledger_path with domain_id ────────────────────────────────────────
+# ── get_log_ledger_path with domain_id ────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_get_ctl_ledger_path_with_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
-    path = adapter.get_ctl_ledger_path("session-1", domain_id="edu")
+def test_get_log_ledger_path_with_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
+    path = adapter.get_log_ledger_path("session-1", domain_id="edu")
     assert "session-1" in path
     assert "edu" in path
 
 
 @pytest.mark.unit
-def test_get_ctl_ledger_path_without_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
-    path = adapter.get_ctl_ledger_path("session-1")
+def test_get_log_ledger_path_without_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
+    path = adapter.get_log_ledger_path("session-1")
     assert "session-1" in path
     assert path.endswith(".jsonl")
 
 
-# ── validate_ctl_chain all sessions ──────────────────────────────────────────
+# ── validate_log_chain all sessions ──────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_validate_ctl_chain_all_sessions(adapter: FilesystemPersistenceAdapter) -> None:
+def test_validate_log_chain_all_sessions(adapter: FilesystemPersistenceAdapter) -> None:
     for sid in ("s1", "s2"):
-        ledger = adapter.get_ctl_ledger_path(sid)
+        ledger = adapter.get_log_ledger_path(sid)
         r = {"record_type": "TraceEvent", "record_id": f"r-{sid}",
              "prev_record_hash": "genesis", "event_type": "turn"}
-        adapter.append_ctl_record(sid, r, ledger)
+        adapter.append_log_record(sid, r, ledger)
 
-    result = adapter.validate_ctl_chain()
+    result = adapter.validate_log_chain()
     assert result["scope"] == "all"
     assert result["sessions_checked"] >= 2
     assert "intact" in result
 
 
 @pytest.mark.unit
-def test_validate_ctl_chain_no_sessions(adapter: FilesystemPersistenceAdapter) -> None:
-    result = adapter.validate_ctl_chain()
+def test_validate_log_chain_no_sessions(adapter: FilesystemPersistenceAdapter) -> None:
+    result = adapter.validate_log_chain()
     assert result["scope"] == "all"
     # System ledger is always checked
     assert result["sessions_checked"] >= 1
@@ -251,7 +251,7 @@ def test_has_policy_commitment_true(adapter: FilesystemPersistenceAdapter) -> No
         "subject_hash": "abc123hashed",
         "commitment_type": "domain_pack_activation",
     }
-    adapter.append_ctl_record(sid, record)
+    adapter.append_log_record(sid, record)
     assert adapter.has_policy_commitment("domain-123", "1.0.0", "abc123hashed") is True
 
 
@@ -272,7 +272,7 @@ def test_has_policy_commitment_version_none(adapter: FilesystemPersistenceAdapte
         "subject_hash": "deadbeef",
         "commitment_type": "domain_pack_activation",
     }
-    adapter.append_ctl_record(sid, record)
+    adapter.append_log_record(sid, record)
     # With version=None, should match any version
     assert adapter.has_policy_commitment("domain-x", None, "deadbeef") is True
 
@@ -294,7 +294,7 @@ def test_has_system_physics_commitment_true(adapter: FilesystemPersistenceAdapte
         "commitment_type": "system_physics_activation",
         "subject_hash": "physics_hash_abc",
     }
-    adapter.append_system_ctl_record(record)
+    adapter.append_system_log_record(record)
     assert adapter.has_system_physics_commitment("physics_hash_abc") is True
 
 
@@ -307,7 +307,7 @@ def test_has_system_physics_commitment_wrong_hash(adapter: FilesystemPersistence
         "commitment_type": "system_physics_activation",
         "subject_hash": "physics_hash_abc",
     }
-    adapter.append_system_ctl_record(record)
+    adapter.append_system_log_record(record)
     assert adapter.has_system_physics_commitment("wrong_hash") is False
 
 
@@ -340,11 +340,11 @@ def test_deactivate_user_not_found(adapter: FilesystemPersistenceAdapter) -> Non
     assert adapter.deactivate_user("nonexistent") is False
 
 
-# ── query_ctl_records ─────────────────────────────────────────────────────────
+# ── query_log_records ─────────────────────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_query_ctl_records_all(adapter: FilesystemPersistenceAdapter) -> None:
+def test_query_log_records_all(adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-query"
     r1: dict[str, Any] = {
         "record_type": "TraceEvent", "record_id": "q1",
@@ -356,15 +356,15 @@ def test_query_ctl_records_all(adapter: FilesystemPersistenceAdapter) -> None:
         "prev_record_hash": adapter._hash_record(r1), "session_id": sid,
         "timestamp_utc": "2024-01-01T00:01:00Z",
     }
-    adapter.append_ctl_record(sid, r1)
-    adapter.append_ctl_record(sid, r2)
+    adapter.append_log_record(sid, r1)
+    adapter.append_log_record(sid, r2)
 
-    all_records = adapter.query_ctl_records(session_id=sid)
+    all_records = adapter.query_log_records(session_id=sid)
     assert len(all_records) == 2
 
 
 @pytest.mark.unit
-def test_query_ctl_records_filter_by_type(adapter: FilesystemPersistenceAdapter) -> None:
+def test_query_log_records_filter_by_type(adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-filter"
     r1: dict[str, Any] = {
         "record_type": "TraceEvent", "record_id": "f1",
@@ -376,47 +376,47 @@ def test_query_ctl_records_filter_by_type(adapter: FilesystemPersistenceAdapter)
         "prev_record_hash": adapter._hash_record(r1), "session_id": sid,
         "timestamp_utc": "2024-01-01T00:01:00Z",
     }
-    adapter.append_ctl_record(sid, r1)
-    adapter.append_ctl_record(sid, r2)
+    adapter.append_log_record(sid, r1)
+    adapter.append_log_record(sid, r2)
 
-    trace_records = adapter.query_ctl_records(session_id=sid, record_type="TraceEvent")
+    trace_records = adapter.query_log_records(session_id=sid, record_type="TraceEvent")
     assert len(trace_records) == 1
     assert trace_records[0]["record_id"] == "f1"
 
 
 @pytest.mark.unit
-def test_query_ctl_records_filter_by_event_type(adapter: FilesystemPersistenceAdapter) -> None:
+def test_query_log_records_filter_by_event_type(adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-event"
     r: dict[str, Any] = {
         "record_type": "TraceEvent", "record_id": "ev1",
         "prev_record_hash": "genesis", "session_id": sid,
         "event_type": "state_update", "timestamp_utc": "2024-01-01T00:00:00Z",
     }
-    adapter.append_ctl_record(sid, r)
-    result = adapter.query_ctl_records(session_id=sid, event_type="state_update")
+    adapter.append_log_record(sid, r)
+    result = adapter.query_log_records(session_id=sid, event_type="state_update")
     assert len(result) == 1
-    result_none = adapter.query_ctl_records(session_id=sid, event_type="other_event")
+    result_none = adapter.query_log_records(session_id=sid, event_type="other_event")
     assert result_none == []
 
 
 @pytest.mark.unit
-def test_query_ctl_records_with_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
+def test_query_log_records_with_domain_id(adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-domain"
     domain = "edu-domain"
-    ledger_path = adapter.get_ctl_ledger_path(sid, domain_id=domain)
+    ledger_path = adapter.get_log_ledger_path(sid, domain_id=domain)
     r: dict[str, Any] = {
         "record_type": "TraceEvent", "record_id": "d1",
         "prev_record_hash": "genesis", "session_id": sid,
         "timestamp_utc": "2024-01-01T00:00:00Z",
     }
-    adapter.append_ctl_record(sid, r, ledger_path)
+    adapter.append_log_record(sid, r, ledger_path)
 
-    result = adapter.query_ctl_records(session_id=sid, domain_id=domain)
+    result = adapter.query_log_records(session_id=sid, domain_id=domain)
     assert len(result) >= 1
 
 
 @pytest.mark.unit
-def test_query_ctl_records_offset_limit(adapter: FilesystemPersistenceAdapter) -> None:
+def test_query_log_records_offset_limit(adapter: FilesystemPersistenceAdapter) -> None:
     sid = "s-page"
     for i in range(5):
         r: dict[str, Any] = {
@@ -425,35 +425,35 @@ def test_query_ctl_records_offset_limit(adapter: FilesystemPersistenceAdapter) -
             "session_id": sid,
             "timestamp_utc": f"2024-01-01T00:0{i}:00Z",
         }
-        adapter.append_ctl_record(sid, r)
+        adapter.append_log_record(sid, r)
 
-    page1 = adapter.query_ctl_records(session_id=sid, limit=2, offset=0)
-    page2 = adapter.query_ctl_records(session_id=sid, limit=2, offset=2)
+    page1 = adapter.query_log_records(session_id=sid, limit=2, offset=0)
+    page2 = adapter.query_log_records(session_id=sid, limit=2, offset=2)
     assert len(page1) == 2
     assert len(page2) == 2
     assert page1[0]["record_id"] != page2[0]["record_id"]
 
 
-# ── list_ctl_sessions_summary ────────────────────────────────────────────────
+# ── list_log_sessions_summary ────────────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_list_ctl_sessions_summary_empty(adapter: FilesystemPersistenceAdapter) -> None:
-    result = adapter.list_ctl_sessions_summary()
+def test_list_log_sessions_summary_empty(adapter: FilesystemPersistenceAdapter) -> None:
+    result = adapter.list_log_sessions_summary()
     assert isinstance(result, list)
 
 
 @pytest.mark.unit
-def test_list_ctl_sessions_summary_with_records(adapter: FilesystemPersistenceAdapter) -> None:
+def test_list_log_sessions_summary_with_records(adapter: FilesystemPersistenceAdapter) -> None:
     for sid in ("summary-s1", "summary-s2"):
         r: dict[str, Any] = {
             "record_type": "TraceEvent", "record_id": f"r-{sid}",
             "prev_record_hash": "genesis", "session_id": sid,
             "timestamp_utc": "2024-01-01T00:00:00Z",
         }
-        adapter.append_ctl_record(sid, r)
+        adapter.append_log_record(sid, r)
 
-    summaries = adapter.list_ctl_sessions_summary()
+    summaries = adapter.list_log_sessions_summary()
     assert len(summaries) >= 2
     session_ids = {s["session_id"] for s in summaries}
     assert "summary-s1" in session_ids
@@ -481,7 +481,7 @@ def test_query_escalations_filter_status(adapter: FilesystemPersistenceAdapter) 
         "status": "pending", "domain_pack_id": "edu",
         "timestamp_utc": "2024-01-01T00:00:00Z",
     }
-    adapter.append_ctl_record(sid, r)
+    adapter.append_log_record(sid, r)
 
     pending = adapter.query_escalations(status="pending")
     assert any(rec["record_id"] == "e1" for rec in pending)
@@ -500,7 +500,7 @@ def test_query_commitments(adapter: FilesystemPersistenceAdapter) -> None:
         "prev_record_hash": "genesis", "session_id": sid,
         "subject_id": "domain-abc", "timestamp_utc": "2024-01-01T00:00:00Z",
     }
-    adapter.append_ctl_record(sid, r)
+    adapter.append_log_record(sid, r)
 
     result = adapter.query_commitments("domain-abc")
     assert len(result) >= 1

@@ -17,6 +17,7 @@ from lumina.api.models import ChatRequest, ChatResponse
 from lumina.api.processing import process_message
 from lumina.core.domain_registry import DomainNotFoundError
 from lumina.core.permissions import Operation, check_permission
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger("lumina-api")
 
@@ -54,6 +55,7 @@ def _get_accessible_domain_ids(
 
 
 @router.post("/api/chat", response_model=ChatResponse)
+@requires_log_commit
 async def chat(
     req: ChatRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -144,10 +146,10 @@ async def chat(
 
     # ── Log routing decision to meta-ledger ──
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             session_id,
             routing_record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
         )
     except Exception:
         log.debug("Could not write routing decision to meta-ledger")

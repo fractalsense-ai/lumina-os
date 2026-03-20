@@ -13,6 +13,8 @@ from starlette.concurrency import run_in_threadpool
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
 from lumina.core.yaml_loader import load_yaml
+from lumina.system_log.admin_operations import build_commitment_record, map_role_to_actor_role
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger("lumina-api")
 
@@ -94,6 +96,7 @@ async def nightcycle_proposals(
 
 
 @router.post("/api/nightcycle/proposals/{proposal_id}/resolve")
+@requires_log_commit
 async def nightcycle_resolve_proposal(
     proposal_id: str,
     req: dict[str, Any] = Body(...),
@@ -111,4 +114,18 @@ async def nightcycle_resolve_proposal(
     found = _get_night_scheduler().resolve_proposal(proposal_id, action)
     if not found:
         raise HTTPException(status_code=404, detail="Proposal not found")
+
+    record = build_commitment_record(
+        actor_id=user_data["sub"],
+        actor_role=map_role_to_actor_role(user_data["role"]),
+        commitment_type="nightcycle_proposal_resolution",
+        subject_id=proposal_id,
+        summary=f"Night cycle proposal {action}",
+        metadata={"action": action},
+    )
+    _cfg.PERSISTENCE.append_log_record(
+        "admin", record,
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+    )
+
     return {"proposal_id": proposal_id, "status": action}

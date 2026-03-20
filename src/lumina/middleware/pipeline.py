@@ -7,7 +7,7 @@ Chains three inspection stages:
 3. **Invariant Check** — domain physics invariant evaluation
 
 If any stage produces a critical violation the pipeline denies execution.
-The ``InspectionResult`` carries the full audit trail for CTL logging.
+The ``InspectionResult`` carries the full audit trail for System Log logging.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ class InspectionResult:
     nlp_result: NLPPreprocessResult | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialise to a plain dict suitable for CTL metadata."""
+        """Serialise to a plain dict suitable for System Log metadata."""
         return {
             "approved": self.approved,
             "violations": list(self.violations),

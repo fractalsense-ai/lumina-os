@@ -4,7 +4,7 @@ lumina-api-server.py — Project Lumina Integration Server
 Generic runtime host for D.S.A. orchestration:
 - Loads runtime behavior from domain-owned config
 - Keeps core server free of domain-specific prompt/state logic
-- Routes each turn through orchestrator prompt contracts and CTL
+- Routes each turn through orchestrator prompt contracts and System Log
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ from lumina.auth.auth import (
     verify_jwt,
     verify_password,
 )
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     build_commitment_record,
     build_trace_event,
     can_govern_domain,
@@ -125,9 +125,9 @@ DOMAIN_REGISTRY = DomainRegistry(
     load_runtime_context_fn=load_runtime_context,
 )
 
-_DEFAULT_CTL_DIR = Path(tempfile.gettempdir()) / "lumina-ctl"
-CTL_DIR = Path(os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_CTL_DIR)))
-CTL_DIR.mkdir(parents=True, exist_ok=True)
+_DEFAULT_LOG_DIR = Path(tempfile.gettempdir()) / "lumina-log"
+LOG_DIR = Path(os.environ.get("LUMINA_LOG_DIR", os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_LOG_DIR))))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _build_persistence_adapter() -> PersistenceAdapter:
@@ -135,7 +135,7 @@ def _build_persistence_adapter() -> PersistenceAdapter:
         from lumina.persistence.sqlite import SQLitePersistenceAdapter
 
         return SQLitePersistenceAdapter(repo_root=_REPO_ROOT, database_url=DB_URL)
-    return FilesystemPersistenceAdapter(repo_root=_REPO_ROOT, ctl_dir=CTL_DIR)
+    return FilesystemPersistenceAdapter(repo_root=_REPO_ROOT, log_dir=LOG_DIR)
 
 
 PERSISTENCE: PersistenceAdapter = _build_persistence_adapter()
@@ -337,7 +337,7 @@ def _assert_policy_commitment(runtime: dict[str, Any]) -> None:
     )
     if not has_commitment:
         raise RuntimeError(
-            "Policy commitment mismatch: active module domain-physics hash is not CTL-committed. "
+            "Policy commitment mismatch: active module domain-physics hash is not log-committed. "
             "Commit the module domain-physics.json hash before activation."
         )
 
@@ -350,7 +350,7 @@ def _assert_system_physics_commitment() -> None:
     if not PERSISTENCE.has_system_physics_commitment(SYSTEM_PHYSICS_HASH):
         raise RuntimeError(
             "System-physics commitment missing: the active system-physics.json hash is not present in "
-            "the system CTL. Run scripts/seed-system-physics-ctl.ps1 before starting the server."
+            "the system log. Run scripts/seed-system-physics-log.ps1 before starting the server."
         )
 
 
@@ -774,7 +774,7 @@ def _build_domain_context(
         domain_physics_path = Path(_module_map[_profile_domain_id]["domain_physics_path"])
 
     domain = PERSISTENCE.load_domain_physics(str(domain_physics_path))
-    ledger_path = PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=resolved_domain_id)
+    ledger_path = PERSISTENCE.get_log_ledger_path(session_id, domain_id=resolved_domain_id)
     ps = persisted_state or {}
 
     state_builder = runtime["state_builder_fn"]
@@ -805,7 +805,7 @@ def _build_domain_context(
         initial_state=initial_state,
         action_prompt_type_map=runtime.get("action_prompt_type_map") or {},
         policy_commitment=_policy_commitment_payload(runtime),
-        ctl_append_callback=lambda sid, record: PERSISTENCE.append_ctl_record(
+        log_append_callback=lambda sid, record: PERSISTENCE.append_log_record(
             sid,
             record,
             ledger_path=str(ledger_path),
@@ -880,7 +880,7 @@ def get_or_create_session(
                 _persist_session_container(session_id, container)
 
             # Record the domain switch event in the meta-ledger
-            PERSISTENCE.append_ctl_record(
+            PERSISTENCE.append_log_record(
                 session_id,
                 {
                     "event": "domain_switch",
@@ -889,7 +889,7 @@ def get_or_create_session(
                     "timestamp": time.time(),
                     "session_id": session_id,
                 },
-                ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+                ledger_path=PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
             )
 
         return container.active_context.to_session_dict()
@@ -1179,7 +1179,7 @@ def process_message(
 
     escalated = any(
         r.get("record_type") == "EscalationRecord" and r.get("session_id") == session_id
-        for r in orch.ctl_records[-2:]
+        for r in orch.log_records[-2:]
     )
 
     tool_results = apply_tool_call_policy(
@@ -1301,7 +1301,7 @@ class ToolResponse(BaseModel):
     result: dict[str, Any]
 
 
-class CtlValidateResponse(BaseModel):
+class SystemLogValidateResponse(BaseModel):
     result: dict[str, Any]
 
 
@@ -1529,10 +1529,10 @@ async def chat(
 
     # ── Log routing decision to meta-ledger (Step 9) ─────────
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             session_id,
             routing_record,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+            ledger_path=PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
         )
     except Exception:
         log.debug("Could not write routing decision to meta-ledger")
@@ -1665,21 +1665,21 @@ async def run_tool(
     return ToolResponse(tool_id=tool_id, result=result)
 
 
-@app.get("/api/ctl/validate", response_model=CtlValidateResponse)
-async def validate_ctl(
+@app.get("/api/system-log/validate", response_model=SystemLogValidateResponse)
+async def validate_system_log(
     session_id: str | None = None,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> CtlValidateResponse:
-    """Validate CTL hash-chain integrity for one session or all known sessions."""
+) -> SystemLogValidateResponse:
+    """Validate System Log hash-chain integrity for one session or all known sessions."""
     user = await get_current_user(credentials)
     if user is not None:
         require_role(user, "root", "domain_authority", "qa", "auditor")
     try:
-        result = await run_in_threadpool(PERSISTENCE.validate_ctl_chain, session_id)
+        result = await run_in_threadpool(PERSISTENCE.validate_log_chain, session_id)
     except Exception as exc:
-        log.exception("CTL validation failed")
+        log.exception("System Log validation failed")
         raise HTTPException(status_code=500, detail=str(exc))
-    return CtlValidateResponse(result=result)
+    return SystemLogValidateResponse(result=result)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1885,7 +1885,7 @@ async def update_user(
     if updated is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # CTL: TraceEvent for role change
+    # System Log: TraceEvent for role change
     if new_role != old_role:
         event = build_trace_event(
             session_id="admin",
@@ -1899,9 +1899,9 @@ async def update_user(
             },
         )
         try:
-            PERSISTENCE.append_ctl_record(
+            PERSISTENCE.append_log_record(
                 "admin", event,
-                ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+                ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
             )
         except Exception:
             log.debug("Could not write role_change trace event")
@@ -1940,9 +1940,9 @@ async def delete_user(
         evidence_summary={"target_user_id": user_id},
     )
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write user_deactivated trace event")
@@ -1973,9 +1973,9 @@ async def revoke_token(
         evidence_summary={"target_user_id": req.user_id or user_data["sub"]},
     )
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write token_revoked trace event")
@@ -2012,9 +2012,9 @@ async def password_reset(
         evidence_summary={"target_user_id": target_user_id},
     )
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write password_reset trace event")
@@ -2032,7 +2032,7 @@ async def domain_pack_commit(
     req: DomainCommitRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
-    """Commit domain pack hash to CTL."""
+    """Commit domain pack hash to System Log."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2064,9 +2064,9 @@ async def domain_pack_commit(
         subject_hash=subject_hash,
     )
 
-    PERSISTENCE.append_ctl_record(
+    PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
     )
 
     return {
@@ -2157,9 +2157,9 @@ async def update_domain_physics(
         subject_hash=subject_hash,
         metadata={"updated_fields": list(req.updates.keys())},
     )
-    PERSISTENCE.append_ctl_record(
+    PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
     )
 
     return {
@@ -2187,9 +2187,9 @@ def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: 
             metadata={"domain_id": did, "turn_count": ctx.turn_count},
         )
         try:
-            PERSISTENCE.append_ctl_record(
+            PERSISTENCE.append_log_record(
                 session_id, record,
-                ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=did),
+                ledger_path=PERSISTENCE.get_log_ledger_path(session_id, domain_id=did),
             )
         except Exception:
             log.debug("Could not write session_close record for %s/%s", session_id, did)
@@ -2245,9 +2245,9 @@ def _get_ingest_service() -> Any:
         from lumina.ingestion.service import IngestService
 
         _INGEST_SERVICE = IngestService(
-            persistence_append=lambda sid, rec: PERSISTENCE.append_ctl_record(
+            persistence_append=lambda sid, rec: PERSISTENCE.append_log_record(
                 sid, rec,
-                ledger_path=PERSISTENCE.get_ctl_ledger_path(sid, domain_id="_admin"),
+                ledger_path=PERSISTENCE.get_log_ledger_path(sid, domain_id="_admin"),
             ),
             max_file_size_mb=10,
         )
@@ -2427,7 +2427,7 @@ async def ingest_commit(
     ingestion_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
-    """Finalize and CTL-commit an approved ingestion."""
+    """Finalize and System Log-commit an approved ingestion."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2557,9 +2557,9 @@ async def dashboard_telemetry(
     if user_data["role"] not in ("root", "domain_authority"):
         raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
 
-    # Query recent CTL records for stats
+    # Query recent System Log records for stats
     records = await run_in_threadpool(
-        PERSISTENCE.query_ctl_records,
+        PERSISTENCE.query_log_records,
         domain_id=domain_id,
     )
 
@@ -2581,7 +2581,7 @@ async def dashboard_telemetry(
     resolved = sum(1 for e in escalations if e.get("status") == "resolved")
 
     return {
-        "total_ctl_records": len(records),
+        "total_log_records": len(records),
         "record_type_counts": record_types,
         "escalation_summary": {
             "total": len(escalations),
@@ -2790,9 +2790,9 @@ async def resolve_escalation(
     )
 
     session_id = target.get("session_id", "admin")
-    PERSISTENCE.append_ctl_record(
+    PERSISTENCE.append_log_record(
         session_id, record,
-        ledger_path=PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_admin"),
+        ledger_path=PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
     )
 
     return {
@@ -2809,7 +2809,7 @@ async def audit_log(
     format: str = "json",
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
-    """Generate audit log report from CTL records."""
+    """Generate audit log report from System Logs records."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2824,7 +2824,7 @@ async def audit_log(
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     records = await run_in_threadpool(
-        PERSISTENCE.query_ctl_records,
+        PERSISTENCE.query_log_records,
         session_id=session_id,
         domain_id=domain_id,
     )
@@ -2837,9 +2837,9 @@ async def audit_log(
         decision=f"Audit log requested: session={session_id}, domain={domain_id}",
     )
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", audit_event,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write audit_requested trace event")
@@ -2889,7 +2889,7 @@ async def manifest_regen(
     """Recompute and rewrite SHA-256 hashes in docs/MANIFEST.yaml.
 
     Restricted to: ``root`` and ``domain_authority`` only.
-    Writes a CTL TraceEvent for the audit trail.
+    Writes a System Log TraceEvent for the audit trail.
     """
     current = await get_current_user(credentials)
     user_data = require_auth(current)
@@ -2913,9 +2913,9 @@ async def manifest_regen(
         },
     )
     try:
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write manifest_regen trace event")
@@ -2923,8 +2923,8 @@ async def manifest_regen(
     return ManifestRegenResponse(**report)
 
 
-@app.get("/api/ctl/records")
-async def query_ctl_records(
+@app.get("/api/system-log/records")
+async def query_log_records(
     session_id: str | None = None,
     record_type: str | None = None,
     event_type: str | None = None,
@@ -2933,7 +2933,7 @@ async def query_ctl_records(
     offset: int = 0,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> list[dict[str, Any]]:
-    """Query CTL records with filters."""
+    """Query System Log records with filters."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2945,7 +2945,7 @@ async def query_ctl_records(
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     records = await run_in_threadpool(
-        PERSISTENCE.query_ctl_records,
+        PERSISTENCE.query_log_records,
         session_id=session_id,
         record_type=record_type,
         event_type=event_type,
@@ -2956,11 +2956,11 @@ async def query_ctl_records(
     return records
 
 
-@app.get("/api/ctl/sessions")
-async def list_ctl_sessions(
+@app.get("/api/system-log/sessions")
+async def list_log_sessions(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> list[dict[str, Any]]:
-    """List all CTL session IDs with summary info."""
+    """List all System Log session IDs with summary info."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2968,16 +2968,16 @@ async def list_ctl_sessions(
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    summaries = await run_in_threadpool(PERSISTENCE.list_ctl_sessions_summary)
+    summaries = await run_in_threadpool(PERSISTENCE.list_log_sessions_summary)
     return summaries
 
 
-@app.get("/api/ctl/records/{record_id}")
-async def get_ctl_record(
+@app.get("/api/system-log/records/{record_id}")
+async def get_log_record(
     record_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
-    """Get a specific CTL record by record_id."""
+    """Get a specific System Log record by record_id."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
@@ -2989,7 +2989,7 @@ async def get_ctl_record(
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     # Search all records for the matching record_id
-    all_records = await run_in_threadpool(PERSISTENCE.query_ctl_records, limit=10000)
+    all_records = await run_in_threadpool(PERSISTENCE.query_log_records, limit=10000)
     for r in all_records:
         if r.get("record_id") == record_id:
             return r
@@ -3070,9 +3070,9 @@ async def _execute_admin_operation(
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True, "updated_fields": list(updates.keys())},
         )
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
         )
         result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 
@@ -3100,9 +3100,9 @@ async def _execute_admin_operation(
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True},
         )
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
         )
         result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 
@@ -3205,10 +3205,10 @@ async def _execute_admin_operation(
         event_id = str(params.get("event_id", parsed.get("target", "")))
         if not event_id:
             raise HTTPException(status_code=422, detail="event_id required")
-        records = await run_in_threadpool(PERSISTENCE.query_ctl_records)
+        records = await run_in_threadpool(PERSISTENCE.query_log_records)
         target = [r for r in records if r.get("record_id") == event_id]
         if not target:
-            raise HTTPException(status_code=404, detail="CTL record not found")
+            raise HTTPException(status_code=404, detail="System Log record not found")
         result = {"operation": operation, "record": target[0]}
 
     elif operation == "module_status":
@@ -3287,7 +3287,7 @@ async def admin_command(
     staged_id = str(uuid.uuid4())
     expires_at = time.time() + _STAGED_CMD_TTL_SECONDS
 
-    # Write the "staged" CTL record immediately so even rejected commands are auditable.
+    # Write the "staged" System Log record immediately so even rejected commands are auditable.
     stage_record = build_commitment_record(
         actor_id=user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
@@ -3302,9 +3302,9 @@ async def admin_command(
             "original_instruction": req.instruction,
         },
     )
-    PERSISTENCE.append_ctl_record(
+    PERSISTENCE.append_log_record(
         "admin", stage_record,
-        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+        ledger_path=PERSISTENCE.get_log_ledger_path("admin"),
     )
 
     entry: dict[str, Any] = {
@@ -3315,7 +3315,7 @@ async def admin_command(
         "original_instruction": req.instruction,
         "staged_at": time.time(),
         "expires_at": expires_at,
-        "ctl_stage_record_id": stage_record["record_id"],
+        "log_stage_record_id": stage_record["record_id"],
         "resolved": False,
     }
     with _STAGED_COMMANDS_LOCK:
@@ -3326,7 +3326,7 @@ async def admin_command(
         "staged_command": parsed,
         "original_instruction": req.instruction,
         "expires_at": expires_at,
-        "ctl_stage_record_id": stage_record["record_id"],
+        "log_stage_record_id": stage_record["record_id"],
     }
 
 
@@ -3346,7 +3346,7 @@ async def admin_command_resolve(
     Only the original actor may resolve their own staged commands, **except** that
     ``root`` may resolve any staged command regardless of who staged it.
 
-    Each resolution path writes its own CTL record (``hitl_command_accepted``,
+    Each resolution path writes its own System Log record (``hitl_command_accepted``,
     ``hitl_command_rejected``, or ``hitl_command_modified``).
     """
     # Note: do NOT call _purge_expired_staged_commands() here — we need the entry
@@ -3403,18 +3403,18 @@ async def admin_command_resolve(
             subject_hash=None,
             metadata={
                 "staged_id": staged_id,
-                "ctl_stage_record_id": entry["ctl_stage_record_id"],
+                "log_stage_record_id": entry["log_stage_record_id"],
                 "parsed_command": parsed,
             },
         )
-        PERSISTENCE.append_ctl_record(
+        PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+            ledger_path=PERSISTENCE.get_log_ledger_path("admin"),
         )
         return {
             "staged_id": staged_id,
             "action": "reject",
-            "ctl_record_id": record["record_id"],
+            "log_record_id": record["record_id"],
         }
 
     if req.action == "modify":
@@ -3428,7 +3428,7 @@ async def admin_command_resolve(
         commitment_type: str = "hitl_command_modified"
         metadata: dict[str, Any] = {
             "staged_id": staged_id,
-            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "log_stage_record_id": entry["log_stage_record_id"],
             "delta": delta,
             "modified_schema": parsed,
         }
@@ -3436,7 +3436,7 @@ async def admin_command_resolve(
         commitment_type = "hitl_command_accepted"
         metadata = {
             "staged_id": staged_id,
-            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "log_stage_record_id": entry["log_stage_record_id"],
             "parsed_command": parsed,
         }
 
@@ -3453,9 +3453,9 @@ async def admin_command_resolve(
         subject_hash=None,
         metadata=metadata,
     )
-    PERSISTENCE.append_ctl_record(
+    PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=PERSISTENCE.get_ctl_ledger_path("admin"),
+        ledger_path=PERSISTENCE.get_log_ledger_path("admin"),
     )
 
     return {
@@ -3463,7 +3463,7 @@ async def admin_command_resolve(
         "action": req.action,
         "parsed_command": parsed,
         "result": exec_result,
-        "ctl_record_id": record["record_id"],
+        "log_record_id": record["record_id"],
     }
 
 
@@ -3652,7 +3652,7 @@ if __name__ == "__main__":
             log.info("  Domain: %s (%s)%s", d["domain_id"], d["label"], " [default]" if d["is_default"] else "")
     else:
         log.info("Single-domain mode: %s", RUNTIME_CONFIG_PATH)
-    log.info("CTL directory: %s", CTL_DIR)
+    log.info("System Log directory: %s", LOG_DIR)
     log.info("Bootstrap mode: %s", BOOTSTRAP_MODE)
     log.info("CORS origins: %s", CORS_ORIGINS)
     uvicorn.run(app, host="0.0.0.0", port=port)

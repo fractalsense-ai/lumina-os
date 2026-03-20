@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # verify-repo-integrity(1)
 
 **Version:** 1.0.0  
@@ -27,4 +32,4 @@ Validates cross-file consistency across the repository: version alignment betwee
 
 ## SEE ALSO
 
-[ctl-commitment-validator(1)](ctl-commitment-validator.md), [audit-and-rollback](../../governance/audit-and-rollback.md)
+[system-log-validator(1)](system-log-validator.md), [audit-and-rollback](../../governance/audit-and-rollback.md)

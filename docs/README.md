@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Project Lumina — Documentation Index
 
 **Version:** 1.0.0  
@@ -26,7 +31,7 @@ Documentation is organized using the UNIX man-page section convention.
 1. **Concepts** — Read [principles](../specs/principles-v1.md) and the [D.S.A. structural schema](../specs/dsa-framework-v1.md) underlying PPA
 2. **Standards** — Review [lumina-core](../standards/lumina-core-v1.md) and [RBAC](../specs/rbac-spec-v1.md)
 3. **Formats** — Understand [domain-physics schema](../standards/domain-physics-schema-v1.json) and [prompt-contract schema](../standards/prompt-contract-schema-v1.json)
-4. **Commands** — Start with [installation and packaging](1-commands/installation-and-packaging.md), then use the [YAML converter](1-commands/yaml-to-json-converter.md) and [CTL validator](1-commands/ctl-commitment-validator.md)
+4. **Commands** — Start with [installation and packaging](1-commands/installation-and-packaging.md), then use the [YAML converter](1-commands/yaml-to-json-converter.md) and [System Log validator](1-commands/system-log-validator.md)
 5. **API** — Browse the [API server reference](2-syscalls/lumina-api-server.md)
 6. **Examples** — Study the [causal learning trace](../examples/causal-learning-trace-example.json)
 7. **Admin** — Configure [runtime secrets](8-admin/secrets-and-runtime-config.md), [RBAC roles](8-admin/rbac-administration.md), and [audit policy](../governance/audit-and-rollback.md)

@@ -43,7 +43,7 @@ Expanding scope without a justified escalation is a violation of this principle.
 
 - No raw transcripts or free-text interaction payloads are stored at rest
 - Evidence is structured telemetry defined by domain contracts (for example: correctness, latency, threshold deltas, tool outcomes)
-- Raw interaction content is never written to the CTL or persistent state stores
+- Raw interaction content is never written to the System Logs or persistent state stores
 - Hashes of content may be stored for integrity verification; the content itself is not
 - State estimates are derived from structured outcomes and ground-truth measurements, not inferred internal traits
 
@@ -65,7 +65,7 @@ If the AI cannot resolve a situation within the Domain Authority's instructions,
 
 **The ledger is never modified. Only extended.**
 
-The CTL is append-only. Records may not be deleted, modified, or backdated. Corrections are new records that reference the prior record and explain the correction.
+The System Logs is append-only. Records may not be deleted, modified, or backdated. Corrections are new records that reference the prior record and explain the correction.
 
 This ensures that:
 - Audit trails are trustworthy
@@ -174,7 +174,7 @@ A system that maximizes engagement by keeping subjects dependent is not function
 
 When a principle is violated:
 1. The session must be frozen (no further autonomous action)
-2. An `EscalationRecord` must be created in the CTL
+2. An `EscalationRecord` must be created in the System Logs
 3. The Meta Authority must be notified immediately
 4. The session may only resume after explicit Meta Authority authorization
 

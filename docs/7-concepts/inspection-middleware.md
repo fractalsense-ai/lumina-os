@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Inspection Middleware
 
 > Tier 2 of the Three-Tier Execution Pipeline  
@@ -85,7 +90,7 @@ class InspectionResult:
 - Any **critical** invariant fails, or
 - Any **required-field** or **type-mismatch** violation occurs in strict mode.
 
-The `to_dict()` method serialises the result for CTL audit metadata.
+The `to_dict()` method serialises the result for System Log audit metadata.
 
 ## Integration Point
 

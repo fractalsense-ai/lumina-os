@@ -8,7 +8,7 @@
 
 TCP/IP assembles packets from layered protocols — each layer adds its headers, the payload travels through, and checksums verify integrity. Lumina OS does the same thing for LLMs.
 
-The **PPA (Prompt Packet Assembly) engine** assembles a **dynamic prompt contract** from layered components — global rules, domain policy, module state, and turn context. Only what is needed is added at each layer. The LLM processes this contract. Tool-adapters verify the output. The Causal Trace Ledger logs the decision.
+The **PPA (Prompt Packet Assembly) engine** assembles a **dynamic prompt contract** from layered components — global rules, domain policy, module state, and turn context. Only what is needed is added at each layer. The LLM processes this contract. Tool-adapters verify the output. The System Logs logs the decision.
 
 The LLM is the **processing unit**, not the authority. The input interface is the **surface**, not the system — it can be a chat session, a sensor feed, a lab instrument stream, or any structured event source. Everything surrounding the probabilistic LLM is **deterministic and verifiable**.
 
@@ -43,7 +43,7 @@ The LLM is the **processing unit**, not the authority. The input interface is th
 ├──────────────────────────────────────────────────────────────────────┤
 │  Domain Adapter — Signal Synthesis (B)                               │  ← computes engine contract fields
 ├──────────────────────────────────────────────────────────────────────┤
-│  CTL (Causal Trace Ledger)                                           │  ← append-only: trace events, escalations, novel synthesis events
+│  System Log (System Logs)                                           │  ← append-only: trace events, escalations, novel synthesis events
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -76,7 +76,7 @@ Every turn follows a strict, auditable sequence:
 4. **Proposal (LLM)** — the LLM processes the assembled prompt contract
 5. **Verification (tools + invariants)** — tool-adapters check the LLM's reasoning; unrecognized patterns are flagged as novel synthesis signals
 6. **Commit / escalate** — verified decisions are committed; violations escalate to a human; novel synthesis events require a two-key gate (LLM flags → Domain Authority confirms or rejects)
-7. **Trace (CTL)** — the decision is logged to the append-only ledger
+7. **Trace (System Log)** — the decision is logged to the append-only ledger
 
 The **D.S.A. structural schema** is the contract model behind PPA. Three pillars define every session contract:
 
@@ -86,9 +86,9 @@ The **D.S.A. structural schema** is the contract model behind PPA. Three pillars
 | **S**  | State | Compact entity profile updated from structured evidence | Mutable |
 | **A**  | Action | Bounded response produced by the orchestrator | Constrained by Domain |
 
-The PPA orchestrator assembles a dynamic prompt contract from these D.S.A. components. The LLM is constrained to that contract, tool-adapters verify its output, and the resulting decision is committed or escalated and written to CTL.
+The PPA orchestrator assembles a dynamic prompt contract from these D.S.A. components. The LLM is constrained to that contract, tool-adapters verify its output, and the resulting decision is committed or escalated and written to System Log.
 
-See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full D.S.A. structural specification and [`standards/causal-trace-ledger-v1.md`](standards/causal-trace-ledger-v1.md) for CTL protocol.
+See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full D.S.A. structural specification and [`standards/system-log-v1.md`](standards/system-log-v1.md) for System Log protocol.
 
 ---
 
@@ -96,7 +96,7 @@ See [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) for the full D.S.A.
 
 The core engine (`src/lumina/api/server.py`) is a **generic runtime host** with zero domain-specific logic. Domain behavior is loaded at startup from a domain pack's `cfg/runtime-config.yaml`, which declares prompt files, state adapters, tool policies, and deterministic templates.
 
-At startup, the runtime computes policy/prompt hashes and enforces a **policy commitment gate** — the active domain-physics hash must match a committed CTL `CommitmentRecord` before any session can execute. During each turn, provenance lineage hashes are carried in CTL metadata for packet-level auditability without storing transcript content.
+At startup, the runtime computes policy/prompt hashes and enforces a **policy commitment gate** — the active domain-physics hash must match a committed System Log `CommitmentRecord` before any session can execute. During each turn, provenance lineage hashes are carried in System Log metadata for packet-level auditability without storing transcript content.
 
 ### Swapping domains
 
@@ -138,9 +138,9 @@ When the LLM produces a response the domain's evidence extractors cannot classif
 1. **Key 1 — Domain invariant fires** — the domain physics defines a `signal_type: NOVEL_PATTERN` invariant. When the pattern-recognition check fails, the orchestrator applies a standing order (requesting justification) and, if unresolved, creates an `EscalationRecord` with `trigger_type: novel_synthesis_review`.
 2. **Key 2 — Domain Authority confirms** — the human Domain Authority reviews the escalation and issues a verdict: `novel_synthesis_verified` (innovation recorded) or `novel_synthesis_rejected` (false positive flagged).
 
-The CTL records `model_id`, `model_version`, and the verdict for every gate event. This builds a **cross-domain model performance heatmap** — distinguishing models that parrott known answers from those that generate genuine insight. The domain knowledge base is never updated until Key 2 turns.
+The System Logs records `model_id`, `model_version`, and the verdict for every gate event. This builds a **cross-domain model performance heatmap** — distinguishing models that parrott known answers from those that generate genuine insight. The domain knowledge base is never updated until Key 2 turns.
 
-See [`docs/7-concepts/novel-synthesis-framework.md`](docs/7-concepts/novel-synthesis-framework.md) for the full lifecycle diagram and CTL telemetry schema.
+See [`docs/7-concepts/novel-synthesis-framework.md`](docs/7-concepts/novel-synthesis-framework.md) for the full lifecycle diagram and System Log telemetry schema.
 
 ---
 
@@ -158,7 +158,7 @@ Micro Authority    (e.g., Operator / Lead Physician / Teacher)
 Subject/Target     (e.g., Environment / Patient / Learner)
 ```
 
-Each level authors its own Domain Physics, retrieves context from the level above via RAG contracts, is held accountable via the CTL, and can escalate upward when the system cannot stabilize.
+Each level authors its own Domain Physics, retrieves context from the level above via RAG contracts, is held accountable via the System Logs, and can escalate upward when the system cannot stabilize.
 
 See [`GOVERNANCE.md`](GOVERNANCE.md) for policies and [`docs/8-admin/`](docs/8-admin/README.md) for role definitions, RBAC, and audit procedures.
 
@@ -190,7 +190,7 @@ project-lumina/
 │   │   ├── auth/               ← authentication and token management
 │   │   ├── cli/                ← command-line interface
 │   │   ├── core/               ← orchestrator, PPA engine, prompt assembly
-│   │   ├── ctl/                ← Causal Trace Ledger writer
+│   │   ├── ctl/                ← System Logs writer
 │   │   ├── orchestrator/       ← turn pipeline and commitment gating
 │   │   ├── persistence/        ← storage adapters (SQLite, filesystem)
 │   │   └── systools/           ← repo integrity verifier and admin utilities
@@ -206,7 +206,7 @@ project-lumina/
 │       └── systools/           ← domain-specific tool adapters
 ├── specs/                      ← architecture specifications (PPA framework, principles, prompts)
 ├── standards/                  ← universal engine schemas and contracts
-├── ledger/                     ← CTL JSON schemas (trace events, commitments, escalations)
+├── ledger/                     ← System Log JSON schemas (trace events, commitments, escalations)
 ├── governance/                 ← policy templates and role definitions
 ├── retrieval/                  ← RAG layer contracts and schemas
 ├── docs/                       ← UNIX man-page reference (sections 1–8)
@@ -304,7 +304,7 @@ See [`docs/1-commands/`](docs/1-commands/README.md) for detailed command referen
 5. [`domain-packs/agriculture/modules/operations-level-1/`](domain-packs/agriculture/modules/operations-level-1/) — a sensor/field operations domain pack
 6. [`examples/README.md`](examples/README.md) — full interaction traces
 7. [`docs/7-concepts/slm-compute-distribution.md`](docs/7-concepts/slm-compute-distribution.md) — SLM three-role architecture, weight routing, provider backends, fallback guarantees
-8. [`docs/7-concepts/novel-synthesis-framework.md`](docs/7-concepts/novel-synthesis-framework.md) — two-key verification gate, model benchmarking via CTL telemetry
+8. [`docs/7-concepts/novel-synthesis-framework.md`](docs/7-concepts/novel-synthesis-framework.md) — two-key verification gate, model benchmarking via System Log telemetry
 
 ---
 
@@ -318,7 +318,7 @@ All domain packs and implementations must conform to [`standards/lumina-core-v1.
 
 Lumina OS is research/experimental software provided AS-IS under Apache 2.0 with NO WARRANTIES. No part of this project is certified for safety-critical, high-stakes, or regulated use (including with minors) without thorough independent validation.
 
-The engine provides structural accountability (D.S.A. contracts, CTL traces) but does **not** replace human oversight, professional judgment, or legal compliance. Ultimate accountability for any deployment sits with the human Domain Authority at each level, never the AI or the engine.
+The engine provides structural accountability (D.S.A. contracts, System Log traces) but does **not** replace human oversight, professional judgment, or legal compliance. Ultimate accountability for any deployment sits with the human Domain Authority at each level, never the AI or the engine.
 
 Domain packs that involve vulnerable populations (children, patients, etc.) include additional warnings and must be independently reviewed before any real-world deployment. See individual domain pack READMEs for domain-specific disclaimers.
 

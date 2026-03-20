@@ -16,12 +16,13 @@ from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
 from lumina.api.models import DomainCommitRequest, DomainPhysicsUpdateRequest
 from lumina.api.session import _close_session, _persist_session_container, _session_containers
 from lumina.core.domain_registry import DomainNotFoundError
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
     build_commitment_record,
     can_govern_domain,
     map_role_to_actor_role,
 )
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger("lumina-api")
 
@@ -29,6 +30,7 @@ router = APIRouter()
 
 
 @router.post("/api/domain-pack/commit")
+@requires_log_commit
 async def domain_pack_commit(
     req: DomainCommitRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -64,9 +66,9 @@ async def domain_pack_commit(
         subject_hash=subject_hash,
     )
 
-    _cfg.PERSISTENCE.append_ctl_record(
+    _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
     )
 
     return {
@@ -107,6 +109,7 @@ async def domain_pack_history(
 
 
 @router.patch("/api/domain-pack/{domain_id}/physics")
+@requires_log_commit
 async def update_domain_physics(
     domain_id: str,
     req: DomainPhysicsUpdateRequest,
@@ -153,9 +156,9 @@ async def update_domain_physics(
         subject_hash=subject_hash,
         metadata={"updated_fields": list(req.updates.keys())},
     )
-    _cfg.PERSISTENCE.append_ctl_record(
+    _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
     )
 
     return {
@@ -166,6 +169,7 @@ async def update_domain_physics(
 
 
 @router.post("/api/session/{session_id}/close", status_code=200)
+@requires_log_commit
 async def close_session(
     session_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),

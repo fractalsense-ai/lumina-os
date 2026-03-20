@@ -11,7 +11,7 @@
 # Changes to this file require:
 #   1. Semantic version bump (version field below)
 #   2. Compilation to system-physics.json (YAML -> JSON)
-#   3. CommitmentRecord (system_physics_activation) in the system CTL
+#   3. CommitmentRecord (system_physics_activation) in the system log
 #      with the SHA-256 hash of the compiled system-physics.json
 #      before the updated physics takes operational effect.
 #
@@ -223,12 +223,12 @@ glossary:
       - commitment
       - policy commitment
     related_terms:
-      - causal_trace_ledger
+      - system_logs
       - trace_event
     example_in_context: >-
       When a Domain Authority activates a new domain-physics version, the
       runtime writes a commitment_record of type domain_physics_activation
-      to the system CTL.
+      to the system log.
 
   - term: trace_event
     definition: >-
@@ -239,11 +239,11 @@ glossary:
       - trace
       - ctl event
     related_terms:
-      - causal_trace_ledger
+      - system_logs
       - commitment_record
     example_in_context: >-
       Every time the orchestrator completes a turn it appends a trace_event
-      to the domain CTL that includes the SHA-256 of the active
+      to the domain System Log that includes the SHA-256 of the active
       system-physics.json.
 
   - term: escalation_record
@@ -256,18 +256,18 @@ glossary:
     related_terms:
       - escalation_trigger
       - meta_authority
-      - causal_trace_ledger
+      - system_logs
     example_in_context: >-
       If all standing-order attempts are exhausted, an escalation_record is
-      appended to the CTL and a human Meta Authority is notified.
+      appended to the System Logs and a human Meta Authority is notified.
 
-  - term: causal_trace_ledger
+  - term: system_logs
     definition: >-
       The append-only, hash-chained log that records all decisions, outcomes,
       escalations, and policy commitments.  Operates at both the system level
-      (LUMINA_CTL_DIR/system/) and per domain/session.
+      (LUMINA_LOG_DIR/system/) and per domain/session.
     aliases:
-      - CTL
+      - System Log
       - ledger
       - audit ledger
     related_terms:
@@ -275,7 +275,7 @@ glossary:
       - trace_event
       - escalation_record
     example_in_context: >-
-      An auditor can replay the full causal_trace_ledger for a session to
+      An auditor can replay the full system_logs for a session to
       reconstruct every orchestrator decision from first principles.
 
   - term: system_physics
@@ -372,7 +372,7 @@ glossary:
   - term: policy_commitment_gate
     definition: >-
       A startup check that verifies the SHA-256 hash of the active
-      domain-physics.json matches a CommitmentRecord in the CTL before any
+      domain-physics.json matches a CommitmentRecord in the System Logs before any
       session executes.  Prevents silently modified policies from taking effect.
     aliases:
       - policy gate
@@ -380,11 +380,11 @@ glossary:
       - startup gate
     related_terms:
       - commitment_record
-      - causal_trace_ledger
+      - system_logs
       - domain_physics
     example_in_context: >-
       The policy_commitment_gate halts server startup if the education
-      domain-physics.json hash is absent from the system CTL.
+      domain-physics.json hash is absent from the system log.
 
   - term: domain_pack
     definition: >-
@@ -419,7 +419,7 @@ glossary:
     example_in_context: >-
       The domain_authority for the education pack may update the ZPD
       thresholds in domain-physics.yaml; the change must be committed to
-      the CTL before it takes effect.
+      the System Logs before it takes effect.
 
   - term: meta_authority
     definition: >-
@@ -465,10 +465,10 @@ glossary:
       - anon id
     related_terms:
       - rbac
-      - causal_trace_ledger
+      - system_logs
     example_in_context: >-
       The trace_event carries a pseudonymous_id, not the student's real
-      name, ensuring the CTL is auditable without exposing PII.
+      name, ensuring the System Logs is auditable without exposing PII.
 
   - term: rbac
     definition: >-
@@ -485,7 +485,7 @@ glossary:
       - domain_authority
       - meta_authority
     example_in_context: >-
-      An auditor role has read-only rbac permissions on CTL entries but
+      An auditor role has read-only rbac permissions on System Log entries but
       cannot activate or roll back domain physics.
 
   - term: tool_adapter
@@ -519,10 +519,10 @@ glossary:
     related_terms:
       - prompt_contract
       - tool_adapter
-      - causal_trace_ledger
+      - system_logs
     example_in_context: >-
       The orchestrator evaluates every system_physics invariant after
-      each LLM response before committing the turn to the CTL.
+      each LLM response before committing the turn to the System Logs.
 
   - term: domain_lib
     definition: >-

@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # artifact-manifest-format(4)
 
 **Version:** 1.0.0  
@@ -52,7 +57,7 @@ An AI agent navigating the repository should:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `path` | string | Yes | Workspace-relative path from repository root (e.g., `docs/1-commands/ctl-commitment-validator.md`). |
+| `path` | string | Yes | Workspace-relative path from repository root (e.g., `docs/1-commands/system-log-validator.md`). |
 | `type` | string | Yes | Artifact type: `doc`, `spec`, `standard`, `schema`, `tool-adapter`, `domain-library`. |
 | `section` | integer | Docs only | Unix man-page section number (1–8). Omit for non-doc artifacts. |
 | `doc_version` | string (semver) | Yes | Current semver version of the artifact's content. |
@@ -70,7 +75,7 @@ schema_version: 1.0.0
 last_updated: 2026-03-12
 
 artifacts:
-  - path: docs/1-commands/ctl-commitment-validator.md
+  - path: docs/1-commands/system-log-validator.md
     type: doc
     section: 1
     doc_version: 1.0.0

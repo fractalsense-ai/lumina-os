@@ -39,7 +39,7 @@ See `cfg/domain-registry.yaml` (`role_defaults`) and `src/lumina/core/domain_reg
 - **Status queries** — discuss the state of a Lumina component as reported in session context
 - **Diagnostic discussion** — describe a problem and receive structured troubleshooting guidance
 - **Config review** — walk through domain-registry, domain-physics, or system-physics structure
-- **Operational monitoring** — CTL record structure, night-cycle status, hash-chain integrity
+- **Operational monitoring** — System Log record structure, night-cycle status, hash-chain integrity
 
 The system domain does **not** support:
 - World-sim / persona themes (explicitly disabled in persona rules)

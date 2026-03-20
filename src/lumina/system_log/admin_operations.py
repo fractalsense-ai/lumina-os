@@ -1,7 +1,7 @@
 """
 admin_operations.py — Shared admin operation logic for API endpoints and CLI tools.
 
-Provides CTL record builders, validation helpers, and common admin
+Provides System Log record builders, validation helpers, and common admin
 operation infrastructure used by lumina-api-server.py and CLI tools.
 """
 
@@ -16,7 +16,7 @@ from typing import Any
 
 
 # ─────────────────────────────────────────────────────────────
-# CTL Record Builders
+# System Log Record Builders
 # ─────────────────────────────────────────────────────────────
 
 
@@ -43,7 +43,7 @@ def build_trace_event(
     evidence_summary: dict[str, Any] | None = None,
     prev_record_hash: str = "genesis",
 ) -> dict[str, Any]:
-    """Build a TraceEvent CTL record."""
+    """Build a TraceEvent System Log record."""
     record: dict[str, Any] = {
         "record_type": "TraceEvent",
         "record_id": str(uuid.uuid4()),
@@ -74,7 +74,7 @@ def build_commitment_record(
     metadata: dict[str, Any] | None = None,
     prev_record_hash: str = "genesis",
 ) -> dict[str, Any]:
-    """Build a CommitmentRecord CTL record."""
+    """Build a CommitmentRecord System Log record."""
     record: dict[str, Any] = {
         "record_type": "CommitmentRecord",
         "record_id": str(uuid.uuid4()),
@@ -118,7 +118,7 @@ def can_govern_domain(user: dict[str, Any], domain_id: str) -> bool:
 
 
 def map_role_to_actor_role(role: str) -> str:
-    """Map Lumina RBAC role to CTL actor_role enum value."""
+    """Map Lumina RBAC role to System Log actor_role enum value."""
     mapping = {
         "root": "administration",
         "domain_authority": "domain_authority",

@@ -17,7 +17,7 @@ The **RAG (Retrieval-Augmented Generation) layer** governs what the orchestrator
 Every orchestrator response that uses retrieved content must:
 
 1. **Cite the retrieved artifact** by ID and version
-2. **Verify the artifact hash** against the CTL commitment before use
+2. **Verify the artifact hash** against the System Logs commitment before use
 3. **Not use content that fails hash verification** — escalate instead
 4. **Not retrieve beyond the authorized scope** for the current session
 5. **Not hallucinate** — if required context cannot be retrieved, escalate rather than guess
@@ -36,7 +36,7 @@ A response that uses retrieved content without citation is a violation of the gr
 | Tool Adapter Definitions | Input/output schemas for authorized tools | Orchestrator (session-scoped) |
 | Mastery Artifacts | Artifact definitions and unlock conditions | Orchestrator (session-scoped) |
 | Boss Challenge Bundles | Task definitions for artifact assessment | Orchestrator (boss challenge only) |
-| CTL TraceEvents (structured fields only) | Prior decisions, standing order invocations | Domain Authority (audit), Orchestrator (limited) |
+| System Log TraceEvents (structured fields only) | Prior decisions, standing order invocations | Domain Authority (audit), Orchestrator (limited) |
 | Subject Profile | Compressed state, preferences, consent record | Orchestrator (own session only) |
 | Prior Session Summaries | Aggregate session outcomes (no transcripts) | Domain Authority, Meta Authority |
 | Evaluation Bundles | Test tasks for harness evaluation | Evaluation harness only |
@@ -46,7 +46,7 @@ A response that uses retrieved content without citation is a violation of the gr
 | Prohibited Target | Reason |
 |------------------|--------|
 | Conversation transcripts | Not stored; retrieval would be a privacy violation |
-| Raw CTL record content | Only structured fields; never free-text payloads |
+| Raw System Log record content | Only structured fields; never free-text payloads |
 | Another subject's profile | Privacy isolation |
 | Domain packs outside current scope | Domain-bounded operation |
 | Content from unapproved external sources | Domain Physics must authorize all retrieval targets |
@@ -59,7 +59,7 @@ The orchestrator follows a specific retrieval order to ensure determinism and au
 
 1. **Structured filters first** — query by explicit identifiers (artifact ID, session ID, domain pack ID)
 2. **Semantic search second** — if no exact match, use semantic similarity within the authorized corpus
-3. **Rerank and verify** — rerank results by relevance; verify each result's hash against CTL
+3. **Rerank and verify** — rerank results by relevance; verify each result's hash against System Log
 4. **Cite or escalate** — if no verified result is found, escalate rather than proceed without grounding
 
 ---
@@ -77,7 +77,7 @@ A session may only retrieve from:
 ### Domain Authority Scope
 
 A Domain Authority reviewing a session may retrieve:
-- CTL structured fields for sessions within their governed domains
+- System Log structured fields for sessions within their governed domains
 - Subject progress summaries (pseudonymous, no transcripts)
 - Domain pack versions within their authored scope
 
@@ -136,4 +136,4 @@ If grounding fails (required content cannot be retrieved and verified):
 - [`retrieval-index-schema-v1.json`](retrieval-index-schema-v1.json) — retrieval index schema
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements (Section 5)
 - [`../specs/memory-spec-v1.md`](../specs/memory-spec-v1.md) — memory layer overview
-- [`../standards/causal-trace-ledger-v1.md`](../standards/causal-trace-ledger-v1.md) — CTL record types
+- [`../standards/system-log-v1.md`](../standards/system-log-v1.md) — System Log record types

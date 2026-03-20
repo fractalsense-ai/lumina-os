@@ -1,21 +1,36 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/module-status.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "module_status",
   "description": "Retrieve the runtime status of a domain module or all modules in a domain.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "module_status" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "module_status"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["domain_id"],
+      "required": [
+        "domain_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "domain_id": { "type": "string" },
-        "module_id": { "type": "string" }
+        "domain_id": {
+          "type": "string"
+        },
+        "module_id": {
+          "type": "string"
+        }
       }
     }
   }

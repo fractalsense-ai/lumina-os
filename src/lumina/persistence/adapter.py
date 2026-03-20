@@ -3,9 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
+from lumina.system_log.commit_guard import notify_log_commit
+
 
 class PersistenceAdapter(ABC):
-    """Domain-agnostic persistence interface for runtime and CTL operations."""
+    """Domain-agnostic persistence interface for runtime and System Log operations."""
 
     @abstractmethod
     def load_domain_physics(self, path: str) -> dict[str, Any]:
@@ -20,7 +22,7 @@ class PersistenceAdapter(ABC):
         """Persist a subject profile document (atomic write)."""
 
     @abstractmethod
-    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         """Return a stable ledger path for a given session.
 
         When *domain_id* is provided, the path is scoped to that domain
@@ -29,8 +31,8 @@ class PersistenceAdapter(ABC):
         """
 
     @abstractmethod
-    def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
-        """Append one CTL record for the session."""
+    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+        """Append one System Log record for the session."""
 
     @abstractmethod
     def load_session_state(self, session_id: str) -> dict[str, Any] | None:
@@ -41,12 +43,12 @@ class PersistenceAdapter(ABC):
         """Persist session metadata."""
 
     @abstractmethod
-    def list_ctl_session_ids(self) -> list[str]:
-        """Return known CTL session IDs for the current backend."""
+    def list_log_session_ids(self) -> list[str]:
+        """Return known System Log session IDs for the current backend."""
 
     @abstractmethod
-    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
-        """Validate CTL hash-chain integrity for one session or all sessions."""
+    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        """Validate System Log hash-chain integrity for one session or all sessions."""
 
     @abstractmethod
     def has_policy_commitment(
@@ -55,19 +57,19 @@ class PersistenceAdapter(ABC):
         subject_version: str | None,
         subject_hash: str,
     ) -> bool:
-        """Return True when CTL contains a matching policy CommitmentRecord."""
+        """Return True when System Log contains a matching policy CommitmentRecord."""
 
     @abstractmethod
-    def get_system_ctl_ledger_path(self) -> str:
-        """Return the ledger path for the system-physics CTL."""
+    def get_system_log_ledger_path(self) -> str:
+        """Return the ledger path for the system-physics System Log."""
 
     @abstractmethod
     def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
-        """Return True when the system CTL contains a CommitmentRecord for this system-physics hash."""
+        """Return True when the system log contains a CommitmentRecord for this system-physics hash."""
 
     @abstractmethod
-    def append_system_ctl_record(self, record: dict[str, Any]) -> None:
-        """Append one record to the system-physics CTL."""
+    def append_system_log_record(self, record: dict[str, Any]) -> None:
+        """Append one record to the system-physics System Log."""
 
     # ── User / Auth persistence ──────────────────────────────
 
@@ -125,7 +127,7 @@ class PersistenceAdapter(ABC):
         """Merge domain_roles mapping into user record. Returns updated record (no password_hash) or None."""
 
     @abstractmethod
-    def query_ctl_records(
+    def query_log_records(
         self,
         session_id: str | None = None,
         record_type: str | None = None,
@@ -134,11 +136,11 @@ class PersistenceAdapter(ABC):
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        """Query CTL records across all sessions with optional filters."""
+        """Query System Log records across all sessions with optional filters."""
 
     @abstractmethod
-    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
-        """Return summary info for each CTL session."""
+    def list_log_sessions_summary(self) -> list[dict[str, Any]]:
+        """Return summary info for each System Log session."""
 
     @abstractmethod
     def query_escalations(
@@ -183,12 +185,13 @@ class NullPersistenceAdapter(PersistenceAdapter):
     def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
         return None
 
-    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:
             return f"session-{session_id}-{domain_id}.jsonl"
         return f"session-{session_id}.jsonl"
 
-    def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+        notify_log_commit()
         return None
 
     def load_session_state(self, session_id: str) -> dict[str, Any] | None:
@@ -197,10 +200,10 @@ class NullPersistenceAdapter(PersistenceAdapter):
     def save_session_state(self, session_id: str, state: dict[str, Any]) -> None:
         self._session_state[session_id] = dict(state)
 
-    def list_ctl_session_ids(self) -> list[str]:
+    def list_log_session_ids(self) -> list[str]:
         return []
 
-    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
         if session_id:
             return {
                 "scope": "session",
@@ -224,13 +227,14 @@ class NullPersistenceAdapter(PersistenceAdapter):
     ) -> bool:
         return True
 
-    def get_system_ctl_ledger_path(self) -> str:
+    def get_system_log_ledger_path(self) -> str:
         return "system/system.jsonl"
 
     def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
         return True
 
-    def append_system_ctl_record(self, record: dict[str, Any]) -> None:
+    def append_system_log_record(self, record: dict[str, Any]) -> None:
+        notify_log_commit()
         return None
 
     # ── User / Auth (in-memory) ──────────────────────────────
@@ -322,7 +326,7 @@ class NullPersistenceAdapter(PersistenceAdapter):
         self._users[user_id]["domain_roles"] = existing
         return {k: v for k, v in self._users[user_id].items() if k != "password_hash"}
 
-    def query_ctl_records(
+    def query_log_records(
         self,
         session_id: str | None = None,
         record_type: str | None = None,
@@ -333,7 +337,7 @@ class NullPersistenceAdapter(PersistenceAdapter):
     ) -> list[dict[str, Any]]:
         return []
 
-    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
+    def list_log_sessions_summary(self) -> list[dict[str, Any]]:
         return []
 
     def query_escalations(

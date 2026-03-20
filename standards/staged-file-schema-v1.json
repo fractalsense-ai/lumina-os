@@ -1,6 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/staged-file-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "Staged File Envelope V1",
   "description": "Schema for a staged file envelope written by the StagingService. Each envelope captures the payload, template, actor, and approval state.",
   "type": "object",
@@ -60,9 +62,9 @@
       "type": ["string", "null"],
       "description": "Absolute path where the file was written (populated on approval)."
     },
-    "ctl_record_id": {
+    "log_record_id": {
       "type": ["string", "null"],
-      "description": "ID of the most recent CTL commitment record for this staged file."
+      "description": "ID of the most recent System Log commitment record for this staged file."
     }
   }
 }

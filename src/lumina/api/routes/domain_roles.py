@@ -19,12 +19,13 @@ from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     build_domain_role_assignment,
     build_domain_role_revocation,
     can_govern_domain,
     map_role_to_actor_role,
 )
+from lumina.system_log.commit_guard import requires_log_commit
 from lumina.core.domain_roles import get_active_role_defs, get_default_role_defs, get_domain_role_def
 from lumina.core.domain_registry import DomainNotFoundError
 
@@ -97,6 +98,7 @@ async def get_module_roles(
 
 
 @router.post("/api/domain-roles/{module_id}/assign")
+@requires_log_commit
 async def assign_domain_role(
     module_id: str,
     req: DomainRoleAssignRequest,
@@ -136,12 +138,12 @@ async def assign_domain_role(
         domain_role=req.domain_role,
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
-        log.debug("Could not write domain_role_assignment CTL record")
+        log.debug("Could not write domain_role_assignment System Log record")
 
     return {
         "user_id": req.user_id,
@@ -158,6 +160,7 @@ async def assign_domain_role(
 
 
 @router.delete("/api/domain-roles/{module_id}/{user_id}", status_code=200)
+@requires_log_commit
 async def revoke_domain_role(
     module_id: str,
     user_id: str,
@@ -196,12 +199,12 @@ async def revoke_domain_role(
         prev_role=prev_role,
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
-        log.debug("Could not write domain_role_revocation CTL record")
+        log.debug("Could not write domain_role_revocation System Log record")
 
     return {
         "user_id": user_id,

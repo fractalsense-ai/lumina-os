@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Domain Evidence Extension
 
 **Version:** 1.0.0
@@ -8,7 +13,7 @@
 
 ## What Is Domain Evidence?
 
-Every Project Lumina session produces per-turn **evidence** — structured signals that describe what happened in a turn without quoting transcript content. This evidence is recorded in the `evidence_summary` field of a CTL `TraceEvent`.
+Every Project Lumina session produces per-turn **evidence** — structured signals that describe what happened in a turn without quoting transcript content. This evidence is recorded in the `evidence_summary` field of a System Log `TraceEvent`.
 
 Because Lumina hosts radically different domains — algebra tutoring, agricultural operations, corporate training, medical continuing education — no single set of field names can describe every domain's signals. A hint request means nothing to a soil sensor domain. An out-of-tolerance reading means nothing to an algebra tutor.
 
@@ -121,7 +126,7 @@ Add an entry in `docs/MANIFEST.yaml` for the new `evidence-schema.json` file.
 
 | Layer | What it enforces |
 |-------|-----------------|
-| **CTL JSON Schema** (`ledger/trace-event-schema.json`) | `evidence_summary` is an object or null. `_domain` and `_schema_version`, when present, are strings. All other fields are open. |
+| **System Log JSON Schema** (`ledger/trace-event-schema.json`) | `evidence_summary` is an object or null. `_domain` and `_schema_version`, when present, are strings. All other fields are open. |
 | **Domain-physics schema** | `evidence_schema.path` and `evidence_schema.version` are correctly typed. |
 | **Evidence meta-schema** (`standards/domain-evidence-schema-v1.json`) | The `evidence-schema.json` file itself is structurally valid. |
 | **Runtime** | Not enforced. Field-level validation against declared schemas is optional and audit-time only. |
@@ -143,5 +148,5 @@ This layered approach means no domain is blocked by schema evolution in another 
 
 - [`standards/domain-evidence-extension-v1.md`](../../standards/domain-evidence-extension-v1.md) — Normative standard
 - [`standards/domain-evidence-schema-v1.json`](../../standards/domain-evidence-schema-v1.json) — Meta-schema for evidence declarations
-- [`standards/causal-trace-ledger-v1.md`](../../standards/causal-trace-ledger-v1.md) — CTL specification
+- [`standards/system-log-v1.md`](../../standards/system-log-v1.md) — System Log specification
 - [`ledger/trace-event-schema.json`](../../ledger/trace-event-schema.json) — TraceEvent JSON Schema

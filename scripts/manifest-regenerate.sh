@@ -11,7 +11,7 @@
 # Run this script after modifying any artifact listed in the manifest, after adding
 # a new entry with sha256: pending, or whenever integrity-check.sh reports a MISMATCH.
 #
-# Domain-pack hashes are committed via the CTL (lumina-ctl-validate), not this script.
+# Domain-pack hashes are committed via the System Logs (lumina-system-log-validate), not this script.
 #
 # Usage:
 #   bash scripts/manifest-regenerate.sh

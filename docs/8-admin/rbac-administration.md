@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # RBAC Administration
 
 **Version:** 1.2.0
@@ -18,7 +23,7 @@ Project Lumina uses a chmod-style permission model with 6 canonical roles. Permi
 | Domain Authority | `domain_authority` | 1 | 750 | Owns and manages domain pack modules |
 | IT Support | `it_support` | 2 | 644 | System configuration and user management |
 | Quality Assurance | `qa` | 2 | 644 | Evaluation access, read-only to modules |
-| Auditor | `auditor` | 2 | 644 | CTL and compliance read access |
+| Auditor | `auditor` | 2 | 644 | System Log and compliance read access |
 | Standard User | `user` | 3 | 644 | Session execution only |
 
 ## Permission Model
@@ -36,7 +41,7 @@ permissions:
       scope: evaluation_only
     - role: auditor
       access: r
-      scope: ctl_records_only
+      scope: log_records_only
 ```
 
 ### Octal Notation
@@ -174,7 +179,7 @@ domain_roles:
 
 - The **Domain Authority** (module owner) can assign any domain role
 - Roles with `may_assign_domain_roles: true` can assign roles at or below their `max_assignable_level`
-- All assignments are recorded as CTL `CommitmentRecord` entries (`commitment_type: domain_role_assignment`)
+- All assignments are recorded as System Log `CommitmentRecord` entries (`commitment_type: domain_role_assignment`)
 
 ### Domain Role in JWT
 
@@ -204,7 +209,7 @@ The `auditor` role may inspect the manifest (read) but may **not** regenerate ha
 is a write operation that modifies `docs/MANIFEST.yaml` — it is restricted to roles with authoring
 authority (`root` and `domain_authority`).
 
-All `POST /api/manifest/regen` calls are recorded as a CTL `TraceEvent` on the `_admin` ledger for
+All `POST /api/manifest/regen` calls are recorded as a System Log `TraceEvent` on the `_admin` ledger for
 full auditability.
 
 From the command line, any authenticated user in an allowed role may also invoke the systools

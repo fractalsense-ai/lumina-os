@@ -132,7 +132,7 @@ These rules are enforced by the domain system prompt in [`../prompts/domain-syst
 
 The MUD World Builder operates within the same magic circle consent established by [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md). No additional consent step is required. The student's profile interests are used solely for framing (Principle 6 — immersion is non-grading; see `magic-circle-consent-v1.md`).
 
-The world builder does not introduce any new data collection. The `template_id` is recorded in the session-open CommitmentRecord for audit purposes; narrative content is ephemeral (not stored in the CTL).
+The world builder does not introduce any new data collection. The `template_id` is recorded in the session-open CommitmentRecord for audit purposes; narrative content is ephemeral (not stored in the System Logs).
 
 ---
 

@@ -1,6 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/tool-adapter-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "Tool Adapter Schema V1",
   "description": "JSON Schema for Project Lumina tool adapter definitions. Tool adapters define how the orchestrator may call external tools, what inputs are acceptable, and what outputs mean.",
   "type": "object",
@@ -39,7 +41,9 @@
     },
     "call_types": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "List of call type identifiers this adapter supports"
     },
     "input_schema": {
@@ -52,28 +56,38 @@
     },
     "authorization": {
       "type": "object",
-      "required": ["who_may_call", "requires_entity_consent"],
+      "required": [
+        "who_may_call",
+        "requires_entity_consent"
+      ],
       "additionalProperties": false,
       "properties": {
         "who_may_call": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["orchestrator", "entity", "domain_authority"]
+            "enum": [
+              "orchestrator",
+              "entity",
+              "domain_authority"
+            ]
           },
-          "description": "Roles authorized to invoke this tool. Use 'entity' for the domain subject (student, patient, operator, etc.) — the domain's conversational_interface_overrides handle the domain-specific vocabulary."
+          "description": "Roles authorized to invoke this tool. Use 'entity' for the domain subject (student, patient, operator, etc.) \u2014 the domain's conversational_interface_overrides handle the domain-specific vocabulary."
         },
         "requires_entity_consent": {
           "type": "boolean",
           "description": "Whether explicit entity consent is required before calling this tool"
         },
         "max_calls_per_session": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "description": "Maximum invocations per session, or null for unlimited"
         },
-        "logged_in_ctl": {
+        "logged_in_system_log": {
           "type": "boolean",
-          "description": "Whether calls to this tool are recorded in the CTL as ToolCallRecords"
+          "description": "Whether calls to this tool are recorded in the System Logs as ToolCallRecords"
         }
       }
     },
@@ -82,11 +96,19 @@
       "properties": {
         "on_failure": {
           "type": "string",
-          "enum": ["escalate", "fallback_to_standing_order", "notify_entity", "ignore"],
+          "enum": [
+            "escalate",
+            "fallback_to_standing_order",
+            "notify_entity",
+            "ignore"
+          ],
           "description": "What the orchestrator does when the tool call fails"
         },
         "fallback_standing_order_id": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Standing order to invoke on tool failure (if on_failure is fallback_to_standing_order)"
         }
       }

@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # API Server Architecture
 
 **Version:** 1.0.0  
@@ -12,7 +17,7 @@ This document describes the internal structure of the Lumina API server after it
 
 ## A. Motivation
 
-The original `server.py` grew to ~3,600 lines as the system acquired new capabilities: multi-domain routing, HITL admin staging, ingestion pipeline, night-cycle scheduling, governance dashboard, cross-domain synthesis, and CTL record browsing. At that scale:
+The original `server.py` grew to ~3,600 lines as the system acquired new capabilities: multi-domain routing, HITL admin staging, ingestion pipeline, night-cycle scheduling, governance dashboard, cross-domain synthesis, and System Log record browsing. At that scale:
 
 - **Tests required full-import** of the entire module to patch any single function, making fixture setup slow and interdependencies fragile.
 - **Merge conflicts were frequent** — unrelated features touched the same file.
@@ -44,10 +49,10 @@ src/lumina/api/
     ├── chat.py          ← POST /api/chat
     ├── auth.py          ← auth and user-management endpoints
     ├── admin.py         ← escalation, audit, manifest, HITL admin-command endpoints
-    ├── ctl.py           ← CTL record-browsing endpoints
+    ├── ctl.py           ← System Log record-browsing endpoints
     ├── domain.py        ← domain-pack lifecycle and session-close endpoints
     ├── ingestion.py     ← document ingestion pipeline endpoints
-    ├── system.py        ← health, domain listing, tool adapter, CTL validate
+    ├── system.py        ← health, domain listing, tool adapter, System Log validate
     ├── dashboard.py     ← governance dashboard telemetry endpoints
     └── nightcycle.py    ← night-cycle trigger, status, and proposal endpoints
 ```
@@ -89,7 +94,7 @@ Sessions are no longer immutably bound to their initial domain. Each session hol
 2. If no `DomainContext` exists for that domain, one is created and added to `container.contexts`.
 3. If `len(container.contexts) >= LUMINA_MAX_CONTEXTS_PER_SESSION` (default 10), the request is rejected with HTTP 429.
 
-Each `DomainContext` carries its own CTL ledger path, conversation history, and evidence state. Contexts within the same session are isolated — they do not share turn history.
+Each `DomainContext` carries its own System Log ledger path, conversation history, and evidence state. Contexts within the same session are isolated — they do not share turn history.
 
 ---
 

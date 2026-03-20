@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # ppa-orchestrator-demo(1)
 
 **Version:** 1.1.0  
@@ -18,7 +23,7 @@ python reference-implementations/ppa-orchestrator-demo.py
 
 ## DESCRIPTION
 
-Runs a self-contained demonstration of the PPA orchestration loop using deterministic mock data. Shows how turns are processed through the D.S.A. structural schema (Domain → State → Action), how CTL records are created, and how tool adapters are invoked.
+Runs a self-contained demonstration of the PPA orchestration loop using deterministic mock data. Shows how turns are processed through the D.S.A. structural schema (Domain → State → Action), how System Log records are created, and how tool adapters are invoked.
 
 ## SEE ALSO
 

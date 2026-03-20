@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # installation-and-packaging
 
 **Version:** 1.1.0  
@@ -204,7 +209,7 @@ Available after editable install:
 lumina-api                # start the FastAPI server
 lumina-verify             # repo integrity check
 lumina-orchestrator-demo  # run the deterministic orchestrator demo
-lumina-ctl-validate       # validate a CTL commitment record
+lumina-system-log-validate       # validate a System Log commitment record
 lumina-security-freeze    # check for exposed secrets / security hygiene
 lumina-yaml-convert       # convert YAML files to JSON
 ```
@@ -278,11 +283,11 @@ installation without a venv:
 .\scripts\<script>.ps1 -PythonExe "C:\Python312\python.exe"
 ```
 
-### seed-system-physics-ctl.ps1
+### seed-system-physics-log.ps1
 
 Computes the canonical SHA-256 of `cfg/system-physics.json` and writes a
-`system_physics_activation` CommitmentRecord to the system CTL
-(`$LUMINA_CTL_DIR/system/system.jsonl`). Safe to run multiple times — idempotent
+`system_physics_activation` CommitmentRecord to the system log
+(`$LUMINA_LOG_DIR/system/system.jsonl`). Safe to run multiple times — idempotent
 if the hash is already committed.
 
 Run this whenever `cfg/system-physics.yaml` is edited and recompiled. The server
@@ -290,15 +295,15 @@ will refuse to start until the active hash is committed.
 
 ```powershell
 # Default (uses .venv)
-.\scripts\seed-system-physics-ctl.ps1
+.\scripts\seed-system-physics-log.ps1
 
-# Custom actor and CTL directory
-.\scripts\seed-system-physics-ctl.ps1 `
+# Custom actor and System Log directory
+.\scripts\seed-system-physics-log.ps1 `
     -ActorId "ci-pipeline" `
     -CtlDir "C:\lumina-data\ctl"
 
 # Custom Python
-.\scripts\seed-system-physics-ctl.ps1 -PythonExe "C:\Python312\python.exe"
+.\scripts\seed-system-physics-log.ps1 -PythonExe "C:\Python312\python.exe"
 ```
 
 See [system-domain-operations](../8-admin/system-domain-operations.md) for the

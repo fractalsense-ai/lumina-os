@@ -101,9 +101,9 @@ Fatigue does **not** automatically change the ZPD band. However:
 
 ---
 
-## Fatigue in the CTL
+## Fatigue in the System Logs
 
-Fatigue score is not stored in the CTL as a separate field. It is captured via:
+Fatigue score is not stored in the System Logs as a separate field. It is captured via:
 - `affect.arousal` (declining arousal correlates with fatigue)
 - `evidence_summary.response_latency_sec` (in TraceEvents)
 - Session-close `CommitmentRecord` may include a `fatigue_summary` in metadata

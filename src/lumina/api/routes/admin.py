@@ -35,7 +35,7 @@ from lumina.core.domain_registry import DomainNotFoundError
 from lumina.core import slm as _slm_mod
 from lumina.core.email_sender import send_invite_email
 from lumina.core.invite_store import generate_invite_token
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
     build_commitment_record,
     build_domain_role_assignment,
@@ -46,6 +46,7 @@ from lumina.ctl.admin_operations import (
 )
 from lumina.middleware.command_schema_registry import validate_command
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger("lumina-api")
 
@@ -88,6 +89,7 @@ async def list_escalations(
 
 
 @router.post("/api/escalations/{escalation_id}/resolve")
+@requires_log_commit
 async def resolve_escalation(
     escalation_id: str,
     req: EscalationResolveRequest,
@@ -132,9 +134,9 @@ async def resolve_escalation(
     )
 
     session_id = target.get("session_id", "admin")
-    _cfg.PERSISTENCE.append_ctl_record(
+    _cfg.PERSISTENCE.append_log_record(
         session_id, record,
-        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_admin"),
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
     )
 
     # ── PIN generation ── freeze session so student must unlock with OTP ──
@@ -216,7 +218,7 @@ async def audit_log(
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     records = await run_in_threadpool(
-        _cfg.PERSISTENCE.query_ctl_records, session_id=session_id, domain_id=domain_id,
+        _cfg.PERSISTENCE.query_log_records, session_id=session_id, domain_id=domain_id,
     )
 
     # Scope records based on caller role
@@ -238,9 +240,9 @@ async def audit_log(
         decision=f"Audit log requested: session={session_id}, domain={domain_id}",
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", audit_event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write audit_requested trace event")
@@ -280,6 +282,7 @@ async def manifest_check(
 
 
 @router.post("/api/manifest/regen", response_model=ManifestRegenResponse)
+@requires_log_commit
 async def manifest_regen(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> ManifestRegenResponse:
@@ -304,9 +307,9 @@ async def manifest_regen(
         },
     )
     try:
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write manifest_regen trace event")
@@ -409,9 +412,9 @@ async def _execute_admin_operation(
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True, "updated_fields": list(updates.keys())},
         )
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
         )
         result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 
@@ -439,9 +442,9 @@ async def _execute_admin_operation(
             subject_hash=subject_hash,
             metadata={"slm_command_translation": True},
         )
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id=resolved),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
         )
         result = {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 
@@ -489,9 +492,9 @@ async def _execute_admin_operation(
             module_id=module_id,
             domain_role=domain_role,
         )
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
         result = {
             "operation": operation,
@@ -525,9 +528,9 @@ async def _execute_admin_operation(
             module_id=module_id,
             prev_role=prev_role or "unknown",
         )
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
         )
         result = {
             "operation": operation,
@@ -613,10 +616,10 @@ async def _execute_admin_operation(
         event_id = str(params.get("event_id", parsed.get("target", "")))
         if not event_id:
             raise HTTPException(status_code=422, detail="event_id required")
-        records = await run_in_threadpool(_cfg.PERSISTENCE.query_ctl_records)
+        records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records)
         target = [r for r in records if r.get("record_id") == event_id]
         if not target:
-            raise HTTPException(status_code=404, detail="CTL record not found")
+            raise HTTPException(status_code=404, detail="System Log record not found")
         result = {"operation": operation, "record": target[0]}
 
     elif operation == "module_status":
@@ -707,9 +710,9 @@ async def _execute_admin_operation(
             },
         )
         try:
-            _cfg.PERSISTENCE.append_ctl_record(
+            _cfg.PERSISTENCE.append_log_record(
                 "admin", invite_event,
-                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin", domain_id="_admin"),
+                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
             )
         except Exception:
             log.debug("Could not write user_invited trace event")
@@ -775,6 +778,7 @@ async def list_staged_commands(
 
 
 @router.post("/api/admin/command")
+@requires_log_commit
 async def admin_command(
     req: AdminCommandRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
@@ -825,9 +829,9 @@ async def admin_command(
             "original_instruction": req.instruction,
         },
     )
-    _cfg.PERSISTENCE.append_ctl_record(
+    _cfg.PERSISTENCE.append_log_record(
         "admin", stage_record,
-        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin"),
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
     )
 
     entry: dict[str, Any] = {
@@ -838,7 +842,7 @@ async def admin_command(
         "original_instruction": req.instruction,
         "staged_at": time.time(),
         "expires_at": expires_at,
-        "ctl_stage_record_id": stage_record["record_id"],
+        "log_stage_record_id": stage_record["record_id"],
         "resolved": False,
     }
     with _STAGED_COMMANDS_LOCK:
@@ -849,11 +853,12 @@ async def admin_command(
         "staged_command": parsed,
         "original_instruction": req.instruction,
         "expires_at": expires_at,
-        "ctl_stage_record_id": stage_record["record_id"],
+        "log_stage_record_id": stage_record["record_id"],
     }
 
 
 @router.post("/api/admin/command/{staged_id}/resolve")
+@requires_log_commit
 async def admin_command_resolve(
     staged_id: str,
     req: CommandResolveRequest,
@@ -908,18 +913,18 @@ async def admin_command_resolve(
             subject_hash=None,
             metadata={
                 "staged_id": staged_id,
-                "ctl_stage_record_id": entry["ctl_stage_record_id"],
+                "log_stage_record_id": entry["log_stage_record_id"],
                 "parsed_command": parsed,
             },
         )
-        _cfg.PERSISTENCE.append_ctl_record(
+        _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin"),
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
         )
         return {
             "staged_id": staged_id,
             "action": "reject",
-            "ctl_record_id": record["record_id"],
+            "log_record_id": record["record_id"],
         }
 
     if req.action == "modify":
@@ -944,7 +949,7 @@ async def admin_command_resolve(
         commitment_type: str = "hitl_command_modified"
         metadata: dict[str, Any] = {
             "staged_id": staged_id,
-            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "log_stage_record_id": entry["log_stage_record_id"],
             "delta": delta,
             "modified_schema": parsed,
         }
@@ -952,7 +957,7 @@ async def admin_command_resolve(
         commitment_type = "hitl_command_accepted"
         metadata = {
             "staged_id": staged_id,
-            "ctl_stage_record_id": entry["ctl_stage_record_id"],
+            "log_stage_record_id": entry["log_stage_record_id"],
             "parsed_command": parsed,
         }
 
@@ -968,9 +973,9 @@ async def admin_command_resolve(
         subject_hash=None,
         metadata=metadata,
     )
-    _cfg.PERSISTENCE.append_ctl_record(
+    _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path("admin"),
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
     )
 
     return {
@@ -978,7 +983,7 @@ async def admin_command_resolve(
         "action": req.action,
         "parsed_command": parsed,
         "result": exec_result,
-        "ctl_record_id": record["record_id"],
+        "log_record_id": record["record_id"],
     }
 
 

@@ -89,16 +89,17 @@ DOMAIN_REGISTRY = DomainRegistry(
 # Persistence
 # ─────────────────────────────────────────────────────────────
 
-_DEFAULT_CTL_DIR = Path(tempfile.gettempdir()) / "lumina-ctl"
-CTL_DIR = Path(os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_CTL_DIR)))
-CTL_DIR.mkdir(parents=True, exist_ok=True)
+_DEFAULT_LOG_DIR = Path(tempfile.gettempdir()) / "lumina-log"
+# Backward compat: honour legacy LUMINA_CTL_DIR if LUMINA_LOG_DIR is not set
+LOG_DIR = Path(os.environ.get("LUMINA_LOG_DIR", os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_LOG_DIR))))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _build_persistence_adapter() -> PersistenceAdapter:
     if PERSISTENCE_BACKEND == "sqlite":
         from lumina.persistence.sqlite import SQLitePersistenceAdapter
         return SQLitePersistenceAdapter(repo_root=_REPO_ROOT, database_url=DB_URL)
-    return FilesystemPersistenceAdapter(repo_root=_REPO_ROOT, ctl_dir=CTL_DIR)
+    return FilesystemPersistenceAdapter(repo_root=_REPO_ROOT, log_dir=LOG_DIR)
 
 
 PERSISTENCE: PersistenceAdapter = _build_persistence_adapter()

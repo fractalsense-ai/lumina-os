@@ -80,7 +80,7 @@ Domains that do not use a field leave it at its default value and do not configu
 Domain-lib specifications are versioned independently of the domain pack itself:
 
 ```
-Draft → Validated → Committed (CTL) → Active
+Draft → Validated → Committed (System Log) → Active
                                          ↓
                                     New Version
                                          ↓

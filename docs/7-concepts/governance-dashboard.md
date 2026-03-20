@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Concept — Governance Dashboard
 
 **Version:** 1.0.0  
@@ -19,14 +24,14 @@ The dashboard navigation toggle is visible in the application header only when t
 ### Overview Tab
 
 Displays aggregate system metrics:
-- **CTL Records** — Total causal trace ledger entries
+- **System Log Records** — Total system logs entries
 - **Pending Escalations** — Number of unresolved escalation events
 - **Resolved Escalations** — Number of resolved escalation events
 - **Domain Cards** — Per-domain summaries showing pending escalation and ingestion counts
 
 Data is fetched from:
 - `GET /api/dashboard/domains` — Domain-level summaries
-- `GET /api/dashboard/telemetry` — Aggregate CTL and escalation metrics
+- `GET /api/dashboard/telemetry` — Aggregate System Log and escalation metrics
 
 ### Escalations Tab
 

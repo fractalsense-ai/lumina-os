@@ -109,7 +109,7 @@ class TestProcessingTimingCapture:
             },
             "task_complete",
         )
-        mock_orch.ctl_records = []
+        mock_orch.log_records = []
         mock_orch.get_standing_order_attempts.return_value = {}
         mock_orch.append_provenance_trace.return_value = None
         return {
@@ -327,7 +327,7 @@ class TestTaskCompletePayloadSeparation:
             },
             "task_complete",
         )
-        mock_orch.ctl_records = []
+        mock_orch.log_records = []
         mock_orch.get_standing_order_attempts.return_value = {}
         mock_orch.append_provenance_trace.return_value = None
         return {

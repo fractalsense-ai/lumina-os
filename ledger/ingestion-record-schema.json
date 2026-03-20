@@ -1,8 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/ledger/ingestion-record-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "Ingestion Record Schema V1",
-  "description": "CTL record capturing a document ingestion lifecycle: upload, SLM extraction, multi-interpretation review, and commitment. Hash-chained like all CTL records.",
+  "description": "System Log record capturing a document ingestion lifecycle: upload, SLM extraction, multi-interpretation review, and commitment. Hash-chained like all System Log records.",
   "type": "object",
   "required": [
     "record_type",
@@ -26,11 +28,11 @@
     "record_id": {
       "type": "string",
       "format": "uuid",
-      "description": "Unique identifier for this CTL record."
+      "description": "Unique identifier for this System Log record."
     },
     "prev_record_hash": {
       "type": "string",
-      "description": "SHA-256 hash of the previous CTL record in the chain, or 'genesis' for the first record."
+      "description": "SHA-256 hash of the previous System Log record in the chain, or 'genesis' for the first record."
     },
     "timestamp_utc": {
       "type": "string",

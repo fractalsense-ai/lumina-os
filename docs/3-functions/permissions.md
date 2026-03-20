@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # permissions(3)
 
 **Version:** 1.1.0

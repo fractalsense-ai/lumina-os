@@ -1,10 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/rbac-permission-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "RBAC Module Permission Schema V1",
   "description": "JSON Schema for the permissions block in a Project Lumina domain-physics document. Defines chmod-style octal mode, ownership, and optional extended ACL entries.",
   "type": "object",
-  "required": ["mode", "owner", "group"],
+  "required": [
+    "mode",
+    "owner",
+    "group"
+  ],
   "additionalProperties": false,
   "properties": {
     "mode": {
@@ -41,11 +47,21 @@
   "$defs": {
     "acl_entry": {
       "type": "object",
-      "required": ["access"],
+      "required": [
+        "access"
+      ],
       "additionalProperties": false,
       "oneOf": [
-        { "required": ["role"] },
-        { "required": ["domain_role"] }
+        {
+          "required": [
+            "role"
+          ]
+        },
+        {
+          "required": [
+            "domain_role"
+          ]
+        }
       ],
       "properties": {
         "role": {
@@ -73,7 +89,7 @@
         },
         "scope": {
           "type": "string",
-          "description": "Optional scope qualifier limiting what the access grant applies to. Values are module-defined (e.g., 'evaluation_only', 'ctl_records_only'). When omitted, the grant applies to the full module."
+          "description": "Optional scope qualifier limiting what the access grant applies to. Values are module-defined (e.g., 'evaluation_only', 'log_records_only'). When omitted, the grant applies to the full module."
         }
       }
     }

@@ -1,14 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/night-cycle-status.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "night_cycle_status",
   "description": "Retrieve current Night Cycle scheduler status and recent run history.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "night_cycle_status" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "night_cycle_status"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
       "additionalProperties": false,

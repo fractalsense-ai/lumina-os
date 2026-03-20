@@ -8,7 +8,7 @@
 
 ## Overview
 
-The **evaluation harness** is the test suite that enforces Project Lumina's core constraint: **measurement, not surveillance**. It verifies that implementations handle data correctly, that the CTL is append-only and transcript-free, and that standing orders and escalation behave within their defined bounds.
+The **evaluation harness** is the test suite that enforces Project Lumina's core constraint: **measurement, not surveillance**. It verifies that implementations handle data correctly, that the System Logs is append-only and transcript-free, and that standing orders and escalation behave within their defined bounds.
 
 ---
 
@@ -18,10 +18,10 @@ The **evaluation harness** is the test suite that enforces Project Lumina's core
 
 These tests verify that no conversation content is written to any persistent store.
 
-**TC-TNS-001: CTL write contains no transcript**
+**TC-TNS-001: System Log write contains no transcript**
 - Trigger: Simulate a 10-turn session with varied responses
-- Assert: No CTL record contains a field with value longer than 512 chars outside of hash fields
-- Assert: No CTL record contains any field that matches any of the simulated response strings
+- Assert: No System Log record contains a field with value longer than 512 chars outside of hash fields
+- Assert: No System Log record contains any field that matches any of the simulated response strings
 - Pass criterion: All assertions pass
 
 **TC-TNS-002: Entity profile update contains no conversation**
@@ -37,50 +37,50 @@ These tests verify that no conversation content is written to any persistent sto
 
 ---
 
-### Category 2: CTL Integrity
+### Category 2: System Log Integrity
 
-**TC-CTL-001: Append-only enforcement**
-- Trigger: Attempt to modify or delete a CTL record
+**TC-System Log-001: Append-only enforcement**
+- Trigger: Attempt to modify or delete a System Log record
 - Assert: Modification raises an error (at the implementation layer)
-- Assert: The CTL record remains unchanged after the attempt
+- Assert: The System Logs record remains unchanged after the attempt
 - Pass criterion: Error raised, record unchanged
 
-**TC-CTL-002: Hash chain validity**
-- Trigger: Write 20 records to the CTL
+**TC-System Log-002: Hash chain validity**
+- Trigger: Write 20 records to the System Logs
 - Assert: `verify_chain(records)` returns True
 - Pass criterion: Chain verified
 
-**TC-CTL-003: Hash chain tamper detection**
+**TC-System Log-003: Hash chain tamper detection**
 - Trigger: Write 20 records, then modify one record's `decision` field
 - Assert: `verify_chain(records)` returns False
 - Assert: The broken record is identified by `record_id`
 - Pass criterion: Tamper detected
 
-**TC-CTL-004: Pseudonymous IDs only**
+**TC-System Log-004: Pseudonymous IDs only**
 - Trigger: Write a session with a known real-name entity/subject
-- Assert: No field in any CTL record contains the real name
+- Assert: No field in any System Log record contains the real name
 - Assert: All actor/entity ID fields are pseudonymous tokens (format: `[a-f0-9]{32}`)
 - Pass criterion: All assertions pass
 
-**TC-CTL-005: Module policy commitment required**
-- Trigger: Start a session with a module `domain-physics.json` whose hash is not committed in CTL
+**TC-System Log-005: Module policy commitment required**
+- Trigger: Start a session with a module `domain-physics.json` whose hash is not committed in System Log
 - Assert: Session is blocked/frozen before autonomous action
 - Assert: A discrepancy or policy-mismatch event is recorded
 - Pass criterion: Session does not proceed with uncommitted policy
 
-**TC-CTL-006: Policy update requires new commitment**
+**TC-System Log-006: Policy update requires new commitment**
 - Trigger: Change module policy JSON content and version, then attempt a session without a new commitment
 - Assert: Session is blocked/frozen
 - Assert: Session proceeds only after updated hash commitment exists
-- Pass criterion: Updated policy cannot run without updated CTL commitment
+- Pass criterion: Updated policy cannot run without updated System Log commitment
 
-**TC-CTL-007: Turn trace includes provenance lineage hashes**
+**TC-System Log-007: Turn trace includes provenance lineage hashes**
 - Trigger: Run one deterministic turn in an active committed module
 - Assert: At least one `TraceEvent` metadata object includes runtime provenance keys: `domain_pack_id`, `domain_pack_version`, `domain_physics_hash`, `global_prompt_hash`, `domain_prompt_hash`, `turn_interpretation_prompt_hash`, `system_prompt_hash`
 - Assert: The same turn lineage includes `turn_data_hash` and `prompt_contract_hash`
 - Pass criterion: Required provenance keys are present and each hash value matches SHA-256 hex format
 
-**TC-CTL-008: Post-payload provenance hashes recorded**
+**TC-System Log-008: Post-payload provenance hashes recorded**
 - Trigger: Run one deterministic turn end-to-end through prompt contract, tool policy, and response generation
 - Assert: At least one `TraceEvent` metadata object includes `tool_results_hash`, `llm_payload_hash`, and `response_hash`
 - Assert: Hash values match SHA-256 hex format
@@ -104,7 +104,7 @@ These tests verify that no conversation content is written to any persistent sto
 
 **TC-INV-003: Escalation record created on exhaust**
 - Trigger: Exhaust a standing order
-- Assert: An `EscalationRecord` is appended to the CTL
+- Assert: An `EscalationRecord` is appended to the System Logs
 - Assert: The `EscalationRecord`'s `trigger` field matches the standing order ID
 - Assert: The `status` is `pending`
 - Pass criterion: All assertions pass
@@ -187,7 +187,7 @@ python -m pytest reference-implementations/ -k "test_harness" -v
 python -m pytest reference-implementations/ -k "test_harness_transcript" -v
 ```
 
-The reference implementation includes test stubs that implement these test cases against domain-lib references and `reference-implementations/ctl-commitment-validator.py`. For education-specific examples, see `domain-packs/education/evaluation-tests.md`.
+The reference implementation includes test stubs that implement these test cases against domain-lib references and `reference-implementations/system-log-validator.py`. For education-specific examples, see `domain-packs/education/evaluation-tests.md`.
 
 ---
 
@@ -196,7 +196,7 @@ The reference implementation includes test stubs that implement these test cases
 A Project Lumina implementation is considered conformant with respect to measurement-not-surveillance when all Category 1, 2, and 4 tests pass. Categories 3, 5, and 6 are domain-specific and depend on the domain pack configuration.
 
 Conformance must be re-verified after:
-- Any change to the CTL write path
+- Any change to the System Logs write path
 - Any change to the state update functions/domain-lib runtime logic
 - Any change to the turn-interpretation or tool-adapter pipeline
 - Any change to the entity profile update logic

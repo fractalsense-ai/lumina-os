@@ -27,7 +27,7 @@
         "mastery_artifact",
         "boss_challenge_bundle",
         "subject_profile",
-        "ctl_structured_fields",
+        "log_structured_fields",
         "session_summary",
         "evaluation_bundle",
         "governance_policy"
@@ -45,11 +45,11 @@
     "content_hash": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$",
-      "description": "SHA-256 hex digest of the canonical artifact content. Must match the CTL CommitmentRecord hash."
+      "description": "SHA-256 hex digest of the canonical artifact content. Must match the System Log CommitmentRecord hash."
     },
-    "ctl_commitment_record_id": {
+    "log_commitment_record_id": {
       "type": ["string", "null"],
-      "description": "ID of the CTL CommitmentRecord that committed this artifact's hash. Null for unverified drafts."
+      "description": "ID of the System Log CommitmentRecord that committed this artifact's hash. Null for unverified drafts."
     },
     "retrieval_scope": {
       "type": "object",

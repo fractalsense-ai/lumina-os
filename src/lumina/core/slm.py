@@ -363,7 +363,7 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
     },
     {
         "name": "commit_domain_physics",
-        "description": "Commit the current domain physics hash to the CTL.",
+        "description": "Commit the current domain physics hash to the System Logs.",
         "params_schema": {
             "domain_id": "string — target domain identifier",
         },
@@ -444,7 +444,7 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
         "name": "explain_reasoning",
         "description": "Explain why the system made a specific decision or escalated an event.",
         "params_schema": {
-            "event_id": "string -- CTL record ID or escalation ID to explain",
+            "event_id": "string -- System Log record ID or escalation ID to explain",
         },
     },
     {

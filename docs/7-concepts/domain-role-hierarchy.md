@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Domain Role Hierarchy
 
 **Version:** 1.1.0
@@ -74,7 +79,7 @@ Domain roles are declared in the `domain_roles` block of a domain-physics docume
       {
         "domain_role": "teaching_assistant",
         "access": "r",
-        "scope": "ctl_records_own_students"
+        "scope": "log_records_own_students"
       }
     ]
   }
@@ -224,7 +229,7 @@ These fields are set by the Domain Authority (or a teacher with `may_assign_doma
 
 ## Role Assignment
 
-Domain roles are assigned by the Domain Authority or by roles with `may_assign_domain_roles: true`. Assignments are recorded in the CTL as `domain_role_assignment` commitment records for full auditability.
+Domain roles are assigned by the Domain Authority or by roles with `may_assign_domain_roles: true`. Assignments are recorded in the System Logs as `domain_role_assignment` commitment records for full auditability.
 
 A role can only assign roles at or below its `max_assignable_level`. For example, a teacher at level 1 with `max_assignable_level: 2` can assign teaching assistants (level 2) and students (level 3) but not other teachers (level 1).
 

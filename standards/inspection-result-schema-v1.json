@@ -1,6 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/inspection-result-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "InspectionResult",
   "description": "Schema for the output of the Inspection Middleware pipeline (Tier 2 of the Three-Tier Execution Pipeline). Every pipeline run produces an InspectionResult that records the approval verdict, any violations, invariant evaluation summaries, and NLP extraction anchors.",
   "type": "object",
@@ -38,7 +40,7 @@
           }
         }
       },
-      "description": "Per-invariant pass/fail results with severity, used for CTL audit logging."
+      "description": "Per-invariant pass/fail results with severity, used for System Log audit logging."
     },
     "nlp_anchors": {
       "type": "array",

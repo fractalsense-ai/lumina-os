@@ -1,4 +1,4 @@
-"""CTL query endpoints: records, sessions, single record lookup."""
+"""System Log query endpoints: records, sessions, single record lookup."""
 
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ log = logging.getLogger("lumina-api")
 router = APIRouter()
 
 
-@router.get("/api/ctl/records")
-async def query_ctl_records(
+@router.get("/api/system-log/records")
+async def query_log_records(
     session_id: str | None = None,
     record_type: str | None = None,
     event_type: str | None = None,
@@ -38,7 +38,7 @@ async def query_ctl_records(
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     records = await run_in_threadpool(
-        _cfg.PERSISTENCE.query_ctl_records,
+        _cfg.PERSISTENCE.query_log_records,
         session_id=session_id,
         record_type=record_type,
         event_type=event_type,
@@ -49,8 +49,8 @@ async def query_ctl_records(
     return records
 
 
-@router.get("/api/ctl/sessions")
-async def list_ctl_sessions(
+@router.get("/api/system-log/sessions")
+async def list_log_sessions(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> list[dict[str, Any]]:
     current = await get_current_user(credentials)
@@ -60,12 +60,12 @@ async def list_ctl_sessions(
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    summaries = await run_in_threadpool(_cfg.PERSISTENCE.list_ctl_sessions_summary)
+    summaries = await run_in_threadpool(_cfg.PERSISTENCE.list_log_sessions_summary)
     return summaries
 
 
-@router.get("/api/ctl/records/{record_id}")
-async def get_ctl_record(
+@router.get("/api/system-log/records/{record_id}")
+async def get_log_record(
     record_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
@@ -79,7 +79,7 @@ async def get_ctl_record(
         else:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    all_records = await run_in_threadpool(_cfg.PERSISTENCE.query_ctl_records, limit=10000)
+    all_records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records, limit=10000)
     for r in all_records:
         if r.get("record_id") == record_id:
             return r

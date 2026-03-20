@@ -1,21 +1,39 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/approve-interpretation.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "approve_interpretation",
   "description": "Approve a specific interpretation for an ingestion record.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "approve_interpretation" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "approve_interpretation"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["ingestion_id", "interpretation_id"],
+      "required": [
+        "ingestion_id",
+        "interpretation_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "ingestion_id": { "type": "string", "minLength": 1 },
-        "interpretation_id": { "type": "string", "minLength": 1 }
+        "ingestion_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpretation_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

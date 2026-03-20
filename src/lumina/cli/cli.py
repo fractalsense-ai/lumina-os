@@ -30,8 +30,8 @@ def orchestrator_demo() -> None:
     _run_systool("ppa_demo.py")
 
 
-def ctl_validate() -> None:
-    _run_systool("ctl_validator.py")
+def system_log_validate() -> None:
+    _run_systool("system_log_validator.py")
 
 
 def security_freeze() -> None:

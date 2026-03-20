@@ -8,7 +8,7 @@
     PENDING and MISSING entries produce warnings but do not fail the check.
     Exits 1 if any MISMATCH (hash changed) is detected.
 
-    Domain-pack artifact integrity is managed by the Causal Trace Ledger (CTL),
+    Domain-pack artifact integrity is managed by the System Logs,
     not by this script.
 
 .PARAMETER PythonExe

@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # persistence_adapter(3)
 
 **Version:** 1.0.0  
@@ -8,7 +13,7 @@
 
 ## NAME
 
-`persistence_adapter.py` — Abstract persistence interface for runtime and CTL operations
+`persistence_adapter.py` — Abstract persistence interface for runtime and System Log operations
 
 ## SYNOPSIS
 
@@ -24,13 +29,13 @@ from persistence_adapter import PersistenceAdapter
 |--------|---------|-------------|
 | `load_domain_physics(path)` | `dict` | Load domain physics document |
 | `load_subject_profile(path)` | `dict` | Load subject profile document |
-| `get_ctl_ledger_path(session_id)` | `str` | Stable ledger path for a session |
-| `append_ctl_record(session_id, record, ledger_path)` | `None` | Append one CTL record |
+| `get_log_ledger_path(session_id)` | `str` | Stable ledger path for a session |
+| `append_log_record(session_id, record, ledger_path)` | `None` | Append one System Log record |
 | `load_session_state(session_id)` | `dict | None` | Load persisted session metadata |
 | `save_session_state(session_id, state)` | `None` | Persist session metadata |
-| `list_ctl_session_ids()` | `list[str]` | Return known CTL session IDs |
-| `validate_ctl_chain(session_id)` | `dict` | Validate CTL hash-chain integrity |
-| `has_policy_commitment(subject_id, subject_version, subject_hash)` | `bool` | Check CTL for matching CommitmentRecord |
+| `list_log_session_ids()` | `list[str]` | Return known System Log session IDs |
+| `validate_log_chain(session_id)` | `dict` | Validate System Log hash-chain integrity |
+| `has_policy_commitment(subject_id, subject_version, subject_hash)` | `bool` | Check System Log for matching CommitmentRecord |
 
 ### User & Auth
 

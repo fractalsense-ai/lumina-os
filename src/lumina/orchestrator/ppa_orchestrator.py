@@ -3,10 +3,10 @@ ppa-orchestrator.py — Project Lumina Prompt Packet Assembly (PPA) Orchestrator
 
 Version: 0.3.0
 Conforms to: specs/dsa-framework-v1.md
-                         standards/causal-trace-ledger-v1.md
+                         standards/system-log-v1.md
 
 Implements the Action layer of the D.S.A. framework, connecting:
-        Domain Physics -> (optional domain lib) -> CTL -> Prompt Contract
+        Domain Physics -> (optional domain lib) -> System Log -> Prompt Contract
 
 The orchestrator:
     1. Loads Domain Physics (JSON) defining invariants and standing orders.
@@ -20,8 +20,8 @@ The orchestrator:
          c. Resolves the final action (invariant failures trump state drift).
          d. Builds a prompt_contract JSON object conforming to the domain schema.
          e. Appends a hash-chained TraceEvent (and, when needed, an
-                EscalationRecord) to the Causal Trace Ledger (CTL).
-    4. Opens the session with a CommitmentRecord in the CTL.
+                EscalationRecord) to the System Logs.
+    4. Opens the session with a CommitmentRecord in the System Logs.
 
 Invariant evaluation (domain-pack-driven):
     Each invariant in the domain-pack may carry a ``check`` field whose value
@@ -40,8 +40,8 @@ Invariant evaluation (domain-pack-driven):
 
 Design constraints:
     - Standard library only (no external dependencies).
-    - All CTL records are hash-chained with SHA-256 canonical JSON, exactly as
-        implemented in ctl-commitment-validator.py.
+    - All System Log records are hash-chained with SHA-256 canonical JSON, exactly as
+        implemented in system-log-validator.py.
     - No domain-specific domain-lib implementation is imported or required by
         the engine. Domain integrations wire up their domain libs externally and pass
         them in via ``domain_lib_step_fn`` / ``initial_state``.
@@ -78,8 +78,8 @@ log = logging.getLogger("ppa_orchestrator")
 
 
 # ─────────────────────────────────────────────────────────────
-# CTL Hash Utilities
-# (identical pattern to ctl-commitment-validator.py lines 49-60)
+# System Log Hash Utilities
+# (identical pattern to system-log-validator.py lines 49-60)
 # ─────────────────────────────────────────────────────────────
 
 def canonical_json(record: dict[str, Any]) -> bytes:
@@ -90,7 +90,7 @@ def canonical_json(record: dict[str, Any]) -> bytes:
 
 
 def hash_record(record: dict[str, Any]) -> str:
-    """Compute SHA-256 of a canonical CTL record."""
+    """Compute SHA-256 of a canonical System Log record."""
     return hashlib.sha256(canonical_json(record)).hexdigest()
 
 
@@ -142,7 +142,7 @@ class PPAOrchestrator:
     """
     D.S.A. Action layer orchestrator.
 
-    Connects Domain Physics → (optional domain lib) → CTL → Prompt Contract
+    Connects Domain Physics → (optional domain lib) → System Log → Prompt Contract
     for a single session.
 
     Attributes:
@@ -150,7 +150,7 @@ class PPAOrchestrator:
         profile     Subject profile dict (domain-agnostic; loaded by the caller).
         state       Current domain-lib state supplied by the caller; updated each
                 turn when a ``domain_lib_step_fn`` is registered.
-        session_id  UUID string identifying this session in the CTL.
+        session_id  UUID string identifying this session in the System Logs.
     """
 
     def __init__(
@@ -163,7 +163,7 @@ class PPAOrchestrator:
         initial_state: Any | None = None,
         action_prompt_type_map: dict[str, str] | None = None,
         policy_commitment: dict[str, Any] | None = None,
-        ctl_append_callback: Callable[[str, dict[str, Any]], None] | None = None,
+        log_append_callback: Callable[[str, dict[str, Any]], None] | None = None,
         system_physics_hash: str | None = None,
     ) -> None:
         """
@@ -173,7 +173,7 @@ class PPAOrchestrator:
             domain_physics:  Domain physics dict (from ``load_domain_physics``).
             subject_profile: Subject profile dict (any domain; load with
                              ``yaml_loader.load_yaml`` or equivalent).
-            ledger_path:     Path to the JSONL CTL ledger file.
+            ledger_path:     Path to the JSONL System Log ledger file.
             session_id:      Optional session UUID; generated if omitted.
             domain_lib_step_fn: Optional domain-lib callable with signature
                              ``(state, task_spec, evidence) -> (new_state, decision_dict)``.
@@ -202,7 +202,7 @@ class PPAOrchestrator:
         for action, prompt_type in (action_prompt_type_map or {}).items():
             self._action_prompt_type_map[str(action)] = str(prompt_type)
         self._policy_commitment = dict(policy_commitment or {})
-        self._ctl_append_callback = ctl_append_callback
+        self._log_append_callback = log_append_callback
         self._system_physics_hash = system_physics_hash
 
         # Diagnostics for the most recently processed turn (read-only for callers)
@@ -223,8 +223,8 @@ class PPAOrchestrator:
     # ── State construction ────────────────────────────────────
 
     @property
-    def ctl_records(self) -> list[dict[str, Any]]:
-        """Read-only view of all CTL records written in this session."""
+    def log_records(self) -> list[dict[str, Any]]:
+        """Read-only view of all System Log records written in this session."""
         return list(self._records)
 
     def set_standing_order_attempts(self, attempts: dict[str, Any] | None) -> None:
@@ -243,12 +243,12 @@ class PPAOrchestrator:
         """Expose standing-order attempts for session-state persistence."""
         return dict(self._standing_order_attempts)
 
-    # ── CTL record writers ────────────────────────────────────
+    # ── System Log record writers ────────────────────────────────────
 
-    def _append_ctl_record(self, record: dict[str, Any]) -> None:
+    def _append_log_record(self, record: dict[str, Any]) -> None:
         """Append a record to the JSONL ledger and advance the hash chain."""
-        if self._ctl_append_callback is not None:
-            self._ctl_append_callback(self.session_id, record)
+        if self._log_append_callback is not None:
+            self._log_append_callback(self.session_id, record)
         else:
             self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.ledger_path, "a", encoding="utf-8") as fh:
@@ -260,7 +260,7 @@ class PPAOrchestrator:
         self._records.append(record)
 
     def _write_commitment_record(self) -> None:
-        """Write the session-open CommitmentRecord to the CTL."""
+        """Write the session-open CommitmentRecord to the System Logs."""
         domain_id = self._policy_commitment.get("subject_id", self.domain.get("id", "unknown"))
         domain_version = self._policy_commitment.get("subject_version", self.domain.get("version", "unknown"))
         domain_hash = self._policy_commitment.get("subject_hash", "unknown")
@@ -284,7 +284,7 @@ class PPAOrchestrator:
             "references": [],
             "metadata": {"session_id": self.session_id},
         }
-        self._append_ctl_record(record)
+        self._append_log_record(record)
 
     def _write_trace_event(
         self,
@@ -295,7 +295,7 @@ class PPAOrchestrator:
         prompt_contract: dict[str, Any],
         provenance_metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Append a TraceEvent record to the CTL for this turn."""
+        """Append a TraceEvent record to the System Logs for this turn."""
         record: dict[str, Any] = {
             "record_type": "TraceEvent",
             "record_id": str(uuid.uuid4()),
@@ -327,7 +327,7 @@ class PPAOrchestrator:
             if not inv_result["passed"] and inv_result.get("signal_type"):
                 record["metadata"]["novel_synthesis_signal"] = inv_result["signal_type"]
                 break
-        self._append_ctl_record(record)
+        self._append_log_record(record)
 
     def _write_escalation_record(
         self,
@@ -336,7 +336,7 @@ class PPAOrchestrator:
         trigger: str,
         provenance_metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Append an EscalationRecord to the CTL."""
+        """Append an EscalationRecord to the System Logs."""
         record: dict[str, Any] = {
             "record_type": "EscalationRecord",
             "record_id": str(uuid.uuid4()),
@@ -361,7 +361,7 @@ class PPAOrchestrator:
         }
         if self._system_physics_hash is not None:
             record["metadata"]["system_physics_hash"] = self._system_physics_hash
-        self._append_ctl_record(record)
+        self._append_log_record(record)
 
     # ── Core decision logic ───────────────────────────────────
 
@@ -618,7 +618,7 @@ class PPAOrchestrator:
         trace_metadata = dict(provenance_metadata or {})
         trace_metadata["prompt_contract_hash"] = hash_payload(prompt_contract)
 
-        # 5. Append TraceEvent to CTL
+        # 5. Append TraceEvent to System Log
         self._write_trace_event(
             task_spec,
             invariant_results,
@@ -662,4 +662,4 @@ class PPAOrchestrator:
             "prompt_type": prompt_type,
             "metadata": dict(metadata),
         }
-        self._append_ctl_record(record)
+        self._append_log_record(record)

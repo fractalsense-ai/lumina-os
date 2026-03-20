@@ -78,7 +78,7 @@ _register(Template(
             "who_may_call": ["orchestrator"],
             "requires_entity_consent": False,
             "max_calls_per_session": None,
-            "logged_in_ctl": True,
+            "logged_in_system_log": True,
         },
         "error_handling": {
             "on_failure": "escalate",

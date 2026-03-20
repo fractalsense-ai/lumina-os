@@ -1,8 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://projectlumina.org/ledger/trace-event-schema.json",
+  "$id": "https://projectlumina.org/ledger/trace-event-schema-v1.json",
+  "schema_version": "1.1.0",
+  "last_updated": "2026-03-20",
   "title": "TraceEvent Schema",
-  "description": "A CTL record representing a single decision or observation during an active Project Lumina session.",
+  "description": "A System Log record representing a single decision or observation during an active Project Lumina session.",
   "type": "object",
   "required": [
     "record_type",
@@ -123,7 +125,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Additional structured metadata. Must not contain PII or transcript content. For turn-processing provenance events, metadata SHOULD include: runtime provenance keys (domain_pack_id, domain_pack_version, domain_physics_hash, system_physics_hash, global_prompt_hash, domain_prompt_hash, turn_interpretation_prompt_hash, system_prompt_hash), input hash keys (turn_data_hash, prompt_contract_hash), model identity keys (model_id, model_version), and when present post-payload hash keys (tool_results_hash, llm_payload_hash, response_hash). The 'system_physics_hash' key MUST contain the SHA-256 hex digest of the active system-physics.json at the time of the event, linking every domain trace event to the system layer version in effect and enabling cross-ledger auditability between the system CTL and domain/session CTLs. The 'model_id' key SHOULD contain the identifier of the LLM model used for this turn (e.g. 'claude-sonnet-4-20250514'). The 'model_version' key SHOULD contain the version or revision of the model. For novel_synthesis_flagged events, metadata MUST include 'novel_synthesis_signal' (the signal_type value from the domain physics invariant that fired). For cross_domain_synthesis_flagged events, metadata MUST include 'source_domain_id', 'peer_domain_id', 'match_type' (glossary|invariant_structure), and 'similarity_score'. For logic_scrape_flagged events, metadata MUST include 'scrape_id', 'iteration' (1-indexed), 'novel_synthesis_signal', and 'prompt_hash' (SHA-256 of the original prompt)."
+      "description": "Additional structured metadata. Must not contain PII or transcript content. For turn-processing provenance events, metadata SHOULD include: runtime provenance keys (domain_pack_id, domain_pack_version, domain_physics_hash, system_physics_hash, global_prompt_hash, domain_prompt_hash, turn_interpretation_prompt_hash, system_prompt_hash), input hash keys (turn_data_hash, prompt_contract_hash), model identity keys (model_id, model_version), and when present post-payload hash keys (tool_results_hash, llm_payload_hash, response_hash). The 'system_physics_hash' key MUST contain the SHA-256 hex digest of the active system-physics.json at the time of the event, linking every domain trace event to the system layer version in effect and enabling cross-ledger auditability between the system log and domain/session CTLs. The 'model_id' key SHOULD contain the identifier of the LLM model used for this turn (e.g. 'claude-sonnet-4-20250514'). The 'model_version' key SHOULD contain the version or revision of the model. For novel_synthesis_flagged events, metadata MUST include 'novel_synthesis_signal' (the signal_type value from the domain physics invariant that fired). For cross_domain_synthesis_flagged events, metadata MUST include 'source_domain_id', 'peer_domain_id', 'match_type' (glossary|invariant_structure), and 'similarity_score'. For logic_scrape_flagged events, metadata MUST include 'scrape_id', 'iteration' (1-indexed), 'novel_synthesis_signal', and 'prompt_hash' (SHA-256 of the original prompt)."
     }
   }
 }

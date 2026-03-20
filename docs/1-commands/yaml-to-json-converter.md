@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # yaml-to-json-converter(1)
 
 **Version:** 1.0.0  
@@ -42,4 +47,4 @@ python reference-implementations/yaml-to-json-converter.py \
 
 ## SEE ALSO
 
-[ctl-commitment-validator(1)](ctl-commitment-validator.md), [domain-physics-schema](../../standards/domain-physics-schema-v1.json)
+[system-log-validator(1)](system-log-validator.md), [domain-physics-schema](../../standards/domain-physics-schema-v1.json)

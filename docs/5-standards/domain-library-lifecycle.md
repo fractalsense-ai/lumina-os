@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # domain-library-lifecycle(5)
 
 **Version:** 1.0.0  
@@ -14,7 +19,7 @@
 
 Domain packs and the domain libs they contain are versioned artifacts with explicit lifecycle
 rules. This document defines what triggers version bumps, what must be recorded in
-`CHANGELOG.md`, and how domain library versions relate to CTL commitment records.
+`CHANGELOG.md`, and how domain library versions relate to System Log commitment records.
 
 ## DESCRIPTION
 
@@ -22,7 +27,7 @@ A domain pack contains two versioned sub-artifacts with related but independent 
 
 1. **Domain physics document** (`domain-physics.yaml` / `domain-physics.json`) — The immutable
    ruleset defining what is true in the domain. Its version is embedded in the document's
-   `version` field and its SHA-256 hash is committed to the CTL before activation.
+   `version` field and its SHA-256 hash is committed to the System Logs before activation.
 
 2. **Domain library (domain lib)** — Deterministic estimators and signal processors that compute
    the compressed state fed to the D.S.A. engine. Conformant with the
@@ -49,7 +54,7 @@ The domain pack version is carried in `domain-physics.yaml` (and its derived
 | `domain_id` changed | MAJOR | Treat as a new domain pack entirely. |
 
 Any change that modifies the content of `domain-physics.json` (the machine-authoritative file)
-changes its SHA-256 hash and **requires a new `CommitmentRecord`** in the CTL before the pack
+changes its SHA-256 hash and **requires a new `CommitmentRecord`** in the System Logs before the pack
 can be activated.
 
 ---
@@ -70,7 +75,7 @@ paths) and in `CHANGELOG.md`.
 | Output field removed or type changed | MAJOR | Breaking for engine contract consumers. |
 | Domain lib split into sub-modules | MAJOR | Import paths change. |
 
-Domain library changes that do not touch `domain-physics.json` do not require a new CTL
+Domain library changes that do not touch `domain-physics.json` do not require a new System Log
 commitment, but the library version and `CHANGELOG.md` must still be updated.
 
 ---
@@ -98,19 +103,19 @@ result.
 
 ---
 
-## CTL COMMITMENT TRIGGER
+## SYSTEM LOG COMMITMENT TRIGGER
 
 When `domain-physics.json` is modified (any MINOR or MAJOR bump to the domain pack), commit the
 new hash before activating the pack:
 
 ```bash
-python reference-implementations/ctl-commitment-validator.py \
+python reference-implementations/system-log-validator.py \
   --commit domain-packs/{domain}/modules/{module}/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger <ledger-file>
 ```
 
-The CTL `CommitmentRecord` becomes the auditable proof that the domain pack at a specific version
+The System Logs `CommitmentRecord` becomes the auditable proof that the domain pack at a specific version
 was reviewed and approved for activation. Any session using the pack after this point has a
 traceable lineage to that record.
 
@@ -121,6 +126,6 @@ traceable lineage to that record.
 [domain-state-lib-contract-v1](../../standards/domain-state-lib-contract-v1.md),
 [lumina-core-v1](../../standards/lumina-core-v1.md),
 [document-versioning-policy(5)](document-versioning-policy.md),
-[ctl-commitment-validator(1)](../1-commands/ctl-commitment-validator.md),
+[system-log-validator(1)](../1-commands/system-log-validator.md),
 [artifact-manifest-format(4)](../4-formats/artifact-manifest-format.md),
 [domain-adapter-pattern(7)](../7-concepts/domain-adapter-pattern.md)

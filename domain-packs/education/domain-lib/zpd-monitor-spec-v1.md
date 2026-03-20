@@ -217,12 +217,12 @@ The ZPD band itself is updated by the Domain Authority, not by the ZPD monitor. 
 
 ---
 
-## Integration with CTL
+## Integration with System Log
 
 After each `zpd_monitor_step`:
 1. Compute the SHA-256 hash of the updated state (canonical JSON)
-2. Append a `TraceEvent` to the CTL with `state_snapshot_hash` and `decision`
-3. The full state is not written to the CTL — only the hash
+2. Append a `TraceEvent` to the System Logs with `state_snapshot_hash` and `decision`
+3. The full state is not written to the System Logs — only the hash
 
 ---
 

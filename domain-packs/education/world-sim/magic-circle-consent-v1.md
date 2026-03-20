@@ -59,7 +59,7 @@ domain_pack_id: "domain/org/algebra-level-1/v1"
 domain_pack_version: "0.2.0"
 ```
 
-The consent record is stored in the entity profile and referenced in the session-open `CommitmentRecord` in the CTL.
+The consent record is stored in the entity profile and referenced in the session-open `CommitmentRecord` in the System Logs.
 
 ---
 
@@ -97,16 +97,16 @@ Regardless of domain pack contents, the following are always out of scope:
 
 A session opens with:
 1. Consent record verified (or collected if first session)
-2. Domain pack loaded and hash-verified against CTL commitment
+2. Domain pack loaded and hash-verified against System Log commitment
 3. Entity profile loaded
-4. Session-open `CommitmentRecord` appended to CTL
+4. Session-open `CommitmentRecord` appended to System Log
 
 ### Session Close
 
 A session closes with:
 1. Final state update committed to entity profile
-2. Outcome records appended to CTL
-3. Session-close `CommitmentRecord` appended to CTL
+2. Outcome records appended to System Log
+3. Session-close `CommitmentRecord` appended to System Log
 
 ### Forced Session Close
 
@@ -114,7 +114,7 @@ A session is forcibly closed when:
 - The participant invokes the exit clause ("exit session" or equivalent)
 - An escalation is not acknowledged within SLA
 - A principle violation is detected (see [`../../../specs/principles-v1.md`](../../../specs/principles-v1.md))
-- A technical failure prevents CTL writes
+- A technical failure prevents System Log writes
 
 A forced close is recorded as a session-close `CommitmentRecord` with `close_type: forced` and the reason noted.
 
@@ -124,9 +124,9 @@ A forced close is recorded as a session-close `CommitmentRecord` with `close_typ
 
 A participant may withdraw consent at any time. Withdrawal:
 - Terminates the current session immediately
-- Does not delete existing CTL records (the ledger is append-only)
+- Does not delete existing System Log records (the ledger is append-only)
 - Prevents new sessions from being initiated without fresh consent
-- Is recorded as a `CommitmentRecord` in the CTL
+- Is recorded as a `CommitmentRecord` in the System Logs
 
 ---
 

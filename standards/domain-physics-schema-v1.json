@@ -1,6 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/domain-physics-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "Domain Physics Schema V1",
   "description": "JSON Schema for Project Lumina Domain Physics documents (derived from YAML source).",
   "type": "object",
@@ -28,12 +30,21 @@
     },
     "domain_authority": {
       "type": "object",
-      "required": ["name", "role"],
+      "required": [
+        "name",
+        "role"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "pseudonymous_id": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "pseudonymous_id": {
+          "type": "string"
+        }
       },
       "description": "The human Domain Authority who authored this domain pack"
     },
@@ -52,29 +63,39 @@
     "invariants": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/invariant" },
+      "items": {
+        "$ref": "#/$defs/invariant"
+      },
       "description": "List of domain invariants. Must include at least one critical invariant."
     },
     "standing_orders": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/standing_order" },
+      "items": {
+        "$ref": "#/$defs/standing_order"
+      },
       "description": "List of bounded automated responses the orchestrator may take"
     },
     "escalation_triggers": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/escalation_trigger" },
+      "items": {
+        "$ref": "#/$defs/escalation_trigger"
+      },
       "description": "Conditions that cause the system to escalate to the Meta Authority"
     },
     "artifacts": {
       "type": "array",
-      "items": { "$ref": "#/$defs/artifact" },
+      "items": {
+        "$ref": "#/$defs/artifact"
+      },
       "description": "Domain artifacts (achievements, milestones) that can be earned in this domain"
     },
     "subsystem_configs": {
       "type": "object",
-      "additionalProperties": { "type": "object" },
+      "additionalProperties": {
+        "type": "object"
+      },
       "description": "Optional subsystem configuration blocks, keyed by subsystem ID. Each value is a free-form object of parameters specific to that subsystem (e.g. {\"zpd_monitor\": {\"min_challenge\": 0.3, ...}} for education, or {\"soil_health_monitor\": {...}} for agriculture). Omit entirely for domains that use no configurable subsystems."
     },
     "evidence_schema": {
@@ -91,17 +112,24 @@
           "description": "Version of the evidence schema. Must match the 'version' field in the referenced evidence-schema.json."
         }
       },
-      "required": ["path", "version"],
+      "required": [
+        "path",
+        "version"
+      ],
       "description": "Reference to the domain module's evidence schema declaration file. See standards/domain-evidence-extension-v1.md for the Domain Evidence Extension standard."
     },
     "tool_adapters": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "List of tool adapter IDs available in this domain"
     },
     "glossary": {
       "type": "array",
-      "items": { "$ref": "#/$defs/glossary_entry" },
+      "items": {
+        "$ref": "#/$defs/glossary_entry"
+      },
       "description": "Domain vocabulary definitions. Students may query these terms during a session; the system performs server-side lookup and returns the definition without penalizing off-task ratio."
     },
     "permissions": {
@@ -146,9 +174,23 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["pdf", "docx", "markdown", "csv", "json", "yaml"]
+            "enum": [
+              "pdf",
+              "docx",
+              "markdown",
+              "csv",
+              "json",
+              "yaml"
+            ]
           },
-          "default": ["pdf", "docx", "markdown", "csv", "json", "yaml"],
+          "default": [
+            "pdf",
+            "docx",
+            "markdown",
+            "csv",
+            "json",
+            "yaml"
+          ],
           "description": "Document formats accepted by the ingestion pipeline."
         },
         "max_interpretations": {
@@ -172,7 +214,9 @@
         },
         "peer_domains": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Domain IDs this domain allows synthesis comparison with. Both domains in a pair must list each other for analysis to proceed (mutual opt-in). Empty array or omitted means no peers."
         },
         "share_glossary": {
@@ -213,7 +257,10 @@
         },
         "feedback_mode": {
           "type": "string",
-          "enum": ["cumulative", "sliding_window"],
+          "enum": [
+            "cumulative",
+            "sliding_window"
+          ],
           "default": "cumulative",
           "description": "How prior responses are fed back to the LLM. cumulative: all prior responses included. sliding_window: only the last N responses included."
         },
@@ -238,14 +285,19 @@
         "roles": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "domain-role-schema-v1.json" },
+          "items": {
+            "$ref": "domain-role-schema-v1.json"
+          },
           "description": "Domain-specific role definitions ordered by hierarchy_level. The Domain Authority is implicitly level 0 and must not be listed here."
         },
         "role_acl": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["domain_role", "access"],
+            "required": [
+              "domain_role",
+              "access"
+            ],
             "additionalProperties": false,
             "properties": {
               "domain_role": {
@@ -260,27 +312,40 @@
               },
               "scope": {
                 "type": "string",
-                "description": "Optional scope qualifier limiting what the access grant applies to. Values are domain-defined (e.g., session_monitoring, ctl_records_own_students)."
+                "description": "Optional scope qualifier limiting what the access grant applies to. Values are domain-defined (e.g., session_monitoring, log_records_own_students)."
               }
             }
           },
           "description": "Extended ACL entries for domain roles. Provides scoped permission overrides beyond the default_access declared on each role definition."
         }
       },
-      "required": ["schema_version", "roles"],
+      "required": [
+        "schema_version",
+        "roles"
+      ],
       "description": "Optional domain-scoped role hierarchy. Defines roles that exist only within this domain, beneath the Domain Authority ceiling. Each domain can define its own role tiers (e.g., teacher/teaching-assistant/student for education, site-manager/field-operator/observer for agriculture). The Domain Authority is always the implicit ceiling at hierarchy level 0. Omit entirely for domains that use only the 7 system-level roles."
     }
   },
   "$defs": {
     "invariant": {
       "type": "object",
-      "required": ["id", "description", "severity"],
+      "required": [
+        "id",
+        "description",
+        "severity"
+      ],
       "additionalProperties": false,
       "if": {
-        "not": { "required": ["handled_by"] }
+        "not": {
+          "required": [
+            "handled_by"
+          ]
+        }
       },
       "then": {
-        "required": ["check"]
+        "required": [
+          "check"
+        ]
       },
       "properties": {
         "id": {
@@ -293,7 +358,10 @@
         },
         "severity": {
           "type": "string",
-          "enum": ["critical", "warning"],
+          "enum": [
+            "critical",
+            "warning"
+          ],
           "description": "critical: halts autonomous action; warning: triggers a standing order"
         },
         "check": {
@@ -316,7 +384,13 @@
     },
     "standing_order": {
       "type": "object",
-      "required": ["id", "action", "trigger_condition", "max_attempts", "escalation_on_exhaust"],
+      "required": [
+        "id",
+        "action",
+        "trigger_condition",
+        "max_attempts",
+        "escalation_on_exhaust"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -348,7 +422,11 @@
     },
     "escalation_trigger": {
       "type": "object",
-      "required": ["id", "condition", "target_role"],
+      "required": [
+        "id",
+        "condition",
+        "target_role"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -370,12 +448,22 @@
     },
     "artifact": {
       "type": "object",
-      "required": ["id", "name", "unlock_condition"],
+      "required": [
+        "id",
+        "name",
+        "unlock_condition"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
         "unlock_condition": {
           "type": "string",
           "description": "Description of mastery conditions required to earn this artifact"
@@ -388,14 +476,19 @@
         },
         "skills_required": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Skill IDs that must meet the mastery threshold"
         }
       }
     },
     "glossary_entry": {
       "type": "object",
-      "required": ["term", "definition"],
+      "required": [
+        "term",
+        "definition"
+      ],
       "additionalProperties": false,
       "properties": {
         "term": {
@@ -408,12 +501,16 @@
         },
         "aliases": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Alternate forms a student might use (plurals, colloquial phrasings)."
         },
         "related_terms": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Other glossary terms to surface after the definition."
         },
         "example_in_context": {

@@ -24,8 +24,8 @@ from typing import Any
 # Repo root is 4 parents up: systools/ → system/ → domain-packs/ → project-lumina/
 _REPO_ROOT: Path = Path(__file__).resolve().parents[3]
 
-_DEFAULT_CTL_DIR = Path(tempfile.gettempdir()) / "lumina-ctl"
-_CTL_DIR: Path = Path(os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_CTL_DIR)))
+_DEFAULT_LOG_DIR = Path(tempfile.gettempdir()) / "lumina-log"
+_LOG_DIR: Path = Path(os.environ.get("LUMINA_LOG_DIR", os.environ.get("LUMINA_CTL_DIR", str(_DEFAULT_LOG_DIR))))
 
 _DOMAIN_REGISTRY_PATH: Path = _REPO_ROOT / "cfg" / "domain-registry.yaml"
 
@@ -59,12 +59,12 @@ def _load_jsonl_records(path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def _scan_all_ctl_records(ctl_dir: Path) -> list[dict[str, Any]]:
-    """Return all CTL records across every JSONL ledger in *ctl_dir*."""
+def _scan_all_log_records(log_dir: Path) -> list[dict[str, Any]]:
+    """Return all System Log records across every JSONL ledger in *log_dir*."""
     all_records: list[dict[str, Any]] = []
-    if not ctl_dir.is_dir():
+    if not log_dir.is_dir():
         return all_records
-    for ledger_path in sorted(ctl_dir.glob("session-*.jsonl")):
+    for ledger_path in sorted(log_dir.glob("session-*.jsonl")):
         all_records.extend(_load_jsonl_records(ledger_path))
     return all_records
 
@@ -192,7 +192,7 @@ def module_status(payload: dict[str, Any]) -> dict[str, Any]:
     """Return the operational status of a domain module.
 
     Resolves the domain-physics hash and checks whether a matching
-    CTL commitment record exists.  This is a read-only health check —
+    System Log commitment record exists.  This is a read-only health check —
     it does not modify any state.
 
     Payload keys:
@@ -238,8 +238,8 @@ def module_status(payload: dict[str, Any]) -> dict[str, Any]:
         raw = physics_path.read_bytes()
         physics_hash = hashlib.sha256(raw).hexdigest()
 
-    # Scan CTL for CommitmentRecords that reference this physics hash.
-    all_records = _scan_all_ctl_records(_CTL_DIR)
+    # Scan System Log for CommitmentRecords that reference this physics hash.
+    all_records = _scan_all_log_records(_LOG_DIR)
     matching_commitments = [
         r for r in all_records
         if r.get("record_type") == "CommitmentRecord"
@@ -257,7 +257,7 @@ def module_status(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def list_escalations(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return recent escalation records from the CTL.
+    """Return recent escalation records from the System Logs.
 
     Payload keys (all optional):
         limit (int): max records to return (default 10, max 100)
@@ -275,7 +275,7 @@ def list_escalations(payload: dict[str, Any]) -> dict[str, Any]:
     filter_domain: str = str(payload.get("domain_id") or "").strip()
     filter_status: str = str(payload.get("status") or "").strip()
 
-    all_records = _scan_all_ctl_records(_CTL_DIR)
+    all_records = _scan_all_log_records(_LOG_DIR)
     escalations = [r for r in all_records if r.get("record_type") == "EscalationRecord"]
 
     if filter_domain:
@@ -294,8 +294,8 @@ def list_escalations(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def list_ctl_records(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return recent CTL records across all sessions.
+def list_log_records(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return recent System Log records across all sessions.
 
     Payload keys (all optional):
         limit (int): max records to return (default 20, max 200)
@@ -315,7 +315,7 @@ def list_ctl_records(payload: dict[str, Any]) -> dict[str, Any]:
     filter_domain: str = str(payload.get("domain_id") or "").strip()
     filter_session: str = str(payload.get("session_id") or "").strip()
 
-    all_records = _scan_all_ctl_records(_CTL_DIR)
+    all_records = _scan_all_log_records(_LOG_DIR)
 
     filtered = all_records
     if filter_record_type:

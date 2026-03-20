@@ -1,8 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/system-physics-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "System Physics Schema V1",
-  "description": "JSON Schema for Project Lumina System Physics documents. Defines the structured SOP for the top-level Conversational Interface (CI) layer — the invariants, standing orders, escalation triggers, and output contract that govern the CI regardless of which domain is active. Derived from YAML source (cfg/system-physics.yaml); the compiled JSON form's SHA-256 hash is committed to the system CTL before operational activation.",
+  "description": "JSON Schema for Project Lumina System Physics documents. Defines the structured SOP for the top-level Conversational Interface (CI) layer \u2014 the invariants, standing orders, escalation triggers, and output contract that govern the CI regardless of which domain is active. Derived from YAML source (cfg/system-physics.yaml); the compiled JSON form's SHA-256 hash is committed to the system log before operational activation.",
   "type": "object",
   "required": [
     "id",
@@ -41,19 +43,25 @@
     "invariants": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/invariant" },
-      "description": "List of system-layer invariants. Must include at least one critical invariant. These apply unconditionally — before and regardless of which domain is active."
+      "items": {
+        "$ref": "#/$defs/invariant"
+      },
+      "description": "List of system-layer invariants. Must include at least one critical invariant. These apply unconditionally \u2014 before and regardless of which domain is active."
     },
     "standing_orders": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/standing_order" },
+      "items": {
+        "$ref": "#/$defs/standing_order"
+      },
       "description": "List of bounded automated CI responses the orchestrator may take when a system invariant is violated"
     },
     "escalation_triggers": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/escalation_trigger" },
+      "items": {
+        "$ref": "#/$defs/escalation_trigger"
+      },
       "description": "Conditions that cause the system layer to escalate to the Meta Authority"
     },
     "ci_output_contract": {
@@ -71,39 +79,59 @@
       "properties": {
         "output_mode": {
           "type": "string",
-          "enum": ["conversational_text"],
+          "enum": [
+            "conversational_text"
+          ],
           "description": "Primary output mode. 'conversational_text' means user-facing prose only; no structured data payloads unless explicitly overridden."
         },
         "chain_of_thought": {
           "type": "string",
-          "enum": ["disallowed", "allowed_if_domain_permits"],
+          "enum": [
+            "disallowed",
+            "allowed_if_domain_permits"
+          ],
           "description": "Whether the CI may surface internal reasoning steps to the user."
         },
         "raw_json_output": {
           "type": "string",
-          "enum": ["only_if_explicitly_requested", "allowed", "disallowed"],
+          "enum": [
+            "only_if_explicitly_requested",
+            "allowed",
+            "disallowed"
+          ],
           "description": "When raw JSON may appear in CI output."
         },
         "grounding_requirement": {
           "type": "string",
-          "enum": ["must_derive_from_prompt_contract", "best_effort"],
+          "enum": [
+            "must_derive_from_prompt_contract",
+            "best_effort"
+          ],
           "description": "How tightly CI responses must be grounded in the active prompt contract."
         },
         "capability_claims": {
           "type": "string",
-          "enum": ["bounded_by_active_prompt_contract", "unrestricted"],
+          "enum": [
+            "bounded_by_active_prompt_contract",
+            "unrestricted"
+          ],
           "description": "Whether capability claims are bounded by the active prompt contract (prevents false advertising of hidden features)."
         },
         "internal_state_disclosure": {
           "type": "string",
-          "enum": ["prohibited_unless_domain_permits", "allowed"],
+          "enum": [
+            "prohibited_unless_domain_permits",
+            "allowed"
+          ],
           "description": "Whether internal confidence scores, private policy internals, or sensitive runtime state may be disclosed."
         }
       }
     },
     "glossary": {
       "type": "array",
-      "items": { "$ref": "#/$defs/glossary_entry" },
+      "items": {
+        "$ref": "#/$defs/glossary_entry"
+      },
       "description": "Controlled vocabulary for Lumina infrastructure terms. Entries are surfaced via the glossary-intercept pipeline when admins or auditors query term definitions in the system domain."
     },
     "slm_config": {
@@ -114,13 +142,23 @@
   "$defs": {
     "invariant": {
       "type": "object",
-      "required": ["id", "description", "severity"],
+      "required": [
+        "id",
+        "description",
+        "severity"
+      ],
       "additionalProperties": false,
       "if": {
-        "not": { "required": ["handled_by"] }
+        "not": {
+          "required": [
+            "handled_by"
+          ]
+        }
       },
       "then": {
-        "required": ["check"]
+        "required": [
+          "check"
+        ]
       },
       "properties": {
         "id": {
@@ -133,7 +171,10 @@
         },
         "severity": {
           "type": "string",
-          "enum": ["critical", "warning"],
+          "enum": [
+            "critical",
+            "warning"
+          ],
           "description": "critical: violation halts autonomous CI action and triggers immediate standing order or escalation; warning: triggers a standing order"
         },
         "check": {
@@ -156,7 +197,13 @@
     },
     "standing_order": {
       "type": "object",
-      "required": ["id", "action", "trigger_condition", "max_attempts", "escalation_on_exhaust"],
+      "required": [
+        "id",
+        "action",
+        "trigger_condition",
+        "max_attempts",
+        "escalation_on_exhaust"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -188,7 +235,11 @@
     },
     "escalation_trigger": {
       "type": "object",
-      "required": ["id", "condition", "target_role"],
+      "required": [
+        "id",
+        "condition",
+        "target_role"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -204,13 +255,16 @@
         },
         "sla_minutes": {
           "type": "integer",
-          "description": "SLA for acknowledgement in minutes; breach is itself a reportable event in the system CTL"
+          "description": "SLA for acknowledgement in minutes; breach is itself a reportable event in the system log"
         }
       }
     },
     "glossary_entry": {
       "type": "object",
-      "required": ["term", "definition"],
+      "required": [
+        "term",
+        "definition"
+      ],
       "additionalProperties": false,
       "properties": {
         "term": {
@@ -223,12 +277,16 @@
         },
         "aliases": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Alternate forms an administrator or auditor might use."
         },
         "related_terms": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Other glossary terms to surface alongside this definition."
         },
         "example_in_context": {
@@ -240,7 +298,9 @@
     "slm_config": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["enabled"],
+      "required": [
+        "enabled"
+      ],
       "description": "Configuration for the Small Language Model compute distribution layer.",
       "properties": {
         "enabled": {
@@ -249,18 +309,29 @@
         },
         "default_provider": {
           "type": "string",
-          "enum": ["local", "openai", "anthropic"],
+          "enum": [
+            "local",
+            "openai",
+            "anthropic"
+          ],
           "description": "Default SLM provider. 'local' uses an Ollama-compatible endpoint (recommended); cloud providers as opt-in."
         },
         "weight_boundary": {
           "type": "string",
-          "enum": ["definitions_only", "definitions_and_physics", "full"],
+          "enum": [
+            "definitions_only",
+            "definitions_and_physics",
+            "full"
+          ],
           "description": "How much work the SLM handles. 'definitions_only': glossary lookups. 'definitions_and_physics': plus physics interpretation and context compression. 'full': plus admin command translation."
         },
         "fallback_on_unavailable": {
           "type": "string",
-          "enum": ["deterministic", "llm"],
-          "description": "Behaviour when the SLM is unreachable. 'deterministic' uses template rendering (recommended — preserves compute separation). 'llm' escalates to the large model."
+          "enum": [
+            "deterministic",
+            "llm"
+          ],
+          "description": "Behaviour when the SLM is unreachable. 'deterministic' uses template rendering (recommended \u2014 preserves compute separation). 'llm' escalates to the large model."
         },
         "local_endpoint": {
           "type": "string",

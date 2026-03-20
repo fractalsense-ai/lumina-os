@@ -1,11 +1,11 @@
 """
-Tests for the system-physics CTL commitment gate.
+Tests for the system-physics System Log commitment gate.
 
 Covers:
   1. NullPersistenceAdapter stubs return safe defaults (no blocking in tests)
   2. FilesystemPersistenceAdapter correctly detects missing commitment
   3. FilesystemPersistenceAdapter detects present commitment after append
-  4. Appended system CTL record forms a valid hash chain
+  4. Appended system System Log record forms a valid hash chain
   5. PPAOrchestrator injects system_physics_hash into TraceEvent metadata
   6. PPAOrchestrator injects system_physics_hash into EscalationRecord metadata
 """
@@ -66,15 +66,15 @@ def _canonical_hash(data: Any) -> str:
 def test_null_adapter_system_stubs():
     adapter = NullPersistenceAdapter()
 
-    # get_system_ctl_ledger_path should return a non-empty string
-    path = adapter.get_system_ctl_ledger_path()
+    # get_system_log_ledger_path should return a non-empty string
+    path = adapter.get_system_log_ledger_path()
     assert isinstance(path, str) and path
 
     # has_system_physics_commitment must return True (no gate blocking in tests)
     assert adapter.has_system_physics_commitment("any-hash") is True
 
-    # append_system_ctl_record must be a no-op (no errors)
-    adapter.append_system_ctl_record({"record_type": "CommitmentRecord"})
+    # append_system_log_record must be a no-op (no errors)
+    adapter.append_system_log_record({"record_type": "CommitmentRecord"})
 
 
 # ─────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ def test_null_adapter_system_stubs():
 # ─────────────────────────────────────────────────────────────
 
 def test_filesystem_no_commitment(tmp_path):
-    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, ctl_dir=tmp_path / "ctl")
+    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, log_dir=tmp_path / "ctl")
 
     fake_hash = "a" * 64
     assert adapter.has_system_physics_commitment(fake_hash) is False
@@ -93,11 +93,11 @@ def test_filesystem_no_commitment(tmp_path):
 # ─────────────────────────────────────────────────────────────
 
 def test_filesystem_commitment_present(tmp_path):
-    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, ctl_dir=tmp_path / "ctl")
+    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, log_dir=tmp_path / "ctl")
 
     fake_hash = "b" * 64
     record = _make_commitment_record(fake_hash)
-    adapter.append_system_ctl_record(record)
+    adapter.append_system_log_record(record)
 
     assert adapter.has_system_physics_commitment(fake_hash) is True
     # Different hash must still return False
@@ -105,27 +105,27 @@ def test_filesystem_commitment_present(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────
-# Test 4: Appended system CTL chain is hash-chain valid
+# Test 4: Appended system log chain is hash-chain valid
 # ─────────────────────────────────────────────────────────────
 
 def test_filesystem_system_ctl_chain_valid(tmp_path):
-    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, ctl_dir=tmp_path / "ctl")
+    adapter = FilesystemPersistenceAdapter(repo_root=tmp_path, log_dir=tmp_path / "ctl")
 
     r1 = _make_commitment_record("d" * 64, prev_hash="genesis")
-    adapter.append_system_ctl_record(r1)
+    adapter.append_system_log_record(r1)
 
     r1_hash = _canonical_hash(r1)
     r2 = _make_commitment_record("e" * 64, prev_hash=r1_hash)
-    adapter.append_system_ctl_record(r2)
+    adapter.append_system_log_record(r2)
 
-    # Read the ledger back and verify via validate_ctl_chain (scope="all")
-    result = adapter.validate_ctl_chain()
+    # Read the ledger back and verify via validate_log_chain (scope="all")
+    result = adapter.validate_log_chain()
     # The "system" sentinel will be included in the all-scope results
     system_result = next(
         (r for r in result.get("results", []) if r.get("session_id") == "system"),
         None,
     )
-    assert system_result is not None, "System CTL missing from validate_ctl_chain results"
+    assert system_result is not None, "System Log missing from validate_log_chain results"
     assert system_result["intact"] is True
     assert system_result["records_checked"] == 2
 
@@ -159,7 +159,7 @@ def test_orchestrator_trace_event_hash_injection(tmp_path):
         prompt_contract={"prompt_type": "explain"},
     )
 
-    trace_records = [r for r in orch.ctl_records if r.get("record_type") == "TraceEvent"]
+    trace_records = [r for r in orch.log_records if r.get("record_type") == "TraceEvent"]
     assert trace_records, "No TraceEvent written"
     assert trace_records[0]["metadata"].get("system_physics_hash") == fake_hash
 
@@ -190,7 +190,7 @@ def test_orchestrator_escalation_hash_injection(tmp_path):
         trigger="test_trigger",
     )
 
-    escalation_records = [r for r in orch.ctl_records if r.get("record_type") == "EscalationRecord"]
+    escalation_records = [r for r in orch.log_records if r.get("record_type") == "EscalationRecord"]
     assert escalation_records, "No EscalationRecord written"
     assert escalation_records[0]["metadata"].get("system_physics_hash") == fake_hash
 

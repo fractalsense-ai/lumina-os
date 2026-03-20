@@ -10,7 +10,7 @@
 # but the probe did not improve the student's state.
 # The orchestrator now escalates to the teacher.
 #
-# This EscalationRecord would be appended to the CTL
+# This EscalationRecord would be appended to the System Logs
 # and the teacher would receive a notification.
 
 record_type: EscalationRecord

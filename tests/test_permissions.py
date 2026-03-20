@@ -11,7 +11,7 @@ BASE_PERMS = {
     "group": "domain_authority",
     "acl": [
         {"role": "qa", "access": "rx", "scope": "evaluation_only"},
-        {"role": "auditor", "access": "r", "scope": "ctl_only"},
+        {"role": "auditor", "access": "r", "scope": "log_only"},
     ],
 }
 

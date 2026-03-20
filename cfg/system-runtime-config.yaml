@@ -1,5 +1,8 @@
 # system-runtime-config.yaml — DEPRECATED routing-only stub.
 #
+# version: 1.0.0
+# last_updated: 2026-03-20
+#
 # This file is superseded by domain-packs/system/cfg/runtime-config.yaml which
 # provides a full live-session runtime config for the system domain.
 #

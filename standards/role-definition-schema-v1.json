@@ -1,10 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/role-definition-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "Lumina Role Definition Schema V1",
   "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical role in the system.",
   "type": "object",
-  "required": ["role_id", "role_name", "hierarchy_level", "description", "default_module_mode"],
+  "required": [
+    "role_id",
+    "role_name",
+    "hierarchy_level",
+    "description",
+    "default_module_mode"
+  ],
   "additionalProperties": false,
   "properties": {
     "role_id": {
@@ -46,18 +54,33 @@
     },
     "scope_type": {
       "type": "string",
-      "enum": ["global", "governed_modules", "assigned_modules", "session_only"],
+      "enum": [
+        "global",
+        "governed_modules",
+        "assigned_modules",
+        "session_only"
+      ],
       "description": "How this role's access scope is determined. global = all modules; governed_modules = per JWT governed_modules claim; assigned_modules = per ACL; session_only = own sessions only."
     },
     "max_session_scope": {
       "type": "string",
-      "enum": ["all", "governed", "assigned", "own"],
+      "enum": [
+        "all",
+        "governed",
+        "assigned",
+        "own"
+      ],
       "description": "Maximum session visibility. all = every session in the system; governed = sessions in governed modules; assigned = sessions in ACL-assigned modules; own = only sessions the user created."
     },
     "audit_visibility": {
       "type": "string",
-      "enum": ["all", "governed", "assigned", "own"],
-      "description": "CTL record visibility scope. Determines which audit trails this role can inspect."
+      "enum": [
+        "all",
+        "governed",
+        "assigned",
+        "own"
+      ],
+      "description": "System Log record visibility scope. Determines which audit trails this role can inspect."
     },
     "may_create_users": {
       "type": "boolean",

@@ -2,7 +2,7 @@
 lumina-security-freeze.py — Project Lumina Emergency Security Freeze CLI
 
 Performs an institution-wide security freeze:
-    1. Scans all CTL ledger files for chain integrity
+    1. Scans all System Log ledger files for chain integrity
     2. Writes a CommitmentRecord (policy_change / security_freeze) to each ledger
     3. Outputs a consolidated integrity report
 
@@ -33,7 +33,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 # ─────────────────────────────────────────────────────────────
-# Hash Utilities (same as ctl-commitment-validator.py)
+# Hash Utilities (same as system-log-validator.py)
 # ─────────────────────────────────────────────────────────────
 
 def canonical_json(record: dict[str, Any]) -> bytes:
@@ -220,7 +220,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--ledger-dir", required=True,
-        help="Root directory containing CTL ledger files (*.jsonl).",
+        help="Root directory containing System Log ledger files (*.jsonl).",
     )
     parser.add_argument(
         "--reason", required=True,

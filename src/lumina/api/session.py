@@ -46,7 +46,7 @@ def _assert_policy_commitment(runtime: dict[str, Any]) -> None:
     )
     if not has_commitment:
         raise RuntimeError(
-            "Policy commitment mismatch: active module domain-physics hash is not CTL-committed. "
+            "Policy commitment mismatch: active module domain-physics hash is not log-committed. "
             "Commit the module domain-physics.json hash before activation."
         )
 
@@ -59,7 +59,7 @@ def _assert_system_physics_commitment() -> None:
     if not _cfg.PERSISTENCE.has_system_physics_commitment(_cfg.SYSTEM_PHYSICS_HASH):
         raise RuntimeError(
             "System-physics commitment missing: the active system-physics.json hash is not present in "
-            "the system CTL. Run scripts/seed-system-physics-ctl.ps1 before starting the server."
+            "the system log. Run scripts/seed-system-physics-log.ps1 before starting the server."
         )
 
 
@@ -195,7 +195,7 @@ def _build_domain_context(
         domain_physics_path = Path(_module_map[_profile_domain_id]["domain_physics_path"])
 
     domain = _cfg.PERSISTENCE.load_domain_physics(str(domain_physics_path))
-    ledger_path = _cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=resolved_domain_id)
+    ledger_path = _cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id=resolved_domain_id)
     ps = persisted_state or {}
 
     state_builder = runtime["state_builder_fn"]
@@ -226,7 +226,7 @@ def _build_domain_context(
         initial_state=initial_state,
         action_prompt_type_map=runtime.get("action_prompt_type_map") or {},
         policy_commitment=_policy_commitment_payload(runtime),
-        ctl_append_callback=lambda sid, record: _cfg.PERSISTENCE.append_ctl_record(
+        log_append_callback=lambda sid, record: _cfg.PERSISTENCE.append_log_record(
             sid, record, ledger_path=str(ledger_path),
         ),
         system_physics_hash=_cfg.SYSTEM_PHYSICS_HASH,
@@ -300,7 +300,7 @@ def get_or_create_session(
                 log.info("[%s] Created new domain context: %s", session_id, resolved_domain_id_checked)
                 _persist_session_container(session_id, container)
 
-            _cfg.PERSISTENCE.append_ctl_record(
+            _cfg.PERSISTENCE.append_log_record(
                 session_id,
                 {
                     "event": "domain_switch",
@@ -309,7 +309,7 @@ def get_or_create_session(
                     "timestamp": time.time(),
                     "session_id": session_id,
                 },
-                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id="_meta"),
+                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
             )
 
         return container.active_context.to_session_dict()
@@ -331,30 +331,42 @@ def get_or_create_session(
 
 def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: str = "normal", close_reason: str | None = None) -> None:
     """Close a session: write CommitmentRecords and remove from memory."""
-    from lumina.ctl.admin_operations import build_commitment_record
+    from lumina.system_log.admin_operations import build_commitment_record
 
     container = _session_containers.get(session_id)
     if container is None:
         return
 
-    for did, ctx in container.contexts.items():
+    if container.contexts:
+        for did, ctx in container.contexts.items():
+            record = build_commitment_record(
+                actor_id=actor_id,
+                actor_role=actor_role,
+                commitment_type="session_close",
+                subject_id=session_id,
+                summary=f"Session closed ({close_type}): domain {did}",
+                close_type=close_type,
+                close_reason=close_reason,
+                metadata={"domain_id": did, "turn_count": ctx.turn_count},
+            )
+            try:
+                _cfg.PERSISTENCE.append_log_record(
+                    session_id, record,
+                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id=did),
+                )
+            except Exception:
+                log.debug("Could not write session_close record for %s/%s", session_id, did)
+    else:
         record = build_commitment_record(
             actor_id=actor_id,
             actor_role=actor_role,
             commitment_type="session_close",
             subject_id=session_id,
-            summary=f"Session closed ({close_type}): domain {did}",
+            summary=f"Session closed ({close_type}): no domain contexts",
             close_type=close_type,
             close_reason=close_reason,
-            metadata={"domain_id": did, "turn_count": ctx.turn_count},
         )
-        try:
-            _cfg.PERSISTENCE.append_ctl_record(
-                session_id, record,
-                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(session_id, domain_id=did),
-            )
-        except Exception:
-            log.debug("Could not write session_close record for %s/%s", session_id, did)
+        _cfg.PERSISTENCE.append_system_log_record(record)
 
     _persist_session_container(session_id, container)
     del _session_containers[session_id]

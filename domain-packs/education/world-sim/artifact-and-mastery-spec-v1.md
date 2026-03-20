@@ -1,6 +1,6 @@
 # Artifact and Mastery Specification — Education Domain (V1)
 
-> **Domain scope:** This specification defines how artifacts and mastery are recognized within the education domain. Other domains may adapt this pattern — for example, "certifications" in agriculture or "clinical competency records" in medical. The generic artifact *slot* in domain physics and the `OutcomeRecord` in the CTL are engine-level structural contracts; the *award process and rules* specified here are education-specific.
+> **Domain scope:** This specification defines how artifacts and mastery are recognized within the education domain. Other domains may adapt this pattern — for example, "certifications" in agriculture or "clinical competency records" in medical. The generic artifact *slot* in domain physics and the `OutcomeRecord` in the System Logs are engine-level structural contracts; the *award process and rules* specified here are education-specific.
 
 **Version:** 1.2.0  
 **Status:** Active  
@@ -42,14 +42,14 @@ artifacts:
 1. **Threshold check**: All `skills_required` must have score >= `proficiency_threshold`
 2. **Boss challenge**: A boss challenge task is presented (see below)
 3. **Boss pass**: The entity must pass the boss challenge
-4. **OutcomeRecord**: An `OutcomeRecord` is appended to the CTL with `artifact_earned: <artifact_id>`
+4. **OutcomeRecord**: An `OutcomeRecord` is appended to the System Logs with `artifact_earned: <artifact_id>`
 5. **Profile update**: The artifact is recorded in the entity profile
 
 Artifacts may not be awarded without the boss challenge, even if score thresholds are met.
 
 ### Artifact Integrity
 
-- Artifacts are non-revocable once awarded (the CTL is append-only)
+- Artifacts are non-revocable once awarded (the System Logs is append-only)
 - An entity may re-attempt a boss challenge if they fail; each attempt is a separate `OutcomeRecord`
 - Proficiency estimates may decrease over time (decay), but awarded artifacts are permanent records of demonstrated competence at the time of award
 
@@ -98,7 +98,7 @@ Education-specific worked examples are in [`../artifact-and-mastery-examples.md`
 
 ### Boss Challenge Outcome
 
-| Outcome | CTL Record | Next Action |
+| Outcome | System Log Record | Next Action |
 |---------|-----------|-------------|
 | Pass (score >= pass_threshold) | OutcomeRecord: pass, artifact_earned | Award artifact, update proficiency |
 | Partial (threshold not met) | OutcomeRecord: partial | Continue practice, suggest weak skills |
@@ -160,7 +160,7 @@ These two principles govern all assessment:
 ## References
 
 - [`../../../standards/domain-physics-schema-v1.json`](../../../standards/domain-physics-schema-v1.json) — artifact field definition in domain physics schema (engine-level)
-- [`../../../standards/causal-trace-ledger-v1.md`](../../../standards/causal-trace-ledger-v1.md) — OutcomeRecord definition (engine-level)
+- [`../../../standards/system-log-v1.md`](../../../standards/system-log-v1.md) — OutcomeRecord definition (engine-level)
 - [`../artifact-and-mastery-examples.md`](../artifact-and-mastery-examples.md) — education-domain worked examples
 - [`world-sim-spec-v1.md`](world-sim-spec-v1.md) — how preferences shape the simulation context without affecting assessment
 - [`magic-circle-consent-v1.md`](magic-circle-consent-v1.md) — consent boundary required before any session containing boss challenges

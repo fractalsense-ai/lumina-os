@@ -52,7 +52,7 @@ def test_sqlite_session_state_roundtrip(sqlite_adapter: SQLitePersistenceAdapter
 
 
 @pytest.mark.unit
-def test_sqlite_ctl_chain_validation(sqlite_adapter: SQLitePersistenceAdapter) -> None:
+def test_sqlite_log_chain_validation(sqlite_adapter: SQLitePersistenceAdapter) -> None:
     sid = "s-chain"
     import hashlib
     import json
@@ -68,7 +68,7 @@ def test_sqlite_ctl_chain_validation(sqlite_adapter: SQLitePersistenceAdapter) -
         "prev_record_hash": "genesis",
         "event_type": "turn",
     }
-    sqlite_adapter.append_ctl_record(sid, r1)
+    sqlite_adapter.append_log_record(sid, r1)
 
     r2 = {
         "record_type": "TraceEvent",
@@ -76,8 +76,8 @@ def test_sqlite_ctl_chain_validation(sqlite_adapter: SQLitePersistenceAdapter) -
         "prev_record_hash": _hash_record(r1),
         "event_type": "turn",
     }
-    sqlite_adapter.append_ctl_record(sid, r2)
+    sqlite_adapter.append_log_record(sid, r2)
 
-    result = sqlite_adapter.validate_ctl_chain(sid)
+    result = sqlite_adapter.validate_log_chain(sid)
     assert result["intact"] is True
     assert result["records_checked"] == 2

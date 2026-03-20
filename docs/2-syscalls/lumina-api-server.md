@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # lumina-api-server(2)
 
 **Version:** 1.3.0  
@@ -22,7 +27,7 @@ lumina-api
 
 ## DESCRIPTION
 
-Generic runtime host for D.S.A. orchestration with built-in JWT authentication. Loads runtime behavior from domain-owned config, keeps the core server free of domain-specific logic, and routes each turn through orchestrator prompt contracts and CTL.
+Generic runtime host for D.S.A. orchestration with built-in JWT authentication. Loads runtime behavior from domain-owned config, keeps the core server free of domain-specific logic, and routes each turn through orchestrator prompt contracts and System Log.
 
 `src/lumina/api/server.py` is a **thin app factory** (~200 lines). All business logic is distributed across dedicated sub-modules:
 
@@ -45,10 +50,10 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `routes/chat.py` | `POST /api/chat` |
 | `routes/auth.py` | Auth and user-management endpoints |
 | `routes/admin.py` | Escalation, audit, manifest, and HITL admin-command endpoints |
-| `routes/ctl.py` | CTL record-browsing endpoints |
+| `routes/system_log.py` | System Log record-browsing endpoints |
 | `routes/domain.py` | Domain-pack lifecycle and session-close endpoints |
 | `routes/ingestion.py` | Document ingestion pipeline endpoints |
-| `routes/system.py` | Health, domain listing, tool adapter, CTL validate |
+| `routes/system.py` | Health, domain listing, tool adapter, System Log validate |
 | `routes/dashboard.py` | Governance dashboard data endpoints |
 | `routes/nightcycle.py` | Night-cycle trigger, status, and proposal endpoints |
 
@@ -77,7 +82,7 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `LUMINA_PERSISTENCE_BACKEND` | `filesystem` | `filesystem` or `sqlite` |
 | `LUMINA_DB_URL` | `sqlite+aiosqlite:///lumina.db` | SQLAlchemy database URL |
 | `LUMINA_PORT` | `8000` | HTTP listen port |
-| `LUMINA_ENFORCE_POLICY_COMMITMENT` | `true` | Require CTL-committed domain-physics hash |
+| `LUMINA_ENFORCE_POLICY_COMMITMENT` | `true` | Require log-committed domain-physics hash |
 | `LUMINA_JWT_SECRET` | — | **Required.** HMAC signing key for JWT tokens |
 | `LUMINA_JWT_TTL_MINUTES` | `60` | Token time-to-live |
 | `LUMINA_JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
@@ -167,33 +172,33 @@ Invoke a domain tool adapter.
 
 ---
 
-### GET /api/ctl/validate
+### GET /api/system-log/validate
 
-Validate CTL hash-chain integrity. Optional `session_id` query parameter.
+Validate System Log hash-chain integrity. Optional `session_id` query parameter.
 
 **Auth:** Optional Bearer token. When provided, requires role: `root`, `domain_authority`, `qa`, or `auditor`.
 
 ---
 
-### GET /api/ctl/records
+### GET /api/system-log/records
 
-List CTL commitment records. Query parameters: `session_id`, `record_type`, `limit`, `offset`.
-
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
-
----
-
-### GET /api/ctl/sessions
-
-List session IDs that have CTL records.
+List System Log commitment records. Query parameters: `session_id`, `record_type`, `limit`, `offset`.
 
 **Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
 
 ---
 
-### GET /api/ctl/records/{record_id}
+### GET /api/system-log/sessions
 
-Retrieve a single CTL commitment record by ID.
+List session IDs that have System Log records.
+
+**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+
+---
+
+### GET /api/system-log/records/{record_id}
+
+Retrieve a single System Log commitment record by ID.
 
 **Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
 
@@ -216,7 +221,7 @@ Resolve an open escalation with a decision.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `decision` | `string` | required | `"approve"`, `"reject"`, or `"defer"` |
-| `reasoning` | `string` | required | Free-text rationale recorded in the CTL |
+| `reasoning` | `string` | required | Free-text rationale recorded in the System Logs |
 | `generate_pin` | `bool` | `false` | When `true`, generates a 6-digit OTP, freezes the session, and returns `unlock_pin` in the response |
 | `intervention_notes` | `string \| null` | `null` | Free-text intervention notes appended to the student's `intervention_history` in their profile |
 | `generate_proposal` | `bool` | `false` | Marks the intervention notes entry for night-cycle proposal generation |
@@ -279,11 +284,11 @@ Parse and stage a natural-language admin instruction via the SLM. Returns a `sta
 
 **Request:** `AdminCommandRequest` — `instruction`
 
-**Response:** `staged_id`, `staged_command` (parsed operation dict), `original_instruction`, `expires_at`, `ctl_stage_record_id`
+**Response:** `staged_id`, `staged_command` (parsed operation dict), `original_instruction`, `expires_at`, `log_stage_record_id`
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
 
-**Notes:** Staged commands expire after `LUMINA_STAGED_CMD_TTL_SECONDS` seconds. Each staging is recorded in the admin CTL ledger before the response is returned.
+**Notes:** Staged commands expire after `LUMINA_STAGED_CMD_TTL_SECONDS` seconds. Each staging is recorded in the admin System Log ledger before the response is returned.
 
 ---
 
@@ -417,13 +422,13 @@ Activate a pending user account by setting their password using the one-time inv
 
 **Notes:**
 - Validates the invite token; returns 403 if expired or already used.
-- Sets the password hash, marks the account `active=true`, and logs a `account_activated` CTL trace event.
+- Sets the password hash, marks the account `active=true`, and logs a `account_activated` System Log trace event.
 
 ---
 
 ### POST /api/domain-pack/commit
 
-Commit a domain-physics hash to the CTL, establishing the authoritative version for a domain.
+Commit a domain-physics hash to the System Logs, establishing the authoritative version for a domain.
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
 
@@ -431,7 +436,7 @@ Commit a domain-physics hash to the CTL, establishing the authoritative version 
 
 ### GET /api/domain-pack/{domain_id}/history
 
-Return the CTL commitment history for a domain's physics hash.
+Return the System Logs commitment history for a domain's physics hash.
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority`, `qa`, `auditor`.
 
@@ -439,7 +444,7 @@ Return the CTL commitment history for a domain's physics hash.
 
 ### PATCH /api/domain-pack/{domain_id}/physics
 
-Apply a live patch to a domain's physics document and auto-commit a new CTL record.
+Apply a live patch to a domain's physics document and auto-commit a new System Log record.
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
 
@@ -447,7 +452,7 @@ Apply a live patch to a domain's physics document and auto-commit a new CTL reco
 
 ### POST /api/session/{session_id}/close
 
-Explicitly close a session, flushing its CTL ledger and releasing memory.
+Explicitly close a session, flushing its System Log ledger and releasing memory.
 
 **Auth:** Bearer token required. Users may close their own sessions; `root` and `it_support` may close any session.
 
@@ -491,7 +496,7 @@ Submit a human review decision on extracted content before commit.
 
 ### POST /api/ingest/{ingestion_id}/commit
 
-Finalize an ingestion: write approved entries to the domain physics and record the CTL commitment.
+Finalize an ingestion: write approved entries to the domain physics and record the System Logs commitment.
 
 **Auth:** Bearer token required. Roles: `root`, `domain_authority`.
 

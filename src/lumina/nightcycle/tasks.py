@@ -82,7 +82,7 @@ def glossary_expansion(
     # Check ingestion records for new terms (simplified heuristic)
     if persistence is not None:
         try:
-            records = persistence.query_ctl_records(domain_id=domain_id)
+            records = persistence.query_log_records(domain_id=domain_id)
             for rec in records:
                 if rec.get("record_type") != "IngestionRecord":
                     continue
@@ -550,7 +550,7 @@ def logic_scrape_review(
     # Query persistence for pending scrape proposals
     if persistence is not None:
         try:
-            records = persistence.query_ctl_records(domain_id=domain_id)
+            records = persistence.query_log_records(domain_id=domain_id)
             for rec in records:
                 if rec.get("record_type") != "TraceEvent":
                     continue

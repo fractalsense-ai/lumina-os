@@ -12,7 +12,8 @@ from starlette.concurrency import run_in_threadpool
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
 from lumina.core.domain_registry import DomainNotFoundError
-from lumina.ctl.admin_operations import can_govern_domain
+from lumina.system_log.admin_operations import can_govern_domain
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger("lumina-api")
 
@@ -28,9 +29,9 @@ def _get_ingest_service() -> Any:
         from lumina.ingestion.service import IngestService
 
         _INGEST_SERVICE = IngestService(
-            persistence_append=lambda sid, rec: _cfg.PERSISTENCE.append_ctl_record(
+            persistence_append=lambda sid, rec: _cfg.PERSISTENCE.append_log_record(
                 sid, rec,
-                ledger_path=_cfg.PERSISTENCE.get_ctl_ledger_path(sid, domain_id="_admin"),
+                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(sid, domain_id="_admin"),
             ),
             max_file_size_mb=10,
         )
@@ -204,6 +205,7 @@ async def ingest_review(
 
 
 @router.post("/api/ingest/{ingestion_id}/commit")
+@requires_log_commit
 async def ingest_commit(
     ingestion_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),

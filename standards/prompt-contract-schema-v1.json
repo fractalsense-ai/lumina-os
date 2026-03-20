@@ -1,10 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/prompt-contract-schema-v1.json",
-  "title": "Project Lumina — Universal Prompt Contract Schema",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "title": "Project Lumina \u2014 Universal Prompt Contract Schema",
   "description": "Base schema that all Project Lumina prompt contracts must conform to. Domain packs extend this schema with domain-specific fields (e.g., hint_level, skills_targeted). A domain-specific prompt-contract-schema.json that adds required fields and constrains prompt_type to a domain-defined enum is a valid extension of this base.",
   "type": "object",
-  "required": ["prompt_type", "domain_pack_id", "domain_pack_version", "task_id"],
+  "required": [
+    "prompt_type",
+    "domain_pack_id",
+    "domain_pack_version",
+    "task_id"
+  ],
   "properties": {
     "prompt_type": {
       "type": "string",
@@ -27,9 +34,15 @@
       "items": {
         "type": "object",
         "properties": {
-          "artifact_id": { "type": "string" },
-          "artifact_version": { "type": "string" },
-          "hash_verified": { "type": "boolean" }
+          "artifact_id": {
+            "type": "string"
+          },
+          "artifact_version": {
+            "type": "string"
+          },
+          "hash_verified": {
+            "type": "boolean"
+          }
         }
       },
       "description": "Retrieved artifacts cited in this prompt (grounding contract). Domain packs may require this field."
@@ -39,8 +52,11 @@
       "description": "Whether all claims in this prompt are grounded in cited artifacts"
     },
     "theme": {
-      "type": ["string", "null"],
-      "description": "World simulation theme applied to this prompt (immersion only — must not influence domain content or difficulty)"
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "World simulation theme applied to this prompt (immersion only \u2014 must not influence domain content or difficulty)"
     }
   }
 }

@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-    Seeds the system-physics CTL with a CommitmentRecord for the active
+    Seeds the system-physics System Log with a CommitmentRecord for the active
     cfg/system-physics.json, enabling the runtime system-physics gate.
 
 .DESCRIPTION
     Computes the canonical JSON SHA-256 of cfg/system-physics.json and
-    appends a system_physics_activation CommitmentRecord to the system CTL
-    ledger at <LUMINA_CTL_DIR>/system/system.jsonl.
+    appends a system_physics_activation CommitmentRecord to the system log
+    ledger at <LUMINA_LOG_DIR>/system/system.jsonl.
 
     Safe to run multiple times: if the hash is already committed, the script
     reports success without writing a duplicate record.
@@ -23,14 +23,14 @@
     (default: "system-operator").
 
 .PARAMETER CtlDir
-    CTL root directory. Defaults to LUMINA_CTL_DIR env var, then
+    System Log root directory. Defaults to LUMINA_LOG_DIR env var, then
     a temp directory matching the server default.
 
 .EXAMPLE
-    .\scripts\seed-system-physics-ctl.ps1
+    .\scripts\seed-system-physics-log.ps1
 
 .EXAMPLE
-    .\scripts\seed-system-physics-ctl.ps1 `
+    .\scripts\seed-system-physics-log.ps1 `
         -ActorId "ci-pipeline" `
         -CtlDir "C:\lumina-data\ctl"
 #>
@@ -54,7 +54,7 @@ try {
         $msg += "  Then install dependencies:`n"
         $msg += "    .\.venv\Scripts\pip install -e .[dev]`n"
         $msg += "  Or supply a custom Python via -PythonExe:`n"
-        $msg += "    .\scripts\seed-system-physics-ctl.ps1 -PythonExe C:\Python312\python.exe`n"
+        $msg += "    .\scripts\seed-system-physics-log.ps1 -PythonExe C:\Python312\python.exe`n"
         $msg += "  See docs/1-commands/installation-and-packaging.md for full setup instructions."
         throw $msg
     }
@@ -62,16 +62,16 @@ try {
         throw "system-physics.json not found at: $SystemPhysicsFile"
     }
 
-    # Resolve CTL directory
+    # Resolve System Log directory
     if ([string]::IsNullOrWhiteSpace($CtlDir)) {
-        $CtlDir = $env:LUMINA_CTL_DIR
+        $CtlDir = $env:LUMINA_LOG_DIR
     }
     if ([string]::IsNullOrWhiteSpace($CtlDir)) {
-        $CtlDir = Join-Path ([System.IO.Path]::GetTempPath()) "lumina-ctl"
+        $CtlDir = Join-Path ([System.IO.Path]::GetTempPath()) "lumina-log"
     }
 
     Write-Host "System-physics file : $SystemPhysicsFile"
-    Write-Host "CTL directory       : $CtlDir"
+    Write-Host "System Log directory       : $CtlDir"
     Write-Host "Actor ID            : $ActorId"
     Write-Host ""
 

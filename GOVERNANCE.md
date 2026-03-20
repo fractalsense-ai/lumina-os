@@ -13,7 +13,7 @@ Project Lumina governance is built on a **fractal authority structure**: every p
 
 ## Accountability
 
-Ultimate accountability for any Project Lumina deployment sits with the **human Domain Authority** at each level, never the AI or the engine. The engine provides structural safeguards (D.S.A. contracts, CTL traces, escalation protocols) but does not replace human oversight, professional judgment, or legal compliance. No AI decision is final — every decision is traceable, auditable, and subject to human review.
+Ultimate accountability for any Project Lumina deployment sits with the **human Domain Authority** at each level, never the AI or the engine. The engine provides structural safeguards (D.S.A. contracts, System Log traces, escalation protocols) but does not replace human oversight, professional judgment, or legal compliance. No AI decision is final — every decision is traceable, auditable, and subject to human review.
 
 ---
 
@@ -50,7 +50,7 @@ Subject/Target
 Each level:
 1. **Authors its own Domain Physics** — YAML ruleset defining invariants, standing orders, and escalation triggers within its scope
 2. **Retrieves from the level above** — via RAG contracts; cannot override a higher authority's invariants
-3. **Is accountable via the CTL** — every commitment, decision, and escalation is ledger-recorded
+3. **Is accountable via the System Logs** — every commitment, decision, and escalation is ledger-recorded
 4. **Can escalate upward** — when the system cannot stabilize within its own Domain Physics
 
 ---
@@ -67,7 +67,7 @@ Rights:
 
 Constraints:
 - Cannot override invariants set by a higher-level Domain Authority
-- All domain pack versions must be hash-committed to the CTL before taking effect
+- All domain pack versions must be hash-committed to the System Logs before taking effect
 - Domain pack changes require explicit versioning and a CHANGELOG entry
 
 See [`governance/domain-authority-roles.md`](governance/domain-authority-roles.md) for role definitions and onboarding.
@@ -97,7 +97,7 @@ All governance documents and domain packs follow semantic versioning:
 | New standing order, clarified constraint | **Minor** | v1.0 → v1.1 |
 | Wording correction, metadata update | **Patch** | v1.0 → v1.0.1 |
 
-Version history is maintained in Git. The current hash of every active domain pack must be committed to the CTL as a `CommitmentRecord` before the pack takes operational effect.
+Version history is maintained in Git. The current hash of every active domain pack must be committed to the System Logs as a `CommitmentRecord` before the pack takes operational effect.
 
 ---
 
@@ -109,8 +109,8 @@ Escalation occurs when the AI orchestrator cannot stabilize a session within its
 
 1. **Detection** — the orchestrator detects that state drift is major, a critical invariant is repeatedly violated, or a standing order is exhausted
 2. **Freeze** — the orchestrator halts autonomous action within this session scope
-3. **Packet Assembly** — an `EscalationRecord` is assembled: structured summary, evidence hashes, decision trail from CTL, proposed next action
-4. **CTL Record** — the `EscalationRecord` is appended to the CTL (append-only; escalation cannot be deleted)
+3. **Packet Assembly** — an `EscalationRecord` is assembled: structured summary, evidence hashes, decision trail from System Logs, proposed next action
+4. **System Log Record** — the `EscalationRecord` is appended to the System Logs (append-only; escalation cannot be deleted)
 5. **Notification** — the Meta Authority receives the escalation packet through the designated channel
 6. **Resolution** — the Meta Authority reviews, decides, and records their decision as a `CommitmentRecord`
 7. **Resume or Terminate** — the session resumes under updated parameters, or is terminated cleanly
@@ -123,12 +123,12 @@ Every escalation step must be recorded. An escalation that is not acknowledged w
 
 All stakeholders have the right to audit within their authority scope:
 
-- **Subject/Target** (e.g., Student, Patient): may request a summary of their own CTL records (structured telemetry only, never raw transcripts)
-- **Micro Authority** (e.g., Teacher, Physician, Operator): may audit CTL records for sessions within their domain
-- **Meso Authority** (e.g., Department Head, Site Manager): may audit Micro Authority-level CTL records
-- **Macro Authority** (e.g., Administration, Hospital Admin, Corporate Policy): may audit all CTL records within their scope
+- **Subject/Target** (e.g., Student, Patient): may request a summary of their own System Log records (structured telemetry only, never raw transcripts)
+- **Micro Authority** (e.g., Teacher, Physician, Operator): may audit System Log records for sessions within their domain
+- **Meso Authority** (e.g., Department Head, Site Manager): may audit Micro Authority-level System Log records
+- **Macro Authority** (e.g., Administration, Hospital Admin, Corporate Policy): may audit all System Log records within their scope
 
-Audit outputs are structured summaries. No audit may produce a transcript — the CTL does not store transcripts.
+Audit outputs are structured summaries. No audit may produce a transcript — the System Logs does not store transcripts.
 
 See [`governance/audit-and-rollback.md`](governance/audit-and-rollback.md) for audit procedures and rollback policy.
 
@@ -137,9 +137,9 @@ See [`governance/audit-and-rollback.md`](governance/audit-and-rollback.md) for a
 ## Privacy Policy
 
 - **No transcripts at rest** — this is a hard constraint, not a default
-- **Pseudonymous only** — subject identifiers in the CTL are pseudonymous; real identity mapping is held by the institution, not the AI layer
+- **Pseudonymous only** — subject identifiers in the System Logs are pseudonymous; real identity mapping is held by the institution, not the AI layer
 - **Interests affect generation, never grading** — subject preference data may be used for immersion (e.g., contextualizing task presentation) but must never influence assessment or outcome scoring
-- **Structured telemetry only** — the CTL records decision summaries, not conversational content
+- **Structured telemetry only** — the System Logs records decision summaries, not conversational content
 
 ---
 
@@ -147,11 +147,11 @@ See [`governance/audit-and-rollback.md`](governance/audit-and-rollback.md) for a
 
 Domain Physics changes may be rolled back by a Domain Authority within their scope. Rollback:
 - Must be recorded as a new version (not a deletion)
-- Must append a `CommitmentRecord` to the CTL explaining the reason
-- Does not remove prior CTL records — the ledger is append-only
+- Must append a `CommitmentRecord` to the System Logs explaining the reason
+- Does not remove prior System Log records — the ledger is append-only
 
 See [`governance/audit-and-rollback.md`](governance/audit-and-rollback.md).
 
 ---
 
-*This document shall be updated when governance policy changes. All changes require a Major version bump and a CTL commitment.*
+*This document shall be updated when governance policy changes. All changes require a Major version bump and a System Log commitment.*

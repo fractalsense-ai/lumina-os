@@ -24,7 +24,7 @@ Lumina defines six canonical roles. Each role has a fixed position in the hierar
 | **Domain Authority** | `domain_authority` | 1 | Subject-matter expert with authoring rights over governed modules. Scoped to specific domain packs. |
 | **IT Support** | `it_support` | 2 | Tier-1 technical support. Diagnostics, session monitoring, and runtime troubleshooting. |
 | **Quality Assurance** | `qa` | 2 | Test harness execution, conformance validation, and regression testing on assigned modules. |
-| **Auditor** | `auditor` | 2 | Compliance and audit role. Read-only access to CTL records, audit logs, and session traces within scope. |
+| **Auditor** | `auditor` | 2 | Compliance and audit role. Read-only access to System Log records, audit logs, and session traces within scope. |
 | **Standard User** | `user` | 3 (lowest) | End-user / session participant. May execute sessions on modules they are permitted to access. |
 
 Hierarchy level determines tie-breaking and scope inheritance:
@@ -38,7 +38,7 @@ Hierarchy level determines tie-breaking and scope inheritance:
 Roles do **not** inherit permissions from other roles. Each role has its own default access pattern. However:
 
 - A user with the `domain_authority` role inherits read access to modules governed by their Meta Authority chain (upward visibility for context).
-- A user may hold exactly one role at any time. Role changes require a CTL `CommitmentRecord`.
+- A user may hold exactly one role at any time. Role changes require a System Log `CommitmentRecord`.
 
 ---
 
@@ -61,7 +61,7 @@ Each digit is the sum of:
 
 | Bit | Value | Meaning |
 |-----|-------|---------|
-| r | 4 | **Read** — view domain physics, session data, CTL records, audit logs for this module |
+| r | 4 | **Read** — view domain physics, session data, System Log records, audit logs for this module |
 | w | 2 | **Write** — author or modify the domain pack, standing orders, invariants, artifacts, subsystem configs |
 | x | 1 | **Execute** — run sessions against this module, trigger tool adapters, invoke domain-lib functions |
 
@@ -91,9 +91,9 @@ These are the **recommended** defaults when a Domain Authority creates a new mod
 | `POST /api/chat` | Execute (x) | Running a session executes the module's domain physics |
 | `GET /api/domain-info` | Read (r) | Viewing module metadata is a read operation |
 | `POST /api/tool/{tool_id}` | Execute (x) | Tool invocation is an execution within the session context |
-| `GET /api/ctl/validate` | Read (r) | Viewing CTL integrity data is a read operation |
+| `GET /api/system-log/validate` | Read (r) | Viewing System Log integrity data is a read operation |
 | Domain pack authoring | Write (w) | Creating or modifying domain-physics files |
-| CTL record review | Read (r) | Audit trail inspection |
+| System Log record review | Read (r) | Audit trail inspection |
 | `GET /api/manifest/check` | Read (r) | Manifest integrity inspection — read-only; accessible to auditors |
 | `POST /api/manifest/regen` | Write (w) | Rewriting artifact hashes modifies the version-control manifest |
 
@@ -114,7 +114,7 @@ permissions:
       scope: "evaluation_only"    # optional scope qualifier
     - role: auditor
       access: r                   # read-only for auditors
-      scope: "ctl_records_only"
+      scope: "log_records_only"
 ```
 
 ### Extended ACL
@@ -125,7 +125,7 @@ The `acl` array provides fine-grained overrides beyond the owner/group/others mo
 |-------|------|----------|-------------|
 | `role` | string | yes | One of the six canonical role IDs |
 | `access` | string | yes | Combination of `r`, `w`, `x` characters |
-| `scope` | string | no | Optional scope qualifier limiting what the access applies to. Values are module-defined (e.g., `evaluation_only`, `ctl_records_only`, `read_physics_only`). When omitted, access applies to the full module. |
+| `scope` | string | no | Optional scope qualifier limiting what the access applies to. Values are module-defined (e.g., `evaluation_only`, `log_records_only`, `read_physics_only`). When omitted, access applies to the full module. |
 
 ACL entries are evaluated **after** the octal mode check. An ACL entry can **grant** additional access not covered by the octal mode, but it cannot **revoke** access already granted by the mode bits.
 
@@ -186,7 +186,7 @@ All authenticated requests carry a JWT in the `Authorization: Bearer <token>` he
 
 | Claim | Type | Description |
 |-------|------|-------------|
-| `sub` | string | Pseudonymous user ID (32-character hex token). Matches `actor_id` in CTL records. |
+| `sub` | string | Pseudonymous user ID (32-character hex token). Matches `actor_id` in System Log records. |
 | `role` | string | One of the six canonical role IDs |
 | `governed_modules` | string[] | Module IDs this user has explicit governance over. Only meaningful for `domain_authority`; empty for other roles. |
 | `iat` | integer | Issued-at timestamp (UNIX epoch) |
@@ -242,11 +242,11 @@ This ensures subject-matter experts can observe peer modules but cannot modify t
 
 ---
 
-## CTL Integration
+## System Log Integration
 
 ### Actor Identity in Records
 
-All CTL records created during an authenticated session include the JWT-derived identity:
+All System Log records created during an authenticated session include the JWT-derived identity:
 
 ```json
 {
@@ -260,7 +260,7 @@ All CTL records created during an authenticated session include the JWT-derived 
 
 ### Role Change Auditing
 
-When a user's role is changed (e.g., promoted from `user` to `domain_authority`), a `CommitmentRecord` is appended to the CTL:
+When a user's role is changed (e.g., promoted from `user` to `domain_authority`), a `CommitmentRecord` is appended to the System Logs:
 
 ```json
 {
@@ -385,7 +385,7 @@ The JWT payload gains an optional `domain_roles` claim:
 
 ### Domain Role Assignment Auditing
 
-Domain role assignments and revocations are recorded in the CTL as `CommitmentRecord` entries with `commitment_type` values:
+Domain role assignments and revocations are recorded in the System Logs as `CommitmentRecord` entries with `commitment_type` values:
 
 - `domain_role_assignment` — when a domain role is assigned to a user
 - `domain_role_revocation` — when a domain role is removed from a user

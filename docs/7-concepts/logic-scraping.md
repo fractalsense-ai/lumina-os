@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Logic Scraping
 
 **Version:** 1.0.0
@@ -68,7 +73,7 @@ After all iterations complete, a post-loop verification pass runs across all fla
 1. The logic scrape produces `Proposal` objects — one per unique flagged response.
 2. Proposals appear in the governance dashboard under the night cycle review panel.
 3. The domain authority reviews each proposal and approves or rejects it.
-4. Approved proposals generate `novel_synthesis_verified` commitment records in the CTL.
+4. Approved proposals generate `novel_synthesis_verified` commitment records in the System Logs.
 5. Rejected proposals generate `novel_synthesis_rejected` commitment records with `denial_rationale`.
 
 The night cycle `logic_scrape_review` task surfaces any pending proposals during scheduled runs.

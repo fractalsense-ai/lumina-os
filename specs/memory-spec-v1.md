@@ -13,7 +13,7 @@ Project Lumina uses **indexed generalized memory** — a structured, queryable s
 Memory in Project Lumina has three layers:
 1. **Domain Memory** — the Domain Physics (invariants, artifacts, standing orders) — static per session
 2. **Entity Memory** — the entity profile (compressed state, preferences, artifact history) — updated per session
-3. **Session Memory** — structured summaries from CTL TraceEvents — per-session ephemeral, summarized to profile
+3. **Session Memory** — structured summaries from System Log TraceEvents — per-session ephemeral, summarized to profile
 
 ---
 
@@ -21,10 +21,10 @@ Memory in Project Lumina has three layers:
 
 Domain memory is the domain pack loaded at session start. It is:
 - Immutable during the session
-- Loaded from disk and hash-verified against the CTL commitment
+- Loaded from disk and hash-verified against the System Logs commitment
 - Fully queryable via the RAG layer (see [`../retrieval/rag-contracts.md`](../retrieval/rag-contracts.md))
 
-Domain memory is not "remembered" between sessions — it is always loaded fresh. Consistency is ensured by version control and CTL hash commitments.
+Domain memory is not "remembered" between sessions — it is always loaded fresh. Consistency is ensured by version control and System Log hash commitments.
 
 ---
 
@@ -78,7 +78,7 @@ During a session, the orchestrator maintains working memory:
 
 At session close:
 - The final compressed state is written to the entity profile
-- A session summary is assembled and the `OutcomeRecord` is appended to the CTL
+- A session summary is assembled and the `OutcomeRecord` is appended to the System Logs
 - The working memory is discarded (no transcript retention)
 
 ---
@@ -86,7 +86,7 @@ At session close:
 ## Retrieval-Augmented Memory
 
 The RAG layer provides access to:
-- Prior CTL records (by session ID, entity ID, or record type)
+- Prior System Log records (by session ID, entity ID, or record type)
 - Domain pack artifacts and invariants (by ID)
 - Evaluation bundles (for boss challenges)
 
@@ -96,8 +96,8 @@ Retrieved content is always cited by artifact ID and version. See [`../retrieval
 
 ## Memory Integrity
 
-- Entity profiles are signed with the hash of their last update in the CTL
-- On load, the profile hash is verified against the CTL record
+- Entity profiles are signed with the hash of their last update in the System Logs
+- On load, the profile hash is verified against the System Logs record
 - If verification fails, the session cannot proceed until the Domain Authority resolves the discrepancy (see [`../specs/reports-spec-v1.md`](reports-spec-v1.md))
 
 ---

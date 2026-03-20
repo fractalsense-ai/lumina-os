@@ -1,7 +1,7 @@
 """Tests for the /api/admin/command endpoint — SLM-powered admin command translation.
 
 Covers RBAC enforcement, SLM parsing, dispatch to admin operations,
-fallback on SLM unavailability, and CTL record creation.
+fallback on SLM unavailability, and System Log record creation.
 """
 from __future__ import annotations
 

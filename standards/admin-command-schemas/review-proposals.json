@@ -1,19 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/review-proposals.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "review_proposals",
   "description": "List pending night-cycle proposals for review, optionally filtered by domain.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "review_proposals" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "review_proposals"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "domain_id": { "type": "string" }
+        "domain_id": {
+          "type": "string"
+        }
       }
     }
   }

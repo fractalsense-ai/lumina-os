@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # manifest-regenerate(1)
 
 **Version:** 1.0.0  
@@ -46,8 +51,8 @@ existing hash values.
 - When `integrity-check(1)` reports a `MISMATCH`
 - As part of the release preparation workflow before tagging a version
 
-Domain-pack artifact hashes are committed via `ctl-commitment-validator(1)`, not this
-tool. Do not use this script to manage CTL ledger integrity.
+Domain-pack artifact hashes are committed via `system-log-validator(1)`, not this
+tool. Do not use this script to manage System Log ledger integrity.
 
 ## EXIT CODES
 
@@ -69,7 +74,7 @@ This is a write operation that modifies `docs/MANIFEST.yaml` in-place. It is res
 that carry authoring authority over repository artifacts. Auditors and QA personnel may inspect
 the manifest via `integrity-check(1)` (`GET /api/manifest/check`) but may not rewrite it.
 
-All API invocations are recorded as a CTL `TraceEvent` on the `_admin` ledger for auditability.
+All API invocations are recorded as a System Log `TraceEvent` on the `_admin` ledger for auditability.
 
 ## ENVIRONMENT
 
@@ -77,4 +82,4 @@ All API invocations are recorded as a CTL `TraceEvent` on the `_admin` ledger fo
 
 ## SEE ALSO
 
-[integrity-check(1)](integrity-check.md), [ctl-commitment-validator(1)](ctl-commitment-validator.md), [document-versioning-policy(5)](../5-standards/document-versioning-policy.md), [artifact-manifest-format(4)](../4-formats/artifact-manifest-format.md)
+[integrity-check(1)](integrity-check.md), [system-log-validator(1)](system-log-validator.md), [document-versioning-policy(5)](../5-standards/document-versioning-policy.md), [artifact-manifest-format(4)](../4-formats/artifact-manifest-format.md)

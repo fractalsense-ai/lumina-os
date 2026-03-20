@@ -128,7 +128,7 @@ The consent boundary (implemented here as the magic circle) establishes explicit
 - Real-world consequences are suspended within bounds
 - The system and Domain Authority are protected from liability claims related to simulation content
 
-Consent is **measurement + accountability**, not surveillance: only a pseudonymous token and scope hash are stored in CTL; no PII/transcript at rest.
+Consent is **measurement + accountability**, not surveillance: only a pseudonymous token and scope hash are stored in System Log; no PII/transcript at rest.
 
 The world simulation personalizes presentation based on student interests and preferences (from the student profile's `likes` / `dislikes` fields) without affecting grading or assessment. Domain invariants are enforced identically regardless of narrative theme.
 
@@ -150,6 +150,6 @@ These specs were relocated here from `specs/` because they are domain-specific l
 > - Protecting student privacy and data
 > - Handling liability for simulation content or AI decisions
 >
-> The engine provides structural accountability (D.S.A. contracts, CTL traces) but does **NOT** replace human oversight, professional judgment, or legal compliance.
+> The engine provides structural accountability (D.S.A. contracts, System Log traces) but does **NOT** replace human oversight, professional judgment, or legal compliance.
 >
 > The education-domain magic-circle consent specification is a structural template implementing the universal consent-boundary principle. It is **not legal advice**. Consult education lawyers and ethics boards before production use.

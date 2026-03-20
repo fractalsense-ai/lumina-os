@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # NLP Semantic Router
 
 **Version:** 1.0.0
@@ -250,10 +255,10 @@ The NLP semantic router has a strictly bounded role. Understanding what it does 
 | Extracts deterministic signals as anchors | Decide what action the orchestrator should take |
 | Short-circuits on known glossary terms | Determine the LLM's response |
 | Injects grounding anchors into the LLM context hint | Verify the LLM's output (that is Tool Adapters) |
-| Operates synchronously before prompt assembly | Write to the CTL |
+| Operates synchronously before prompt assembly | Write to the System Logs |
 | Uses only the message text and registry keywords | Authenticate or authorize the caller |
 
-The NLP layer influences the **quality of the LLM's input**. It does not influence the orchestrator's policy constraints, the tool verification chain, or the ledger. A misconfigured NLP layer can degrade LLM accuracy; it cannot cause a policy violation or a CTL integrity failure — those are protected by separate layers.
+The NLP layer influences the **quality of the LLM's input**. It does not influence the orchestrator's policy constraints, the tool verification chain, or the ledger. A misconfigured NLP layer can degrade LLM accuracy; it cannot cause a policy violation or a System Log integrity failure — those are protected by separate layers.
 
 ---
 

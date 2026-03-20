@@ -1,38 +1,38 @@
 """
-ctl-commitment-validator.py — Project Lumina CTL Validator & Commitment Tool
+system-log-validator.py — Project Lumina System Log Validator & Commitment Tool
 
 Commands:
-    --verify-chain     Verify the hash chain of an entire CTL ledger file
+    --verify-chain     Verify the hash chain of an entire System Log ledger file
     --verify-session   Verify records for a specific session ID
-    --commit           Commit a domain pack (or other artifact) hash to the CTL
+    --commit           Commit a domain pack (or other artifact) hash to the System Logs
     --rollback         Roll back a domain pack to a previous version
     --print-ledger     Print all records in a ledger in human-readable form
 
 Usage:
     # Verify entire chain
-    python reference-implementations/ctl-commitment-validator.py \\
+    python reference-implementations/system-log-validator.py \\
         --verify-chain path/to/ledger.jsonl
 
     # Verify a single session
-    python reference-implementations/ctl-commitment-validator.py \\
+    python reference-implementations/system-log-validator.py \\
         --verify-session <session-uuid> \\
         --ledger path/to/ledger.jsonl
 
     # Commit a domain pack hash
-    python reference-implementations/ctl-commitment-validator.py \\
+    python reference-implementations/system-log-validator.py \\
         --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \\
         --actor-id <pseudonymous-id> \\
         --ledger path/to/ledger.jsonl
 
     # Rollback a domain pack
-    python reference-implementations/ctl-commitment-validator.py \\
+    python reference-implementations/system-log-validator.py \\
         --rollback domain-packs/education/modules/algebra-level-1/domain-physics.json \\
         --actor-id <pseudonymous-id> \\
         --reason "Defective invariant in v2.1.0" \\
         --ledger path/to/ledger.jsonl
 
     # Print ledger contents
-    python reference-implementations/ctl-commitment-validator.py \\
+    python reference-implementations/system-log-validator.py \\
         --print-ledger path/to/ledger.jsonl
 
 Dependencies: standard library only (json, hashlib, argparse, uuid, datetime)
@@ -71,7 +71,7 @@ def sha256_hex(data: bytes) -> str:
 
 
 def hash_record(record: dict[str, Any]) -> str:
-    """Compute SHA-256 of a canonical CTL record."""
+    """Compute SHA-256 of a canonical System Log record."""
     return sha256_hex(canonical_json(record))
 
 
@@ -127,7 +127,7 @@ def append_record(path: Path, record: dict[str, Any]) -> None:
 
 def verify_chain(records: list[dict[str, Any]]) -> dict[str, Any]:
     """
-    Verify the hash chain integrity of a sequence of CTL records.
+    Verify the hash chain integrity of a sequence of System Log records.
 
     Returns a result dict with:
         intact: bool
@@ -331,7 +331,7 @@ def cmd_rollback(args: argparse.Namespace) -> int:
     else:
         print("  Prior commit: (none found)")
     print("─" * 60)
-    print("This will append a domain_pack_rollback CommitmentRecord to the CTL.")
+    print("This will append a domain_pack_rollback CommitmentRecord to the System Logs.")
 
     confirmation = input("Type 'ROLLBACK' to confirm: ")
     if confirmation.strip() != "ROLLBACK":
@@ -365,11 +365,11 @@ def cmd_rollback(args: argparse.Namespace) -> int:
 
 
 def cmd_verify_system_chain(args: argparse.Namespace) -> int:
-    """Verify the system-physics CTL chain and optionally check a specific hash is committed."""
-    ctl_dir = Path(args.ctl_dir)
-    system_ledger = ctl_dir / "system" / "system.jsonl"
+    """Verify the system-physics System Log chain and optionally check a specific hash is committed."""
+    log_dir = Path(args.log_dir)
+    system_ledger = log_dir / "system" / "system.jsonl"
     records = load_ledger(system_ledger)
-    print(f"System CTL: {system_ledger}  ({len(records)} records)")
+    print(f"System Log: {system_ledger}  ({len(records)} records)")
     result = verify_chain(records)
 
     if result["intact"]:
@@ -434,7 +434,7 @@ def cmd_print_ledger(args: argparse.Namespace) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Project Lumina CTL hash chain validator and commitment tool.",
+        description="Project Lumina System Log hash chain validator and commitment tool.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -467,7 +467,7 @@ def main() -> None:
     group.add_argument(
         "--verify-system-chain",
         action="store_true",
-        help="Verify the system-physics CTL chain. Requires --ctl-dir.",
+        help="Verify the system-physics System Log chain. Requires --log-dir.",
     )
 
     parser.add_argument("--ledger", metavar="LEDGER", help="Path to the JSONL ledger file.")
@@ -481,10 +481,10 @@ def main() -> None:
     parser.add_argument("--summary", metavar="TEXT", help="Human-readable summary (for --commit).")
     parser.add_argument("--reason", metavar="TEXT", help="Reason for rollback (for --rollback).")
     parser.add_argument(
-        "--ctl-dir",
+        "--log-dir",
         metavar="DIR",
-        default=os.environ.get("LUMINA_CTL_DIR", str(Path(sys.argv[0]).resolve().parents[3] / "ctl")),
-        help="CTL root directory (for --verify-system-chain). Defaults to LUMINA_CTL_DIR env var.",
+        default=os.environ.get("LUMINA_LOG_DIR", str(Path(sys.argv[0]).resolve().parents[3] / "ctl")),
+        help="System Log root directory (for --verify-system-chain). Defaults to LUMINA_LOG_DIR env var.",
     )
     parser.add_argument(
         "--system-physics-file",

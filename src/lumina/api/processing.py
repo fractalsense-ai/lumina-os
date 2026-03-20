@@ -338,7 +338,7 @@ def process_message(
 
     escalated = any(
         r.get("record_type") == "EscalationRecord" and r.get("session_id") == session_id
-        for r in orch.ctl_records[-2:]
+        for r in orch.log_records[-2:]
     )
 
     tool_results = apply_tool_call_policy(

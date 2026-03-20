@@ -306,7 +306,7 @@ def test_root_defaults_to_system_domain(multi_client: TestClient) -> None:
         "/api/chat",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "message": "Show me the current CTL configuration",
+            "message": "Show me the current System Log configuration",
             "deterministic_response": True,
         },
     )

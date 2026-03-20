@@ -393,7 +393,7 @@ permissions:
       scope: evaluation_only
     - role: auditor
       access: r
-      scope: ctl_records_only
+      scope: log_records_only
     - role: user
       access: x
 

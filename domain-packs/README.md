@@ -115,10 +115,10 @@ For each external tool, write a tool adapter YAML conforming to [`../standards/t
 
 Document every version with semver, date, and changes.
 
-### 7. Commit the hash to the CTL
+### 7. Commit the hash to the System Logs
 
 ```bash
-python ../reference-implementations/ctl-commitment-validator.py \
+python ../reference-implementations/system-log-validator.py \
   --commit domain-packs/{org}/{subject-level}/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger path/to/ledger.jsonl
@@ -127,7 +127,7 @@ python ../reference-implementations/ctl-commitment-validator.py \
 Every material module policy change requires:
 - semantic version update,
 - YAML -> JSON regeneration,
-- CTL commitment of the updated module `domain-physics.json` hash before activation.
+- System Log commitment of the updated module `domain-physics.json` hash before activation.
 
 ### 8. Implement your runtime adapter
 
@@ -142,14 +142,14 @@ See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adap
 ## Domain Pack Lifecycle
 
 ```
-Draft → Validated → Committed (CTL) → Active
+Draft → Validated → Committed (System Log) → Active
                                          ↓
                                     New Version (Major/Minor/Patch)
                                          ↓
                                     Validated → Committed → Active
 ```
 
-A domain pack must be in the `Active` state (CTL commitment present) before use in a production session.
+A domain pack must be in the `Active` state (System Log commitment present) before use in a production session.
 
 ---
 
@@ -203,11 +203,11 @@ Repository integrity checks enforce this linkage: a declared `tool_adapters` ID 
 The authoritative execution flow is:
 
 1. Module `domain-physics.json` is loaded as machine-authoritative policy truth.
-2. Its hash is verified against the committed CTL `CommitmentRecord`.
+2. Its hash is verified against the committed System Log `CommitmentRecord`.
 3. Authorized tool-adapters produce structured signals/evidence.
 4. Domain-lib runtime components transform those signals into machine-readable state summaries.
 5. Orchestrator evaluates module invariants and resolves standing-order/escalation outcomes.
-6. CTL records are appended for accountability.
+6. System Log records are appended for accountability.
 
 `world-sim/` may shape interaction framing, but it does not define normative thresholds, standing-order policy, or escalation policy.
 

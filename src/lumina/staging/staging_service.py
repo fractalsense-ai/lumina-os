@@ -6,8 +6,8 @@ All LLM-generated file payloads pass through this service.  The workflow:
    envelope to ``data/staging/{staged_id}.json``.
 2. ``list_staged()`` — returns pending envelopes for DA/QA review.
 3. ``approve_staged()`` — calls ``write_from_template`` to the final path,
-   writes a CTL commitment record.
-4. ``reject_staged()`` — marks the envelope rejected, writes a CTL record.
+   writes a System Log commitment record.
+4. ``reject_staged()`` — marks the envelope rejected, writes a System Log record.
 
 The staging directory defaults to ``data/staging/`` relative to the
 repository root but can be overridden at construction time.
@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from lumina.ctl.admin_operations import (
+from lumina.system_log.admin_operations import (
     build_commitment_record,
     map_role_to_actor_role,
 )
@@ -52,7 +52,7 @@ class StagedFile:
     approver_id: str | None = None
     resolved_at: str | None = None
     final_path: str | None = None
-    ctl_record_id: str | None = None
+    log_record_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -124,8 +124,8 @@ class StagingService:
             staged_at=now,
         )
 
-        # Write CTL record for staging
-        ctl = build_commitment_record(
+        # Write System Log record for staging
+        log_rec = build_commitment_record(
             actor_id=actor_id,
             actor_role=map_role_to_actor_role(actor_role),
             commitment_type="hitl_command_staged",
@@ -133,7 +133,7 @@ class StagingService:
             summary=f"File staged: template={template_id}",
             metadata={"template_id": template_id},
         )
-        envelope.ctl_record_id = ctl.get("record_id")
+        envelope.log_record_id = log_rec.get("record_id")
 
         # Persist envelope
         with self._lock:
@@ -224,8 +224,8 @@ class StagingService:
             target_path=target_path,
         )
 
-        # CTL record
-        ctl = build_commitment_record(
+        # System Log record
+        log_rec = build_commitment_record(
             actor_id=approver_id,
             actor_role=map_role_to_actor_role(approver_role),
             commitment_type="hitl_command_accepted",
@@ -239,7 +239,7 @@ class StagingService:
         envelope.approver_id = approver_id
         envelope.resolved_at = datetime.now(timezone.utc).isoformat()
         envelope.final_path = str(final)
-        envelope.ctl_record_id = ctl.get("record_id")
+        envelope.log_record_id = log_rec.get("record_id")
         self._persist_envelope(envelope)
 
         log.info("Approved staged file %s → %s", staged_id, final)
@@ -254,10 +254,10 @@ class StagingService:
         approver_role: str = "domain_authority",
         reason: str = "",
     ) -> None:
-        """Reject a staged file — mark as rejected, write CTL record."""
+        """Reject a staged file — mark as rejected, write System Log record."""
         envelope = self._load_and_check(staged_id)
 
-        ctl = build_commitment_record(
+        log_rec = build_commitment_record(
             actor_id=approver_id,
             actor_role=map_role_to_actor_role(approver_role),
             commitment_type="hitl_command_rejected",
@@ -269,7 +269,7 @@ class StagingService:
         envelope.approval_status = "rejected"
         envelope.approver_id = approver_id
         envelope.resolved_at = datetime.now(timezone.utc).isoformat()
-        envelope.ctl_record_id = ctl.get("record_id")
+        envelope.log_record_id = log_rec.get("record_id")
         self._persist_envelope(envelope)
 
         log.info("Rejected staged file %s (reason=%s)", staged_id, reason)

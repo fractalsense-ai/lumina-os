@@ -1,20 +1,33 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/list-ingestions.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "list_ingestions",
   "description": "List ingestion records, optionally filtered by domain and status.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "list_ingestions" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "list_ingestions"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "domain_id": { "type": "string" },
-        "status": { "type": "string" }
+        "domain_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
       }
     }
   }

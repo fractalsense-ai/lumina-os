@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
 from lumina.staging.staging_service import StagingService
+from lumina.system_log.commit_guard import requires_log_commit
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class RejectRequest(BaseModel):
 # ------------------------------------------------------------------
 
 @router.post("/create")
+@requires_log_commit
 async def create_staged_file(
     body: StageFileRequest,
     credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
@@ -73,7 +75,7 @@ async def create_staged_file(
         "staged_id": envelope.staged_id,
         "template_id": envelope.template_id,
         "staged_at": envelope.staged_at,
-        "ctl_record_id": envelope.ctl_record_id,
+        "log_record_id": envelope.log_record_id,
     }
 
 
@@ -119,6 +121,7 @@ async def get_staged_file(
 
 
 @router.post("/{staged_id}/approve")
+@requires_log_commit
 async def approve_staged_file(
     staged_id: str,
     body: ApproveRequest,
@@ -148,6 +151,7 @@ async def approve_staged_file(
 
 
 @router.post("/{staged_id}/reject")
+@requires_log_commit
 async def reject_staged_file(
     staged_id: str,
     body: RejectRequest,

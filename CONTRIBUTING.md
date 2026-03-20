@@ -2,7 +2,7 @@
 
 Welcome, and thank you for your interest in Project Lumina.
 
-Lumina is not a chatbot; it is a **domain-bounded, measurement-centric AI orchestration framework**. Our core philosophy is **Accountability by Design**. Every contribution must uphold the integrity of the **D.S.A. (Domain, State, Action)** prompt contracts and the cryptographic accountability of the **Causal Trace Ledger (CTL)**.
+Lumina is not a chatbot; it is a **domain-bounded, measurement-centric AI orchestration framework**. Our core philosophy is **Accountability by Design**. Every contribution must uphold the integrity of the **D.S.A. (Domain, State, Action)** prompt contracts and the cryptographic accountability of the **System Logs**.
 
 Whether you are optimizing the core orchestration engine or authoring a new domain pack, please read this guide carefully to understand our strict architectural boundaries.
 
@@ -17,7 +17,7 @@ Before contributing, you must understand the firewall between the core engine an
 The core orchestrator (`lumina-api-server.py`, `dsa-orchestrator.py`) is **100% domain-agnostic**.
 
 * **Zero Domain Logic:** You may not hardcode rules, prompts, or assumptions about specific subjects (e.g., education, medical, agriculture) into the core engine.
-* **Contract Enforcement:** The engine's only job is to assemble the dynamic prompt contract, execute it, verify the tool/invariant outputs, and log the state change to the CTL.
+* **Contract Enforcement:** The engine's only job is to assemble the dynamic prompt contract, execute it, verify the tool/invariant outputs, and log the state change to the System Logs.
 
 ### 2. Domain Packs (`domain-packs/`)
 
@@ -42,11 +42,11 @@ We welcome new reference implementations for different industries. To submit a n
 4. **Tool Adapters:** Python functions that deterministically verify the LLM's proposals.
 5. **Pre-integration Scenarios:** A standalone script or set of JSON payloads proving your domain rules work under stress.
 
-### Modifying the Core Engine or CTL
+### Modifying the Core Engine or System Log
 
-Changes to the orchestration loop or the Causal Trace Ledger are high-risk and require heavy validation.
+Changes to the orchestration loop or the System Logs are high-risk and require heavy validation.
 
-1. **CTL Integrity:** Your change cannot break the append-only hash-chain. Every engine decision must result in a valid `TraceEvent` or `EscalationRecord`.
+1. **System Log Integrity:** Your change cannot break the append-only hash-chain. Every engine decision must result in a valid `TraceEvent` or `EscalationRecord`.
 2. **Backward Compatibility:** Core changes must be tested against *all* existing domain packs in the repository to prove they haven't introduced domain bias.
 
 ---
@@ -69,7 +69,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 * Health check and stable turn execution.
 * **Major Drift Simulation:** Ensures the orchestrator successfully catches a boundary violation and triggers a Hard Escalation.
-* **CTL Hash-Chain Integrity:** Validates that no trace events were dropped or mutated.
+* **System Log Hash-Chain Integrity:** Validates that no trace events were dropped or mutated.
 
 **If the deterministic test suite fails, your PR will be automatically rejected.**
 
@@ -82,7 +82,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 3. **Run the regression suite** (see above).
 4. **Commit your changes.** Use clear, descriptive commit messages.
 5. **Open a PR** against the `main` branch.
-6. **Include Proof:** In your PR description, you must include a sample `trace-event-schema.json` output demonstrating that your feature is properly logging its execution to the CTL.
+6. **Include Proof:** In your PR description, you must include a sample `trace-event-schema.json` output demonstrating that your feature is properly logging its execution to the System Logs.
 
 ---
 

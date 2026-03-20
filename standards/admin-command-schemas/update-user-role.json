@@ -1,23 +1,46 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/update-user-role.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "update_user_role",
   "description": "Change a user's platform role. Only root may perform this operation.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "update_user_role" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "update_user_role"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["user_id", "new_role"],
+      "required": [
+        "user_id",
+        "new_role"
+      ],
       "additionalProperties": false,
       "properties": {
-        "user_id": { "type": "string", "minLength": 1 },
+        "user_id": {
+          "type": "string",
+          "minLength": 1
+        },
         "new_role": {
           "type": "string",
-          "enum": ["root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"]
+          "enum": [
+            "root",
+            "domain_authority",
+            "it_support",
+            "qa",
+            "auditor",
+            "user",
+            "guest"
+          ]
         }
       }
     }

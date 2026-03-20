@@ -9,6 +9,7 @@ from typing import Any
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.yaml_loader import load_yaml
 from lumina.persistence.filesystem import _dump_yaml
+from lumina.system_log.commit_guard import notify_log_commit
 
 
 class SQLitePersistenceAdapter(PersistenceAdapter):
@@ -43,8 +44,8 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         class Base(DeclarativeBase):
             pass
 
-        class CtlRecord(Base):
-            __tablename__ = "ctl_records"
+        class SystemLogRecord(Base):
+            __tablename__ = "log_records"
             id = Column(Integer, primary_key=True, autoincrement=True)
             session_id = Column(String(128), nullable=False, index=True)
             record_type = Column(String(64), nullable=False, index=True)
@@ -72,7 +73,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
         self._Base = Base
-        self._CtlRecord = CtlRecord
+        self._SystemLogRecord = SystemLogRecord
         self._SessionState = SessionState
         self._User = User
         self._engine = create_async_engine(self.database_url, echo=False)
@@ -82,14 +83,14 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
         async with self._engine.begin() as conn:
             await conn.run_sync(self._Base.metadata.create_all)
-            # Enforce append-only semantics at DB level for CTL.
+            # Enforce append-only semantics at DB level for System Log.
             await conn.execute(
                 text(
                     """
-                    CREATE TRIGGER IF NOT EXISTS trg_ctl_records_no_update
-                    BEFORE UPDATE ON ctl_records
+                    CREATE TRIGGER IF NOT EXISTS trg_log_records_no_update
+                    BEFORE UPDATE ON log_records
                     BEGIN
-                        SELECT RAISE(ABORT, 'ctl_records is append-only; UPDATE is forbidden');
+                        SELECT RAISE(ABORT, 'log_records is append-only; UPDATE is forbidden');
                     END;
                     """
                 )
@@ -97,10 +98,10 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             await conn.execute(
                 text(
                     """
-                    CREATE TRIGGER IF NOT EXISTS trg_ctl_records_no_delete
-                    BEFORE DELETE ON ctl_records
+                    CREATE TRIGGER IF NOT EXISTS trg_log_records_no_delete
+                    BEFORE DELETE ON log_records
                     BEGIN
-                        SELECT RAISE(ABORT, 'ctl_records is append-only; DELETE is forbidden');
+                        SELECT RAISE(ABORT, 'log_records is append-only; DELETE is forbidden');
                     END;
                     """
                 )
@@ -128,26 +129,27 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             fh.write(_dump_yaml(data))
         tmp.replace(target)
 
-    def get_ctl_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         # DB backend does not rely on file path, but we keep interface compatibility.
         if domain_id:
-            return f"sqlite://ctl/session-{session_id}-{domain_id}"
-        return f"sqlite://ctl/session-{session_id}"
+            return f"sqlite://log/session-{session_id}-{domain_id}"
+        return f"sqlite://log/session-{session_id}"
 
-    def append_ctl_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
         if loop is not None:
-            loop.create_task(self._append_ctl_record_async(session_id, record))
+            loop.create_task(self._append_log_record_async(session_id, record))
         else:
-            asyncio.run(self._append_ctl_record_async(session_id, record))
+            asyncio.run(self._append_log_record_async(session_id, record))
+        notify_log_commit()
 
-    async def _append_ctl_record_async(self, session_id: str, record: dict[str, Any]) -> None:
+    async def _append_log_record_async(self, session_id: str, record: dict[str, Any]) -> None:
         from sqlalchemy import insert
 
-        stmt = insert(self._CtlRecord).values(
+        stmt = insert(self._SystemLogRecord).values(
             session_id=session_id,
             record_type=str(record.get("record_type", "unknown")),
             record_id=str(record.get("record_id", "")),
@@ -188,20 +190,20 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         async with self._engine.begin() as conn:
             await conn.execute(upsert_stmt)
 
-    def list_ctl_session_ids(self) -> list[str]:
-        return asyncio.run(self._list_ctl_session_ids_async())
+    def list_log_session_ids(self) -> list[str]:
+        return asyncio.run(self._list_log_session_ids_async())
 
-    async def _list_ctl_session_ids_async(self) -> list[str]:
+    async def _list_log_session_ids_async(self) -> list[str]:
         from sqlalchemy import distinct, select
 
         async with self._engine.connect() as conn:
-            result = await conn.execute(select(distinct(self._CtlRecord.session_id)).order_by(self._CtlRecord.session_id))
+            result = await conn.execute(select(distinct(self._SystemLogRecord.session_id)).order_by(self._SystemLogRecord.session_id))
             values = result.scalars().all()
         return [str(v) for v in values if v is not None]
 
-    def validate_ctl_chain(self, session_id: str | None = None) -> dict[str, Any]:
+    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
         if session_id is not None:
-            records = asyncio.run(self._load_ctl_records_async(session_id))
+            records = asyncio.run(self._load_log_records_async(session_id))
             result = self._verify_records(records)
             return {
                 "scope": "session",
@@ -211,8 +213,8 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
         results: list[dict[str, Any]] = []
         all_intact = True
-        for sid in self.list_ctl_session_ids():
-            records = asyncio.run(self._load_ctl_records_async(sid))
+        for sid in self.list_log_session_ids():
+            records = asyncio.run(self._load_log_records_async(sid))
             result = self._verify_records(records)
             all_intact = all_intact and bool(result.get("intact"))
             results.append({"session_id": sid, **result})
@@ -247,7 +249,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
         async with self._engine.connect() as conn:
             result = await conn.execute(
-                select(self._CtlRecord.payload_json).where(self._CtlRecord.record_type == "CommitmentRecord")
+                select(self._SystemLogRecord.payload_json).where(self._SystemLogRecord.record_type == "CommitmentRecord")
             )
             payloads = result.scalars().all()
 
@@ -267,8 +269,8 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
                 return True
         return False
 
-    def get_system_ctl_ledger_path(self) -> str:
-        return "sqlite://ctl/system"
+    def get_system_log_ledger_path(self) -> str:
+        return "sqlite://log/system"
 
     def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
         return asyncio.run(self._has_system_physics_commitment_async(system_physics_hash))
@@ -278,9 +280,9 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
 
         async with self._engine.connect() as conn:
             result = await conn.execute(
-                select(self._CtlRecord.payload_json)
-                .where(self._CtlRecord.session_id == "system")
-                .where(self._CtlRecord.record_type == "CommitmentRecord")
+                select(self._SystemLogRecord.payload_json)
+                .where(self._SystemLogRecord.session_id == "system")
+                .where(self._SystemLogRecord.record_type == "CommitmentRecord")
             )
             payloads = result.scalars().all()
 
@@ -297,17 +299,17 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
                 return True
         return False
 
-    def append_system_ctl_record(self, record: dict[str, Any]) -> None:
-        self.append_ctl_record("system", record)
+    def append_system_log_record(self, record: dict[str, Any]) -> None:
+        self.append_log_record("system", record)
 
-    async def _load_ctl_records_async(self, session_id: str) -> list[dict[str, Any]]:
+    async def _load_log_records_async(self, session_id: str) -> list[dict[str, Any]]:
         from sqlalchemy import select
 
         async with self._engine.connect() as conn:
             result = await conn.execute(
-                select(self._CtlRecord.payload_json)
-                .where(self._CtlRecord.session_id == session_id)
-                .order_by(self._CtlRecord.id.asc())
+                select(self._SystemLogRecord.payload_json)
+                .where(self._SystemLogRecord.session_id == session_id)
+                .order_by(self._SystemLogRecord.id.asc())
             )
             payloads = result.scalars().all()
         records: list[dict[str, Any]] = []
@@ -497,6 +499,23 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             )
         return await self._get_user_async(user_id)
 
+    def activate_user(self, user_id: str) -> bool:
+        return asyncio.run(self._activate_user_async(user_id))
+
+    async def _activate_user_async(self, user_id: str) -> bool:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            existing = await conn.execute(
+                select(self._User.user_id).where(self._User.user_id == user_id)
+            )
+            if existing.first() is None:
+                return False
+            await conn.execute(
+                update(self._User).where(self._User.user_id == user_id).values(active=True)
+            )
+        return True
+
     def deactivate_user(self, user_id: str) -> bool:
         return asyncio.run(self._deactivate_user_async(user_id))
 
@@ -557,7 +576,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             )
         return await self._get_user_async(user_id)
 
-    def query_ctl_records(
+    def query_log_records(
         self,
         session_id: str | None = None,
         record_type: str | None = None,
@@ -567,10 +586,10 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         return asyncio.run(
-            self._query_ctl_records_async(session_id, record_type, event_type, domain_id, limit, offset)
+            self._query_log_records_async(session_id, record_type, event_type, domain_id, limit, offset)
         )
 
-    async def _query_ctl_records_async(
+    async def _query_log_records_async(
         self,
         session_id: str | None,
         record_type: str | None,
@@ -581,11 +600,11 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
     ) -> list[dict[str, Any]]:
         from sqlalchemy import select
 
-        stmt = select(self._CtlRecord.payload_json).order_by(self._CtlRecord.id.asc())
+        stmt = select(self._SystemLogRecord.payload_json).order_by(self._SystemLogRecord.id.asc())
         if session_id:
-            stmt = stmt.where(self._CtlRecord.session_id == session_id)
+            stmt = stmt.where(self._SystemLogRecord.session_id == session_id)
         if record_type:
-            stmt = stmt.where(self._CtlRecord.record_type == record_type)
+            stmt = stmt.where(self._SystemLogRecord.record_type == record_type)
         stmt = stmt.offset(offset).limit(limit)
 
         async with self._engine.connect() as conn:
@@ -605,20 +624,20 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             records.append(rec)
         return records
 
-    def list_ctl_sessions_summary(self) -> list[dict[str, Any]]:
-        return asyncio.run(self._list_ctl_sessions_summary_async())
+    def list_log_sessions_summary(self) -> list[dict[str, Any]]:
+        return asyncio.run(self._list_log_sessions_summary_async())
 
-    async def _list_ctl_sessions_summary_async(self) -> list[dict[str, Any]]:
+    async def _list_log_sessions_summary_async(self) -> list[dict[str, Any]]:
         from sqlalchemy import distinct, func, select
 
         async with self._engine.connect() as conn:
             result = await conn.execute(
                 select(
-                    self._CtlRecord.session_id,
-                    func.count(self._CtlRecord.id).label("record_count"),
-                    func.min(self._CtlRecord.created_at_utc).label("first_ts"),
-                    func.max(self._CtlRecord.created_at_utc).label("last_ts"),
-                ).group_by(self._CtlRecord.session_id)
+                    self._SystemLogRecord.session_id,
+                    func.count(self._SystemLogRecord.id).label("record_count"),
+                    func.min(self._SystemLogRecord.created_at_utc).label("first_ts"),
+                    func.max(self._SystemLogRecord.created_at_utc).label("last_ts"),
+                ).group_by(self._SystemLogRecord.session_id)
             )
             rows = result.all()
         return [
@@ -638,7 +657,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        records = self.query_ctl_records(record_type="EscalationRecord", limit=10000)
+        records = self.query_log_records(record_type="EscalationRecord", limit=10000)
         if status:
             records = [r for r in records if r.get("status") == status]
         if domain_id:
@@ -646,5 +665,5 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         return records[offset : offset + limit]
 
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
-        records = self.query_ctl_records(record_type="CommitmentRecord", limit=10000)
+        records = self.query_log_records(record_type="CommitmentRecord", limit=10000)
         return [r for r in records if r.get("subject_id") == subject_id]

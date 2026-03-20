@@ -10,18 +10,18 @@
 
 This document is the normative standard for the Project Lumina **Domain Evidence Extension** mechanism. It defines:
 
-1. The standard `evidence_summary` envelope format used in all CTL `TraceEvent` and `EscalationRecord` records.
+1. The standard `evidence_summary` envelope format used in all System Log `TraceEvent` and `EscalationRecord` records.
 2. The **universal base fields** that all domain modules are expected to emit.
 3. How domain modules declare their own evidence field vocabulary in an `evidence-schema.json` file.
 4. The validation contract — what is enforced at the schema layer vs. left to domain-level tooling.
 
-This standard governs the `evidence_summary` field described in [`standards/causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md). The JSON Meta-Schema that `evidence-schema.json` files must conform to is [`standards/domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json).
+This standard governs the `evidence_summary` field described in [`standards/system-log-v1.md`](system-log-v1.md). The JSON Meta-Schema that `evidence-schema.json` files must conform to is [`standards/domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json).
 
 ---
 
 ## Design Principle
 
-The CTL does not own domain vocabulary. The CTL defines the **container**: a typed, append-only record with a standard envelope. Each domain module owns the **contents**: the set of structured fields that describe a turn in that domain's language.
+The System Logs does not own domain vocabulary. The System Logs defines the **container**: a typed, append-only record with a standard envelope. Each domain module owns the **contents**: the set of structured fields that describe a turn in that domain's language.
 
 This allows any domain to extend `evidence_summary` freely, while guaranteeing:
 - A discoverable reference to the schema that validates the contents.
@@ -47,14 +47,14 @@ Every `evidence_summary` object uses a **flat structure** with the following lay
 
 ### Reserved Keys
 
-Keys beginning with `_` (underscore) are reserved by the CTL system. Domain fields MUST NOT use underscore-prefixed names.
+Keys beginning with `_` (underscore) are reserved by the System Logs system. Domain fields MUST NOT use underscore-prefixed names.
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
 | `_domain` | string | Recommended | The `id` of the domain-physics module that produced this record. Matches `domain_pack_id` on the parent `TraceEvent`. |
 | `_schema_version` | string (semver) | Recommended | Version of the domain's `evidence-schema.json` in effect when this record was created. Enables audit tooling to validate records against the correct schema version. |
 
-> **Note:** `_domain` and `_schema_version` are recommended for all new records and required for records that will be validated against a domain evidence schema. Existing records without these keys remain valid — the CTL JSON Schema accepts any object for `evidence_summary`.
+> **Note:** `_domain` and `_schema_version` are recommended for all new records and required for records that will be validated against a domain evidence schema. Existing records without these keys remain valid — the System Log JSON Schema accepts any object for `evidence_summary`.
 
 ### Universal Base Fields
 
@@ -173,16 +173,16 @@ A complete agriculture `evidence_summary` record:
 
 | Layer | What is enforced |
 |-------|-----------------|
-| **CTL JSON Schema** (`ledger/trace-event-schema.json`) | `evidence_summary` is an object or null. `_domain` and `_schema_version`, when present, are strings. All other fields are pass-through (`additionalProperties: true`). |
+| **System Log JSON Schema** (`ledger/trace-event-schema.json`) | `evidence_summary` is an object or null. `_domain` and `_schema_version`, when present, are strings. All other fields are pass-through (`additionalProperties: true`). |
 | **Domain-physics schema** (`standards/domain-physics-schema-v1.json`) | `evidence_schema.path` and `evidence_schema.version` are present and correctly typed when `evidence_schema` is declared. |
 | **Domain evidence meta-schema** (`standards/domain-evidence-schema-v1.json`) | The domain's `evidence-schema.json` itself is structurally valid (required keys, no underscore-prefixed field names). |
-| **Runtime / audit tooling** | Optional. The CTL validator does not enforce field-level evidence validation at runtime. Domain evidence schemas are available for offline audit validation, enabling post-hoc verification that emitted fields match declared vocabulary. |
+| **Runtime / audit tooling** | Optional. The System Log validator does not enforce field-level evidence validation at runtime. Domain evidence schemas are available for offline audit validation, enabling post-hoc verification that emitted fields match declared vocabulary. |
 
 ---
 
 ## Adding a New Domain
 
-To extend the CTL with a new domain's evidence vocabulary:
+To extend the System Logs with a new domain's evidence vocabulary:
 
 1. Create `<domain-pack-root>/<module>/<evidence-schema.json>` conforming to `standards/domain-evidence-schema-v1.json`.
 2. Add the `evidence_schema` block to the module's `domain-physics.yaml`:
@@ -198,7 +198,7 @@ To extend the CTL with a new domain's evidence vocabulary:
 
 ## Related
 
-- [`standards/causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) — CTL specification
+- [`standards/system-log-v1.md`](system-log-v1.md) — System Log specification
 - [`standards/domain-evidence-schema-v1.json`](domain-evidence-schema-v1.json) — Meta-schema for evidence declarations
 - [`ledger/trace-event-schema.json`](../ledger/trace-event-schema.json) — TraceEvent JSON Schema
 - [`standards/domain-physics-schema-v1.json`](domain-physics-schema-v1.json) — Domain physics schema

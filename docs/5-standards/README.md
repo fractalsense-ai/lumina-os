@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Section 5 — Standards
 
 **Version:** 1.0.0  
@@ -12,7 +17,7 @@ Core specifications and protocol standards.
 |----------|-------------|
 | [lumina-core-v1](../../standards/lumina-core-v1.md) | Core system design contract |
 | [rbac-spec-v1](../../specs/rbac-spec-v1.md) | RBAC permission model and role hierarchy |
-| [causal-trace-ledger-v1](../../standards/causal-trace-ledger-v1.md) | CTL append-only ledger standard |
+| [system-log-v1](../../standards/system-log-v1.md) | System Log append-only ledger standard |
 | [domain-state-lib-contract-v1](../../standards/domain-state-lib-contract-v1.md) | Domain state library interface contract |
 | [domain-profile-spec-v1](../../specs/domain-profile-spec-v1.md) | Domain profile authoring and access control |
 | [memory-spec-v1](../../specs/memory-spec-v1.md) | Session memory and state management |

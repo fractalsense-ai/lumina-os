@@ -1,20 +1,34 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/commit-domain-physics.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "commit_domain_physics",
-  "description": "Commit pending domain physics changes for a given domain, writing a CTL commitment record.",
+  "description": "Commit pending domain physics changes for a given domain, writing a System Log commitment record.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "commit_domain_physics" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "commit_domain_physics"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["domain_id"],
+      "required": [
+        "domain_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "domain_id": { "type": "string", "minLength": 1 }
+        "domain_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

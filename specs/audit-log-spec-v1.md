@@ -8,23 +8,23 @@
 
 ## Overview
 
-The **audit log** is the human-readable view of the Causal Trace Ledger (CTL). While the CTL is a machine-readable append-only record store, the audit log is the structured report produced for governance review, compliance audits, and discrepancy resolution.
+The **audit log** is the human-readable view of the System Logs. While the System Logs is a machine-readable append-only record store, the audit log is the structured report produced for governance review, compliance audits, and discrepancy resolution.
 
 This document specifies what the audit log contains, who may request it, and how it is generated.
 
 ---
 
-## Relationship to the CTL
+## Relationship to the System Logs
 
-The audit log is not a separate store. It is a **view** generated from CTL records on demand. The CTL is the authoritative source; the audit log is derived.
+The audit log is not a separate store. It is a **view** generated from System Logs records on demand. The System Logs is the authoritative source; the audit log is derived.
 
 ```
-CTL (append-only, machine-readable)
+System Log (append-only, machine-readable)
     ↓ audit log generator
 Audit Log (human-readable structured report)
 ```
 
-The audit log may be generated at any time by a party with appropriate audit rights. Generating an audit log does not modify the CTL.
+The audit log may be generated at any time by a party with appropriate audit rights. Generating an audit log does not modify the System Logs.
 
 ---
 
@@ -130,20 +130,20 @@ Chain intact: YES
 | Meta Authority (e.g., department head, supervising officer) | All sessions in their scope |
 | Administration | All sessions institution-wide |
 
-Audit requests outside the requestor's scope must be rejected and the rejection recorded as a `TraceEvent` in the CTL.
+Audit requests outside the requestor's scope must be rejected and the rejection recorded as a `TraceEvent` in the System Logs.
 
 ---
 
 ## Audit Log Generation
 
-The audit log generator reads from the CTL and:
+The audit log generator reads from the System Logs and:
 1. Verifies the hash chain for the requested session's records
 2. Verifies that the active module `domain-physics.json` hash matches the committed `CommitmentRecord` for that policy version
 3. Extracts the structured fields from each record
 4. Formats them as a human-readable report
-5. Appends a `TraceEvent` to the CTL noting that an audit was generated (who requested it, for which session)
+5. Appends a `TraceEvent` to the System Logs noting that an audit was generated (who requested it, for which session)
 
-The audit log itself is not stored — it is generated fresh each time from the CTL.
+The audit log itself is not stored — it is generated fresh each time from the System Logs.
 
 ---
 
@@ -182,7 +182,7 @@ This ensures that even audits are themselves auditable.
 
 ## Provenance Expectations
 
-When present in CTL metadata, provenance hash lineage fields should be surfaced in audit output so reviewers can trace packet integrity from policy activation through turn input, prompt contract, tool results, model payload, and final response.
+When present in System Log metadata, provenance hash lineage fields should be surfaced in audit output so reviewers can trace packet integrity from policy activation through turn input, prompt contract, tool results, model payload, and final response.
 
 ---
 
@@ -192,7 +192,7 @@ If an audit reveals a discrepancy (e.g., a record that doesn't match expected be
 
 1. Document the discrepancy in a `TraceEvent` with `event_type: discrepancy_detected`
 2. Escalate to the Meta Authority via an `EscalationRecord`
-3. Do not modify the CTL
+3. Do not modify the System Logs
 4. The Meta Authority reviews and commits a resolution `CommitmentRecord`
 
 See [`../specs/reports-spec-v1.md`](reports-spec-v1.md) for the full discrepancy resolution workflow.

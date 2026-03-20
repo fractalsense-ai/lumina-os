@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Concept — Document Ingestion Pipeline
 
 **Version:** 1.0.0  
@@ -21,7 +26,7 @@ Upload → Content Extraction → SLM Interpretation → DA Review → Commit
 The DA uploads a file with a target `domain_id`. The system:
 - Validates file size (configurable, default 10 MB max)
 - Detects content type from extension and MIME type
-- Creates an `IngestionRecord` in the CTL ledger with status `uploaded`
+- Creates an `IngestionRecord` in the System Logs ledger with status `uploaded`
 - Returns the record ID for subsequent operations
 
 ### 2. Content Extraction (`POST /api/ingest/{id}/extract`)
@@ -57,7 +62,7 @@ The DA reviews interpretations through either:
 ### 5. Commit (`POST /api/ingest/{id}/commit`)
 
 Once an interpretation is approved, the DA commits it. The system:
-- Appends a finalized CTL record with status `committed`
+- Appends a finalized System Log record with status `committed`
 - The approved YAML content becomes available for domain-physics integration
 - Status transitions to `committed`
 
@@ -86,9 +91,9 @@ All ingestion operations are accessible through natural language commands interp
 
 After heavy ingestion days, the night cycle runs `glossary_expansion` to scan committed ingestions for new terms not yet in the domain glossary, and `rejection_corpus_alignment` to ensure rejection-corpus entries remain consistent with newly ingested content.
 
-## CTL Integration
+## System Log Integration
 
-Each ingestion creates an `IngestionRecord` in the Causal Trace Ledger. The record schema is defined in `ledger/ingestion-record-schema.json` and tracks:
+Each ingestion creates an `IngestionRecord` in the System Logs. The record schema is defined in `ledger/ingestion-record-schema.json` and tracks:
 - Source file metadata (name, size, content type, hash)
 - Extraction results
 - Interpretations with confidence scores
@@ -99,5 +104,5 @@ Each ingestion creates an `IngestionRecord` in the Causal Trace Ledger. The reco
 - `src/lumina/ingestion/service.py` — Lifecycle orchestrator
 - `src/lumina/ingestion/extractors.py` — Format-specific text extractors
 - `src/lumina/ingestion/interpreter.py` — SLM-driven interpretation generator
-- `ledger/ingestion-record-schema.json` — CTL record schema
+- `ledger/ingestion-record-schema.json` — System Log record schema
 - `src/web/components/dashboard/IngestionReview.tsx` — Dashboard UI component

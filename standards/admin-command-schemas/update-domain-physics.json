@@ -1,21 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/update-domain-physics.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "update_domain_physics",
   "description": "Update domain physics fields for a given domain. The updates object contains domain-physics keys to modify.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "update_domain_physics" },
-    "target": { "type": "string", "description": "Alias for domain_id (backward compat)." },
+    "operation": {
+      "const": "update_domain_physics"
+    },
+    "target": {
+      "type": "string",
+      "description": "Alias for domain_id (backward compat)."
+    },
     "params": {
       "type": "object",
-      "required": ["domain_id", "updates"],
+      "required": [
+        "domain_id",
+        "updates"
+      ],
       "additionalProperties": false,
       "properties": {
-        "domain_id": { "type": "string", "minLength": 1 },
-        "updates": { "type": "object", "description": "Key-value pairs to merge into domain physics." }
+        "domain_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updates": {
+          "type": "object",
+          "description": "Key-value pairs to merge into domain physics."
+        }
       }
     }
   }

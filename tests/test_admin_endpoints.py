@@ -1,5 +1,5 @@
 """Tests for admin API endpoints — user management, domain pack lifecycle,
-audit & escalation, CTL queries, and session close."""
+audit & escalation, System Log queries, and session close."""
 
 from __future__ import annotations
 
@@ -324,22 +324,22 @@ class TestAuditLog:
 
 @pytest.mark.integration
 class TestCtlQueries:
-    def test_query_ctl_records(self, client: TestClient) -> None:
+    def test_query_log_records(self, client: TestClient) -> None:
         root_token = _register_root(client)
-        resp = client.get("/api/ctl/records", headers=_auth_header(root_token))
+        resp = client.get("/api/system-log/records", headers=_auth_header(root_token))
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
 
-    def test_list_ctl_sessions(self, client: TestClient) -> None:
+    def test_list_log_sessions(self, client: TestClient) -> None:
         root_token = _register_root(client)
-        resp = client.get("/api/ctl/sessions", headers=_auth_header(root_token))
+        resp = client.get("/api/system-log/sessions", headers=_auth_header(root_token))
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
 
-    def test_get_ctl_record_not_found(self, client: TestClient) -> None:
+    def test_get_log_record_not_found(self, client: TestClient) -> None:
         root_token = _register_root(client)
         resp = client.get(
-            "/api/ctl/records/nonexistent-id",
+            "/api/system-log/records/nonexistent-id",
             headers=_auth_header(root_token),
         )
         assert resp.status_code == 404
@@ -351,17 +351,17 @@ class TestCtlQueries:
             "/api/auth/login",
             json={"username": "bob", "password": "test-pass-123"},
         ).json()["access_token"]
-        resp = client.get("/api/ctl/records", headers=_auth_header(user_token))
+        resp = client.get("/api/system-log/records", headers=_auth_header(user_token))
         assert resp.status_code == 403
 
-    def test_user_cannot_list_ctl_sessions(self, client: TestClient) -> None:
+    def test_user_cannot_list_log_sessions(self, client: TestClient) -> None:
         _register_root(client)
         _register_user(client, "bob")
         user_token = client.post(
             "/api/auth/login",
             json={"username": "bob", "password": "test-pass-123"},
         ).json()["access_token"]
-        resp = client.get("/api/ctl/sessions", headers=_auth_header(user_token))
+        resp = client.get("/api/system-log/sessions", headers=_auth_header(user_token))
         assert resp.status_code == 403
 
 

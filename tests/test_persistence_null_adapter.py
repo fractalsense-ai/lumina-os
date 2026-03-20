@@ -44,14 +44,14 @@ def test_null_adapter_session_state_roundtrip() -> None:
 
 
 @pytest.mark.unit
-def test_null_adapter_validate_ctl_shape() -> None:
+def test_null_adapter_validate_system_log_shape() -> None:
     adapter = NullPersistenceAdapter()
 
-    all_result = adapter.validate_ctl_chain()
+    all_result = adapter.validate_log_chain()
     assert all_result["scope"] == "all"
     assert all_result["intact"] is True
 
-    one_result = adapter.validate_ctl_chain("session-x")
+    one_result = adapter.validate_log_chain("session-x")
     assert one_result["scope"] == "session"
     assert one_result["session_id"] == "session-x"
     assert one_result["intact"] is True

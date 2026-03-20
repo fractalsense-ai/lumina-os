@@ -44,7 +44,7 @@ To keep domain ownership explicit and avoid cross-domain coupling, packs must fo
 
 Runtime configuration files are wiring surfaces (paths, adapter bindings, runtime flags). Normative thresholds/tolerances and standing-order semantics belong in module `domain-physics`, not runtime wiring.
 
-Operational policy truth for a module is the module `domain-physics.json` artifact derived from authored YAML. Any material policy update requires: semantic version update, YAML->JSON regeneration, and CTL `CommitmentRecord` hash commitment before activation.
+Operational policy truth for a module is the module `domain-physics.json` artifact derived from authored YAML. Any material policy update requires: semantic version update, YAML->JSON regeneration, and System Log `CommitmentRecord` hash commitment before activation.
 
 ### 1.1 Domain Physics Requirements
 
@@ -86,7 +86,7 @@ Domain-lib runtime components consume structured signals (including tool-adapter
 
 ## 2. Global System Conformance
 
-The top-level Conversational Interface (CI) layer — the rules that govern every Lumina session regardless of domain — must be managed with the same rigor as domain packs: authored in a structured YAML source, validated against a JSON Schema, and committed to a dedicated system CTL before taking operational effect.
+The top-level Conversational Interface (CI) layer — the rules that govern every Lumina session regardless of domain — must be managed with the same rigor as domain packs: authored in a structured YAML source, validated against a JSON Schema, and committed to a dedicated system log before taking operational effect.
 
 ### 2.0 System Physics Artifact Requirements
 
@@ -98,7 +98,7 @@ The system layer must include the following artifacts:
 | `cfg/system-physics.json` | Yes (derived) | Same schema |
 | `specs/global-system-prompt-v1.md` | Yes (rendered view) | Derived from `cfg/system-physics.yaml`; must not diverge |
 
-`cfg/system-physics.json` is the compiled form of the YAML source. Its SHA-256 hash is what gets committed to the system CTL via a `CommitmentRecord (system_physics_activation)`. The markdown rendering in `specs/global-system-prompt-v1.md` is kept for human readability but is **not** the source of truth.
+`cfg/system-physics.json` is the compiled form of the YAML source. Its SHA-256 hash is what gets committed to the system log via a `CommitmentRecord (system_physics_activation)`. The markdown rendering in `specs/global-system-prompt-v1.md` is kept for human readability but is **not** the source of truth.
 
 ### 2.1 System Physics Requirements
 
@@ -113,12 +113,12 @@ A conformant `cfg/system-physics.yaml` must declare:
 - `escalation_triggers`: at least one trigger pointing to `target_role: meta_authority`
 - `ci_output_contract`: structured rules governing CI output behaviour (output_mode, chain_of_thought, raw_json_output, grounding_requirement, capability_claims, internal_state_disclosure)
 
-### 2.2 System CTL
+### 2.2 System Log
 
-The system layer maintains its **own CTL**, separate from domain/session CTLs but conforming to the same record schemas (`CommitmentRecord`, `TraceEvent`, `EscalationRecord`).
+The system layer maintains its **own System Log**, separate from domain/session CTLs but conforming to the same record schemas (`CommitmentRecord`, `TraceEvent`, `EscalationRecord`).
 
-- Storage path convention: `LUMINA_CTL_DIR/system/` (or equivalent configured path)
-- System CTL must be append-only and hash-chained, same as domain/session CTLs
+- Storage path convention: `LUMINA_LOG_DIR/system/` (or equivalent configured path)
+- System Log must be append-only and hash-chained, same as domain/session CTLs
 - Every activation of a new `cfg/system-physics.json` requires a `CommitmentRecord` with `commitment_type: system_physics_activation` and `subject_hash` set to the SHA-256 of the compiled JSON before it takes effect
 - Rollbacks require `commitment_type: system_physics_rollback`
 
@@ -126,11 +126,11 @@ The system layer maintains its **own CTL**, separate from domain/session CTLs bu
 
 Every domain/session `TraceEvent` record **SHOULD** include `system_physics_hash` in its `metadata` block — the SHA-256 of the active `cfg/system-physics.json` at the time of the event.
 
-This creates an auditable cross-reference chain: any domain CTL record can be traced back to the exact system-layer version that was operational at that moment, without coupling the system CTL and domain CTLs structurally.
+This creates an auditable cross-reference chain: any domain System Log record can be traced back to the exact system-layer version that was operational at that moment, without coupling the system log and domain CTLs structurally.
 
 ```
-Domain CTL TraceEvent.metadata.system_physics_hash
-  └─► System CTL CommitmentRecord.subject_hash  (system_physics_activation)
+Domain System Log TraceEvent.metadata.system_physics_hash
+  └─► System System Log CommitmentRecord.subject_hash  (system_physics_activation)
         └─► cfg/system-physics.json  (compiled, SHA-256 verified)
               └─► cfg/system-physics.yaml  (YAML source, human-authored)
 ```
@@ -152,9 +152,9 @@ See [`novel-synthesis-framework(7)`](../docs/7-concepts/novel-synthesis-framewor
 
 ---
 
-## 3. Causal Trace Ledger (CTL) Conformance
+## 3. System Logs Conformance
 
-Every Lumina system must maintain a CTL-conformant ledger. Requirements:
+Every Lumina system must maintain a System Log-conformant ledger. Requirements:
 
 - **Append-only**: records may not be modified or deleted
 - **Hash-chained**: each record includes the hash of the previous record
@@ -164,7 +164,7 @@ Every Lumina system must maintain a CTL-conformant ledger. Requirements:
 - **Policy commitment gate**: active module `domain-physics.json` hash must match a committed `CommitmentRecord` before autonomous session execution
 - **Provenance metadata**: turn traces should include policy/prompt and payload lineage hashes (`domain_physics_hash`, `system_prompt_hash`, `turn_data_hash`, `prompt_contract_hash`, `tool_results_hash`, `llm_payload_hash`, `response_hash`)
 
-See [`causal-trace-ledger-v1.md`](causal-trace-ledger-v1.md) for the full CTL specification.
+See [`system-log-v1.md`](system-log-v1.md) for the full System Log specification.
 
 ---
 
@@ -192,7 +192,7 @@ All Project Lumina documents and code must use the following canonical terminolo
 | Canonical Term | Description | Do NOT use |
 |----------------|-------------|------------|
 | **Project Lumina** | The overall system | "Spotter" |
-| **Causal Trace Ledger (CTL)** | The append-only accountability ledger | "Flight Data Recorder", "FDR" |
+| **System Logs** | The append-only accountability ledger | "Flight Data Recorder", "FDR" |
 | **Domain Authority** | The human expert who authors the domain | "Master" |
 | **D.S.A. Framework** | Domain, State, Action | Other acronyms |
 | **Meta Authority** | Domain Authority one level above | "Super-admin" |
@@ -229,9 +229,9 @@ Before publishing a domain pack or implementation:
 
 **System Layer**
 - [ ] `cfg/system-physics.yaml` validates against `system-physics-schema-v1.json`
-- [ ] `cfg/system-physics.json` (compiled form) is present and its SHA-256 matches a `CommitmentRecord (system_physics_activation)` in the system CTL
+- [ ] `cfg/system-physics.json` (compiled form) is present and its SHA-256 matches a `CommitmentRecord (system_physics_activation)` in the system log
 - [ ] `specs/global-system-prompt-v1.md` reflects the current `ci_output_contract` in `cfg/system-physics.yaml`
-- [ ] System CTL is append-only and hash-chained
+- [ ] System Log is append-only and hash-chained
 - [ ] Domain/session `TraceEvent` records include `system_physics_hash` in `metadata`
 
 **Domain Packs**
@@ -240,15 +240,15 @@ Before publishing a domain pack or implementation:
 - [ ] All standing orders have `max_attempts` and `escalation_on_exhaust` set
 - [ ] Subject profile template validates against the domain pack's subject profile schema (in `schemas/`)
 - [ ] CHANGELOG.md is present and up to date
-- [ ] CTL integration is append-only and hash-chained
-- [ ] No transcript content is stored in the CTL
+- [ ] System Log integration is append-only and hash-chained
+- [ ] No transcript content is stored in the System Logs
 - [ ] All identifiers are pseudonymous
 - [ ] Terminology conforms to Section 5
 - [ ] If the domain is human-facing (`requires_consent: true`), a consent record is required before the session begins
 - [ ] If module domain-lib subsystems are used, module `domain-physics` declares the relevant `subsystem_configs` block(s) with required thresholds
 - [ ] Module `domain-physics` owns normative thresholds/tolerances and standing-order trigger semantics
 - [ ] Every declared `tool_adapters` ID resolves to an existing tool adapter contract file
-- [ ] Material module policy updates include version bump, YAML->JSON regeneration, and CTL hash commitment before activation
+- [ ] Material module policy updates include version bump, YAML->JSON regeneration, and System Log hash commitment before activation
 
 ---
 

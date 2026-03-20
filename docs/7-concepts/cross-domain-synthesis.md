@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Cross-Domain Synthesis
 
 **Version:** 1.0.0
@@ -105,7 +110,7 @@ Cross-domain synthesis findings produce `Proposal` objects with `required_approv
 1. The night cycle generates a proposal: `"Cross-domain similarity between education and agriculture: glossary overlap (3 shared terms); invariant structure match (2 pairs)"`
 2. The proposal is visible in the governance dashboard for **both** domain authorities.
 3. Each DA independently reviews and approves or rejects.
-4. **Both must approve** for the proposal to be recorded as `cross_domain_synthesis_verified` in the CTL.
+4. **Both must approve** for the proposal to be recorded as `cross_domain_synthesis_verified` in the System Logs.
 5. If **either rejects**, the proposal becomes `cross_domain_synthesis_rejected`.
 
 This extends the Novel Synthesis Framework's two-key gate to a **four-key gate**: LLM detection + system analysis + DA₁ approval + DA₂ approval.
@@ -129,7 +134,7 @@ To enable cross-domain synthesis for a domain pack:
 
 4. **Review proposals** in the governance dashboard after the next night cycle run.
 
-5. **Record commitment** — approved proposals generate `cross_domain_synthesis_verified` commitment records in the CTL.
+5. **Record commitment** — approved proposals generate `cross_domain_synthesis_verified` commitment records in the System Logs.
 
 ---
 

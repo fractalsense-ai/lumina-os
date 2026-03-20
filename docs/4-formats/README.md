@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # Section 4 — Formats (Schemas & File Formats)
 
 **Version:** 1.0.0  
@@ -15,7 +20,7 @@ JSON schemas, data structures, and file format specifications.
 | [tool-adapter-schema-v1.json](../../standards/tool-adapter-schema-v1.json) | Tool adapter declaration schema |
 | [rbac-permission-schema-v1.json](../../standards/rbac-permission-schema-v1.json) | Module permission metadata schema |
 | [role-definition-schema-v1.json](../../standards/role-definition-schema-v1.json) | Role record schema |
-| [causal-trace-ledger-schema-v1.json](../../ledger/causal-trace-ledger-schema-v1.json) | CTL ledger entry schema |
+| [system-log-schema-v1.json](../../ledger/system-log-schema-v1.json) | System Log ledger entry schema |
 | [commitment-record-schema.json](../../ledger/commitment-record-schema.json) | CommitmentRecord schema |
 | [escalation-record-schema.json](../../ledger/escalation-record-schema.json) | EscalationRecord schema |
 | [trace-event-schema.json](../../ledger/trace-event-schema.json) | Trace event schema |

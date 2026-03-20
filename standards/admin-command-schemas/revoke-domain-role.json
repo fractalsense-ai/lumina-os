@@ -1,21 +1,39 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "lumina://standards/admin-command-schemas/revoke-domain-role.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-20",
   "title": "revoke_domain_role",
   "description": "Revoke a domain-specific role from a user for a particular module.",
   "type": "object",
-  "required": ["operation", "params"],
+  "required": [
+    "operation",
+    "params"
+  ],
   "additionalProperties": false,
   "properties": {
-    "operation": { "const": "revoke_domain_role" },
-    "target": { "type": "string" },
+    "operation": {
+      "const": "revoke_domain_role"
+    },
+    "target": {
+      "type": "string"
+    },
     "params": {
       "type": "object",
-      "required": ["user_id", "module_id"],
+      "required": [
+        "user_id",
+        "module_id"
+      ],
       "additionalProperties": false,
       "properties": {
-        "user_id": { "type": "string", "minLength": 1 },
-        "module_id": { "type": "string", "minLength": 1 }
+        "user_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }

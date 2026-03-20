@@ -30,7 +30,7 @@ A Domain Authority may:
 4. **Define Escalation Triggers** — specify when the system must escalate to them or above
 5. **Define Artifacts** — specify domain achievement milestones and challenge structures
 6. **Set Subsystem Parameters** — configure domain-specific sensor parameters and drift thresholds (e.g., operating-band thresholds for education, soil-health thresholds for agriculture)
-7. **Review CTL Records** — access audit logs for sessions in their domain
+7. **Review System Log Records** — access audit logs for sessions in their domain
 8. **Receive Escalations** — receive and resolve escalation packets from their sessions
 9. **Authorize Tool Adapters** — approve which external tools may be used in their sessions
 
@@ -40,7 +40,7 @@ A Domain Authority may:
 
 A Domain Authority must:
 
-1. **Maintain Domain Pack Versions** — keep a CHANGELOG and commit domain pack hashes to the CTL before use
+1. **Maintain Domain Pack Versions** — keep a CHANGELOG and commit domain pack hashes to the System Logs before use
 2. **Respond to Escalations Within SLA** — acknowledge escalation packets within the SLA defined in their domain pack
 3. **Not Override Higher-Level Invariants** — their domain pack may not relax invariants set by their Meta Authority
 4. **Maintain Pseudonymity** — not map pseudonymous subject IDs to real identities within the AI system
@@ -73,7 +73,7 @@ To onboard a new Domain Authority:
 2. **Pseudonymous ID issuance** — a pseudonymous token is assigned; real-identity mapping held by institution
 3. **Policy review** — the new Domain Authority reviews and signs the governance policy and the Meta Authority policy template
 4. **Domain pack training** — review of domain pack authoring process and invariant design guidelines
-5. **Commitment record** — a `CommitmentRecord` is appended to the CTL recording the onboarding
+5. **Commitment record** — a `CommitmentRecord` is appended to the System Logs recording the onboarding
 6. **First domain pack** — the new Domain Authority authors their first domain pack under Meta Authority review
 
 ---
@@ -83,14 +83,14 @@ To onboard a new Domain Authority:
 If two Domain Authorities have overlapping scope:
 - The higher-level Meta Authority resolves the conflict
 - Until resolved, the more restrictive invariant set applies
-- The resolution is recorded as a `CommitmentRecord` in the CTL
+- The resolution is recorded as a `CommitmentRecord` in the System Logs
 
 ---
 
 ## Domain Authority Revocation
 
 A Domain Authority's rights may be revoked by their Meta Authority. Revocation:
-- Is recorded as a `CommitmentRecord` in the CTL
+- Is recorded as a `CommitmentRecord` in the System Logs
 - Takes effect immediately for new sessions
 - Does not retroactively invalidate past sessions
 - Requires the domain pack to be reassigned or deactivated
@@ -108,7 +108,7 @@ The Subject/Target level has a limited form of Domain Authority over their own s
 **Subjects/Targets may:**
 - Set and update their preferences (interests, dislikes, explanation or interaction style)
 - Accept or withdraw consent (where `requires_consent: true` is set in the domain pack)
-- Request a summary of their own CTL records
+- Request a summary of their own System Log records
 - Exit sessions at any time
 
 **Subjects/Targets may not:**
@@ -128,7 +128,7 @@ Project Lumina defines six operational roles for runtime access control. These r
 | **Domain Authority** | `domain_authority` | 1 | `750` | Subject-matter expert. Authors and governs domain packs. Scoped to specific modules via `governed_modules` JWT claim. Maps to **Meso** or **Micro Authority**. |
 | **IT Support** | `it_support` | 2 | — | Tier-1 technical support. Diagnostics, runtime monitoring, session troubleshooting. Cross-cutting role. |
 | **Quality Assurance** | `qa` | 2 | — | Conformance testing. Runs evaluation harness, regression tests on assigned modules. Cross-cutting role. |
-| **Auditor** | `auditor` | 2 | — | Compliance / audit officer. Read-only access to CTL records, audit logs, and session traces within scope. Cross-cutting role. |
+| **Auditor** | `auditor` | 2 | — | Compliance / audit officer. Read-only access to System Log records, audit logs, and session traces within scope. Cross-cutting role. |
 | **Standard User** | `user` | 3 | — | Session participant (student, patient, operator). Execute-only access on permitted modules. Maps to **Subject/Target**. |
 
 ### Role-to-Governance Mapping
@@ -155,7 +155,7 @@ Each domain-pack module declares a `permissions` block with a 3-digit UNIX-style
 
 Permission bits: **r** (4) = read, **w** (2) = write, **x** (1) = execute.
 
-- **Read** — view domain physics, session data, CTL records
+- **Read** — view domain physics, session data, System Log records
 - **Write** — author/modify domain packs, invariants, standing orders
 - **Execute** — run sessions, trigger tool adapters
 

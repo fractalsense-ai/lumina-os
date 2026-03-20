@@ -166,9 +166,9 @@ Write-Host "API status: $($health.status) provider=$($health.provider)"
 Assert-Condition ($health.status -eq "ok") "API health check failed"
 
 $tempDir = [System.IO.Path]::GetTempPath()
-$ctlDir = $env:LUMINA_CTL_DIR
+$ctlDir = $env:LUMINA_LOG_DIR
 if ([string]::IsNullOrWhiteSpace($ctlDir)) {
-	$ctlDir = Join-Path $tempDir "lumina-ctl"
+	$ctlDir = Join-Path $tempDir "lumina-log"
 }
 New-Item -ItemType Directory -Path $ctlDir -Force | Out-Null
 
@@ -244,7 +244,7 @@ for ($turn = 1; $turn -le 4; $turn++) {
 }
 Assert-Condition ($lastLoopResponse.escalated) "Expected escalation after standing-order max attempts are exhausted"
 
-Write-Section "CTL Ledger Presence"
+Write-Section "System Log Ledger Presence"
 Assert-Condition (Test-Path $noEscLedger) "No-esc ledger file missing: $noEscLedger"
 Assert-Condition (Test-Path $escLedger) "Esc ledger file missing: $escLedger"
 Assert-Condition (Test-Path $exhaustLedger) "Exhaust ledger file missing: $exhaustLedger"
@@ -252,15 +252,15 @@ Write-Host "No-escalation ledger: $noEscLedger"
 Write-Host "Escalation ledger:   $escLedger"
 Write-Host "Exhaustion ledger:   $exhaustLedger"
 
-Write-Section "Validate CTL Hash Chain"
-& $PythonExe "reference-implementations/ctl-commitment-validator.py" --verify-chain $noEscLedger
-Assert-Condition ($LASTEXITCODE -eq 0) "CTL chain validation failed for non-escalation ledger"
+Write-Section "Validate System Log Hash Chain"
+& $PythonExe "reference-implementations/system-log-validator.py" --verify-chain $noEscLedger
+Assert-Condition ($LASTEXITCODE -eq 0) "System Log chain validation failed for non-escalation ledger"
 
-& $PythonExe "reference-implementations/ctl-commitment-validator.py" --verify-chain $escLedger
-Assert-Condition ($LASTEXITCODE -eq 0) "CTL chain validation failed for escalation ledger"
+& $PythonExe "reference-implementations/system-log-validator.py" --verify-chain $escLedger
+Assert-Condition ($LASTEXITCODE -eq 0) "System Log chain validation failed for escalation ledger"
 
-& $PythonExe "reference-implementations/ctl-commitment-validator.py" --verify-chain $exhaustLedger
-Assert-Condition ($LASTEXITCODE -eq 0) "CTL chain validation failed for standing-order exhaustion ledger"
+& $PythonExe "reference-implementations/system-log-validator.py" --verify-chain $exhaustLedger
+Assert-Condition ($LASTEXITCODE -eq 0) "System Log chain validation failed for standing-order exhaustion ledger"
 
 Write-Section "Validate EscalationRecord Exists"
 $escRecords = Get-Content $escLedger | ForEach-Object { $_ | ConvertFrom-Json }

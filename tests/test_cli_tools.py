@@ -1,4 +1,4 @@
-"""Tests for CLI tools: ctl-commitment-validator --rollback and lumina-security-freeze."""
+"""Tests for CLI tools: system-log-validator --rollback and lumina-security-freeze."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def _load_module(script_name: str, module_name: str):
 
 @pytest.fixture(scope="module")
 def validator_mod():
-    return _load_module("ctl_validator.py", "lumina.systools.ctl_validator")
+    return _load_module("system_log_validator.py", "lumina.systools.system_log_validator")
 
 
 @pytest.fixture(scope="module")
@@ -58,7 +58,7 @@ def _seed_ledger_with_activation(mod, ledger_path: Path, subject_path: Path, act
 
 
 # ─────────────────────────────────────────────────────────────
-# ctl-commitment-validator --rollback tests
+# system-log-validator --rollback tests
 # ─────────────────────────────────────────────────────────────
 
 

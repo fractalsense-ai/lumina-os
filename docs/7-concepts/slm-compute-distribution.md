@@ -1,3 +1,8 @@
+---
+version: 1.0.0
+last_updated: 2026-03-20
+---
+
 # SLM Compute Distribution
 
 **Version:** 1.2.0  
@@ -211,9 +216,9 @@ slm_config:
 
 ## G. Provenance and Audit
 
-When the SLM handles a turn, the CTL trace event records `slm_model_id` in provenance metadata. This ensures every SLM decision is attributable to a specific model version.
+When the SLM handles a turn, the System Logs trace event records `slm_model_id` in provenance metadata. This ensures every SLM decision is attributable to a specific model version.
 
-For admin command translation, the CTL commitment record includes `slm_command_translation` metadata documenting the original natural language instruction and the parsed structured command.
+For admin command translation, the System Logs commitment record includes `slm_command_translation` metadata documenting the original natural language instruction and the parsed structured command.
 
 ---
 
@@ -238,7 +243,7 @@ The SLM operates under the same zero-trust guarantees as the rest of the system:
 
 - SLM outputs are structured and parsed — free-text SLM responses are JSON-parsed with strict key validation. Malformed responses trigger the deterministic fallback.
 - Admin commands are RBAC-enforced — the SLM only translates; execution goes through existing admin endpoints that check `can_govern_domain()`, role permissions, and RBAC policy.
-- Provenance is recorded — every SLM interaction produces a CTL trace with model identity.
+- Provenance is recorded — every SLM interaction produces a System Log trace with model identity.
 - No scope expansion — the SLM cannot introduce new prompt types, create new admin operations, or modify domain physics directly. It operates within the boundaries defined by the weight classification table and the admin operations list.
 
 ---

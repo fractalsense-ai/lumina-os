@@ -31,7 +31,7 @@ override_invariants:
   - id: "institution_privacy_minimum"
     description: "No transcript content may be stored in any domain under this authority"
     severity: critical
-    check: "ctl_transcript_check()"
+    check: "log_transcript_check()"
     cannot_be_overridden: true
 
   - id: "consent_required"
@@ -109,7 +109,7 @@ role_assignments:
     recorded_as: CommitmentRecord
 
 # ── Renewal ─────────────────────────────────────────────────
-# This policy expires and must be re-committed to the CTL.
+# This policy expires and must be re-committed to the System Logs.
 renewal:
   policy_valid_until: "2027-03-02"
   renewal_requires: commitment_record_with_major_authority_signature

@@ -134,14 +134,14 @@ if (-not $SkipApiScenarios) {
     $previousLuminaPort = $env:LUMINA_PORT
     $previousRuntimeConfigPath = $env:LUMINA_RUNTIME_CONFIG_PATH
     $previousJwtSecret = $env:LUMINA_JWT_SECRET
-    $previousCtlDir = $env:LUMINA_CTL_DIR
+    $previousCtlDir = $env:LUMINA_LOG_DIR
     $previousEnforcePolicyCommitment = $env:LUMINA_ENFORCE_POLICY_COMMITMENT
 
-    # Ensure system-physics CTL commitment is seeded before server startup
-    Write-Host "Seeding system-physics CTL commitment..."
-    & "scripts\seed-system-physics-ctl.ps1" -PythonExe $PythonExe
+    # Ensure system-physics System Log commitment is seeded before server startup
+    Write-Host "Seeding system-physics System Log commitment..."
+    & "scripts\seed-system-physics-log.ps1" -PythonExe $PythonExe
     if ($LASTEXITCODE -ne 0) {
-        throw "seed-system-physics-ctl.ps1 failed"
+        throw "seed-system-physics-log.ps1 failed"
     }
 
     try {
@@ -164,10 +164,10 @@ if (-not $SkipApiScenarios) {
                 $env:LUMINA_JWT_SECRET = $defaultJwtSecret
             }
 
-            if ([string]::IsNullOrWhiteSpace($env:LUMINA_CTL_DIR)) {
-                $isolatedCtlDir = Join-Path ([System.IO.Path]::GetTempPath()) ("lumina-ctl-verify-" + [guid]::NewGuid().ToString("N"))
-                Write-Host "LUMINA_CTL_DIR not set; using isolated CTL dir '$isolatedCtlDir' for local API startup."
-                $env:LUMINA_CTL_DIR = $isolatedCtlDir
+            if ([string]::IsNullOrWhiteSpace($env:LUMINA_LOG_DIR)) {
+                $isolatedCtlDir = Join-Path ([System.IO.Path]::GetTempPath()) ("lumina-log-verify-" + [guid]::NewGuid().ToString("N"))
+                Write-Host "LUMINA_LOG_DIR not set; using isolated System Log dir '$isolatedCtlDir' for local API startup."
+                $env:LUMINA_LOG_DIR = $isolatedCtlDir
             }
 
             if ([string]::IsNullOrWhiteSpace($env:LUMINA_ENFORCE_POLICY_COMMITMENT)) {
@@ -215,10 +215,10 @@ if (-not $SkipApiScenarios) {
         }
 
         if ($null -eq $previousCtlDir) {
-            Remove-Item Env:LUMINA_CTL_DIR -ErrorAction SilentlyContinue
+            Remove-Item Env:LUMINA_LOG_DIR -ErrorAction SilentlyContinue
         }
         else {
-            $env:LUMINA_CTL_DIR = $previousCtlDir
+            $env:LUMINA_LOG_DIR = $previousCtlDir
         }
 
         if ($null -eq $previousEnforcePolicyCommitment) {

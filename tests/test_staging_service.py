@@ -57,7 +57,7 @@ class TestStageFile:
         assert isinstance(env, StagedFile)
         assert env.staged_id
         assert env.approval_status == "pending"
-        assert env.ctl_record_id  # CTL record was created
+        assert env.log_record_id  # System Log record was created
 
     def test_unknown_template_raises(self, svc: StagingService):
         with pytest.raises(ValueError, match="Unknown template_id"):
@@ -198,13 +198,13 @@ class TestStagedFileModel:
 
 
 # ------------------------------------------------------------------
-# CTL records
+# System Log records
 # ------------------------------------------------------------------
 
 class TestCTLIntegration:
     def test_stage_creates_ctl_record(self, svc: StagingService):
         env = svc.stage_file(_PHYSICS_PAYLOAD, "domain-physics", "actor-1")
-        assert env.ctl_record_id is not None
+        assert env.log_record_id is not None
 
     def test_approve_creates_ctl_record(self, svc: StagingService):
         env = svc.stage_file(_PHYSICS_PAYLOAD, "domain-physics", "actor-1")
@@ -212,12 +212,12 @@ class TestCTLIntegration:
                            target_overrides={"domain_short": "test"})
         loaded = svc.get_staged(env.staged_id)
         assert loaded is not None
-        # The ctl_record_id gets updated to the approval record
-        assert loaded.ctl_record_id is not None
+        # The log_record_id gets updated to the approval record
+        assert loaded.log_record_id is not None
 
     def test_reject_creates_ctl_record(self, svc: StagingService):
         env = svc.stage_file(_PHYSICS_PAYLOAD, "domain-physics", "actor-1")
         svc.reject_staged(env.staged_id, "approver-1", reason="test")
         loaded = svc.get_staged(env.staged_id)
         assert loaded is not None
-        assert loaded.ctl_record_id is not None
+        assert loaded.log_record_id is not None
