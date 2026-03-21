@@ -10,9 +10,13 @@
     "domains"
   ],
   "properties": {
+    "unauthenticated_domain": {
+      "type": "string",
+      "description": "Domain ID for unauthenticated (anonymous) sessions. When absent, falls back to default_domain. Must reference a key in 'domains'. Set to a welcome or landing domain pack to give guests a distinct entry point."
+    },
     "default_domain": {
       "type": "string",
-      "description": "Domain ID used when no explicit domain_id is provided in a request and no role_default applies. Must reference a key in 'domains'."
+      "description": "Domain ID used as fallback for authenticated users when no role_default matches and NLP routing finds no confident match. Must reference a key in 'domains'."
     },
     "role_defaults": {
       "type": "object",

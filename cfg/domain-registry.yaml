@@ -9,7 +9,13 @@
 #
 # See: standards/domain-registry-schema-v1.json
 
-# Global fallback for unauthenticated users and any role not listed in role_defaults.
+# Fallback domain for unauthenticated (anonymous) sessions.
+# Set this to a "welcome" or "landing" domain pack when one exists.
+# Defaults to default_domain when absent.
+unauthenticated_domain: education
+
+# Fallback domain for authenticated users whose role is not listed in
+# role_defaults below.
 default_domain: education
 
 # Role-based default: when NLP routing returns no confident match, authenticated

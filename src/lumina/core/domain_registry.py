@@ -44,8 +44,11 @@ class DomainRegistry:
         self._role_defaults: dict[str, str] = {}
         # module_prefix → domain_id reverse map (for domain_authority resolution)
         self._prefix_to_domain: dict[str, str] = {}
+        # Landing domain for unauthenticated sessions (distinct from default_domain)
+        self._unauthenticated_domain: str | None = None
 
         if registry_path:
+            self._multi_domain = True
             self._load_registry(registry_path)
         elif single_config_path:
             # Backward-compatible single-domain mode
@@ -87,6 +90,14 @@ class DomainRegistry:
                 f"default_domain '{self._default_domain}' not found in domains"
             )
 
+        # Optional separate landing domain for unauthenticated sessions
+        unauthenticated_domain = data.get("unauthenticated_domain")
+        if unauthenticated_domain and unauthenticated_domain not in self._domains:
+            raise RuntimeError(
+                f"unauthenticated_domain '{unauthenticated_domain}' not found in domains"
+            )
+        self._unauthenticated_domain = unauthenticated_domain
+
         # Load optional role_defaults mapping
         role_defaults_raw = data.get("role_defaults") or {}
         if not isinstance(role_defaults_raw, dict):
@@ -106,9 +117,10 @@ class DomainRegistry:
         }
 
         log.info(
-            "Loaded domain registry: %d domain(s), default=%s, role_defaults=%s",
+            "Loaded domain registry: %d domain(s), default=%s, unauthenticated=%s, role_defaults=%s",
             len(self._domains),
             self._default_domain or "(none)",
+            self._unauthenticated_domain or f"→ {self._default_domain or '(none)'}",
             self._role_defaults or "(none)",
         )
 
@@ -156,7 +168,8 @@ class DomainRegistry:
         """Return the default domain_id for *user* when NLP routing finds no match.
 
         Resolution order:
-        1. If user is None (unauthenticated) → global default_domain.
+        1. If user is None (unauthenticated) → unauthenticated_domain, then
+           global default_domain.
         2. If user role is listed in role_defaults → that domain.
         3. If user role is domain_authority and governed_modules is non-empty →
            extract the module-prefix segment from the first module path
@@ -167,7 +180,11 @@ class DomainRegistry:
             return self._default_domain or "_default"
 
         if user is None:
-            return self._default_domain or next(iter(self._domains))
+            return (
+                self._unauthenticated_domain
+                or self._default_domain
+                or next(iter(self._domains))
+            )
 
         role = user.get("role", "")
 

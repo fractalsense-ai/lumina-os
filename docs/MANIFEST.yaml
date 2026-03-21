@@ -557,7 +557,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: 6c575c29e365742b6ac686aef049305e15d3a5c31ac042e4be9fcf2e5b972762
+    sha256: 7644a785bc68185c67ceea7ff9e6115e03858a69105ecbe132abc8101fc7b9dd
 
   - path: standards/domain-role-schema-v1.json
     type: schema
@@ -790,7 +790,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: 917743433b7d1747f42368deeeba4da004931cf33dbb39b14b539a97b209fcbf
+    sha256: 173bbf1cca2ec0f1c5acce0ebd542747a95962da8074df43c5b0e6f60274a6aa
 
   - path: cfg/system-physics.json
     type: config
