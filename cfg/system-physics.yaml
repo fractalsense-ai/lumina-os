@@ -19,7 +19,7 @@
 # ============================================================
 
 id: system/lumina/conversational-interface/v1
-version: "1.2.0"
+version: "1.3.0"
 
 meta_authority_id: root
 
@@ -113,6 +113,21 @@ invariants:
     check: "chain_of_thought_in_output == false"
     standing_order_on_violation: strip_and_reformat_output
 
+  - id: no_direct_execution
+    description: >
+      The CI must not directly execute state changes, issue file writes,
+      alter domain physics, modify RBAC, or perform any action that mutates
+      system or domain state. All state-changing commands must be expressed
+      as a structured JSON proposal conforming to the applicable admin
+      command schema, validated by the relevant deterministic tool, and
+      approved by a system-level user via the HITL review gate before any
+      execution occurs. Physics files are standing orders and escalation
+      routes — they govern the CI's routing behaviour; they do not grant
+      execution authority.
+    severity: critical
+    check: "direct_state_change_attempted == false"
+    standing_order_on_violation: enforce_contract_boundaries
+
 # ── Standing Orders ──────────────────────────────────────────
 
 standing_orders:
@@ -204,6 +219,12 @@ ci_output_contract:
   grounding_requirement: must_derive_from_prompt_contract
   capability_claims: bounded_by_active_prompt_contract
   internal_state_disclosure: prohibited_unless_domain_permits
+  # -- Command Execution Policy
+  direct_execution: prohibited
+  state_change_mechanism: proposal_schema_only
+  proposal_validation_requirement: domain_scoped_tool_required
+  proposal_approval_requirement: hitl_required_before_execution
+  physics_file_role: standing_orders_and_escalation_routes
 
 # ────────────────────────────────────────────────────────────────────────────
 # Glossary — Lumina infrastructure controlled vocabulary

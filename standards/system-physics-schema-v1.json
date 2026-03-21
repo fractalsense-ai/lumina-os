@@ -124,6 +124,44 @@
             "allowed"
           ],
           "description": "Whether internal confidence scores, private policy internals, or sensitive runtime state may be disclosed."
+        },
+        "direct_execution": {
+          "type": "string",
+          "enum": [
+            "prohibited"
+          ],
+          "description": "Whether the CI may directly execute state changes. 'prohibited' means all state-changing commands must travel through the proposal-schema pipeline; the CI fills in a JSON schema form and never writes state itself."
+        },
+        "state_change_mechanism": {
+          "type": "string",
+          "enum": [
+            "proposal_schema_only"
+          ],
+          "description": "Mechanism by which state changes must be initiated. 'proposal_schema_only' requires the CI to populate a structured JSON proposal conforming to the applicable admin command schema; no other path to state mutation exists."
+        },
+        "proposal_validation_requirement": {
+          "type": "string",
+          "enum": [
+            "deterministic_tool_required",
+            "domain_scoped_tool_required",
+            "none"
+          ],
+          "description": "Whether a deterministic tool must validate the proposal before it is presented for HITL review. 'domain_scoped_tool_required' means the applicable domain tool (e.g. algebra_checker for education) must pass before the proposal leaves the domain layer."
+        },
+        "proposal_approval_requirement": {
+          "type": "string",
+          "enum": [
+            "hitl_required_before_execution",
+            "none"
+          ],
+          "description": "Whether a system-level user must approve the validated proposal via HITL (accept / reject / modify) before execution proceeds. 'hitl_required_before_execution' is the universal gate for all state changes."
+        },
+        "physics_file_role": {
+          "type": "string",
+          "enum": [
+            "standing_orders_and_escalation_routes"
+          ],
+          "description": "Declares the functional role of physics files. 'standing_orders_and_escalation_routes' means physics files define what the CI must do when conditions are met and where to escalate when they cannot be resolved; they do not grant the CI execution authority."
         }
       }
     },

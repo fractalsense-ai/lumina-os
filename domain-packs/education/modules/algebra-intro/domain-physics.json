@@ -447,5 +447,10 @@
       "related_terms": ["slope", "linear relationship", "y-intercept"],
       "example_in_context": "$12 earned per hour worked: rate of change = 12. Straight line on a distance-earnings graph."
     }
-  ]
+  ],
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/algebra-checker/v1"
+    ]
+  }
 }

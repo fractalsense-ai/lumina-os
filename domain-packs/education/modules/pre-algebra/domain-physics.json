@@ -412,5 +412,10 @@
       "related_terms": ["variable", "coefficient", "expression"],
       "example_in_context": "In 3x + 7 = 19, the numbers 7 and 19 are constants."
     }
-  ]
+  ],
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/algebra-checker/v1"
+    ]
+  }
 }

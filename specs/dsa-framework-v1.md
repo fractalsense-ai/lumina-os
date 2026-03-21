@@ -1,8 +1,8 @@
 # D.S.A. Framework — V1 Specification
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Status:** Active  
-**Last updated:** 2026-03-15
+**Last updated:** 2026-03-21
 
 > **Relationship to PPA:** The D.S.A. Framework is the *structural contract schema* that the Prompt Packet Assembly (PPA) engine uses to assemble each prompt packet. D.S.A. defines the three-pillar model (Domain, State, Action) that governs what goes into the packet; PPA is the mechanism that reads those pillars and produces the assembled `prompt_contract` sent to the LLM. See [`docs/7-concepts/prompt-packet-assembly.md`](../docs/7-concepts/prompt-packet-assembly.md) for the PPA assembly process.
 
@@ -130,6 +130,7 @@ The Action layer is the **orchestrator** — the AI component that drives the se
 - Escalate to the Meta Authority per the escalation triggers
 
 **The Action layer may NOT:**
+- **Execute state changes directly** — all state-changing commands (domain-physics updates, RBAC modifications, system configuration changes) must be expressed as structured JSON proposal schemas, validated by the applicable domain deterministic tool, and approved by a system-level user via the HITL review gate (accept / reject / modify) before the actuator layer executes them
 - Override or modify Domain invariants
 - Store transcripts
 - Use preferences or profile metadata to alter invariant checks, tolerance evaluation, or escalation policy

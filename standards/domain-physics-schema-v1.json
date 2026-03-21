@@ -324,6 +324,20 @@
         "roles"
       ],
       "description": "Optional domain-scoped role hierarchy. Defines roles that exist only within this domain, beneath the Domain Authority ceiling. Each domain can define its own role tiers (e.g., teacher/teaching-assistant/student for education, site-manager/field-operator/observer for agriculture). The Domain Authority is always the implicit ceiling at hierarchy level 0. Omit entirely for domains that use only the 7 system-level roles."
+    },
+    "execution_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deterministic_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tool adapter IDs used to validate proposals before HITL review. These are domain-scoped deterministic tools (e.g. 'adapter/edu/algebra-checker/v1'). Proposals must pass all listed tools before being forwarded to the HITL gate."
+        }
+      },
+      "description": "Declares the domain-scoped deterministic tools that must validate proposals before HITL review. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema."
     }
   },
   "$defs": {

@@ -492,5 +492,10 @@
       "related_terms": ["quadratic formula", "factoring"],
       "example_in_context": "x\u00b2 = 5x\u22126 is NOT standard. Rearrange: x\u00b2 \u2212 5x + 6 = 0. Now a=1, b=\u22125, c=6."
     }
-  ]
+  ],
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/algebra-checker/v1"
+    ]
+  }
 }

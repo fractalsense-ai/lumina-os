@@ -101,5 +101,10 @@
         "may_assign_domain_roles": false
       }
     ]
+  },
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/agri/collar-sensor/v1"
+    ]
   }
 }

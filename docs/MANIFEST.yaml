@@ -362,6 +362,14 @@ artifacts:
     last_updated: 2026-03-20
     sha256: b43c0a3d9d1858881b6922f078432a417d16748061eca2e2ed9bb21e54e82db1
 
+  - path: docs/7-concepts/command-execution-pipeline.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-21
+    sha256: 3231da1c71406cdd5d1a200eff06deedd488ca2bdbb2d57821c26cb4018bf6ad
+
 
   # ── Section 8: Administration ─────────────────────────────────────────────
 
@@ -453,7 +461,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-08
-    sha256: f8a5dd5d134ad641abc24f36a61281adf73bf39f947b491d7f8d154f752cbdab
+    sha256: b7d30ceda79a76fcef7d837f94c3b830177373a6e8469ff643800cd32a40ca2f
 
   - path: specs/evaluation-harness-v1.md
     type: spec
@@ -467,7 +475,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: ec1eeb7f66dc16dc61bfe9bc81ae5fac7eb8f9348d453843728acf2417d2d3be
+    sha256: 20f44198520584ff89841617946cb659900c3f908f4541ecf259364ea8939e98
 
   - path: specs/memory-spec-v1.md
     type: spec
@@ -481,7 +489,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: 9ee5f4b3c9f00bf2821a2fd125a3f724f50e47b388cc892b6445a8e62735dda7
+    sha256: 0f9a23cf767e24dd94939da371caf134c154cfb705131b17e53ac9f36d98b524
 
   - path: specs/principles-v1.md
     type: spec
@@ -550,7 +558,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-15
-    sha256: 1ad221757d0694b59c5afadbe355b82a872c38e306c585a8ffb17572390b7d86
+    sha256: e984ea00f7feb79d1d69c066f70d625847d8e32e2244b0a33457ece7233e788c
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
@@ -606,7 +614,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 8ee96066de4e8c793c6e90f7d4a500861373a609902c26fdae93c8d9802fcf02
+    sha256: 9f626ea243f21cc54d97a1101924747eb6a3545bbca95bab9892947328166e1f
 
   - path: standards/tool-adapter-schema-v1.json
     type: schema
@@ -797,14 +805,14 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 8ed38b2b0951ba1ea019ad41be926cffffa79d024ef4c9b55f34747330fb829e
+    sha256: bc10fde4864be043a089ee93a71bebb83413303b95146ecaab0916da9b718d24
 
   - path: cfg/system-physics.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: d802a67ea31f25ccae6f95de6fb9cf903974f022809b177c90f901385137a0f6
+    sha256: 13219a976d798e16d9614d83ea71fbec1e3046bd9e0af66ba3a06a1fca7d0c12
 
   - path: cfg/system-runtime-config.yaml
     type: config
