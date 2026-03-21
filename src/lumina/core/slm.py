@@ -378,9 +378,26 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
     },
     {
         "name": "deactivate_user",
-        "description": "Deactivate a user account.",
+        "description": "Deactivate a user account (revokes all access).",
         "params_schema": {
             "user_id": "string — target user identifier",
+        },
+    },
+    {
+        "name": "assign_domain_role",
+        "description": "Grant a user access to a domain module by assigning a domain role.",
+        "params_schema": {
+            "user_id": "string — target user identifier",
+            "module_id": "string — domain module identifier (e.g. education/algebra-level-1)",
+            "domain_role": "string — domain role to assign",
+        },
+    },
+    {
+        "name": "revoke_domain_role",
+        "description": "Revoke a user's access to a domain module by removing their domain role.",
+        "params_schema": {
+            "user_id": "string — target user identifier",
+            "module_id": "string — domain module identifier to revoke access for",
         },
     },
     {
@@ -503,6 +520,14 @@ def slm_parse_admin_command(
         text = text.strip()
         if text.lower() in ("null", "none", ""):
             return None
+        # Handle prose-wrapped output: extract the first {...} JSON object if
+        # the model prefixed the JSON with explanatory text.
+        if not text.startswith("{"):
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end > start:
+                text = text[start : end + 1]
+        log.debug("slm_parse_admin_command extracted text: %r", text[:200])
         result = json.loads(text)
         if not isinstance(result, dict):
             return None

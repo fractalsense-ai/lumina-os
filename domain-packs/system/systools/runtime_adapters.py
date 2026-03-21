@@ -114,7 +114,6 @@ def interpret_turn_input(
     defaults: dict[str, Any] = dict(default_fields or {}) or {
         "query_type": "general",
         "target_component": None,
-        "off_task_ratio": 0.0,
         "response_latency_sec": 5.0,
     }
     for key, default_val in defaults.items():

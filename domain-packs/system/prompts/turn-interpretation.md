@@ -6,7 +6,6 @@ The system domain does not track learning state, ZPD, or affect — only intent 
 {
   "query_type": "<one of: admin_command | glossary_lookup | status_query | diagnostic | config_review | out_of_domain | general>",
   "target_component": "<the system component or concept the operator is asking about, or null>",
-  "off_task_ratio": <float 0..1, 0.0 unless clearly unrelated to system administration>,
   "response_latency_sec": <float, default 5.0 if unknown>
 }
 

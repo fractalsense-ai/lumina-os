@@ -25,7 +25,6 @@ runtime:
   turn_input_defaults:
     query_type: general
     target_component: null
-    off_task_ratio: 0.0
     response_latency_sec: 5.0
 
   ui_manifest:
@@ -76,9 +75,6 @@ runtime:
       type: string
       nullable: true
       default: null
-    off_task_ratio:
-      type: number
-      default: 0.0
     response_latency_sec:
       type: number
       default: 5.0
