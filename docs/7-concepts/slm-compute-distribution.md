@@ -173,7 +173,7 @@ The SLM layer supports three provider backends. Local is the default and recomme
 
 | Provider | Env var | Default model | Notes |
 |----------|---------|---------------|-------|
-| **local** (default) | `LUMINA_SLM_ENDPOINT` (`http://localhost:11434`) | `phi-3` | Ollama/llama.cpp via OpenAI-compatible chat endpoint. No API key needed. |
+| **local** (default) | `LUMINA_SLM_ENDPOINT` (`http://localhost:11434`) | `gemma3:4b` | Ollama/llama.cpp via OpenAI-compatible chat endpoint. No API key needed. |
 | openai | `OPENAI_API_KEY` | `LUMINA_SLM_MODEL` | Uses OpenAI client library. |
 | anthropic | `ANTHROPIC_API_KEY` | `LUMINA_SLM_MODEL` | Uses Anthropic client library. |
 

@@ -13,8 +13,10 @@ import pytest
 
 from lumina.core.slm import (
     ADMIN_OPERATIONS,
+    SLM_COMMAND_MAX_TOKENS,
     SLM_PHYSICS_MAX_TOKENS,
     TaskWeight,
+    _compact_operations,
     _empty_physics_context,
     call_slm,
     classify_task_weight,
@@ -538,11 +540,12 @@ class TestAdminCommandParsing:
         result = slm_parse_admin_command("do custom", available_operations=custom_ops)
         assert result is not None
         assert result["operation"] == "custom_op"
-        # Verify the custom ops were sent in the payload
+        # Verify the custom ops were compacted and sent in the payload
         call_args = mock_call.call_args
         user_payload = call_args[1].get("user") or call_args[0][1]
         parsed = json.loads(user_payload)
-        assert parsed["available_operations"] == custom_ops
+        expected_compacted = [{"name": "custom_op", "description": "Custom", "params": []}]
+        assert parsed["available_operations"] == expected_compacted
 
 
 # ── Empty Physics Context ─────────────────────────────────────────────────────
@@ -595,3 +598,109 @@ class TestSlmTimeout:
             _call_local_slm("system", "user")
             call_kwargs = mock_post.call_args
             assert call_kwargs.kwargs.get("timeout") == SLM_TIMEOUT
+
+
+# ── Compact Operations ────────────────────────────────────────────────────────
+
+
+class TestCompactOperations:
+
+    @pytest.mark.unit
+    def test_strips_params_schema_to_key_list(self) -> None:
+        ops = [
+            {
+                "name": "update_domain_physics",
+                "description": "Update domain physics.",
+                "params_schema": {
+                    "domain_id": "string -- domain identifier",
+                    "updates": "object -- key/value pairs",
+                },
+            },
+        ]
+        result = _compact_operations(ops)
+        assert len(result) == 1
+        assert result[0]["name"] == "update_domain_physics"
+        assert result[0]["description"] == "Update domain physics."
+        assert result[0]["params"] == ["domain_id", "updates"]
+        assert "params_schema" not in result[0]
+
+    @pytest.mark.unit
+    def test_handles_missing_params_schema(self) -> None:
+        ops = [{"name": "no_params", "description": "No params."}]
+        result = _compact_operations(ops)
+        assert result == [{"name": "no_params", "description": "No params."}]
+        assert "params" not in result[0]
+
+    @pytest.mark.unit
+    def test_handles_empty_list(self) -> None:
+        assert _compact_operations([]) == []
+
+    @pytest.mark.unit
+    def test_compacts_all_admin_operations(self) -> None:
+        """Every entry in ADMIN_OPERATIONS should compact without error."""
+        result = _compact_operations(ADMIN_OPERATIONS)
+        assert len(result) == len(ADMIN_OPERATIONS)
+        for entry in result:
+            assert "name" in entry
+            assert "description" in entry
+            # params_schema should be gone, replaced with params list
+            assert "params_schema" not in entry
+            assert isinstance(entry.get("params"), list)
+
+
+# ── SLM Command Max Tokens ────────────────────────────────────────────────────
+
+
+class TestSlmCommandMaxTokens:
+
+    @pytest.mark.unit
+    @patch("lumina.core.slm.call_slm")
+    def test_admin_command_uses_command_token_budget(self, mock_call: MagicMock) -> None:
+        """slm_parse_admin_command must pass SLM_COMMAND_MAX_TOKENS to call_slm."""
+        mock_call.return_value = json.dumps({
+            "operation": "update_domain_physics",
+            "target": "algebra",
+            "params": {"updates": {}},
+        })
+        slm_parse_admin_command("update physics")
+        call_kwargs = mock_call.call_args[1]
+        assert call_kwargs.get("max_tokens") == SLM_COMMAND_MAX_TOKENS, (
+            f"Expected max_tokens={SLM_COMMAND_MAX_TOKENS}, got {call_kwargs.get('max_tokens')}"
+        )
+
+    @pytest.mark.unit
+    def test_command_max_tokens_default_value(self) -> None:
+        assert SLM_COMMAND_MAX_TOKENS == 1024
+
+    @pytest.mark.unit
+    @patch("lumina.core.slm.call_slm")
+    def test_compact_ops_sent_in_payload(self, mock_call: MagicMock) -> None:
+        """slm_parse_admin_command sends compacted operations, not full schemas."""
+        mock_call.return_value = json.dumps({
+            "operation": "update_domain_physics",
+            "target": "test",
+            "params": {},
+        })
+        slm_parse_admin_command("update something")
+        call_args = mock_call.call_args
+        user_payload = json.loads(call_args[1].get("user") or call_args[0][1])
+        for op in user_payload["available_operations"]:
+            assert "params_schema" not in op
+            assert isinstance(op.get("params"), list)
+
+
+# ── Admin Command Logging ─────────────────────────────────────────────────────
+
+
+class TestAdminCommandLogging:
+
+    @pytest.mark.unit
+    @patch("lumina.core.slm.call_slm", side_effect=RuntimeError("SLM exploded"))
+    def test_warning_logged_on_parse_failure(self, mock_call: MagicMock) -> None:
+        """slm_parse_admin_command logs a warning (not debug) when parsing fails."""
+        with patch("lumina.core.slm.log") as mock_log:
+            result = slm_parse_admin_command("update something")
+            assert result is None
+            mock_log.warning.assert_called_once()
+            warning_msg = mock_log.warning.call_args[0][0]
+            assert "admin command parsing failed" in warning_msg.lower()

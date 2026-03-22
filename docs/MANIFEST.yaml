@@ -38,7 +38,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 3e1b0fc68056952b97c9739d5dc491e968c86b32c7d546fe3d84f2eaddbdb91f
+    sha256: 6683e9a7c40f7285da1081df4b3c4051c404a11bf0e5f27421ffb78f57b6dbfe
 
   - path: docs/1-commands/integrity-check.md
     type: doc
@@ -97,7 +97,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-22
-    sha256: b811c616d68ba2300ddfe9ebb7433d154d5982a57eb9a6bed1a989796b6fb0e4
+    sha256: 2108505f418a71c7d134477b04a7d940729dc45c099537e0f4e838f23536fae4
 
 
   # ── Section 3: Functions ──────────────────────────────────────────────────
@@ -336,7 +336,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-18
-    sha256: cec4fde323dfcd4f5a5d51d41202bffa34ed010363662de182f410229f571fa5
+    sha256: 88d5ebb4139df483da96b7ab14023f6af2b23a274114622f132aec53d53187c1
 
   - path: docs/7-concepts/world-sim-persona-pattern.md
     type: doc
@@ -427,7 +427,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-15
-    sha256: d848aa6a8cfa6ad651e64610049dc1665f39df612d07bc19af0c5d4b78d187a8
+    sha256: fd5e09c22b0101544ac76a15bf2a44c9b63dd165f4bf12b7f870fa86eabe22a1
 
   - path: docs/8-admin/system-domain-operations.md
     type: doc

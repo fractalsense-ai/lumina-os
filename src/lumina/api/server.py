@@ -203,6 +203,17 @@ async def _start_idle_cleanup() -> None:
         asyncio.create_task(_session_idle_cleanup())
         log.info("Session idle timeout enabled: %d minutes", SESSION_IDLE_TIMEOUT_MINUTES)
 
+    # Start the async SLM PPA enrichment worker ("same bus, different lane").
+    from lumina.core.slm_ppa_worker import start as _start_slm_ppa_worker
+    await _start_slm_ppa_worker()
+
+
+@app.on_event("shutdown")
+async def _stop_background_tasks() -> None:
+    from lumina.core.slm_ppa_worker import stop as _stop_slm_ppa_worker
+    await _stop_slm_ppa_worker()
+    log.info("Background tasks stopped")
+
 
 # ─────────────────────────────────────────────────────────────
 # Singleton propagation: allow test monkey-patching of PERSISTENCE etc.

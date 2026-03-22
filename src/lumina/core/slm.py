@@ -29,7 +29,7 @@ log = logging.getLogger("lumina-slm")
 # ─────────────────────────────────────────────────────────────
 
 SLM_PROVIDER: str = os.environ.get("LUMINA_SLM_PROVIDER", "local")
-SLM_MODEL: str = os.environ.get("LUMINA_SLM_MODEL", "phi3")
+SLM_MODEL: str = os.environ.get("LUMINA_SLM_MODEL", "gemma3:4b")
 SLM_ENDPOINT: str = os.environ.get("LUMINA_SLM_ENDPOINT", "http://localhost:11434")
 SLM_TIMEOUT: float = float(os.environ.get("LUMINA_SLM_TIMEOUT", "60"))
 SLM_TEMPERATURE: float = 0.2
@@ -40,6 +40,9 @@ SLM_MAX_TOKENS: int = 512
 # producing unterminated JSON strings.  This limit is applied only for that
 # one call-site; all other SLM call-sites still use SLM_MAX_TOKENS.
 SLM_PHYSICS_MAX_TOKENS: int = int(os.environ.get("LUMINA_SLM_PHYSICS_MAX_TOKENS", "2048"))
+# Admin command translation also needs a higher token budget — the SLM must
+# parse the instruction against the full operations list and emit a JSON dict.
+SLM_COMMAND_MAX_TOKENS: int = int(os.environ.get("LUMINA_SLM_COMMAND_MAX_TOKENS", "1024"))
 
 
 # ─────────────────────────────────────────────────────────────
@@ -500,6 +503,26 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
 ]
 
 
+def _compact_operations(ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Strip verbose ``params_schema`` descriptions to reduce token count.
+
+    Small models struggle with the full ~2 KB operations payload.  This keeps
+    only the parameter names (as a list) so the SLM can still map intent →
+    operation without burning tokens on schema prose.
+    """
+    compacted: list[dict[str, Any]] = []
+    for op in ops:
+        entry: dict[str, Any] = {
+            "name": op["name"],
+            "description": op["description"],
+        }
+        schema = op.get("params_schema")
+        if isinstance(schema, dict):
+            entry["params"] = list(schema.keys())
+        compacted.append(entry)
+    return compacted
+
+
 def slm_parse_admin_command(
     natural_language: str,
     available_operations: list[dict[str, Any]] | None = None,
@@ -509,6 +532,7 @@ def slm_parse_admin_command(
     Returns a dict ``{"operation", "target", "params"}`` or ``None`` if unparseable.
     """
     ops = available_operations or ADMIN_OPERATIONS
+    ops = _compact_operations(ops)
     user_payload = json.dumps(
         {"instruction": natural_language, "available_operations": ops},
         indent=2,
@@ -516,7 +540,11 @@ def slm_parse_admin_command(
     )
 
     try:
-        raw = call_slm(system=build_system_prompt(PersonaContext.COMMAND_TRANSLATOR), user=user_payload)
+        raw = call_slm(
+            system=build_system_prompt(PersonaContext.COMMAND_TRANSLATOR),
+            user=user_payload,
+            max_tokens=SLM_COMMAND_MAX_TOKENS,
+        )
         text = raw.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[-1]
@@ -544,5 +572,5 @@ def slm_parse_admin_command(
             "params": result.get("params") or {},
         }
     except Exception:
-        log.debug("SLM admin command parsing failed")
+        log.warning("SLM admin command parsing failed for input: %r", natural_language[:80])
         return None

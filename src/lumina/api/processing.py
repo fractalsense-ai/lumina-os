@@ -181,7 +181,11 @@ def process_message(
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 
     # ── SLM physics interpretation (context compression) ─────
-    if not runtime.get("local_only") and slm_available():
+    # All domains (including local-only) benefit from physics context
+    # enrichment.  The SLM matches incoming signals against domain
+    # invariants, standing orders, and glossary so the orchestrator has
+    # structured context before making action decisions.
+    if slm_available():
         slm_context = slm_interpret_physics_context(
             incoming_signals=turn_data,
             domain_physics=domain_physics,

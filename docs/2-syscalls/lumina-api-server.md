@@ -89,7 +89,7 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `LUMINA_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed CORS origins |
 | `LUMINA_BOOTSTRAP_MODE` | `true` | First registered user auto-promoted to root |
 | `LUMINA_SLM_PROVIDER` | `local` | SLM backend: `local` (Ollama/llama.cpp), `openai`, or `anthropic` |
-| `LUMINA_SLM_MODEL` | `phi-3` | Model name forwarded to the SLM backend |
+| `LUMINA_SLM_MODEL` | `gemma3:4b` | Model name forwarded to the SLM backend |
 | `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Base URL for the local provider; ignored for cloud providers |
 | `LUMINA_SESSION_IDLE_TIMEOUT_MINUTES` | `30` | Reap sessions idle longer than this value; `0` disables idle reaping |
 | `LUMINA_STAGED_CMD_TTL_SECONDS` | `300` | TTL for HITL-staged admin commands before they expire |

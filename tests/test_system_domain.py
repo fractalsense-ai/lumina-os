@@ -849,3 +849,105 @@ class TestProcessingLocalOnlyNlpWiring:
         assert captured["nlp_pre_interpreter_fn"] is None, (
             "nlp_pre_interpreter_fn should be None when runtime has no NLP fn"
         )
+
+
+# ===========================================================================
+# processing.py — physics context for local-only domains
+# ===========================================================================
+
+class TestPhysicsContextLocalOnly:
+    """Verify that local-only domains receive SLM physics context enrichment."""
+
+    def _make_session(self) -> dict[str, Any]:
+        mock_orch = MagicMock()
+        mock_orch.state = MagicMock(world_sim_theme={}, mud_world_state={})
+        mock_orch.last_domain_lib_decision = {}
+        mock_orch.process_turn.return_value = (
+            {
+                "prompt_type": "admin_response",
+                "domain_pack_id": "system",
+                "domain_pack_version": "1",
+                "task_id": "sys",
+                "task_nominal_difficulty": 0.0,
+                "skills_targeted": [],
+                "theme": None,
+                "standing_order_trigger": None,
+                "references": [],
+                "grounded": True,
+            },
+            "admin_response",
+        )
+        mock_orch.log_records = []
+        mock_orch.get_standing_order_attempts.return_value = {}
+        mock_orch.append_provenance_trace.return_value = None
+        return {
+            "orchestrator": mock_orch,
+            "task_spec": {"task_id": "sys", "nominal_difficulty": 0.0, "skills_required": []},
+            "current_problem": {},
+            "turn_count": 0,
+            "domain_id": "system",
+            "problem_presented_at": None,
+        }
+
+    def _make_runtime(self, *, interpreter_fn) -> dict[str, Any]:
+        return {
+            "system_prompt": "sys",
+            "domain": {"id": "system", "version": "1", "glossary": []},
+            "runtime_provenance": {},
+            "turn_input_schema": {},
+            "turn_input_defaults": {"query_type": "general"},
+            "slm_weight_overrides": {},
+            "tool_fns": None,
+            "action_prompt_type_map": {},
+            "deterministic_templates": {},
+            "local_only": True,
+            "turn_interpreter_fn": interpreter_fn,
+            "turn_interpretation_prompt": "classify this turn",
+        }
+
+    @pytest.mark.unit
+    def test_local_only_domain_gets_physics_context(self) -> None:
+        """Physics context enrichment must run even when local_only=True."""
+        from lumina.api import processing as proc
+
+        physics_called = {"called": False}
+
+        def spy_interpreter(call_llm, input_text, task_context,
+                            prompt_text, default_fields, tool_fns=None,
+                            call_slm=None, nlp_pre_interpreter_fn=None):
+            return {"query_type": "general"}
+
+        original_interpret = proc.slm_interpret_physics_context
+
+        def spy_physics(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            physics_called["called"] = True
+            return {
+                "matched_invariants": [],
+                "applicable_standing_orders": [],
+                "relevant_glossary_terms": [],
+                "context_summary": "",
+                "suggested_evidence_fields": {},
+            }
+
+        session = self._make_session()
+        runtime = self._make_runtime(interpreter_fn=spy_interpreter)
+
+        with (
+            patch.object(proc, "get_or_create_session", return_value=session),
+            patch.object(proc._cfg.DOMAIN_REGISTRY, "get_runtime_context", return_value=runtime),
+            patch.object(proc, "detect_glossary_query", return_value=None),
+            patch.object(proc, "slm_available", return_value=True),
+            patch.object(proc, "slm_interpret_physics_context", side_effect=spy_physics),
+            patch.object(proc, "call_slm", return_value="ok"),
+            patch.object(proc, "call_llm", return_value="Hello."),
+            patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
+            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
+            patch("lumina.api.processing.time") as mock_time,
+        ):
+            mock_time.time.return_value = 1_000_000.0
+            proc.process_message("sess-phys", "hello")
+
+        assert physics_called["called"], (
+            "slm_interpret_physics_context was NOT called for a local_only domain"
+        )

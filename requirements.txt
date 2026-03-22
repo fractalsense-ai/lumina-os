@@ -10,8 +10,9 @@ sympy>=1.12
 # NLP sentence splitting — optional, requires Python <=3.13
 # (spaCy 3.x uses the pydantic.v1 shim which is broken on Python 3.14+;
 #  the runtime falls back to regex sentence splitting when spaCy is unavailable)
-# On Python <=3.13: pip install spacy>=3.7.0 && spacy download en_core_web_sm
-# Upgrade to en_core_web_md for richer vectors when needed.
+# On Python <=3.13: pip install spacy>=3.7.0 && spacy download en_core_web_md
+# en_core_web_md provides richer word vectors for better sentence segmentation
+# and semantic similarity than en_core_web_sm.
 # spacy>=3.7.0
 
 # Optional providers for live LLM calls (install as needed)
@@ -26,12 +27,12 @@ sympy>=1.12
 # The local provider (default) uses httpx — already listed above — to call a local
 # Ollama/llama.cpp-compatible endpoint.  No extra Python package is needed.
 #   1. Install Ollama:  https://ollama.com/download  (or: winget install Ollama.Ollama)
-#   2. Pull the model:  ollama pull phi3
+#   2. Pull the model:  ollama pull gemma3:4b
 #   3. Start Ollama:    ollama serve          (listens on http://localhost:11434)
 # Cloud SLM providers reuse the openai / anthropic packages already listed above.
 # Key env vars:
 #   LUMINA_SLM_PROVIDER   local | openai | anthropic   (default: local)
-#   LUMINA_SLM_MODEL      model name to pass the provider  (default: phi-3)
+#   LUMINA_SLM_MODEL      model name to pass the provider  (default: gemma3:4b)
 #   LUMINA_SLM_ENDPOINT   Ollama base URL  (default: http://localhost:11434)
 
 # Optional password hashing backends (install for production-grade hashing)

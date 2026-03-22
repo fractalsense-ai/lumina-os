@@ -29,7 +29,7 @@ _spacy_available: bool | None = None
 def get_nlp() -> Any | None:
     """Return a cached spaCy Language instance, or None if unavailable.
 
-    Loads ``en_core_web_sm`` on first call and caches globally.
+    Loads ``en_core_web_md`` on first call and caches globally.
     Returns None (no exception) when spaCy or the model is absent.
     """
     global _nlp_instance, _spacy_available
@@ -42,9 +42,9 @@ def get_nlp() -> Any | None:
     try:
         import spacy
 
-        _nlp_instance = spacy.load("en_core_web_sm")
+        _nlp_instance = spacy.load("en_core_web_md")
         _spacy_available = True
-        log.info("spaCy model en_core_web_sm loaded (core NLP)")
+        log.info("spaCy model en_core_web_md loaded (core NLP)")
         return _nlp_instance
     except ImportError:
         _spacy_available = False
@@ -52,7 +52,7 @@ def get_nlp() -> Any | None:
         return None
     except OSError:
         _spacy_available = False
-        log.info("spaCy model en_core_web_sm not found — core NLP using regex fallbacks")
+        log.info("spaCy model en_core_web_md not found — core NLP using regex fallbacks")
         return None
     except Exception as exc:
         _spacy_available = False

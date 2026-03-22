@@ -205,7 +205,7 @@ The SLM (Small Language Model) layer handles low-weight tasks — glossary rende
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LUMINA_SLM_PROVIDER` | `local` | Backend: `local` (Ollama/llama.cpp), `openai`, or `anthropic` |
-| `LUMINA_SLM_MODEL` | `phi-3` | Model name forwarded to the provider |
+| `LUMINA_SLM_MODEL` | `gemma3:4b` | Model name forwarded to the provider |
 | `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Base URL for the local provider; ignored for cloud providers |
 
 Cloud SLM providers (`openai`, `anthropic`) reuse the same `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` secrets already required for the primary LLM — no additional key is needed.

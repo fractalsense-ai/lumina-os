@@ -78,7 +78,7 @@ pip install -e .
 
 # With NLP support (spaCy glossary detection) — requires Python 3.12 or 3.13 venv (see above)
 pip install -e ".[nlp]"
-spacy download en_core_web_sm
+spacy download en_core_web_md
 
 # With LLM providers (OpenAI + Anthropic)
 pip install -e ".[providers]"
@@ -237,10 +237,10 @@ curl -fsSL https://ollama.com/install.sh | sh
 **Step 2 — Pull the default model:**
 
 ```bash
-ollama pull phi3
+ollama pull gemma3:4b
 ```
 
-> `phi3` maps to `LUMINA_SLM_MODEL=phi-3` (the default). Any model name pulled in Ollama can be used by setting `LUMINA_SLM_MODEL` to the same name.
+> `gemma3:4b` is the default SLM model (`LUMINA_SLM_MODEL=gemma3:4b`). Any model name pulled in Ollama can be used by setting `LUMINA_SLM_MODEL` to the same name.
 
 **Step 3 — Start Ollama (if not already running as a background service):**
 
@@ -264,14 +264,14 @@ python -c "import httpx; r = httpx.get('http://localhost:11434/'); print(r.statu
 ```powershell
 # PowerShell
 $env:LUMINA_SLM_PROVIDER = "local"
-$env:LUMINA_SLM_MODEL    = "phi3"                   # must match the name you pulled
+$env:LUMINA_SLM_MODEL    = "gemma3:4b"                   # must match the name you pulled
 $env:LUMINA_SLM_ENDPOINT = "http://localhost:11434"
 ```
 
 ```bash
 # POSIX
 export LUMINA_SLM_PROVIDER=local
-export LUMINA_SLM_MODEL=phi3
+export LUMINA_SLM_MODEL=gemma3:4b
 export LUMINA_SLM_ENDPOINT=http://localhost:11434
 ```
 
@@ -294,13 +294,13 @@ export OPENAI_API_KEY=<your-key>        # or ANTHROPIC_API_KEY
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `LUMINA_SLM_PROVIDER` | `local` | Backend: `local`, `openai`, or `anthropic` |
-| `LUMINA_SLM_MODEL` | `phi-3` | Model name passed to the provider |
+| `LUMINA_SLM_MODEL` | `gemma3:4b` | Model name passed to the provider |
 | `LUMINA_SLM_ENDPOINT` | `http://localhost:11434` | Ollama/llama.cpp base URL (local provider only) |
 | `LUMINA_SLM_TIMEOUT` | `60` | HTTP timeout in seconds for local SLM calls. Increase on modest hardware if physics interpretation times out |
 
 ### Testing SLM operation end-to-end
 
-With Ollama running and `phi3` pulled, start the API server and send a glossary query — the Librarian role should handle it via the SLM:
+With Ollama running and `gemma3:4b` pulled, start the API server and send a glossary query — the Librarian role should handle it via the SLM:
 
 ```powershell
 # Terminal 1 — start the server
@@ -325,7 +325,7 @@ To verify weight-routed dispatch more directly: send any message that triggers a
 
 ### Fallback behaviour
 
-If Ollama is not running or `phi3` is not pulled, **the server continues to operate normally**. Glossary responses fall back to the `"{term}: {definition}"` deterministic template, physics context compression is skipped, and admin command translation returns HTTP 503. No error is surfaced to the end user. The `[lumina.core.slm]` logger emits a `WARNING` level entry for each skipped SLM call.
+If Ollama is not running or `gemma3:4b` is not pulled, **the server continues to operate normally**. Glossary responses fall back to the `"{term}: {definition}"` deterministic template, physics context compression is skipped, and admin command translation returns HTTP 503. No error is surfaced to the end user. The `[lumina.core.slm]` logger emits a `WARNING` level entry for each skipped SLM call.
 
 ## CLI entrypoints
 
