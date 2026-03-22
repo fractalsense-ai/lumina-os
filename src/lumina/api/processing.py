@@ -168,6 +168,9 @@ def process_message(
             }
             if "call_slm" in _li_sig.parameters:
                 _li_kwargs["call_slm"] = call_slm
+            _nlp_fn = runtime.get("nlp_pre_interpreter_fn")
+            if _nlp_fn is not None and "nlp_pre_interpreter_fn" in _li_sig.parameters:
+                _li_kwargs["nlp_pre_interpreter_fn"] = _nlp_fn
             turn_data = _li_interpreter(**_li_kwargs)
         else:
             turn_data = dict(runtime.get("turn_input_defaults") or {})

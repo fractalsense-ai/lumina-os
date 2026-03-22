@@ -216,7 +216,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-18
-    sha256: 518b5c4a968f4282a71e4db1178a9a0698f38a15b7a1fcb7d8a837574f146801
+    sha256: 393be0a2d62b755a0746422f4eba2d756ecc59b2184c2fcfa5b1972d7676398f
 
   - path: docs/7-concepts/api-server-architecture.md
     type: doc
