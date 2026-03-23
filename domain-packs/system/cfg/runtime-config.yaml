@@ -86,38 +86,38 @@ runtime:
 
 adapters:
   nlp_pre_interpreter:
-    module_path: domain-packs/system/systools/nlp_pre_interpreter.py
+    module_path: domain-packs/system/controllers/nlp_pre_interpreter.py
     callable: nlp_preprocess
 
   state_builder:
-    module_path: domain-packs/system/systools/runtime_adapters.py
+    module_path: domain-packs/system/controllers/runtime_adapters.py
     callable: build_system_state
 
   domain_step:
-    module_path: domain-packs/system/systools/runtime_adapters.py
+    module_path: domain-packs/system/controllers/runtime_adapters.py
     callable: system_domain_step
 
   turn_interpreter:
-    module_path: domain-packs/system/systools/runtime_adapters.py
+    module_path: domain-packs/system/controllers/runtime_adapters.py
     callable: interpret_turn_input
 
   tools:
     list_domains:
-      module_path: domain-packs/system/systools/tool_adapters.py
+      module_path: domain-packs/system/controllers/tool_adapters.py
       callable: list_domains
 
     show_domain_physics:
-      module_path: domain-packs/system/systools/tool_adapters.py
+      module_path: domain-packs/system/controllers/tool_adapters.py
       callable: show_domain_physics
 
     module_status:
-      module_path: domain-packs/system/systools/tool_adapters.py
+      module_path: domain-packs/system/controllers/tool_adapters.py
       callable: module_status
 
     list_escalations:
-      module_path: domain-packs/system/systools/tool_adapters.py
+      module_path: domain-packs/system/controllers/tool_adapters.py
       callable: list_escalations
 
     list_log_records:
-      module_path: domain-packs/system/systools/tool_adapters.py
+      module_path: domain-packs/system/controllers/tool_adapters.py
       callable: list_log_records

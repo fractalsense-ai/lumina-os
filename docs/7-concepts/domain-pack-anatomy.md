@@ -52,10 +52,10 @@ pack, but all six are present in a fully-realised production pack.
 | Component | Location | Who calls it | Mandatory | What it owns |
 |---|---|---|---|---|
 | **Physics files** | `modules/<module>/domain-physics.yaml` and `.json` | Core engine at session load | Yes | Invariants (critical/warning), standing orders, escalation triggers, artifact definitions |
-| **Tool adapters** | `modules/<module>/tool-adapters/*.yaml` + `systools/tool_adapters.py` | Orchestrator policy system (YAML-declared) or runtime adapter directly (Python) | Recommended | Active, deterministic verifiers — compute domain-specific field values on demand |
-| **Runtime adapter** | `systools/runtime_adapters.py` | Core engine on every turn | Yes | Phase A (NLP pre-processing before LLM) + Phase B (signal synthesis after tools); emits engine contract fields |
-| **NLP pre-interpreter** | `systools/nlp_pre_interpreter.py` | Core engine before LLM prompt assembly | Yes (all text-input domains) | Deterministic extraction of domain-meaningful signals from raw input; produces `_nlp_anchors` |
-| **Domain library** | `domain-lib/*.md` specs + `systools/*.py` implementations | Runtime adapter only — never the engine directly | Where applicable | Passive state estimators tracking entity state across turns (ZPD monitor, fluency tracker, fatigue model) |
+| **Tool adapters** | `modules/<module>/tool-adapters/*.yaml` + `controllers/tool_adapters.py` | Orchestrator policy system (YAML-declared) or runtime adapter directly (Python) | Recommended | Active, deterministic verifiers — compute domain-specific field values on demand |
+| **Runtime adapter** | `controllers/runtime_adapters.py` | Core engine on every turn | Yes | Phase A (NLP pre-processing before LLM) + Phase B (signal synthesis after tools); emits engine contract fields |
+| **NLP pre-interpreter** | `controllers/nlp_pre_interpreter.py` | Core engine before LLM prompt assembly | Yes (all text-input domains) | Deterministic extraction of domain-meaningful signals from raw input; produces `_nlp_anchors` |
+| **Domain library** | `domain-lib/*.md` specs + `controllers/*.py` implementations | Runtime adapter only — never the engine directly | Where applicable | Passive state estimators tracking entity state across turns (ZPD monitor, fluency tracker, fatigue model) |
 | **World-sim (optional)** | `world-sim/*.md` + `world-sim/templates.yaml` | Runtime adapter, once at session start | No | Narrative framing layer — cosmetic only; domain physics and invariants are unchanged inside any world-sim theme |
 
 These components are not interchangeable and must not be substituted for one another. The
@@ -297,14 +297,14 @@ domain-packs/{domain}/
 │       └── tool-adapters/
 │           └── {tool}-adapter-v1.yaml   # One file per active verifier (YAML-declared policy tools)
 │
-├── systools/                         # PACK-LEVEL — Python implementations shared across modules
+├── controllers/                      # PACK-LEVEL — Python implementations shared across modules
 │   ├── nlp_pre_interpreter.py        # Phase A information gate  (exported: nlp_preprocess)
 │   ├── runtime_adapters.py           # Phase A + B synthesis     (exported: interpret_turn_input)
 │   └── tool_adapters.py              # Direct tool callables for read-only retrieval
 │
 ├── domain-lib/                       # PACK-LEVEL — passive state estimator specs + implementations
 │   ├── {estimator}-spec-v1.md        #   Normative specification
-│   └── (implementations live in systools/)
+│   └── (implementations live in controllers/)
 │
 ├── prompts/                          # PACK-LEVEL — domain-scoped prompt text overrides
 │   ├── domain-system-override.md

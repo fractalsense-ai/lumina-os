@@ -266,7 +266,7 @@ import json as _json
 import sys as _sys
 from pathlib import Path as _Path
 
-_SYS_ADAPTER_DIR = _Path(__file__).resolve().parent.parent / "domain-packs" / "system" / "systools"
+_SYS_ADAPTER_DIR = _Path(__file__).resolve().parent.parent / "domain-packs" / "system" / "controllers"
 if str(_SYS_ADAPTER_DIR) not in _sys.path:
     _sys.path.insert(0, str(_SYS_ADAPTER_DIR))
 

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-_EDU_REF = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "systools"
+_EDU_REF = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "controllers"
 if str(_EDU_REF) not in sys.path:
     sys.path.insert(0, str(_EDU_REF))
 

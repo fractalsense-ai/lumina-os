@@ -1,0 +1,31 @@
+# ─── System Domain Pack Manifest ──────────────────────────────────────
+# HMVC identity card — declares what this pack is, what it owns,
+# and how its components map to the Model / Controller / View layers.
+# See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
+# ──────────────────────────────────────────────────────────────────────
+
+pack_id: system
+version: "0.1.0"
+description: >-
+  Read-only introspection surface for the Lumina OS runtime.
+  Provides admin commands, log inspection, and health monitoring
+  for root and it_support operators. Local-only — no external LLM.
+
+# ── HMVC Layer Map ────────────────────────────────────────────────────
+layers:
+  model:
+    - modules/system-core/domain-physics.json
+  controller:
+    - controllers/runtime_adapters.py
+    - controllers/tool_adapters.py
+  view:
+    - prompts/
+
+# ── Modules ───────────────────────────────────────────────────────────
+modules:
+  - system-core
+
+# ── Entry Points ──────────────────────────────────────────────────────
+entry_points:
+  runtime_config: cfg/runtime-config.yaml
+  runtime_adapter: controllers/runtime_adapters.py

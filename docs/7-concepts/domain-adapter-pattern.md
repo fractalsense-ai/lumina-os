@@ -64,12 +64,12 @@ Both examples live entirely in their respective domain packs. The engine sees th
 
 Domain packs are authors of three distinct types of components. These are often confused; understanding the distinction is essential before writing a runtime adapter.
 
-### 1. Tool Adapters (`systools/tool_adapters.py` or `modules/<module>/tool-adapters/`)
+### 1. Tool Adapters (`controllers/tool_adapters.py` or `modules/<module>/tool-adapters/`)
 
 **Active verifiers** that produce structured data on demand. There are two kinds:
 
 - **Policy-driven tool adapters** — declared in YAML under `modules/<module>/tool-adapters/` and registered in `cfg/runtime-config.yaml` under `tool_call_policies`. Called by the core engine's policy system (`apply_tool_call_policy`) on specific resolved actions.
-- **Direct tool adapters** — defined in `systools/tool_adapters.py` and registered in `cfg/runtime-config.yaml` under `adapters.tools`. Called directly by the runtime adapter (or by operator tooling) rather than by the orchestrator's policy system. Used for read-only data retrieval where policy-level gating is unnecessary.
+- **Direct tool adapters** — defined in `controllers/tool_adapters.py` and registered in `cfg/runtime-config.yaml` under `adapters.tools`. Called directly by the runtime adapter (or by operator tooling) rather than by the orchestrator's policy system. Used for read-only data retrieval where policy-level gating is unnecessary.
 
 In both cases:
 - Should be **pure and deterministic**: same inputs → same outputs
@@ -81,11 +81,11 @@ In both cases:
 **Passive state estimators** that track entity state across turns — e.g., ZPD monitor, fluency tracker, fatigue model. They are implemented as Python classes/functions and called **inside the runtime adapter** (`domain_step` in `runtime_adapters.py`). They are never called directly by the core engine.
 
 - Specifications live in `domain-lib/*.md`
-- Implementations live in `systools/*.py`
+- Implementations live in `controllers/*.py`
 - Called **by the runtime adapter**, not the orchestrator
 - Produce state transitions (e.g., fluency `advanced: True`) that the adapter then uses to populate engine contract fields
 
-### 3. Runtime Adapter (`systools/runtime_adapters.py`)
+### 3. Runtime Adapter (`controllers/runtime_adapters.py`)
 
 The **synthesis layer** — the domain pack's primary integration point with the core engine. It owns two phases of work on every turn:
 
@@ -103,7 +103,7 @@ Phase A runs on the raw user message **before** the LLM prompt is assembled. Its
 The NLP pre-interpreter is registered at startup via `cfg/runtime-config.yaml`:
 
 ```yaml
-nlp_pre_interpreter_fn: nlp_preprocess   # function in systools/nlp_pre_interpreter.py
+nlp_pre_interpreter_fn: nlp_preprocess   # function in controllers/nlp_pre_interpreter.py
 ```
 
 And called from the main server via `runtime.get("nlp_pre_interpreter_fn")` before passing control to `interpreter(**kwargs)` in `runtime_adapters.interpret_turn_input`.
@@ -131,7 +131,7 @@ The LLM may override them, but having deterministic anchors as a prior makes ove
 
 ### Adding a new Phase A extractor
 
-1. Write a pure function in your domain's `systools/nlp_pre_interpreter.py` that takes `input_text: str` and returns a `dict`.
+1. Write a pure function in your domain's `controllers/nlp_pre_interpreter.py` that takes `input_text: str` and returns a `dict`.
 2. Call it inside `nlp_preprocess()` and add the result to `evidence` and `anchors`.
 3. Register the output field in `cfg/runtime-config.yaml` under `turn_input_defaults` and `turn_input_schema`.
 4. Nothing in `src/lumina/` needs to change.
@@ -158,7 +158,7 @@ turn_input_schema:
     default: false
 ```
 
-**Step 2 — Compute it at the end of `interpret_turn_input()` in `systools/runtime_adapters.py`**
+**Step 2 — Compute it at the end of `interpret_turn_input()` in `controllers/runtime_adapters.py`**
 
 Place the computation immediately before `return evidence`. Use only fields that already exist in `evidence` — no imports from `src/lumina/`, no hardcoded action names.
 
@@ -180,7 +180,7 @@ The core engine reads the field by name via `turn_data.get("my_signal")`. If the
 
 ```python
 # At the end of interpret_turn_input() in
-# domain-packs/education/systools/runtime_adapters.py
+# domain-packs/education/controllers/runtime_adapters.py
 
 # A problem is fully solved when correctness is confirmed by substitution
 # and the step-count minimum has been met. This flag is consumed by the
@@ -233,7 +233,7 @@ domain-packs/education/
 ├── domain-lib/
 │   ├── zpd-monitor-spec-v1.md       ← passive: spec for ZPD state estimator
 │   └── fatigue-estimation-spec-v1.md
-├── systools/
+├── controllers/
 │   ├── nlp_pre_interpreter.py       ← Phase A: answer match, frustration, hint, off-task
 │   ├── zpd_monitor_v0_2.py          ← domain-lib implementation (called by runtime_adapters)
 │   ├── fluency_monitor.py           ← domain-lib implementation (called by runtime_adapters)
@@ -256,7 +256,7 @@ domain-packs/system/
 ├── cfg/
 │   └── runtime-config.yaml          ← local_only: true; slm_weight_overrides;
 │                                       adapters.tools; deterministic_templates
-└── systools/
+└── controllers/
     ├── runtime_adapters.py           ← Phase A + Phase B; populates command_dispatch
     └── tool_adapters.py              ← direct tool adapters (no modules/ layer needed)
 ```

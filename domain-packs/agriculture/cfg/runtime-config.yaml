@@ -73,11 +73,11 @@ runtime:
 
 adapters:
   state_builder:
-    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    module_path: domain-packs/agriculture/controllers/runtime_adapters.py
     callable: build_initial_learning_state
   domain_step:
-    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    module_path: domain-packs/agriculture/controllers/runtime_adapters.py
     callable: domain_step
   turn_interpreter:
-    module_path: domain-packs/agriculture/systools/runtime_adapters.py
+    module_path: domain-packs/agriculture/controllers/runtime_adapters.py
     callable: interpret_turn_input

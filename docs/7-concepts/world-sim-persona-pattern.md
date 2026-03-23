@@ -104,7 +104,7 @@ The same $3x + 5 = 17$ algebra check spawns different narration in each world â€
 
 ### Selection Algorithm
 
-`generate_mud_world(entity_profile, mud_world_cfg)` in `systools/runtime_adapters.py`:
+`generate_mud_world(entity_profile, mud_world_cfg)` in `controllers/runtime_adapters.py`:
 
 1. Collect `preferences.interests` and `preferences.likes` (both; merged into one set).
 2. Collect `preferences.dislikes`.
@@ -197,7 +197,7 @@ If `world_sim_override` is absent, the module inherits the domain-wide `world_si
 - [ ] Author `artifact-and-mastery-spec-v1.md` â€” define artifacts and boss challenges; map in-world names
 - [ ] Add `world_sim` block to `runtime-config.yaml` with at least a `default_theme`
 - [ ] Add `world-sim/*.md` paths to `runtime.additional_specs` in `runtime-config.yaml`
-- [ ] In `systools/runtime_adapters.py`, call `select_world_sim_theme(profile, world_sim_cfg)` inside `build_initial_learning_state` and store result on state
+- [ ] In `controllers/runtime_adapters.py`, call `select_world_sim_theme(profile, world_sim_cfg)` inside `build_initial_learning_state` and store result on state
 - [ ] Update `interpret_turn_input` to accept `world_sim_theme` kwarg and inject hint block
 - [ ] Update the domain system prompt (`prompts/domain-system-override.md`) with conditional persona rendering rules
 

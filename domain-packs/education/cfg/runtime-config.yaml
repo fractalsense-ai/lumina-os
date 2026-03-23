@@ -225,27 +225,27 @@ ui_manifest:
 
 adapters:
   state_builder:
-    module_path: domain-packs/education/systools/runtime_adapters.py
+    module_path: domain-packs/education/controllers/runtime_adapters.py
     callable: build_initial_learning_state
   domain_step:
-    module_path: domain-packs/education/systools/runtime_adapters.py
+    module_path: domain-packs/education/controllers/runtime_adapters.py
     callable: domain_step
   turn_interpreter:
-    module_path: domain-packs/education/systools/runtime_adapters.py
+    module_path: domain-packs/education/controllers/runtime_adapters.py
     callable: interpret_turn_input
   nlp_pre_interpreter:
-    module_path: domain-packs/education/systools/nlp_pre_interpreter.py
+    module_path: domain-packs/education/controllers/nlp_pre_interpreter.py
     callable: nlp_preprocess
   tools:
     calculator:
-      module_path: domain-packs/education/systools/tool_adapters.py
+      module_path: domain-packs/education/controllers/tool_adapters.py
       callable: calculator_tool
     substitution_checker:
-      module_path: domain-packs/education/systools/tool_adapters.py
+      module_path: domain-packs/education/controllers/tool_adapters.py
       callable: substitution_checker_tool
     algebra_parser:
-      module_path: domain-packs/education/systools/tool_adapters.py
+      module_path: domain-packs/education/controllers/tool_adapters.py
       callable: algebra_parser_tool
     generate_problem:
-      module_path: domain-packs/education/systools/problem_generator.py
+      module_path: domain-packs/education/controllers/problem_generator.py
       callable: generate_problem

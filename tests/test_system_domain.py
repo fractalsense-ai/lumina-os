@@ -24,14 +24,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # ---------------------------------------------------------------------------
-# Make domain-pack systools importable without installing the package.
+# Make domain-pack controllers importable without installing the package.
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-_SYSTOOLS = _REPO_ROOT / "domain-packs" / "system" / "systools"
-# Ensure system systools path is FIRST so it takes precedence
-if str(_SYSTOOLS) in sys.path:
-    sys.path.remove(str(_SYSTOOLS))
-sys.path.insert(0, str(_SYSTOOLS))
+_CONTROLLERS = _REPO_ROOT / "domain-packs" / "system" / "controllers"
+# Ensure system controllers path is FIRST so it takes precedence
+if str(_CONTROLLERS) in sys.path:
+    sys.path.remove(str(_CONTROLLERS))
+sys.path.insert(0, str(_CONTROLLERS))
 # Evict any cached tool_adapters or nlp_pre_interpreter from a different domain pack
 sys.modules.pop("tool_adapters", None)
 sys.modules.pop("nlp_pre_interpreter", None)

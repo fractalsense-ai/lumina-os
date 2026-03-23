@@ -2,7 +2,7 @@
 
 Walks ``domain-packs/*/modules/*/tool-adapters/`` directories and reads
 YAML adapter definitions, building an index keyed by adapter ID.  Also
-discovers ``systools/runtime_adapters.py`` and ``systools/tool_adapters.py``
+discovers ``controllers/runtime_adapters.py`` and ``controllers/tool_adapters.py``
 by naming convention.
 
 Explicit adapter declarations in ``runtime-config.yaml`` always take
@@ -143,18 +143,18 @@ def scan_tool_adapters(domain_pack_path: Path) -> dict[str, AdapterEntry]:
 
 
 def scan_runtime_adapters(domain_pack_path: Path) -> dict[str, str]:
-    """Discover ``systools/runtime_adapters.py`` and ``systools/tool_adapters.py``.
+    """Discover ``controllers/runtime_adapters.py`` and ``controllers/tool_adapters.py``.
 
     Returns a dict mapping a short key (``"runtime_adapters"`` /
     ``"tool_adapters"``) to the relative path within the domain pack.
     """
     result: dict[str, str] = {}
-    systools = domain_pack_path / "systools"
-    if not systools.is_dir():
+    controllers = domain_pack_path / "controllers"
+    if not controllers.is_dir():
         return result
 
     for name in ("runtime_adapters.py", "tool_adapters.py"):
-        candidate = systools / name
+        candidate = controllers / name
         if candidate.is_file():
             result[name.removesuffix(".py")] = str(candidate.relative_to(domain_pack_path))
 

@@ -37,7 +37,7 @@ The NLP layer is split into two distinct tiers. They operate sequentially on the
 | Tier | Name | Owner | Location | Output |
 |------|------|-------|----------|--------|
 | 1 | **Semantic Domain Classifier** | Core engine | `src/lumina/core/nlp.py` | `{domain_id, confidence, method}` or `None` |
-| 2 | **Domain NLP Pre-Interpreter** | Domain pack | `domain-packs/<domain>/systools/nlp_pre_interpreter.py` | `evidence` dict + `_nlp_anchors` list |
+| 2 | **Domain NLP Pre-Interpreter** | Domain pack | `domain-packs/<domain>/controllers/nlp_pre_interpreter.py` | `evidence` dict + `_nlp_anchors` list |
 
 ### Tier 1 — Semantic Domain Classifier
 
@@ -267,6 +267,6 @@ The NLP layer influences the **quality of the LLM's input**. It does not influen
 - [`src/lumina/core/nlp.py`](../../src/lumina/core/nlp.py) — `classify_domain()` implementation; spaCy lazy loader; sentence splitter and tokenizer
 - [`cfg/domain-registry.yaml`](../../cfg/domain-registry.yaml) — domain keyword lists; default domain configuration
 - [`docs/7-concepts/domain-adapter-pattern.md`](domain-adapter-pattern.md) — Phase A NLP pre-processing and Phase B signal synthesis lifecycle
-- [`domain-packs/education/systools/nlp_pre_interpreter.py`](../../domain-packs/education/systools/nlp_pre_interpreter.py) — education domain pre-interpreter (reference implementation)
+- [`domain-packs/education/controllers/nlp_pre_interpreter.py`](../../domain-packs/education/controllers/nlp_pre_interpreter.py) — education domain pre-interpreter (reference implementation)
 - [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema and PPA orchestrator specification
 - [`standards/domain-registry-schema-v1.json`](../../standards/domain-registry-schema-v1.json) — schema for `cfg/domain-registry.yaml` including `keywords` field definition

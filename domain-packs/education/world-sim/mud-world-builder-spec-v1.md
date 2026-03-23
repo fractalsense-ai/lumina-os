@@ -73,7 +73,7 @@ New templates can be added by a Domain Authority by appending entries to `mud-wo
 
 ## Template Selection Algorithm
 
-`generate_mud_world(entity_profile, mud_world_cfg)` in `systools/runtime_adapters.py`:
+`generate_mud_world(entity_profile, mud_world_cfg)` in `controllers/runtime_adapters.py`:
 
 1. If `mud_world_cfg` is absent or `enabled: false` → return `{}`.
 2. Load templates from `mud_world_cfg["templates"]` (pre-loaded list from `mud-world-templates.yaml`).

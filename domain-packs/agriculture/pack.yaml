@@ -1,0 +1,29 @@
+# ─── Agriculture Domain Pack Manifest ─────────────────────────────────
+# HMVC identity card — declares what this pack is, what it owns,
+# and how its components map to the Model / Controller / View layers.
+# See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
+# ──────────────────────────────────────────────────────────────────────
+
+pack_id: agriculture
+version: "0.1.0"
+description: >-
+  Agricultural operations domain — signal monitoring, variance reporting,
+  and operational decision support for field-level activities.
+
+# ── HMVC Layer Map ────────────────────────────────────────────────────
+layers:
+  model:
+    - modules/operations-level-1/domain-physics.json
+  controller:
+    - controllers/runtime_adapters.py
+  view:
+    - prompts/
+
+# ── Modules ───────────────────────────────────────────────────────────
+modules:
+  - operations-level-1
+
+# ── Entry Points ──────────────────────────────────────────────────────
+entry_points:
+  runtime_config: cfg/runtime-config.yaml
+  runtime_adapter: controllers/runtime_adapters.py

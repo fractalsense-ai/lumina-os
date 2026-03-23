@@ -63,7 +63,7 @@ world_sim:
 
 ### Dynamic Theme Selection
 
-If the entity profile includes preferences, the world simulation theme is selected dynamically at session start using `select_world_sim_theme()` in `systools/runtime_adapters.py`. The selected theme is stored on the domain state object and injected as a context hint on every turn. Selection rules:
+If the entity profile includes preferences, the world simulation theme is selected dynamically at session start using `select_world_sim_theme()` in `controllers/runtime_adapters.py`. The selected theme is stored on the domain state object and injected as a context hint on every turn. Selection rules:
 - Use a theme that maps to a preference if one is available
 - Fall back to the domain pack's default theme
 - Never select a theme the entity has listed as a dislike

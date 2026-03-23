@@ -394,6 +394,14 @@ artifacts:
     last_updated: 2026-03-21
     sha256: 42815eb5aa46a0d332f3379807f18adaff10709e753f4a5e9f903c7243754c86
 
+  - path: docs/7-concepts/hmvc-heritage.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-23
+    sha256: cb009ccd427a8e8e09e861fa6e070d687ef150f253793deba463c7715935d2f4
+
 
   # ── Section 8: Administration ─────────────────────────────────────────────
 

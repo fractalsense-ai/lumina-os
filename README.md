@@ -206,7 +206,7 @@ project-lumina/
 │       ├── docs/               ← domain-scoped reference documentation
 │       ├── modules/            ← worked module packs
 │       ├── prompts/            ← domain physics and prompt templates
-│       └── systools/           ← domain-specific tool adapters
+│       └── controllers/        ← domain-specific tool adapters
 ├── specs/                      ← architecture specifications (PPA framework, principles, prompts)
 ├── standards/                  ← universal engine schemas and contracts
 ├── ledger/                     ← System Log JSON schemas (trace events, commitments, escalations)

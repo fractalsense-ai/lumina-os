@@ -21,7 +21,7 @@ from typing import Any
 # Path resolution
 # ---------------------------------------------------------------------------
 
-# Repo root is 4 parents up: systools/ → system/ → domain-packs/ → project-lumina/
+# Repo root is 4 parents up: controllers/ → system/ → domain-packs/ → project-lumina/
 _REPO_ROOT: Path = Path(__file__).resolve().parents[3]
 
 _DEFAULT_LOG_DIR = Path(tempfile.gettempdir()) / "lumina-log"

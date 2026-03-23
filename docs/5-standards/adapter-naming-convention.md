@@ -19,7 +19,7 @@ domain-packs/<domain>/
   modules/<module-name>/
     tool-adapters/
       <adapter-name>-adapter-v<version>.yaml
-  systools/
+  controllers/
     runtime_adapters.py
     tool_adapters.py
 ```
@@ -67,8 +67,8 @@ See `standards/tool-adapter-schema-v1.json` for the full JSON Schema.
 
 The scanner discovers Python modules by exact name:
 
-- `systools/runtime_adapters.py` — Domain-specific state builder, domain step, and turn interpreter
-- `systools/tool_adapters.py` — Python implementations of tool adapter logic
+- `controllers/runtime_adapters.py` — Domain-specific state builder, domain step, and turn interpreter
+- `controllers/tool_adapters.py` — Python implementations of tool adapter logic
 
 These are keyed in the router index as `<domain>/runtime_adapters` and
 `<domain>/tool_adapters`.

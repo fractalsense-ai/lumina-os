@@ -1,0 +1,44 @@
+# ─── Education Domain Pack Manifest ───────────────────────────────────
+# HMVC identity card — declares what this pack is, what it owns,
+# and how its components map to the Model / Controller / View layers.
+# See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
+# ──────────────────────────────────────────────────────────────────────
+
+pack_id: education
+version: "0.1.0"
+description: >-
+  Adaptive maths tutoring domain — algebra sequence from pre-algebra
+  through algebra-1, with ZPD tracking, fluency monitoring, and optional
+  world-sim persona theming.
+
+# ── HMVC Layer Map ────────────────────────────────────────────────────
+layers:
+  model:
+    - modules/*/domain-physics.json
+    - modules/*/domain-physics.yaml
+    - schemas/
+    - domain-lib/
+  controller:
+    - controllers/runtime_adapters.py
+    - controllers/nlp_pre_interpreter.py
+    - controllers/tool_adapters.py
+    - controllers/problem_generator.py
+    - controllers/fluency_monitor.py
+    - controllers/zpd_monitor_v0_2.py
+    - modules/*/tool-adapters/*.yaml
+  view:
+    - prompts/
+    - world-sim/
+
+# ── Modules ───────────────────────────────────────────────────────────
+modules:
+  - pre-algebra
+  - algebra-intro
+  - algebra-level-1
+  - algebra-1
+
+# ── Entry Points ──────────────────────────────────────────────────────
+entry_points:
+  runtime_config: cfg/runtime-config.yaml
+  runtime_adapter: controllers/runtime_adapters.py
+  nlp_pre_interpreter: controllers/nlp_pre_interpreter.py

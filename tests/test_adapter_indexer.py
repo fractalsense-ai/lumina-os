@@ -79,8 +79,8 @@ def fake_domain_pack(tmp_path: Path) -> Path:
     )
 
     # Runtime adapter modules
-    _write_py(pack / "systools" / "runtime_adapters.py")
-    _write_py(pack / "systools" / "tool_adapters.py")
+    _write_py(pack / "controllers" / "runtime_adapters.py")
+    _write_py(pack / "controllers" / "tool_adapters.py")
 
     # cfg dir (so build_router_index considers it a domain pack)
     (pack / "cfg").mkdir(parents=True, exist_ok=True)
@@ -191,12 +191,12 @@ class TestScanRuntimeAdapters:
         assert "runtime_adapters" in result
         assert "tool_adapters" in result
 
-    def test_missing_systools(self, tmp_path: Path):
+    def test_missing_controllers(self, tmp_path: Path):
         result = scan_runtime_adapters(tmp_path)
         assert result == {}
 
     def test_partial_modules(self, tmp_path: Path):
-        _write_py(tmp_path / "systools" / "runtime_adapters.py")
+        _write_py(tmp_path / "controllers" / "runtime_adapters.py")
         result = scan_runtime_adapters(tmp_path)
         assert "runtime_adapters" in result
         assert "tool_adapters" not in result

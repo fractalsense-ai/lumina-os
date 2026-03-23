@@ -34,7 +34,7 @@ domain (see `cfg/domain-registry.yaml` → `role_defaults`).
 | Domain pack runtime config | `domain-packs/system/cfg/runtime-config.yaml` | Full live-session config |
 | Domain physics | `domain-packs/system/modules/system-core/domain-physics.json` | Glossary, permissions, topics |
 | Domain prompts | `domain-packs/system/prompts/` | LLM persona + turn interpretation |
-| Runtime adapters | `domain-packs/system/systools/runtime_adapters.py` | Minimal state/step/interpreter |
+| Runtime adapters | `domain-packs/system/controllers/runtime_adapters.py` | Minimal state/step/interpreter |
 | Deprecated stub | `cfg/system-runtime-config.yaml` | Superseded; retained for reference only |
 | System lib | `src/lumina/lib/system_health.py` | Passive state estimator (hw probes) |
 | Hardware probes | `src/lumina/systools/hw_disk.py` · `hw_temp.py` · `hw_memory.py` | Passive, lib-invoked only |

@@ -18,6 +18,7 @@ Architectural principles, design frameworks, and system philosophy.
 | [principles-v1](../../specs/principles-v1.md) | Non-negotiable system principles |
 | [dsa-framework-v1](../../specs/dsa-framework-v1.md) | D.S.A. structural schema (Domain, State, Action) — the contract model behind PPA |
 | [domain-pack-anatomy](domain-pack-anatomy.md) | What a domain pack is: bounded subject-area authority, six-component anatomy (physics / tool-adapters / runtime-adapter / NLP pre-interpreter / domain-lib / world-sim), NLP information gate, physics as standing orders, self-containment contract, cross-domain comparison |
+| [hmvc-heritage](hmvc-heritage.md) | HMVC architectural lineage: how domain packs map to HMVC modules (Model = physics + schemas, Controller = controllers/, View = prompts + world-sim), self-containment as module isolation, framework-as-engine principle, adding new domains with zero engine changes |
 | [rag-contracts](../../retrieval/rag-contracts.md) | RAG retrieval contract model |
 | [domain-adapter-pattern](domain-adapter-pattern.md) | How domain packs extend the engine: NLP pre-processing, signal synthesis, engine contract fields, three-layer distinction (tool-adapters / domain-lib / runtime-adapter) |
 | [api-server-architecture](api-server-architecture.md) | Decomposed API server module layout: thin factory, `_ModProxy` test bridge, session multi-domain isolation, glossary per-domain cache, performance profile |

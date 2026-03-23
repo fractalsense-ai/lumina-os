@@ -25,7 +25,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def _load_runtime_adapters():
     spec = importlib.util.spec_from_file_location(
         "edu_runtime_adapters_test",
-        str(REPO_ROOT / "domain-packs/education/systools/runtime_adapters.py"),
+        str(REPO_ROOT / "domain-packs/education/controllers/runtime_adapters.py"),
     )
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     spec.loader.exec_module(mod)  # type: ignore[union-attr]

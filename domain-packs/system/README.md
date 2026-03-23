@@ -21,7 +21,7 @@ domain-packs/system/
   prompts/
     domain-system-override.md   — System-domain LLM persona and rendering rules
     turn-interpretation.md      — Turn classification prompt (query_type, target_component)
-  systools/
+  controllers/
     runtime_adapters.py         — Minimal adapters: build_system_state, system_domain_step, interpret_turn_input
 ```
 

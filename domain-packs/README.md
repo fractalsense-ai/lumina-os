@@ -40,7 +40,7 @@ domain-packs/
 │   │   ├── compressed-state-estimators.md
 │   │   ├── zpd-monitor-spec-v1.md
 │   │   └── fatigue-estimation-spec-v1.md
-│   ├── systools/               ← runtime adapter: NLP pre-processing + signal synthesis
+│   ├── controllers/            ← runtime adapter: NLP pre-processing + signal synthesis
 │   │   ├── nlp_pre_interpreter.py   ← Phase A: deterministic extractors
 │   │   ├── runtime_adapters.py      ← interpret_turn_input: Phase A + B + domain-lib calls
 │   │   ├── problem_generator.py     ← generates next task spec (sets min_steps etc.)
@@ -73,8 +73,8 @@ Domain packs use three distinct component types. They are different in how the c
 | Layer | Location | Called by | Purpose |
 |---|---|---|---|
 | **Tool adapters** | `modules/<module>/tool-adapters/` | Core engine (via `tool_call_policies`) | Active verifiers — deterministically check LLM proposals on specific actions |
-| **Domain library** | `domain-lib/` specs + `systools/` implementations | Runtime adapter (`runtime_adapters.py`) | Passive state estimators — ZPD, fluency, fatigue — never called directly by the engine |
-| **Runtime adapter** | `systools/runtime_adapters.py` | Core engine (`interpret_turn_input`) | Synthesis layer — runs NLP pre-processing (Phase A) and signal synthesis (Phase B), calls domain-lib internally, writes engine contract fields |
+| **Domain library** | `domain-lib/` specs + `controllers/` implementations | Runtime adapter (`runtime_adapters.py`) | Passive state estimators — ZPD, fluency, fatigue — never called directly by the engine |
+| **Runtime adapter** | `controllers/runtime_adapters.py` | Core engine (`interpret_turn_input`) | Synthesis layer — runs NLP pre-processing (Phase A) and signal synthesis (Phase B), calls domain-lib internally, writes engine contract fields |
 | **World-sim persona** | `world-sim/` (optional) | Domain runtime adapter — selected once at session start in `build_initial_learning_state`; theme hint injected on every turn via `interpret_turn_input` | Narrative framing layer — cosmetic only; domain physics and invariants are unchanged. Three files: spec (parameters), consent (activation gate), mastery (reward surface). |
 
 See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adapter-pattern.md) for the full authoring guide including the engine contract field reference and the `problem_solved` / `problem_status` pattern.
@@ -131,7 +131,7 @@ Every material module policy change requires:
 
 ### 8. Implement your runtime adapter
 
-Create `systools/runtime_adapters.py` with an `interpret_turn_input` function. This is the synthesis layer where:
+Create `controllers/runtime_adapters.py` with an `interpret_turn_input` function. This is the synthesis layer where:
 - **Phase A** — an optional NLP pre-interpreter extracts deterministic signals from raw input before the LLM prompt is assembled
 - **Phase B** — at the end of the function, engine contract fields (`problem_solved`, `problem_status`) are computed from domain-owned evidence
 

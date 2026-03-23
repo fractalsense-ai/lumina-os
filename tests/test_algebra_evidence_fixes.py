@@ -22,9 +22,9 @@ from unittest.mock import MagicMock
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-_EDU_SYSTOOLS = REPO_ROOT / "domain-packs" / "education" / "systools"
-if str(_EDU_SYSTOOLS) not in sys.path:
-    sys.path.insert(0, str(_EDU_SYSTOOLS))
+_EDU_CONTROLLERS = REPO_ROOT / "domain-packs" / "education" / "controllers"
+if str(_EDU_CONTROLLERS) not in sys.path:
+    sys.path.insert(0, str(_EDU_CONTROLLERS))
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ if str(_EDU_SYSTOOLS) not in sys.path:
 def _load_tool_adapters():
     spec = importlib.util.spec_from_file_location(
         "edu_tool_adapters_test",
-        str(_EDU_SYSTOOLS / "tool_adapters.py"),
+        str(_EDU_CONTROLLERS / "tool_adapters.py"),
     )
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
@@ -44,7 +44,7 @@ def _load_tool_adapters():
 def _load_runtime_adapters():
     spec = importlib.util.spec_from_file_location(
         "edu_runtime_adapters_fix_test",
-        str(_EDU_SYSTOOLS / "runtime_adapters.py"),
+        str(_EDU_CONTROLLERS / "runtime_adapters.py"),
     )
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
