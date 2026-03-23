@@ -658,6 +658,13 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         records = self.query_log_records(record_type="EscalationRecord", limit=10000)
+        # Deduplicate by record_id, keeping the latest version (append-only log)
+        seen: dict[str, dict[str, Any]] = {}
+        for r in records:
+            rid = r.get("record_id")
+            if rid:
+                seen[rid] = r
+        records = list(seen.values())
         if status:
             records = [r for r in records if r.get("status") == status]
         if domain_id:

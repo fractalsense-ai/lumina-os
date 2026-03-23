@@ -170,6 +170,15 @@ async def resolve_escalation(
         ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
     )
 
+    # ── Mark original EscalationRecord as resolved ──
+    resolved_esc = dict(target)
+    resolved_esc["status"] = "resolved"
+    resolved_esc["resolution_commitment_id"] = record["record_id"]
+    _cfg.PERSISTENCE.append_log_record(
+        session_id, resolved_esc,
+        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
+    )
+
     # ── PIN generation ── freeze session so student must unlock with OTP ──
     response_extra: dict[str, Any] = {}
     if req.generate_pin:
@@ -425,6 +434,17 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
         raw_role = params.get("new_role", "")
         if raw_role and not re.fullmatch(r"[a-z_]+", raw_role):
             params["new_role"] = re.sub(r"[\s-]+", "_", raw_role.strip()).lower()
+
+        # ── Fuzzy role matching: SLM may produce values like
+        #    "system_domain_as_it_support" or "education" that aren't valid.
+        #    Try substring match against known roles. ──
+        normalised_role = params.get("new_role", "")
+        if normalised_role and normalised_role not in VALID_ROLES:
+            matched = [vr for vr in VALID_ROLES if vr in normalised_role]
+            if matched:
+                # Pick the longest match to avoid e.g. "user" matching inside
+                # "domain_authority_user"
+                params["new_role"] = max(matched, key=len)
 
         # ── governed_modules: may appear at top level or inside params ──
         if "governed_modules" not in params and cmd.get("governed_modules"):

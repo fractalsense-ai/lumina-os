@@ -69,10 +69,11 @@ export function ActionCard({ card, token, onResolved }: ActionCardProps) {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          decision: action.id,
-          reasoning: `Resolved via chat action card`,
-        }),
+        body: JSON.stringify(
+          card.card_type === 'command_proposal'
+            ? { action: action.id }
+            : { decision: action.id, reasoning: 'Resolved via chat action card' },
+        ),
       })
       if (res.ok) {
         setResolved(true)
