@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/group-definition-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-24",
+  "title": "Group Definition Schema V1",
+  "description": "JSON Schema for a named group entry within the groups block of a domain-physics document. Groups bridge domain roles and system roles to chmod-style group permission bits. The kernel resolves group membership at runtime — it does not need to know the semantic meaning of the group name. Analogous to /etc/group in UNIX.",
+  "type": "object",
+  "required": [
+    "members"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this group's purpose. The kernel ignores this field — it exists for domain authors and auditors."
+    },
+    "members": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "root",
+              "domain_authority",
+              "it_support",
+              "qa",
+              "auditor",
+              "user",
+              "guest"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "System role IDs whose holders are members of this group."
+        },
+        "domain_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,47}$"
+          },
+          "uniqueItems": true,
+          "description": "Domain-scoped role IDs whose holders are members of this group. Must match role_id values defined in the domain_roles.roles array of the same domain-physics document."
+        }
+      },
+      "anyOf": [
+        { "required": ["system_roles"] },
+        { "required": ["domain_roles"] }
+      ],
+      "description": "Membership criteria. At least one of system_roles or domain_roles must be present and non-empty."
+    }
+  }
+}

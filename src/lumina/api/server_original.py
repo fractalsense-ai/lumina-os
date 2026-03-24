@@ -1523,6 +1523,7 @@ async def chat(
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                groups_config=domain.get("groups"),
             )
             if not has_access:
                 raise HTTPException(status_code=403, detail="Module access denied")
@@ -1590,6 +1591,7 @@ def _get_accessible_domain_ids(
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                groups_config=domain.get("groups"),
             ):
                 accessible.append(domain_id)
         except Exception:
@@ -1655,6 +1657,7 @@ async def run_tool(
             user_role=user["role"],
             module_permissions=module_perms,
             operation=Operation.EXECUTE,
+            groups_config=domain.get("groups"),
         ):
             raise HTTPException(status_code=403, detail="Module access denied")
     try:
@@ -2283,7 +2286,10 @@ async def ingest_upload(
 
     if user_data["role"] != "root":
         from lumina.core.permissions import Operation as PermOp, check_permission
-        if not check_permission(user_data["sub"], user_data["role"], perms, PermOp.INGEST):
+        if not check_permission(
+            user_data["sub"], user_data["role"], perms, PermOp.INGEST,
+            groups_config=domain_physics.get("groups"),
+        ):
             raise HTTPException(status_code=403, detail="Ingest permission required")
 
     # Detect content type from filename

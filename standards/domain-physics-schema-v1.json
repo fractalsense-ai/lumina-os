@@ -325,6 +325,16 @@
       ],
       "description": "Optional domain-scoped role hierarchy. Defines roles that exist only within this domain, beneath the Domain Authority ceiling. Each domain can define its own role tiers (e.g., teacher/teaching-assistant/student for education, site-manager/field-operator/observer for agriculture). The Domain Authority is always the implicit ceiling at hierarchy level 0. Omit entirely for domains that use only the 7 system-level roles."
     },
+    "groups": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{1,47}$"
+      },
+      "additionalProperties": {
+        "$ref": "group-definition-schema-v1.json"
+      },
+      "description": "Named groups for chmod-style group permission resolution. Each key is a group name that can be referenced by permissions.group. The kernel checks membership at runtime using the members block — it never interprets the group name semantically. Analogous to /etc/group in UNIX. Omit entirely for modules that rely on the backward-compatible system-role-name matching."
+    },
     "execution_policy": {
       "type": "object",
       "additionalProperties": false,

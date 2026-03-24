@@ -263,6 +263,35 @@ This design is implemented in `DomainRegistry.resolve_default_for_user()` in `sr
 
 ---
 
+## Groups — Bridging Domain Roles to chmod Permissions
+
+Domain packs define **named groups** in the `groups` block of a domain-physics document. Groups bridge the gap between domain roles and the chmod-style octal permission model: the `permissions.group` field references a group name, and the kernel checks membership at runtime.
+
+```yaml
+groups:
+  educators:
+    description: "Teaching staff with group-level permissions."
+    members:
+      domain_roles: [teacher, teaching_assistant]
+  learners:
+    description: "Students enrolled in the module."
+    members:
+      domain_roles: [student]
+
+permissions:
+  mode: "750"
+  owner: "da_algebra_lead_001"
+  group: "educators"          # ← references the group above
+```
+
+The kernel never interprets the group name semantically — it only checks whether the requesting user's system role or domain role appears in the `members` block. This is analogous to `/etc/group` in UNIX.
+
+If no `groups` block exists, the kernel falls back to matching `permissions.group` literally against the user's system role, preserving backward compatibility.
+
+See [`standards/group-definition-schema-v1.json`](../../standards/group-definition-schema-v1.json) for the formal schema.
+
+---
+
 ## SEE ALSO
 
 - [`specs/rbac-spec-v1.md`](../../specs/rbac-spec-v1.md) — Full RBAC specification including domain role hierarchy

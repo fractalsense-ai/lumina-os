@@ -43,6 +43,36 @@ def parse_octal(mode: str) -> tuple[int, int, int]:
     return int(mode[0]), int(mode[1]), int(mode[2])
 
 
+def _is_group_member(
+    user_role: str,
+    domain_role: str | None,
+    groups_config: dict[str, Any] | None,
+    group_name: str,
+) -> bool:
+    """Check whether the user is a member of the named group.
+
+    Resolution order:
+    1. If *groups_config* contains *group_name*, check its ``members``
+       block against the user's system role and optional domain role.
+    2. Fallback: if there is no groups block or the group name is not
+       defined in it, match literally against the user's system role.
+       This preserves backward compatibility with modules that set
+       ``permissions.group`` to a system role name.
+    """
+    if groups_config and group_name in groups_config:
+        members = groups_config[group_name].get("members", {})
+        sys_roles = members.get("system_roles", [])
+        if user_role in sys_roles:
+            return True
+        dom_roles = members.get("domain_roles", [])
+        if domain_role and domain_role in dom_roles:
+            return True
+        return False
+    # Backward compat: no groups block or group not listed — fall back to
+    # direct system-role string comparison.
+    return user_role == group_name
+
+
 def check_permission(
     user_id: str,
     user_role: str,
@@ -51,6 +81,7 @@ def check_permission(
     *,
     domain_role: str | None = None,
     domain_roles_config: dict[str, Any] | None = None,
+    groups_config: dict[str, Any] | None = None,
 ) -> bool:
     """Evaluate whether a user may perform *operation* on a module.
 
@@ -71,6 +102,9 @@ def check_permission(
     domain_roles_config:
         Optional ``domain_roles`` block from the module's domain-physics
         document.  Required when *domain_role* is provided.
+    groups_config:
+        Optional ``groups`` block from the module's domain-physics
+        document.  Maps group names to membership criteria.
 
     Returns
     -------
@@ -116,7 +150,7 @@ def check_permission(
     # Step 4: determine category
     if user_id == owner_id:
         bits = owner_bits
-    elif user_role == group_role:
+    elif _is_group_member(user_role, domain_role, groups_config, group_role):
         bits = group_bits
     else:
         bits = others_bits
@@ -222,6 +256,7 @@ def check_permission_or_raise(
     *,
     domain_role: str | None = None,
     domain_roles_config: dict[str, Any] | None = None,
+    groups_config: dict[str, Any] | None = None,
 ) -> None:
     """Like :func:`check_permission` but raises ``PermissionError`` on denial."""
     if not check_permission(
@@ -231,6 +266,7 @@ def check_permission_or_raise(
         operation,
         domain_role=domain_role,
         domain_roles_config=domain_roles_config,
+        groups_config=groups_config,
     ):
         op_name = operation.name or str(operation)
         raise PermissionError(

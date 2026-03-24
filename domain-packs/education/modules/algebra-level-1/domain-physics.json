@@ -316,7 +316,7 @@
         "role_name": "Teacher",
         "hierarchy_level": 1,
         "description": "Certified instructors who deliver lessons, monitor student progress, and receive escalation packets.",
-        "maps_to_system_role": "domain_authority",
+        "maps_to_system_role": "user",
         "default_access": "rwx",
         "may_assign_domain_roles": true,
         "max_assignable_level": 2,
@@ -369,6 +369,30 @@
         "access": "r",
         "scope": "log_records_own_students"
       }
+    ]
+  },
+  "groups": {
+    "educators": {
+      "description": "Teaching staff with group-level permissions on education modules.",
+      "members": {
+        "domain_roles": ["teacher", "teaching_assistant"]
+      }
+    },
+    "learners": {
+      "description": "Students enrolled in the module.",
+      "members": {
+        "domain_roles": ["student"]
+      }
+    }
+  },
+  "permissions": {
+    "mode": "750",
+    "owner": "da_algebra_lead_001",
+    "group": "educators",
+    "acl": [
+      { "role": "qa", "access": "rx", "scope": "evaluation_only" },
+      { "role": "auditor", "access": "r", "scope": "log_records_only" },
+      { "domain_role": "student", "access": "x" }
     ]
   },
   "execution_policy": {

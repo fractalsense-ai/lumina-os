@@ -47,6 +47,7 @@ def _get_accessible_domain_ids(
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                groups_config=domain.get("groups"),
             ):
                 accessible.append(domain_id)
         except Exception:
@@ -140,6 +141,7 @@ async def chat(
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                groups_config=domain.get("groups"),
             )
             if not has_access:
                 raise HTTPException(status_code=403, detail="Module access denied")

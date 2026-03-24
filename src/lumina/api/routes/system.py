@@ -84,6 +84,7 @@ async def run_tool(
             user_role=user["role"],
             module_permissions=module_perms,
             operation=Operation.EXECUTE,
+            groups_config=domain.get("groups"),
         ):
             raise HTTPException(status_code=403, detail="Module access denied")
     try:

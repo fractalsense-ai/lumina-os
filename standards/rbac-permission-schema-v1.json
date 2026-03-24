@@ -25,16 +25,8 @@
     },
     "group": {
       "type": "string",
-      "enum": [
-        "root",
-        "domain_authority",
-        "it_support",
-        "qa",
-        "auditor",
-        "user",
-        "guest"
-      ],
-      "description": "Role name that maps to the group permission bits. Any authenticated user with this role receives the group-level access defined by the middle octal digit."
+      "pattern": "^[a-z][a-z0-9_]{1,47}$",
+      "description": "Name of the group whose members receive the group-level access defined by the middle octal digit. Must reference a key in the groups block of the same domain-physics document, or a system role name for backward compatibility."
     },
     "acl": {
       "type": "array",

@@ -140,8 +140,16 @@ For a given `(user, module, operation)` tuple:
 
 2. Determine category:
    a. If user.pseudonymous_id == module.permissions.owner  → category = OWNER
-   b. Else if user.role == module.permissions.group        → category = GROUP
+   b. Else if _is_group_member(user, module.groups,
+              module.permissions.group)                     → category = GROUP
    c. Else                                                 → category = OTHERS
+
+   Group membership check (_is_group_member):
+   - If the module defines a "groups" block and the group name exists in it,
+     check whether user.role ∈ members.system_roles OR
+     user.domain_role ∈ members.domain_roles.
+   - Fallback: if no groups block or group name not listed, match
+     user.role == module.permissions.group (backward compatible).
 
 3. Extract bits from mode for the determined category:
    - OWNER → first octal digit
@@ -339,8 +347,11 @@ The domain role check is step 7 in the resolution algorithm, after all system-le
 
 2. Determine system-level category:
    a. If user.sub == module.permissions.owner  → category = OWNER
-   b. Else if user.role == module.permissions.group  → category = GROUP
+   b. Else if _is_group_member(user, module.groups,
+              module.permissions.group)              → category = GROUP
    c. Else  → category = OTHERS
+
+   Group membership check — see §Permission Resolution Algorithm above.
 
 3. Extract bits from mode for the determined category.
 4. Check if the required permission bit is set.

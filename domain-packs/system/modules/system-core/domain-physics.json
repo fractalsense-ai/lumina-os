@@ -8,11 +8,20 @@
   "permissions": {
     "mode": "770",
     "owner": "root",
-    "group": "it_support",
+    "group": "ops",
     "acl": [
       { "role": "root",       "access": "rwx" },
       { "role": "it_support", "access": "rwx" }
     ]
+  },
+
+  "groups": {
+    "ops": {
+      "description": "Operations staff with full system access.",
+      "members": {
+        "system_roles": ["root", "it_support"]
+      }
+    }
   },
 
   "topics": [

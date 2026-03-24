@@ -46,7 +46,7 @@
   "permissions": {
     "mode": "750",
     "owner": "da_agri_ops_001",
-    "group": "domain_authority",
+    "group": "staff",
     "acl": [
       {
         "role": "qa",
@@ -64,6 +64,14 @@
       }
     ]
   },
+  "groups": {
+    "staff": {
+      "description": "Site managers and field operators with group-level access to agricultural operations.",
+      "members": {
+        "domain_roles": ["site_manager", "field_operator"]
+      }
+    }
+  },
   "domain_roles": {
     "schema_version": "1.0",
     "roles": [
@@ -72,7 +80,7 @@
         "role_name": "Site Manager",
         "hierarchy_level": 1,
         "description": "On-site operational manager with full read/write/execute access to operations data.",
-        "maps_to_system_role": "domain_authority",
+        "maps_to_system_role": "user",
         "default_access": "rwx",
         "may_assign_domain_roles": true,
         "max_assignable_level": 2

@@ -34,7 +34,7 @@ Each module declares a permission block in its domain-physics document:
 permissions:
   mode: "750"           # owner=rwx, group=r-x, others=---
   owner: "da_lead_001"  # pseudonymous ID of owning domain authority
-  group: "domain_authority"
+  group: "educators"    # references a named group defined in the groups block
   acl:
     - role: qa
       access: rx
@@ -60,6 +60,31 @@ The octal mode `750` displays as `rwxr-x---`:
 - **Owner** (first 3): `rwx` — full access
 - **Group** (middle 3): `r-x` — read and execute
 - **Others** (last 3): `---` — no access
+
+## Groups
+
+The `groups` block in a domain-physics document defines named groups for chmod-style group permission resolution — analogous to `/etc/group` in UNIX. The kernel resolves group membership at runtime by checking the user's system role or domain role against the `members` block; it never interprets the group name semantically.
+
+```yaml
+groups:
+  educators:
+    description: "Teaching staff with group-level permissions."
+    members:
+      domain_roles: [teacher, teaching_assistant]
+  learners:
+    description: "Students enrolled in the module."
+    members:
+      domain_roles: [student]
+```
+
+Each group entry has:
+- **`members.system_roles`** — list of system role IDs whose holders are members.
+- **`members.domain_roles`** — list of domain role IDs whose holders are members.
+- At least one of the two lists must be present.
+
+The `permissions.group` field references a group name. When the kernel evaluates the group permission bits (middle octal digit), it checks whether the requesting user is a member of the named group.
+
+**Backward compatibility:** If no `groups` block exists, or the group name is not defined in it, the kernel falls back to matching `permissions.group` literally against the user's system role — the pre-groups behavior.
 
 ## Bootstrap Mode
 
@@ -159,7 +184,7 @@ domain_roles:
     - role_id: teacher
       role_name: Teacher
       hierarchy_level: 1
-      maps_to_system_role: domain_authority
+      maps_to_system_role: user
       default_access: rwx
       may_assign_domain_roles: true
       max_assignable_level: 2

@@ -79,7 +79,10 @@ async def ingest_upload(
 
     if user_data["role"] != "root":
         from lumina.core.permissions import Operation as PermOp, check_permission
-        if not check_permission(user_data["sub"], user_data["role"], perms, PermOp.INGEST):
+        if not check_permission(
+            user_data["sub"], user_data["role"], perms, PermOp.INGEST,
+            groups_config=domain_physics.get("groups"),
+        ):
             raise HTTPException(status_code=403, detail="Ingest permission required")
 
     filename = file.filename or "unknown"
