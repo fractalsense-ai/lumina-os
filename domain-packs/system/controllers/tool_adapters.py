@@ -121,6 +121,75 @@ def list_domains(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def list_modules(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return all modules registered for a given domain.
+
+    Payload keys:
+        domain_id (str, required): e.g. "education", "agriculture", "system"
+
+    Returns:
+        {
+            "domain_id": str,
+            "modules": [{"module_id": str, "domain_physics_path": str}, ...],
+            "count": int,
+        }
+    """
+    domain_id = str(payload.get("domain_id", ""))
+    if not domain_id:
+        return {"error": "domain_id is required", "modules": []}
+
+    registry = _load_yaml(_DOMAIN_REGISTRY_PATH)
+    if not isinstance(registry, dict):
+        return {"error": "domain-registry.yaml did not parse to a mapping", "modules": []}
+
+    domains_cfg: dict[str, Any] = registry.get("domains") or {}
+    domain_cfg = domains_cfg.get(domain_id)
+    if not isinstance(domain_cfg, dict):
+        return {"error": f"Domain '{domain_id}' not found", "modules": []}
+
+    runtime_cfg_path = _REPO_ROOT / domain_cfg["runtime_config_path"]
+    try:
+        runtime_raw = _load_yaml(runtime_cfg_path)
+    except Exception:
+        return {"error": f"Could not load runtime config for {domain_id}", "modules": []}
+
+    runtime = runtime_raw.get("runtime") or runtime_raw
+    modules: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    # Collect from module_map
+    module_map = runtime.get("module_map") or {}
+    for mod_id, mod_cfg in module_map.items():
+        if mod_id not in seen:
+            seen.add(mod_id)
+            modules.append({
+                "module_id": mod_id,
+                "domain_physics_path": mod_cfg.get("domain_physics_path", ""),
+            })
+
+    # Default module
+    default_dp = runtime.get("domain_physics_path", "")
+    if default_dp:
+        try:
+            dp_full = _REPO_ROOT / default_dp
+            with open(dp_full, encoding="utf-8") as fh:
+                dp_data = json.loads(fh.read())
+            default_mod_id = dp_data.get("id", "")
+        except Exception:
+            default_mod_id = ""
+        if default_mod_id and default_mod_id not in seen:
+            modules.append({
+                "module_id": default_mod_id,
+                "domain_physics_path": default_dp,
+            })
+
+    return {
+        "domain_id": domain_id,
+        "modules": modules,
+        "count": len(modules),
+    }
+
+
 def show_domain_physics(payload: dict[str, Any]) -> dict[str, Any]:
     """Return a summary of domain-physics for *domain_id*.
 

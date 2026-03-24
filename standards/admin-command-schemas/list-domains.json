@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lumina://standards/admin-command-schemas/list-domains.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-24",
+  "title": "list_domains",
+  "description": "List all available domains in the registry. Read-only, HITL-exempt.",
+  "type": "object",
+  "required": [
+    "operation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "operation": {
+      "const": "list_domains"
+    },
+    "target": {
+      "type": "string"
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    }
+  }
+}

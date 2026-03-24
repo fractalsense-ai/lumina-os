@@ -53,6 +53,38 @@ log = logging.getLogger("lumina-api")
 router = APIRouter()
 
 
+def _has_escalation_capability(user_data: dict[str, Any], module_id: str) -> bool:
+    """Check if user has a domain role with ``receive_escalations: true`` for *module_id*."""
+    domain_roles_map = user_data.get("domain_roles") or {}
+    role_id = domain_roles_map.get(module_id)
+    if not role_id:
+        return False
+    # Load the module's domain-physics to inspect scoped_capabilities
+    if _cfg.DOMAIN_REGISTRY is None:
+        return False
+    try:
+        # Resolve the domain from the module_id prefix
+        for domain_info in _cfg.DOMAIN_REGISTRY.list_domains():
+            modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(domain_info["domain_id"])
+            for mod in modules:
+                if mod["module_id"] != module_id:
+                    continue
+                physics_path = mod.get("domain_physics_path")
+                if not physics_path or not Path(physics_path).is_file():
+                    return False
+                with open(physics_path, encoding="utf-8") as fh:
+                    physics = json.load(fh)
+                for r in (physics.get("domain_roles") or {}).get("roles", []):
+                    if r.get("role_id") == role_id:
+                        return bool(
+                            (r.get("scoped_capabilities") or {}).get("receive_escalations")
+                        )
+                return False
+    except Exception:
+        log.debug("Could not check escalation capability for %s", module_id, exc_info=True)
+    return False
+
+
 # ─────────────────────────────────────────────────────────────
 # Escalation management
 # ─────────────────────────────────────────────────────────────
@@ -132,8 +164,10 @@ async def resolve_escalation(
     if req.decision not in ("approve", "reject", "defer"):
         raise HTTPException(status_code=400, detail="decision must be approve, reject, or defer")
 
-    if user_data["role"] not in ("root", "domain_authority"):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    # Defer full RBAC check until we know the escalation's module —
+    # domain-role users with receive_escalations capability are also allowed.
+    _role = user_data["role"]
+    _quick_pass = _role in ("root", "domain_authority")
 
     all_escalations = await run_in_threadpool(_cfg.PERSISTENCE.query_escalations)
     target = None
@@ -145,10 +179,15 @@ async def resolve_escalation(
     if target is None:
         raise HTTPException(status_code=404, detail="Escalation not found")
 
-    if user_data["role"] == "domain_authority":
-        domain = target.get("domain_pack_id", "")
-        if not can_govern_domain(user_data, domain):
+    module_id = target.get("domain_pack_id", "")
+
+    if _role == "domain_authority":
+        if not can_govern_domain(user_data, module_id):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
+    elif not _quick_pass:
+        # Not root/DA — check for domain-role escalation capability
+        if not _has_escalation_capability(user_data, module_id):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     record = build_commitment_record(
         actor_id=user_data["sub"],
@@ -380,6 +419,19 @@ _KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "night_cycle_status",
     "review_proposals",
     "invite_user",
+    "list_domains",
+    "list_modules",
+})
+
+# Read-only operations that bypass HITL staging and execute immediately.
+_HITL_EXEMPT_OPS: frozenset[str] = frozenset({
+    "list_domains",
+    "list_modules",
+    "list_ingestions",
+    "list_escalations",
+    "module_status",
+    "night_cycle_status",
+    "explain_reasoning",
 })
 
 # Staged commands awaiting human resolution (keyed by staged_id).
@@ -409,6 +461,21 @@ def _compute_schema_delta(original: dict[str, Any], modified: dict[str, Any]) ->
     return delta
 
 
+# Domain-specific roles the SLM may output that map to the "user" system role.
+# The intended domain role is preserved in params["intended_domain_role"] so
+# downstream logic (e.g. assign_domain_role chaining) can use it.
+_DOMAIN_ROLE_ALIASES: dict[str, str] = {
+    "student": "user",
+    "teacher": "user",
+    "teaching_assistant": "user",
+    "parent": "user",
+    "observer": "user",
+    "field_operator": "user",
+    "site_manager": "user",
+    "ta": "user",
+}
+
+
 def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
     """Normalise SLM-produced command dicts so they match admin-command-schemas.
 
@@ -425,26 +492,44 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
     target = cmd.get("target", "")
     operation = cmd.get("operation", "")
 
-    if operation == "update_user_role":
-        # ── user_id fallback: SLM often puts the username in 'target' ──
-        if not params.get("user_id") and target:
-            params["user_id"] = target
+    if operation in ("update_user_role", "invite_user"):
+        # ── user_id / username fallback: SLM often puts the name in 'target' ──
+        if operation == "update_user_role":
+            if not params.get("user_id") and target:
+                params["user_id"] = target
+        elif operation == "invite_user":
+            if not params.get("username") and target:
+                params["username"] = target
 
-        # ── new_role normalisation: "Domain Authority" → "domain_authority" ──
-        raw_role = params.get("new_role", "")
+        # ── new_role / role normalisation: "Domain Authority" → "domain_authority" ──
+        role_key = "new_role" if operation == "update_user_role" else "role"
+        raw_role = params.get(role_key, "")
         if raw_role and not re.fullmatch(r"[a-z_]+", raw_role):
-            params["new_role"] = re.sub(r"[\s-]+", "_", raw_role.strip()).lower()
+            params[role_key] = re.sub(r"[\s-]+", "_", raw_role.strip()).lower()
 
-        # ── Fuzzy role matching: SLM may produce values like
-        #    "system_domain_as_it_support" or "education" that aren't valid.
-        #    Try substring match against known roles. ──
-        normalised_role = params.get("new_role", "")
+        # ── Domain-role alias table: map domain-specific roles to system role ──
+        # SLM often outputs domain roles like "student", "teacher", "field_operator"
+        # which are NOT system roles.  Map them to the system role "user" and
+        # preserve the intended domain role for downstream chaining.
+        normalised_role = params.get(role_key, "")
         if normalised_role and normalised_role not in VALID_ROLES:
-            matched = [vr for vr in VALID_ROLES if vr in normalised_role]
-            if matched:
-                # Pick the longest match to avoid e.g. "user" matching inside
-                # "domain_authority_user"
-                params["new_role"] = max(matched, key=len)
+            # Strip common domain prefixes the SLM invents
+            # e.g. "education_user" → "user", "education_domain_user" → "user"
+            _stripped = re.sub(
+                r"^(education|agriculture|system)_?(domain_?)?", "", normalised_role,
+            )
+            if _stripped and _stripped in VALID_ROLES:
+                params["intended_domain_role"] = normalised_role
+                params[role_key] = _stripped
+            elif normalised_role in _DOMAIN_ROLE_ALIASES:
+                params["intended_domain_role"] = normalised_role
+                params[role_key] = _DOMAIN_ROLE_ALIASES[normalised_role]
+            else:
+                # Fuzzy substring match against known system roles
+                matched = [vr for vr in VALID_ROLES if vr in normalised_role]
+                if matched:
+                    params["intended_domain_role"] = normalised_role
+                    params[role_key] = max(matched, key=len)
 
         # ── governed_modules: may appear at top level or inside params ──
         if "governed_modules" not in params and cmd.get("governed_modules"):
@@ -454,6 +539,25 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
         gm = params.get("governed_modules")
         if isinstance(gm, str):
             params["governed_modules"] = [gm]
+
+        # ── Expand "all": SLM may output governed_modules: "all" or ["all"] ──
+        gm_list = params.get("governed_modules")
+        if isinstance(gm_list, list) and any(
+            isinstance(m, str) and m.lower() == "all" for m in gm_list
+        ):
+            # Determine domain from context — use target field or the first
+            # module_prefix hint in existing governed_modules
+            _domain_hint = cmd.get("target", "") or params.get("domain_id", "")
+            try:
+                if _domain_hint and _cfg.DOMAIN_REGISTRY is not None:
+                    _resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_domain_hint)
+                    _mod_list = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(_resolved_domain)
+                    if _mod_list:
+                        params["governed_modules"] = [m["module_id"] for m in _mod_list]
+            except Exception:
+                # If we can't resolve, leave as-is — graceful degradation
+                # will catch it downstream
+                pass
 
     elif operation in ("assign_domain_role", "revoke_domain_role"):
         # Similar user_id fallback for role assignment operations
@@ -524,9 +628,11 @@ def _stage_command(
         "target_meta_authority_id": "root",
         "trigger": f"hitl_command_pending: {operation}",
         "trigger_type": "other",
-        "domain_pack_id": (parsed_command.get("params") or {}).get("governed_modules", [None])[0]
+        "domain_pack_id": (
+            ((parsed_command.get("params") or {}).get("governed_modules") or [None])[0]
             if isinstance((parsed_command.get("params") or {}).get("governed_modules"), list)
-            else (parsed_command.get("params") or {}).get("governed_modules"),
+            else (parsed_command.get("params") or {}).get("governed_modules")
+        ),
         "evidence_summary": {
             "staged_id": staged_id,
             "operation": operation,
@@ -852,8 +958,8 @@ async def _execute_admin_operation(
             result = {"operation": operation, "proposals": proposals, "count": len(proposals)}
 
     elif operation == "invite_user":
-        if user_data["role"] not in ("root", "it_support"):
-            raise HTTPException(status_code=403, detail="Only root or it_support can invite users")
+        if user_data["role"] not in ("root", "it_support", "domain_authority"):
+            raise HTTPException(status_code=403, detail="Only root, it_support, or domain_authority can invite users")
         username = str(params.get("username", parsed.get("target", "")))
         role = str(params.get("role", "user"))
         governed_modules_raw = params.get("governed_modules", [])
@@ -869,6 +975,20 @@ async def _execute_admin_operation(
                 status_code=400,
                 detail="governed_modules is required when role is domain_authority",
             )
+
+        # DA-scoped invite: domain_authority can only invite "user" role within their governed modules
+        if user_data["role"] == "domain_authority":
+            if role not in ("user", "guest"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Domain authority can only invite users with 'user' or 'guest' role",
+                )
+            da_governed = set(user_data.get("governed_modules") or [])
+            if governed_modules and not set(governed_modules).issubset(da_governed):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Cannot invite user to modules outside your governed scope",
+                )
 
         existing = await run_in_threadpool(_cfg.PERSISTENCE.get_user_by_username, username)
         if existing is not None:
@@ -921,6 +1041,24 @@ async def _execute_admin_operation(
             "setup_url": setup_url,
             "email_sent": email_sent,
         }
+
+    elif operation == "list_domains":
+        domains = _cfg.DOMAIN_REGISTRY.list_domains()
+        result = {"operation": operation, "domains": domains, "count": len(domains)}
+
+    elif operation == "list_modules":
+        domain_id = str(params.get("domain_id", parsed.get("target", "")))
+        if not domain_id:
+            raise HTTPException(status_code=422, detail="domain_id required")
+        try:
+            resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        # DA scoping: domain_authority sees only governed domain modules
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, resolved):
+            raise HTTPException(status_code=403, detail="Not authorized for this domain")
+        modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved)
+        result = {"operation": operation, "domain_id": resolved, "modules": modules, "count": len(modules)}
 
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
@@ -996,6 +1134,26 @@ async def admin_command(
     operation = parsed.get("operation", "")
     if operation not in _KNOWN_OPERATIONS:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+
+    # HITL-exempt operations execute immediately without staging.
+    if operation in _HITL_EXEMPT_OPS:
+        parsed = _normalize_slm_command(parsed)
+        try:
+            exec_result = await _execute_admin_operation(user_data, parsed, req.instruction)
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        # Read-only queries don't write a log record; satisfy the commit guard.
+        from lumina.system_log.commit_guard import notify_log_commit
+        notify_log_commit()
+        return {
+            "staged_id": None,
+            "staged_command": parsed,
+            "original_instruction": req.instruction,
+            "result": exec_result,
+            "hitl_exempt": True,
+        }
 
     try:
         entry = _stage_command(

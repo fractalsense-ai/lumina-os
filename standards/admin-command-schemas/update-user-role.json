@@ -49,6 +49,10 @@
             "minLength": 1
           },
           "description": "Domain packs the user is authorised to govern (relevant for domain_authority role)."
+        },
+        "intended_domain_role": {
+          "type": "string",
+          "description": "Original domain-specific role from SLM output (e.g. student, teacher) before mapping to system role."
         }
       }
     }

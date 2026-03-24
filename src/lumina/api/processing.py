@@ -37,6 +37,57 @@ from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 log = logging.getLogger("lumina-api")
 
 
+def _build_clarification_response(
+    error_msg: str,
+    cmd_dispatch: dict[str, Any],
+    user: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Build a structured clarification card when auto-stage fails.
+
+    Instead of silently swallowing the error, this produces a user-visible
+    card explaining what went wrong and how to fix it.
+    """
+    operation = cmd_dispatch.get("operation", "")
+    params = cmd_dispatch.get("params") or {}
+
+    hints: list[str] = []
+
+    # Detect common failure patterns and provide actionable guidance
+    if "schema validation failed" in error_msg.lower():
+        raw_role = params.get("new_role", params.get("role", ""))
+        if raw_role:
+            from lumina.api.routes.admin import _DOMAIN_ROLE_ALIASES
+            if raw_role in _DOMAIN_ROLE_ALIASES:
+                hints.append(
+                    f"'{raw_role}' is a domain role, not a system role. "
+                    f"The system role should be 'user'. "
+                    f"You can then assign the domain role '{raw_role}' separately."
+                )
+
+    if "governed_modules" in error_msg.lower() or not params.get("governed_modules"):
+        # Try to list available modules
+        try:
+            if _cfg.DOMAIN_REGISTRY is not None:
+                domains = _cfg.DOMAIN_REGISTRY.list_domains()
+                domain_labels = [f"{d['domain_id']} ({d['label']})" for d in domains]
+                hints.append(f"Available domains: {', '.join(domain_labels)}")
+        except Exception:
+            pass
+
+    if not hints:
+        hints.append(f"The command could not be processed: {error_msg}")
+        hints.append("Please rephrase with the required fields.")
+
+    return {
+        "type": "action_card",
+        "card_type": "clarification_needed",
+        "operation": operation,
+        "error": error_msg,
+        "hints": hints,
+        "original_params": {k: v for k, v in params.items() if k != "password"},
+    }
+
+
 def process_message(
     session_id: str,
     input_text: str,
@@ -382,16 +433,56 @@ def process_message(
             _actor_id = (user or {}).get("sub", "")
             _actor_role = (user or {}).get("role", "user")
             try:
-                from lumina.api.routes.admin import _stage_command
+                from lumina.api.routes.admin import _stage_command, _HITL_EXEMPT_OPS, _normalize_slm_command
 
-                _staged = _stage_command(
-                    parsed_command=cmd_dispatch,
-                    original_instruction=input_text,
-                    actor_id=_actor_id,
-                    actor_role=_actor_role,
+                operation = cmd_dispatch.get("operation", "")
+
+                # HITL-exempt operations execute immediately without staging
+                if operation in _HITL_EXEMPT_OPS:
+                    from lumina.api.routes.admin import _execute_admin_operation
+                    import asyncio
+
+                    _normalized = _normalize_slm_command(cmd_dispatch)
+                    _user_data = user or {"sub": _actor_id, "role": _actor_role}
+                    # _execute_admin_operation is async; we are in a sync function.
+                    _coro = _execute_admin_operation(
+                        _user_data, _normalized, input_text,
+                    )
+                    try:
+                        _loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        _loop = None
+
+                    if _loop is not None and _loop.is_running():
+                        # Already in an async context (e.g. FastAPI) — create a
+                        # task via run_coroutine_threadsafe from a thread.
+                        import concurrent.futures
+                        _future = asyncio.run_coroutine_threadsafe(_coro, _loop)
+                        _exec_result = _future.result(timeout=30)
+                    else:
+                        _exec_result = asyncio.run(_coro)
+
+                    structured_content = {
+                        "type": "action_card",
+                        "card_type": "query_result",
+                        "operation": operation,
+                        "result": _exec_result,
+                    }
+                else:
+                    _staged = _stage_command(
+                        parsed_command=cmd_dispatch,
+                        original_instruction=input_text,
+                        actor_id=_actor_id,
+                        actor_role=_actor_role,
+                    )
+                    structured_content = _staged.get("structured_content")
+            except ValueError as _val_err:
+                log.warning("Auto-stage failed for command_dispatch: %s", _val_err, exc_info=True)
+                # Build a clarification response instead of silently swallowing
+                structured_content = _build_clarification_response(
+                    str(_val_err), cmd_dispatch, user,
                 )
-                structured_content = _staged.get("structured_content")
-            except (ValueError, Exception):
+            except Exception:
                 log.warning("Auto-stage failed for command_dispatch", exc_info=True)
 
     tool_results = apply_tool_call_policy(

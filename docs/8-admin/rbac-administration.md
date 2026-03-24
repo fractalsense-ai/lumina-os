@@ -250,6 +250,47 @@ lumina-manifest-regen
 python -m lumina.systools.manifest_integrity regen
 ```
 
+## Discovery Operations
+
+Two HITL-exempt admin operations allow querying the domain and module
+inventory without HITL staging:
+
+| Operation       | Command                      | RBAC                                |
+|----------------|------------------------------|-------------------------------------|
+| `list_domains`  | "list domains"               | root, domain_authority, it_support  |
+| `list_modules`  | "list modules for education" | root, domain_authority*, it_support |
+
+\* Domain Authority sees only modules for domains they govern.
+
+These execute immediately and return results inline. See
+[list-domains(1)](../1-commands/list-domains.md) and
+[list-modules(1)](../1-commands/list-modules.md).
+
+## DA-Scoped User Invites
+
+A Domain Authority can invite new users into their governed modules,
+subject to these constraints:
+
+- The invited user's role must be `user` or `guest` (DA cannot create
+  higher-privileged system accounts).
+- The `governed_modules` of the new user must be a subset of the DA's
+  own `governed_modules`.
+- The invite follows the same HITL staging flow as root invites.
+
+This allows DAs to onboard students, TAs, and parents without escalating
+to root for every new user.
+
+## Escalation Resolution by Domain Role
+
+Users with a domain role that has `receive_escalations: true` in their
+module's domain-physics can resolve escalations for that module.  This
+extends the default RBAC check (which allows only `root` and
+`domain_authority`) to include teachers and other instructional staff.
+
+The resolution is scoped: the user can only resolve escalations whose
+`domain_pack_id` matches a module where they hold an escalation-capable
+domain role.
+
 ## SEE ALSO
 
 - [rbac-spec-v1](../../specs/rbac-spec-v1.md) — Full RBAC specification
@@ -257,3 +298,6 @@ python -m lumina.systools.manifest_integrity regen
 - [permissions(3)](../3-functions/permissions.md) — Permission checker
 - [domain-role-hierarchy](../7-concepts/domain-role-hierarchy.md) — Domain-scoped role hierarchy concept
 - [domain-authority-roles](../../governance/domain-authority-roles.md) — Governance role definitions
+- [list-domains(1)](../1-commands/list-domains.md) — List registered domains
+- [list-modules(1)](../1-commands/list-modules.md) — List modules for a domain
+- [graceful-degradation](../7-concepts/graceful-degradation.md) — Clarification flow for SLM failures

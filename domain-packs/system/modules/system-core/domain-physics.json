@@ -76,6 +76,23 @@
       ]
     },
     {
+      "id": "slm_command_translation_guidance",
+      "label": "SLM Command Translation Guidance",
+      "description": "Rules for translating natural-language admin commands into structured JSON before schema validation.",
+      "steps": [
+        "1. When the user specifies a domain-specific role (student, teacher, teaching_assistant, parent, observer, field_operator, site_manager), map it to the system role 'user' and preserve the original name in the 'intended_domain_role' field.",
+        "2. Strip domain prefixes from role names: 'education_user' → 'user', 'agriculture_field_operator' → 'field_operator' → 'user'.",
+        "3. Valid system roles are: root, domain_authority, it_support, qa, auditor, user, guest.",
+        "4. If governed_modules is 'all' or omitted, attempt to resolve the target domain from context (e.g. 'add a student to education' → domain=education) and list concrete module IDs.",
+        "5. If the domain is ambiguous, request clarification — do not guess.",
+        "6. For discovery queries (list domains, list modules, module status), produce the matching operation directly — these are HITL-exempt and execute immediately."
+      ],
+      "notes": [
+        "Domain roles live in domain-physics.json, not in the RBAC system. A 'student' is a user with a domain role, not a separate system role.",
+        "The intended_domain_role field is advisory — it guides downstream domain-role assignment after the user account is created."
+      ]
+    },
+    {
       "id": "escalation_review_sop",
       "label": "Escalation Review SOP",
       "description": "Standard operating procedure for reviewing and resolving open escalation events.",
@@ -137,7 +154,10 @@
     { "term": "pending_user",       "definition": "A user account that has been created by invitation but not yet activated.  active=false, password_hash is empty.  Cannot log in until POST /api/auth/setup-password is called with a valid invite_token." },
     { "term": "user_management_sop","definition": "The standing order defining the invite → setup-link → password-set → active account workflow.  Ensures passwords are never transmitted over the admin interface." },
     { "term": "domain_authority_onboarding_sop", "definition": "The standing order for creating domain_authority accounts with explicit governed_modules definitions before the invite is issued." },
-    { "term": "escalation_review_sop", "definition": "The standing order for reviewing, resolving, and optionally PIN-unlocking sessions tied to open escalation events." }
+    { "term": "escalation_review_sop", "definition": "The standing order for reviewing, resolving, and optionally PIN-unlocking sessions tied to open escalation events." },
+    { "term": "domain_role",          "definition": "A role defined in a module's domain-physics.json (e.g. student, teacher, parent) that is scoped to that domain.  Domain roles are not system roles; they map to the system role 'user' via maps_to_system_role.  Domain roles carry module-specific capabilities and access levels." },
+    { "term": "system_role",          "definition": "One of the seven RBAC roles recognised by the Lumina kernel: root, domain_authority, it_support, qa, auditor, user, guest.  System roles are stored in the user record and govern API-level access.  Domain roles are assigned separately within a module context." },
+    { "term": "intended_domain_role", "definition": "An advisory field set during SLM command normalisation when the user requests a domain-specific role (e.g. 'student').  The system role is set to 'user' and the original domain role name is preserved in this field for downstream domain-role assignment." }
   ],
 
   "default_task_spec": {

@@ -496,6 +496,22 @@
           "view_other_progress": false,
           "query_glossary": true
         }
+      },
+      {
+        "role_id": "parent",
+        "role_name": "Parent / Guardian",
+        "hierarchy_level": 2,
+        "description": "Parents or guardians who can view their assigned child's progress and receive escalation notifications.",
+        "maps_to_system_role": "user",
+        "default_access": "r",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "view_assigned_child_progress": true,
+          "receive_escalation_notifications": true,
+          "query_glossary": true,
+          "view_other_progress": false,
+          "modify_domain_physics": false
+        }
       }
     ],
     "role_acl": [
@@ -522,6 +538,12 @@
       "description": "Students enrolled in the module.",
       "members": {
         "domain_roles": ["student"]
+      }
+    },
+    "guardians": {
+      "description": "Parents and guardians with view access to their assigned child's progress.",
+      "members": {
+        "domain_roles": ["parent"]
       }
     }
   },

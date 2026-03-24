@@ -48,6 +48,14 @@
             "type": "string"
           },
           "description": "Module IDs the new domain_authority may govern."
+        },
+        "intended_domain_role": {
+          "type": "string",
+          "description": "Original domain-specific role from SLM output (e.g. student, teacher) before mapping to system role."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address for sending the invite link."
         }
       }
     }

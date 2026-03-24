@@ -148,6 +148,54 @@ class DomainRegistry:
             })
         return result
 
+    def list_modules_for_domain(self, domain_id: str) -> list[dict[str, Any]]:
+        """Return module catalog for a domain.
+
+        Reads the runtime config to discover the default module and any
+        entries in ``module_map``.  Each returned dict contains at minimum
+        ``module_id`` and ``domain_physics_path``.
+        """
+        entry = self._domains.get(domain_id)
+        if entry is None:
+            raise DomainNotFoundError(domain_id, list(self._domains.keys()))
+
+        cfg_path = self._repo_root / entry["runtime_config_path"]
+        raw = load_yaml(str(cfg_path))
+        runtime_block = raw.get("runtime") or raw
+
+        modules: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+
+        # Collect modules from module_map
+        module_map = runtime_block.get("module_map") or {}
+        for mod_id, mod_cfg in module_map.items():
+            if mod_id in seen_ids:
+                continue
+            seen_ids.add(mod_id)
+            modules.append({
+                "module_id": mod_id,
+                "domain_physics_path": mod_cfg.get("domain_physics_path", ""),
+            })
+
+        # Also include the default domain_physics_path module (if not already listed)
+        default_dp_path = runtime_block.get("domain_physics_path", "")
+        if default_dp_path:
+            # Read the id field from the domain-physics file
+            try:
+                import json as _json
+                dp_full = self._repo_root / default_dp_path
+                dp_data = _json.loads(dp_full.read_text(encoding="utf-8"))
+                default_mod_id = dp_data.get("id", "")
+            except Exception:
+                default_mod_id = ""
+            if default_mod_id and default_mod_id not in seen_ids:
+                modules.append({
+                    "module_id": default_mod_id,
+                    "domain_physics_path": default_dp_path,
+                })
+
+        return modules
+
     def get_domain_routing_map(self) -> dict[str, dict[str, Any]]:
         """Return domain metadata for semantic routing.
 

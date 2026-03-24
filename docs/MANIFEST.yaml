@@ -48,6 +48,22 @@ artifacts:
     last_updated: 2026-03-12
     sha256: ed93ceebaf279cc08c62a8d1b1454d79d1dddc03bbfcdbf0901012c8915c7ba1
 
+  - path: docs/1-commands/list-domains.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: c94a48de661b60477e4fef5717028f0bd0c7a402896506ea235b6e3a02b1e100
+
+  - path: docs/1-commands/list-modules.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: 917ba66012f66eecb69164598149ceed7e645ec229046eb91fc8f5f78540c430
+
   - path: docs/1-commands/manifest-regenerate.md
     type: doc
     section: 1
@@ -273,6 +289,14 @@ artifacts:
     status: active
     last_updated: 2026-06-15
     sha256: eaa23d227ce717df05ae2c7a50469c140b283c3288cc5442636738570a281427
+
+  - path: docs/7-concepts/graceful-degradation.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: 7c9b032a9d0fb6896a10490c59001794aedee73327eea85eca24abb8bb3c1881
 
   - path: docs/7-concepts/ingestion-pipeline.md
     type: doc
@@ -606,6 +630,13 @@ artifacts:
     last_updated: 2026-03-15
     sha256: 5dd1d09c524b97ca7ae340605711b5ae50414048836311acea95e42cc765024d
 
+  - path: standards/group-definition-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: c8c5100bef96ac258c777ca33eb5672110e8787898c5421d473656679db1108b
+
   - path: standards/inspection-result-schema-v1.json
     type: schema
     doc_version: 1.0.0
@@ -707,6 +738,13 @@ artifacts:
     last_updated: 2026-03-20
     sha256: 4b5c43bcae6dec71588f2dc8de90f6cf302825aaa9205d4f841c3d34efe95cf3
 
+  - path: standards/admin-command-schemas/list-domains.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: 292d3ead304cff934fb95742146e86559d1196ff80b2c0533025853c78f40789
+
   - path: standards/admin-command-schemas/list-escalations.json
     type: schema
     doc_version: 1.0.0
@@ -720,6 +758,13 @@ artifacts:
     status: active
     last_updated: 2026-03-20
     sha256: 9f72ae304750d11e481c4214d141a68f3a95c35646abbc179f59c85a11d372be
+
+  - path: standards/admin-command-schemas/list-modules.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: 506509bae3255423183e743c617ccfe06e8a7a90c3b4f24ca78f44e4707b346d
 
   - path: standards/admin-command-schemas/module-status.json
     type: schema
