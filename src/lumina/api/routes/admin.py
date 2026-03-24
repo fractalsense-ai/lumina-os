@@ -44,6 +44,7 @@ from lumina.system_log.admin_operations import (
     can_govern_domain,
     map_role_to_actor_role,
 )
+from lumina.core.state_machine import StateTransaction, TransactionState, IllegalTransitionError
 from lumina.middleware.command_schema_registry import validate_command
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
 from lumina.system_log.commit_guard import requires_log_commit
@@ -651,6 +652,16 @@ def _stage_command(
     except Exception:
         log.warning("Failed to write EscalationRecord for staged command %s", staged_id)
 
+    # Build atomic state transaction — PROPOSED then immediately VALIDATED
+    # (schema validation already passed above).
+    txn = StateTransaction(
+        transaction_id=staged_id,
+        operation=operation,
+        actor_id=actor_id,
+        metadata={"parsed_command": parsed_command, "original_instruction": original_instruction},
+    )
+    txn = txn.advance(TransactionState.VALIDATED, actor_id=actor_id)
+
     entry: dict[str, Any] = {
         "staged_id": staged_id,
         "actor_id": actor_id,
@@ -661,6 +672,7 @@ def _stage_command(
         "expires_at": expires_at,
         "log_stage_record_id": stage_record["record_id"],
         "resolved": False,
+        "transaction": txn,
     }
     with _STAGED_COMMANDS_LOCK:
         _STAGED_COMMANDS[staged_id] = entry
@@ -1221,6 +1233,12 @@ async def admin_command_resolve(
     original_instruction = entry["original_instruction"]
 
     if req.action == "reject":
+        # Advance state transaction → ROLLED_BACK
+        txn = entry.get("transaction")
+        if txn is not None:
+            txn = txn.advance(TransactionState.ROLLED_BACK, actor_id=user_data["sub"])
+            entry["transaction"] = txn
+
         record = build_commitment_record(
             actor_id=user_data["sub"],
             actor_role=actor_role,
@@ -1279,7 +1297,19 @@ async def admin_command_resolve(
             "parsed_command": parsed,
         }
 
+    # Advance state transaction → COMMITTED before executing side-effects
+    txn = entry.get("transaction")
+    if txn is not None:
+        txn = txn.advance(TransactionState.COMMITTED, actor_id=user_data["sub"])
+        entry["transaction"] = txn
+
     exec_result = await _execute_admin_operation(user_data, parsed, original_instruction)
+
+    # Advance state transaction → FINALIZED after side-effects succeed
+    txn = entry.get("transaction")
+    if txn is not None:
+        txn = txn.advance(TransactionState.FINALIZED, actor_id=user_data["sub"])
+        entry["transaction"] = txn
 
     record = build_commitment_record(
         actor_id=user_data["sub"],
@@ -1296,13 +1326,17 @@ async def admin_command_resolve(
         ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
     )
 
-    return {
+    response: dict[str, Any] = {
         "staged_id": staged_id,
         "action": req.action,
         "parsed_command": parsed,
         "result": exec_result,
         "log_record_id": record["record_id"],
     }
+    txn = entry.get("transaction")
+    if txn is not None:
+        response["transaction_state"] = txn.state.value
+    return response
 
 
 # ─────────────────────────────────────────────────────────────

@@ -24,6 +24,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from lumina.core.state_machine import StateTransaction, TransactionState
+
 from lumina.system_log.admin_operations import (
     build_commitment_record,
     map_role_to_actor_role,
@@ -53,9 +55,27 @@ class StagedFile:
     resolved_at: str | None = None
     final_path: str | None = None
     log_record_id: str | None = None
+    transaction: StateTransaction | None = field(default=None, repr=False)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        # Serialize transaction to dict for JSON persistence
+        if self.transaction is not None:
+            d["transaction"] = self.transaction.to_dict()
+        else:
+            d.pop("transaction", None)
+        return d
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> StagedFile:
+        """Reconstruct a ``StagedFile`` from a JSON-loaded dict."""
+        txn_raw = data.get("transaction")
+        fields = {k: v for k, v in data.items()
+                  if k in cls.__dataclass_fields__ and k != "transaction"}
+        sf = cls(**fields)
+        if isinstance(txn_raw, dict) and "transaction_id" in txn_raw:
+            sf.transaction = StateTransaction.from_dict(txn_raw)
+        return sf
 
 
 # ------------------------------------------------------------------
@@ -124,6 +144,16 @@ class StagingService:
             staged_at=now,
         )
 
+        # Create state transaction — PROPOSED → VALIDATED (checks passed)
+        txn = StateTransaction(
+            transaction_id=staged_id,
+            operation=f"stage_file:{template_id}",
+            actor_id=actor_id,
+            metadata={"template_id": template_id},
+        )
+        txn = txn.advance(TransactionState.VALIDATED, actor_id=actor_id)
+        envelope.transaction = txn
+
         # Write System Log record for staging
         log_rec = build_commitment_record(
             actor_id=actor_id,
@@ -161,9 +191,7 @@ class StagingService:
                     continue
                 if actor_id and data.get("actor_id") != actor_id:
                     continue
-                results.append(StagedFile(**{
-                    k: v for k, v in data.items() if k in StagedFile.__dataclass_fields__
-                }))
+                results.append(StagedFile.from_dict(data))
         return results
 
     def get_staged(self, staged_id: str) -> StagedFile | None:
@@ -175,9 +203,7 @@ class StagingService:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return None
-        return StagedFile(**{
-            k: v for k, v in data.items() if k in StagedFile.__dataclass_fields__
-        })
+        return StagedFile.from_dict(data)
 
     # -- Approve ------------------------------------------------------
 
@@ -205,6 +231,12 @@ class StagingService:
         ValueError — staged file not found or already resolved.
         """
         envelope = self._load_and_check(staged_id)
+
+        # Advance transaction → COMMITTED before side-effects
+        if envelope.transaction is not None:
+            envelope.transaction = envelope.transaction.advance(
+                TransactionState.COMMITTED, actor_id=approver_id,
+            )
 
         template = TemplateRegistry.require(envelope.template_id)
 
@@ -240,6 +272,13 @@ class StagingService:
         envelope.resolved_at = datetime.now(timezone.utc).isoformat()
         envelope.final_path = str(final)
         envelope.log_record_id = log_rec.get("record_id")
+
+        # Advance transaction → FINALIZED after side-effects succeed
+        if envelope.transaction is not None:
+            envelope.transaction = envelope.transaction.advance(
+                TransactionState.FINALIZED, actor_id=approver_id,
+            )
+
         self._persist_envelope(envelope)
 
         log.info("Approved staged file %s → %s", staged_id, final)
@@ -270,6 +309,13 @@ class StagingService:
         envelope.approver_id = approver_id
         envelope.resolved_at = datetime.now(timezone.utc).isoformat()
         envelope.log_record_id = log_rec.get("record_id")
+
+        # Advance transaction → ROLLED_BACK
+        if envelope.transaction is not None:
+            envelope.transaction = envelope.transaction.advance(
+                TransactionState.ROLLED_BACK, actor_id=approver_id,
+            )
+
         self._persist_envelope(envelope)
 
         log.info("Rejected staged file %s (reason=%s)", staged_id, reason)

@@ -606,5 +606,10 @@
     "deterministic_tools": [
       "adapter/edu/algebra-checker/v1"
     ]
+  },
+  "temporal_policy": {
+    "module_ttl_seconds": 900,
+    "domain_ttl_seconds": 14400,
+    "system_ttl_seconds": 86400
   }
 }

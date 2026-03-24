@@ -27,6 +27,7 @@ import logging
 from typing import Any, Callable, Awaitable, Sequence
 
 from lumina.system_log.event_payload import LogEvent, LogLevel
+from lumina.system_log.telemetry_mask import apply_masking
 
 log = logging.getLogger("lumina.log-bus")
 
@@ -106,9 +107,13 @@ def emit(event: LogEvent) -> None:
     When called from a running event loop, this schedules the put via
     ``call_soon_threadsafe``.  When no loop is running it falls back to
     a direct synchronous put (unit-test convenience).
+
+    Telemetry masking is applied before the event reaches the queue,
+    controlled by ``LUMINA_TELEMETRY_MASKING_ENABLED``.
     """
     if not _running:
         return
+    event = apply_masking(event)
     try:
         loop = asyncio.get_running_loop()
         loop.call_soon_threadsafe(_queue.put_nowait, event)
@@ -121,9 +126,13 @@ def emit(event: LogEvent) -> None:
 
 
 async def emit_async(event: LogEvent) -> None:
-    """Queue an event for dispatch (async)."""
+    """Queue an event for dispatch (async).
+
+    Telemetry masking is applied before the event reaches the queue.
+    """
     if not _running:
         return
+    event = apply_masking(event)
     await _queue.put(event)
 
 

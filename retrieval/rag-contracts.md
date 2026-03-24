@@ -137,3 +137,42 @@ If grounding fails (required content cannot be retrieved and verified):
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements (Section 5)
 - [`../specs/memory-spec-v1.md`](../specs/memory-spec-v1.md) — memory layer overview
 - [`../standards/system-log-v1.md`](../standards/system-log-v1.md) — System Log record types
+
+---
+
+## Semantic Vector Search
+
+The retrieval layer supports **semantic vector search** as the second tier of
+the retrieval order (see *Retrieval Order* above). Semantic search is powered
+by a sentence-transformer embedding model (`all-MiniLM-L6-v2`, 384 dimensions)
+and a flat-file numpy vector store.
+
+### Indexed corpus
+
+The MiniLM housekeeper indexes all Markdown files under:
+
+1. Root `docs/` (sections 1–8)
+2. Every `domain-packs/*/docs/` tree (same section layout)
+
+Documents are chunked at `## ` heading boundaries. Each chunk is embedded
+independently and stored with its content SHA-256 hash for dedup.
+
+### Indexing modes
+
+| Mode | Trigger | Behaviour |
+|---|---|---|
+| **Full reindex** | Night-cycle `housekeeper_full_reindex` task, or manual call | Clears the store and re-embeds all documents |
+| **Incremental** | ResourceMonitorDaemon idle dispatch | Skips chunks whose content hash is already in the store |
+
+### Scope enforcement
+
+Vector search results are filtered by the same scope rules as structured
+retrieval. A session in the `education` domain may only receive chunks whose
+`source_path` falls within `docs/` (system-wide) or
+`domain-packs/education/docs/` (domain-scoped). Cross-domain doc chunks are
+excluded.
+
+### Artifact type
+
+Domain doc chunks carry artifact type `domain_doc` in the retrieval index
+schema (see `retrieval-index-schema-v1.json`).

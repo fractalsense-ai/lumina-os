@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/telemetry-masking-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-24",
+  "title": "Telemetry Masking Schema V1",
+  "description": "Defines field-level sensitivity declarations and masking strategies for Lumina log events. Every event passing through the log bus may be transformed according to a masking policy before dispatch to subscribers. Strategies range from full redaction to reversible HMAC pseudonymisation.",
+  "type": "object",
+  "required": [
+    "schema_id",
+    "version",
+    "fields"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {
+      "type": "string",
+      "const": "lumina:telemetry-masking:v1",
+      "description": "Fixed identifier for this masking policy schema."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semantic version of this masking policy."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable summary of what this policy protects."
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/field_rule"
+      },
+      "description": "Ordered list of field masking rules. Rules are evaluated top-to-bottom; first match wins for each field path."
+    },
+    "default_strategy": {
+      "type": "string",
+      "enum": ["pass", "redact"],
+      "default": "pass",
+      "description": "Strategy applied to fields not matched by any rule."
+    }
+  },
+  "$defs": {
+    "field_rule": {
+      "type": "object",
+      "required": [
+        "path",
+        "sensitivity",
+        "strategy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Dot-delimited path into the LogEvent dict (e.g. 'data.user_id', 'source', 'data.email'). Supports '*' as a single-level wildcard and '**' as a recursive wildcard."
+        },
+        "sensitivity": {
+          "type": "string",
+          "enum": ["public", "internal", "confidential", "restricted"],
+          "description": "Data classification level. public = no masking needed, internal = organisation-visible, confidential = role-gated, restricted = PII / secrets."
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["pass", "sha256_hash", "hmac_pseudonym", "redact", "truncate"],
+          "description": "Transformation applied before the event reaches subscribers."
+        },
+        "truncate_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Required when strategy is 'truncate'. Number of leading characters to keep."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable justification for this rule."
+        }
+      },
+      "if": {
+        "properties": { "strategy": { "const": "truncate" } }
+      },
+      "then": {
+        "required": ["truncate_length"]
+      }
+    }
+  }
+}

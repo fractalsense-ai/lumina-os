@@ -29,6 +29,7 @@ Every domain pack must include the following artifacts:
 Optional but recommended:
 - `tool-adapters/*.yaml` — one per tool, conforming to [`tool-adapter-schema-v1.json`](tool-adapter-schema-v1.json)
 - `example-entity-*.yaml` — example profiles for testing
+- `docs/` — domain-scoped man-page documentation tree (see §1.0a)
 
 > **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`domain-packs/education/schemas/student-profile-schema-v1.json`](../domain-packs/education/schemas/student-profile-schema-v1.json) for education). The entity profile template is named according to the domain's own conventions (e.g., `student-profile-template.yaml` for education, `operator-profile-template.yaml` for agriculture) and must validate against that domain-specific schema.
 
@@ -41,6 +42,7 @@ To keep domain ownership explicit and avoid cross-domain coupling, packs must fo
 - **`domain-lib/`** holds deterministic domain estimation/reference specifications used by domain-lib implementations.
 - **`world-sim/`** is optional and separate from `domain-lib/`; it provides interaction/world framing, not normative thresholds.
 - **`tool-adapters/`** are active deterministic tools and must be explicitly linked from module `domain-physics` via `tool_adapters` IDs.
+- **`docs/`** mirrors the root documentation man-page sections (1–8). Required sections: `1-commands/`, `3-functions/`, `7-concepts/`. Optional: `2-syscalls/`, `4-formats/`, `5-standards/`, `6-examples/`, `8-admin/`. See [`domain-pack-anatomy(7)`](../docs/7-concepts/domain-pack-anatomy.md) §H for full details.
 
 Runtime configuration files are wiring surfaces (paths, adapter bindings, runtime flags). Normative thresholds/tolerances and standing-order semantics belong in module `domain-physics`, not runtime wiring.
 
@@ -249,6 +251,8 @@ Before publishing a domain pack or implementation:
 - [ ] Module `domain-physics` owns normative thresholds/tolerances and standing-order trigger semantics
 - [ ] Every declared `tool_adapters` ID resolves to an existing tool adapter contract file
 - [ ] Material module policy updates include version bump, YAML->JSON regeneration, and System Log hash commitment before activation
+- [ ] `docs/` directory contains required sections (`1-commands/`, `3-functions/`, `7-concepts/`) with `README.md` in each
+- [ ] Domain doc files are tracked in `docs/MANIFEST.yaml` and pass integrity check
 
 ---
 

@@ -18,6 +18,8 @@ layers:
     - controllers/runtime_adapters.py
   view:
     - prompts/
+  docs:
+    - docs/
 
 # ── Modules ───────────────────────────────────────────────────────────
 modules:

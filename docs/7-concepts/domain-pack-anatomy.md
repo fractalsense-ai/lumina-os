@@ -302,6 +302,20 @@ domain-packs/{domain}/
 │   ├── runtime_adapters.py           # Phase A + B synthesis     (exported: interpret_turn_input)
 │   └── tool_adapters.py              # Direct tool callables for read-only retrieval
 │
+├── docs/                             # PACK-LEVEL — domain-scoped man pages (mirrors root docs/)
+│   ├── README.md                     #   Section index for this domain's documentation
+│   ├── 1-commands/                   #   REQUIRED — domain CLI / admin commands
+│   │   └── README.md
+│   ├── 3-functions/                  #   REQUIRED — domain-lib & controller function references
+│   │   └── {function}.md
+│   ├── 7-concepts/                   #   REQUIRED — domain design rationale & architecture
+│   │   └── README.md
+│   ├── 2-syscalls/                   #   Optional — domain API endpoints
+│   ├── 4-formats/                    #   Optional — domain data formats
+│   ├── 5-standards/                  #   Optional — domain-specific conventions
+│   ├── 6-examples/                   #   Optional — worked domain examples
+│   └── 8-admin/                      #   Optional — domain admin operations
+│
 ├── domain-lib/                       # PACK-LEVEL — passive state estimator specs + implementations
 │   ├── {estimator}-spec-v1.md        #   Normative specification
 │   └── (implementations live in controllers/)
@@ -326,3 +340,54 @@ For authoring a new domain pack from scratch (8-step authoring process), see
 `domain-packs/README.md`. For the engine contract field reference, Phase A/B implementation
 contract, and three-layer component distinction in depth, see
 [`domain-adapter-pattern(7)`](domain-adapter-pattern.md).
+
+---
+
+## H. Domain Pack `/docs` — Unix Man-Page Sections
+
+Every domain pack should include a `/docs` directory that mirrors the root `docs/` man-page
+section layout (1–8). This makes domain documentation structurally identical to system
+documentation, enabling a single indexing pipeline (MiniLM housekeeper, MANIFEST integrity,
+retrieval index) to walk any `/docs` tree — root or domain — without special-casing.
+
+### Required sections
+
+| Section | Purpose | Must contain at minimum |
+|---|---|---|
+| `1-commands/` | Domain-scoped CLI commands, admin verbs, operator actions | `README.md` |
+| `3-functions/` | Function-level references for domain-lib components, controllers, NLP extractors | At least one `{function}.md` per exported controller function |
+| `7-concepts/` | Architectural rationale, design decisions, domain theory | `README.md` |
+
+### Optional sections
+
+| Section | Include when |
+|---|---|
+| `2-syscalls/` | The domain exposes its own API endpoints |
+| `4-formats/` | The domain defines wire formats, evidence schemas, or file layouts beyond what physics files cover |
+| `5-standards/` | The domain defines naming or authoring conventions beyond lumina-core and domain-physics |
+| `6-examples/` | Worked examples, trace walkthroughs, or sample sessions |
+| `8-admin/` | Domain-specific administration procedures (role setup, physics editing, escalation handling) |
+
+### Man-page formatting
+
+Each document follows the same heading conventions as root docs:
+
+```markdown
+# {name}({section})
+
+## NAME
+## SYNOPSIS
+## DESCRIPTION
+## SEE ALSO
+```
+
+Where `{section}` is the numeric man section (1, 3, 7, etc.). This consistent structure
+enables automated chunking by `## ` headers for embedding pipelines.
+
+### Integrity tracking
+
+Domain-pack doc files are tracked in the root `docs/MANIFEST.yaml` under their full
+relative paths (e.g., `domain-packs/education/docs/3-functions/fluency-monitor.md`). The
+standard `manifest_integrity regen` and `check` subcommands cover domain-pack docs alongside
+system docs. New domain-pack doc files are automatically discovered by `manifest_integrity
+discover`.

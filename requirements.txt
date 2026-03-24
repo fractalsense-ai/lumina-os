@@ -33,6 +33,11 @@ sympy>=1.12
 # Key env vars:
 #   LUMINA_SLM_PROVIDER   local | openai | anthropic   (default: local)
 #   LUMINA_SLM_MODEL      model name to pass the provider  (default: gemma3:4b)
+
+# Semantic embeddings for domain-pack doc retrieval (MiniLM housekeeper)
+# all-MiniLM-L6-v2: 384-dim, ~80MB, CPU-friendly
+sentence-transformers>=3.0.0
+numpy>=1.26.0
 #   LUMINA_SLM_ENDPOINT   Ollama base URL  (default: http://localhost:11434)
 
 # Optional password hashing backends (install for production-grade hashing)

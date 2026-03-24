@@ -1,0 +1,115 @@
+# Invite & Onboarding Flow — Worked Example
+# ============================================================
+# This is a worked example of the complete user onboarding
+# flow: root invites a domain authority, who activates their
+# account via the one-time setup URL.
+# ============================================================
+#
+# Scenario: The root administrator invites a new domain
+# authority ("alice-math") scoped to the algebra-level-1
+# module.  Alice receives the setup URL, sets her password,
+# and activates her account.  The system issues a JWT and
+# Alice is immediately logged in.
+#
+# Prerequisites:
+#   - Root account has been registered via POST /api/auth/register
+#   - LUMINA_BASE_URL is set (e.g. https://lumina.example.org)
+
+# ── Step 1: Root authenticates ──────────────────────────────
+
+login_request:
+  method: POST
+  url: /api/auth/login
+  body:
+    username: root
+    password: "********"   # redacted
+
+login_response:
+  status: 200
+  body:
+    access_token: "eyJhbGciOiJIUzI1NiIs..."   # JWT for root
+    token_type: bearer
+
+# ── Step 2: Root invites domain authority ───────────────────
+
+invite_request:
+  method: POST
+  url: /api/auth/invite
+  headers:
+    Authorization: "Bearer eyJhbGciOiJIUzI1NiIs..."
+  body:
+    username: alice-math
+    role: domain_authority
+    governed_modules:
+      - "domain/edu/algebra-level-1/v1"
+    email: null   # optional — omit if no email relay configured
+
+invite_response:
+  status: 200
+  body:
+    user_id: "a1b2c3d4-e5f6-4000-8000-000000000001"
+    username: alice-math
+    role: domain_authority
+    governed_modules:
+      - "domain/edu/algebra-level-1/v1"
+    setup_token: "inv_a1b2c3d4e5f6..."   # one-time token (HMAC-signed)
+    setup_url: "https://lumina.example.org/api/auth/setup-password?token=inv_a1b2c3d4e5f6..."
+    email_sent: false
+
+# ── Step 3: Alice activates her account ─────────────────────
+# Alice navigates to setup_url or POSTs directly.
+
+setup_password_request:
+  method: POST
+  url: /api/auth/setup-password
+  body:
+    token: "inv_a1b2c3d4e5f6..."   # from Step 2 setup_token
+    new_password: "correct-horse-battery-staple"   # >= 8 chars
+
+setup_password_response:
+  status: 200
+  body:
+    access_token: "eyJhbGciOiJIUzI1NiIs..."   # JWT for alice-math
+    token_type: bearer
+
+# ── Postconditions ──────────────────────────────────────────
+#
+# - User record "alice-math" now has active=true.
+# - The setup token is consumed; re-using it returns 403.
+# - Alice's JWT scopes her to governed_modules only.
+# - A trace event (decision: user_invited) is appended to
+#   the admin session System Log ledger.
+# - Alice can now log in via POST /api/auth/login.
+
+# ── Step 4 (optional): Verify login ────────────────────────
+
+verify_login_request:
+  method: POST
+  url: /api/auth/login
+  body:
+    username: alice-math
+    password: "correct-horse-battery-staple"
+
+verify_login_response:
+  status: 200
+  body:
+    access_token: "eyJhbGciOiJIUzI1NiIs..."
+    token_type: bearer
+
+# ── Negative cases ──────────────────────────────────────────
+#
+# Reuse setup token:
+#   POST /api/auth/setup-password {token: "inv_a1b2c3d4e5f6...", new_password: "x"}
+#   → 403 Forbidden (token already consumed)
+#
+# Invite duplicate username:
+#   POST /api/auth/invite {username: "alice-math", role: "user"}
+#   → 409 Conflict (username already taken)
+#
+# DA without governed_modules:
+#   POST /api/auth/invite {username: "bob", role: "domain_authority"}
+#   → 400 Bad Request (governed_modules required for domain_authority)
+#
+# Unprivileged user invites:
+#   POST /api/auth/invite (with user-role JWT)
+#   → 403 Forbidden (requires root or it_support)

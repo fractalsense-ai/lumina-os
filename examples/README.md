@@ -10,6 +10,7 @@ This directory contains worked examples of Project Lumina interaction loops.
 |------|-------------|
 | `causal-learning-trace-example.json` | System Log records from a real (simulated) 5-turn algebra session |
 | `escalation-example-packet.yaml` | A complete escalation packet for a major ZPD drift event |
+| `invite-onboarding-example.yaml` | Full invite → setup-password → login onboarding flow |
 
 ---
 

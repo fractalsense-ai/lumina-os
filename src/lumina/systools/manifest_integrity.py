@@ -10,8 +10,8 @@ regen  Recompute all SHA-256 hashes and rewrite docs/MANIFEST.yaml in-place.
        Preserves comments, formatting, and all non-hash fields.
        Also updates the top-level last_updated date to today.
 
-Domain-pack artifact integrity is managed by the System Logs,
-not by this tool.
+discover  Scan domain-packs/*/docs/ for .md files not yet listed in
+          docs/MANIFEST.yaml and print them (optionally append with --add).
 """
 from __future__ import annotations
 
@@ -232,8 +232,60 @@ def regen_manifest(repo_root: Path = REPO_ROOT) -> int:
 
 
 # ─────────────────────────────────────────────────────────────
-# Entry point
+# discover — find untracked domain-pack docs
 # ─────────────────────────────────────────────────────────────
+
+def discover_domain_pack_docs(repo_root: Path = REPO_ROOT, *, add: bool = False) -> int:
+    """Scan domain-packs/*/docs/ for .md files not yet in MANIFEST.yaml.
+
+    If *add* is True, append new entries (with sha256 set to ``pending``)
+    to the manifest and then run :func:`regen_manifest` to compute hashes.
+    """
+    manifest_path = repo_root / "docs" / "MANIFEST.yaml"
+    existing = _parse_artifacts(manifest_path)
+    tracked = {e["path"] for e in existing}
+
+    packs_dir = repo_root / "domain-packs"
+    if not packs_dir.is_dir():
+        print("[INFO] No domain-packs/ directory found")
+        return 0
+
+    new_paths: list[str] = []
+    for pack in sorted(packs_dir.iterdir()):
+        docs_dir = pack / "docs"
+        if not docs_dir.is_dir():
+            continue
+        for md_file in sorted(docs_dir.rglob("*.md")):
+            rel = md_file.relative_to(repo_root).as_posix()
+            if rel not in tracked:
+                new_paths.append(rel)
+
+    if not new_paths:
+        print("[INFO] All domain-pack doc files are already tracked in MANIFEST.yaml")
+        return 0
+
+    print(f"Found {len(new_paths)} untracked domain-pack doc(s):")
+    for p in new_paths:
+        print(f"  + {p}")
+
+    if not add:
+        print("\nRe-run with --add to append these entries and compute hashes.")
+        return 0
+
+    # Append new entries to the end of the manifest
+    lines = manifest_path.read_text(encoding="utf-8")
+    # Ensure trailing newline before appending
+    if not lines.endswith("\n"):
+        lines += "\n"
+    for p in new_paths:
+        lines += f"  - path: {p}\n"
+        lines += f"    sha256: pending\n"
+    manifest_path.write_text(lines, encoding="utf-8")
+    print(f"\n[DONE] Appended {len(new_paths)} entry/entries to MANIFEST.yaml")
+
+    # Immediately regen to compute hashes
+    return regen_manifest(repo_root)
+
 
 # ─────────────────────────────────────────────────────────────
 # API-compatible report functions (return dicts; no side-effects)
@@ -355,12 +407,23 @@ def main(argv: list[str] | None = None) -> int:
         "regen",
         help="Recompute and rewrite all sha256 entries in docs/MANIFEST.yaml",
     )
+    disc = sub.add_parser(
+        "discover",
+        help="Find domain-pack doc files not yet in MANIFEST.yaml",
+    )
+    disc.add_argument(
+        "--add",
+        action="store_true",
+        help="Append discovered files and compute hashes",
+    )
     args = parser.parse_args(argv)
 
     if args.command == "check":
         return check_manifest()
     if args.command == "regen":
         return regen_manifest()
+    if args.command == "discover":
+        return discover_domain_pack_docs(add=args.add)
     return 1
 
 

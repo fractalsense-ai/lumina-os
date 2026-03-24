@@ -20,6 +20,8 @@ layers:
     - controllers/tool_adapters.py
   view:
     - prompts/
+  docs:
+    - docs/
 
 # ── Modules ───────────────────────────────────────────────────────────
 modules:

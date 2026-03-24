@@ -1,0 +1,2 @@
+21 failed, 2370 passed, 1 skipped, 460 warnings in 1216.53s (0:20:16)
+rc=1

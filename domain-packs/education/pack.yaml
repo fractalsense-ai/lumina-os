@@ -29,6 +29,8 @@ layers:
   view:
     - prompts/
     - world-sim/
+  docs:
+    - docs/
 
 # ── Modules ───────────────────────────────────────────────────────────
 modules:

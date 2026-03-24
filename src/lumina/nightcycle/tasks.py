@@ -833,3 +833,56 @@ def gated_staging(
             "proposals_generated": len(proposals),
         },
     )
+
+
+# ── Retrieval indexing task ──────────────────────────────────
+
+
+@register_cross_domain_task("housekeeper_full_reindex")
+def housekeeper_full_reindex(
+    domains: list[dict[str, Any]],
+    **_kw: Any,
+) -> TaskResult:
+    """Re-embed all Markdown docs into the MiniLM vector store.
+
+    This is a system-wide task: it walks *every* ``docs/`` tree (root and
+    all domain packs) regardless of the domain list, clears the store, and
+    re-indexes from scratch.  Scheduled once per night cycle.
+
+    Gracefully skips if ``sentence-transformers`` is not installed.
+    """
+    start = time.monotonic()
+
+    try:
+        from lumina.retrieval.housekeeper import make_housekeeper  # noqa: F811
+    except ImportError as exc:
+        log.info("housekeeper_full_reindex skipped: %s", exc)
+        return TaskResult(
+            task="housekeeper_full_reindex",
+            domain_id="system",
+            success=True,
+            duration_seconds=time.monotonic() - start,
+            metadata={"skipped": True, "reason": str(exc)},
+        )
+
+    try:
+        hk = make_housekeeper()
+        summary = hk.full_reindex()
+        success = True
+    except ImportError as exc:
+        # sentence-transformers not installed — skip gracefully
+        log.info("housekeeper_full_reindex skipped (missing dep): %s", exc)
+        summary = {"skipped": True, "reason": str(exc)}
+        success = True
+    except Exception as exc:
+        log.warning("housekeeper_full_reindex failed: %s", exc)
+        summary = {"error": str(exc)}
+        success = False
+
+    return TaskResult(
+        task="housekeeper_full_reindex",
+        domain_id="system",
+        success=success,
+        duration_seconds=time.monotonic() - start,
+        metadata=summary,
+    )

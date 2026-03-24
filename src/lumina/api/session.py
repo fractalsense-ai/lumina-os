@@ -10,6 +10,7 @@ from typing import Any
 
 from lumina.api import config as _cfg
 from lumina.api.config import _ensure_user_profile
+from lumina.core.ttl_manager import TTLManager, Tier
 from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
 log = logging.getLogger("lumina-api")
@@ -143,7 +144,7 @@ class DomainContext:
 class SessionContainer:
     """Holds isolated domain contexts for a single session."""
 
-    __slots__ = ("active_domain_id", "contexts", "user", "last_activity", "frozen")
+    __slots__ = ("active_domain_id", "contexts", "user", "last_activity", "frozen", "ttl_manager")
 
     def __init__(self, active_domain_id: str, user: dict[str, Any] | None = None) -> None:
         self.active_domain_id = active_domain_id
@@ -151,6 +152,7 @@ class SessionContainer:
         self.user = user
         self.last_activity: float = time.time()
         self.frozen: bool = False  # True when an escalation lock is active
+        self.ttl_manager: TTLManager = TTLManager()
 
     @property
     def active_context(self) -> DomainContext:
@@ -282,6 +284,14 @@ def get_or_create_session(
         container = _session_containers[session_id]
         resolved = domain_id or container.active_domain_id
 
+        # Touch the active domain context and prune expired ones
+        container.ttl_manager.touch(Tier.DOMAIN, resolved)
+        for entry in container.ttl_manager.prune():
+            expired_did = entry.key
+            if expired_did in container.contexts and expired_did != container.active_domain_id:
+                del container.contexts[expired_did]
+                log.info("[%s] TTL-pruned domain context: %s", session_id, expired_did)
+
         if resolved != container.active_domain_id:
             previous_domain = container.active_domain_id
             if resolved in container.contexts:
@@ -297,6 +307,7 @@ def get_or_create_session(
                 ctx = _build_domain_context(session_id, resolved_domain_id_checked, user=container.user)
                 container.contexts[resolved_domain_id_checked] = ctx
                 container.active_domain_id = resolved_domain_id_checked
+                container.ttl_manager.register(Tier.DOMAIN, resolved_domain_id_checked)
                 log.info("[%s] Created new domain context: %s", session_id, resolved_domain_id_checked)
                 _persist_session_container(session_id, container)
 
@@ -323,6 +334,12 @@ def get_or_create_session(
     container = SessionContainer(active_domain_id=resolved_domain_id, user=user)
     container.contexts[resolved_domain_id] = ctx
     _session_containers[session_id] = container
+
+    # Configure TTL manager from domain physics temporal_policy
+    _tp = (ctx.orchestrator.domain or {}).get("temporal_policy")
+    if _tp:
+        container.ttl_manager = TTLManager.from_temporal_policy(_tp)
+    container.ttl_manager.register(Tier.DOMAIN, resolved_domain_id)
 
     _persist_session_container(session_id, container)
     log.info("Created new session: %s (domain=%s)", session_id, resolved_domain_id)

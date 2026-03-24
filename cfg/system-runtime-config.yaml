@@ -60,3 +60,4 @@ daemon:
     - pacing_heuristic_recompute
     - slm_hint_generation
     - context_crawler
+    - housekeeper_full_reindex

@@ -17,6 +17,7 @@ Worked examples, traces, and reference scenarios.
 |---------|-------------|
 | [causal-learning-trace](../../examples/causal-learning-trace-example.json) | Full System Log trace for an education session |
 | [escalation-example](../../examples/escalation-example-packet.yaml) | Escalation packet with System Log context |
+| [invite-onboarding](../../examples/invite-onboarding-example.yaml) | Full invite → setup-password → login onboarding flow |
 | [examples index](../../examples/README.md) | Full examples directory listing |
 
 See also the domain pack worked examples:

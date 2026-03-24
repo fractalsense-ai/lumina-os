@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/state-transaction-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-24",
+  "title": "State Transaction Schema V1",
+  "description": "JSON Schema for the Lumina atomic state machine. Defines the envelope for any transactional workflow — admin commands, staged-file approvals, domain-physics updates, and future operations. Every transaction follows the PROPOSED → VALIDATED → COMMITTED → FINALIZED lifecycle (with ROLLED_BACK as the abort branch).",
+  "type": "object",
+  "required": [
+    "transaction_id",
+    "operation",
+    "state",
+    "actor_id",
+    "created_at",
+    "updated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUID v4 globally unique transaction identifier."
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical operation name (e.g. invite_user, stage_file, update_domain_physics)."
+    },
+    "state": {
+      "$ref": "#/$defs/transaction_state",
+      "description": "Current state of the transaction."
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "ID of the actor who created or last advanced this transaction."
+    },
+    "created_at": {
+      "type": "number",
+      "description": "Unix timestamp (seconds) when the transaction was first PROPOSED."
+    },
+    "updated_at": {
+      "type": "number",
+      "description": "Unix timestamp (seconds) of the most recent state transition."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Open dict for domain-specific context. The state machine kernel never inspects this.",
+      "default": {}
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/history_entry"
+      },
+      "default": [],
+      "description": "Ordered list recording every state transition."
+    }
+  },
+  "$defs": {
+    "transaction_state": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "VALIDATED",
+        "COMMITTED",
+        "FINALIZED",
+        "ROLLED_BACK"
+      ],
+      "description": "Legal states in the 4-stage ACK lifecycle."
+    },
+    "history_entry": {
+      "type": "object",
+      "required": ["state", "actor_id", "timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/transaction_state",
+          "description": "The state that was transitioned TO."
+        },
+        "actor_id": {
+          "type": "string",
+          "description": "Actor who performed this transition."
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Unix timestamp (seconds) when this transition occurred."
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-06-15
+last_updated: 2026-03-24
 
 artifacts:
 
@@ -194,7 +194,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: ca1d23cd264f88571d68b15844bf3dc8c8831817f9be1bfa0ab70f7bdb97bb3c
+    sha256: 6eaff97b0ad3e6704ab3b1be2b29f437a478e5b3da13d58d9816489372eff21a
 
   - path: docs/5-standards/document-versioning-policy.md
     type: doc
@@ -221,7 +221,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 2a3ed3cac5d4ee40a581a90738ced5a9cf0b5056ebe3f3bd2d79138d615716d0
+    sha256: 409a2c2d47b6d383008e15af45a6f531f7baea9c8386dcecc5e2d1f9012c7d50
 
 
   # ── Section 7: Concepts ───────────────────────────────────────────────────
@@ -232,7 +232,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-18
-    sha256: 393be0a2d62b755a0746422f4eba2d756ecc59b2184c2fcfa5b1972d7676398f
+    sha256: 6ca6173e1115e5b314266347fe3ea00e39172322de2760b2df4373508daa7580
 
   - path: docs/7-concepts/api-server-architecture.md
     type: doc
@@ -256,7 +256,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-18
-    sha256: d7db58ed509abc8f23006edebf3a1569e7500f6de50b15ab6e1d3cb020739361
+    sha256: 7f99505a8e69a01e55ab30cd35ec41c63edf2b4d35fd24949cdc0cfbfa176bc7
 
   - path: docs/7-concepts/domain-evidence-extension.md
     type: doc
@@ -272,7 +272,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-19
-    sha256: 9c5e291ad5539de3fb5b34aaa41e602efcad5b1868d0c462039c58dcdfa7c315
+    sha256: 5e8bd53b3dff2e22c38d95c1d1b97ff8f3613f97662790298129c90b0bf2afb8
 
   - path: docs/7-concepts/file-generation-staging.md
     type: doc
@@ -336,7 +336,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-13
-    sha256: ece87282a7b0cf92398bc3274b139158dd09896f193bce6d4138ee4ef056a287
+    sha256: f332c5f888004e331283f53d676df4e4f1c43b6924569062486328b69c21580d
 
   - path: docs/7-concepts/novel-synthesis-framework.md
     type: doc
@@ -384,7 +384,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: 9ac0e41192df8a4af7b75b1a9d2b8dcf3038cf8b0af6b465b8674745a63ce163
+    sha256: a4a35e1c1ad68de15838f4a0fe49f7939edb97876adfd1e387cf5887859f52e2
 
   - path: docs/7-concepts/zero-trust-architecture.md
     type: doc
@@ -393,6 +393,14 @@ artifacts:
     status: active
     last_updated: 2026-03-15
     sha256: 0ab2daa4b03170a336b1f0193740765d162100f941a44e1baaa1bb3924812cc3
+
+  - path: docs/7-concepts/telemetry-masking.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-24
+    sha256: beac1d748982db68162e818e0379f90c24f0570ec9ff039eaf6c2a2f6f978e1b
 
   - path: docs/7-concepts/state-change-commit-policy.md
     type: doc
@@ -416,7 +424,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-21
-    sha256: 42815eb5aa46a0d332f3379807f18adaff10709e753f4a5e9f903c7243754c86
+    sha256: d2362e7df8853c0b9b4e7dbe7207102e018f55334803369311628906920b6c52
 
   - path: docs/7-concepts/hmvc-heritage.md
     type: doc
@@ -467,7 +475,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-22
-    sha256: 4c6e4119dd86355e8e4fe80c507fa7202d9901bf169914eb6862d1ebd9da8c2b
+    sha256: 684489e3805ae1a42d3b4f2f86cf80e076d679ecdb419aff6023342cd2f0578b
 
   - path: docs/8-admin/secrets-and-runtime-config.md
     type: doc
@@ -483,7 +491,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-13
-    sha256: 1894bfc9a14d26935fd8dcc28b08950ee28d906b213271feaa13e1fa31140adb
+    sha256: 13dd73450ad6db2b89b3038b42ad897c2ef0dbdbac6c4ccb038524442a722f88
 
 
   # ── Docs Root ─────────────────────────────────────────────────────────────
@@ -559,7 +567,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-15
-    sha256: 18f8d3d4e60ce2a759feb181308f546eeafc2d8318c52ddd77ec5169d6b2461d
+    sha256: dc5ea560f4cc4347cad66c096b722df1a3b55ecf495a2214b03ea1124f724ec1
 
   - path: specs/reports-spec-v1.md
     type: spec
@@ -597,7 +605,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 712e3b8872cf883808eb8a5b667335cd85834e0003ffb4c4bf9b6ec36833d3b5
+    sha256: 58ec190982e12579fd10933c42ca3b1b87d8f4757806cc51d567a3be7624bf58
 
 
   # ── Standards (JSON Schemas) ──────────────────────────────────────────────
@@ -614,7 +622,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-15
-    sha256: e984ea00f7feb79d1d69c066f70d625847d8e32e2244b0a33457ece7233e788c
+    sha256: 7c243a7c5f568ebf8c4d64752660a76cba45a17e546068d32d9e3d05e51ba342
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
@@ -656,7 +664,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-15
-    sha256: 4dfd593474b3cf42079a457723153444d90f8ead9b05589feda56e007c28d66e
+    sha256: ad75563fba5cf2a26bd209b35ca0c1c7c38cd3ce7ccb81060ebf94a4c2db35f1
 
   - path: standards/role-definition-schema-v1.json
     type: schema
@@ -685,6 +693,20 @@ artifacts:
     status: active
     last_updated: 2026-03-08
     sha256: 14e60e342e6f90a196501ede06cb221e128c876648cbd861e5e818423f2efde8
+
+  - path: standards/state-transaction-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-24
+    sha256: 6f01a28bb0a2b8e57302c8d077c7ac8b71ab396684a531b5a2d53839bf181edb
+
+  - path: standards/telemetry-masking-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-24
+    sha256: 5a9a3fe3f4d100a39d4bd21ef386593291315452a65bb2f601df400ff1c91fab
 
   - path: standards/action-card-schema-v1.json
     type: schema
@@ -736,7 +758,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: 4b5c43bcae6dec71588f2dc8de90f6cf302825aaa9205d4f841c3d34efe95cf3
+    sha256: 3da68001f50094ee58439e78eb5ed1cea361248257c0c14281496d3d11085f60
 
   - path: standards/admin-command-schemas/list-domains.json
     type: schema
@@ -834,7 +856,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-23
-    sha256: fe855b8dd117104d24e87e1eff3f40a3e98cf9ad738395de4f54f7af450665ee
+    sha256: 334d8e03bdfcd072e8bdc6a85f0900ddbd808e20dbef4ff3fff6b814ed651807
 
 
   # ── Ledger Schemas ────────────────────────────────────────────────────────
@@ -903,7 +925,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: fe66e67971dea36f30d8f884dcd130519227d7056345454854b7fa078f154c83
+    sha256: 93fbcdab30f9735232d754a102d476c8f8ce5f724b9782877d2038da0e6fee00
 
 
   # ── Retrieval ─────────────────────────────────────────────────────────────
@@ -913,11 +935,41 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-20
-    sha256: 0d75b443f772950065d5b81b8ad711deeba463678b9e5812059975d63bd35bbf
+    sha256: 5d0bb097d3e799e6fb0e50a134c539564edd18d09e64ca3a77993f43d4857b9b
 
   - path: retrieval/retrieval-index-schema-v1.json
     type: schema
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: b86b6187ba9138f2cf11f5ec69a26863ef7b3521b8d354e20d47a3b8776f1a68
+    sha256: 0a393413bc4faeea167a4244a48b7f9371b101da31bc4405766f166a15f8a220
+  - path: domain-packs/agriculture/docs/1-commands/README.md
+    sha256: 62791ccb67feda1e6099e9a1cb914b21190ae53bd35d55d5de7dc1371fceb56d
+  - path: domain-packs/agriculture/docs/3-functions/README.md
+    sha256: 77f4183aadfce37c1eb083d9519cf896aab5decb7ceee07059c98b5344574608
+  - path: domain-packs/agriculture/docs/7-concepts/README.md
+    sha256: 88842ae16cee097da451084f626b16d33d270a192b331f0ee364095551d242f4
+  - path: domain-packs/agriculture/docs/README.md
+    sha256: 6c39a5c510f94bc53a3c7ed669b69bb1341d09466e3f6ecce55f35749b61cfb7
+  - path: domain-packs/education/docs/1-commands/README.md
+    sha256: 01f79b923a1c7c3e7d81144712577e83441db55ff9ac050c5125d492f0e97247
+  - path: domain-packs/education/docs/3-functions/fluency-monitor.md
+    sha256: 393617f748a845941847fb47850b50e39868c9cb1ea4adab9ac5347fc7e1865e
+  - path: domain-packs/education/docs/3-functions/nlp-pre-interpreter.md
+    sha256: b1350464d45b112a0c848d945addcc05f3deb8c41048d91c2fc7ba1fb777ede2
+  - path: domain-packs/education/docs/3-functions/problem-generator.md
+    sha256: abe5a4b3a29d3d87c19ea5f2463c1fb0685c690ae15607679e45899773835f01
+  - path: domain-packs/education/docs/7-concepts/README.md
+    sha256: 28c0b49bd4d4d262955ceb6234a388b072ad69d63aaa69a16e7a7eefffeac534
+  - path: domain-packs/education/docs/README.md
+    sha256: 5db651f901e02d74353ae33e0d36d2015eeccbe9578b25e39edf9ac5940e601f
+  - path: domain-packs/system/docs/1-commands/README.md
+    sha256: e2aeb44cf9c24a3183f7af216f0a8338c7867ba700468d0153cc8b460dd3f91b
+  - path: domain-packs/system/docs/3-functions/README.md
+    sha256: 03cb3dc46cf0e3079fb186e4a77af20230ec05b85072c1eba39ee27cb8f43acb
+  - path: domain-packs/system/docs/3-functions/state-transaction-adapter.md
+    sha256: ec1962b6fda2c7c4c926d61563516b924d7add2e3e213653d5b849239fd21d53
+  - path: domain-packs/system/docs/7-concepts/README.md
+    sha256: 68f5b0fdbac1ab1ba86265f817359976e1ea72119d179e96fafa13407476bace
+  - path: domain-packs/system/docs/README.md
+    sha256: 384cf5fb74bdb74dbece6b5b8d121574edfc78a4f8f2c37798291fcf00c8092b

@@ -23,6 +23,7 @@
       "type": "string",
       "enum": [
         "domain_pack",
+        "domain_doc",
         "tool_adapter",
         "mastery_artifact",
         "boss_challenge_bundle",

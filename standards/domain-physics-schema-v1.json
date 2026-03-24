@@ -348,6 +348,31 @@
         }
       },
       "description": "Declares the domain-scoped deterministic tools that must validate proposals before HITL review. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema."
+    },
+    "temporal_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "module_ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "default": 900,
+          "description": "Time-to-live in seconds for module-level context entries (e.g. problem state, step history). Default 15 minutes."
+        },
+        "domain_ttl_seconds": {
+          "type": "integer",
+          "minimum": 300,
+          "default": 14400,
+          "description": "Time-to-live in seconds for domain-level context entries (e.g. session-scoped glossary cache, mastery snapshot). Default 4 hours."
+        },
+        "system_ttl_seconds": {
+          "type": "integer",
+          "minimum": 3600,
+          "default": 86400,
+          "description": "Time-to-live in seconds for system-level context entries (e.g. RBAC cache, domain physics snapshot). Default 24 hours."
+        }
+      },
+      "description": "Hierarchical time-to-live policy for context pruning. Module < domain < system. The TTL manager prunes entries whose last-touched timestamp exceeds the tier's TTL. Omit to use system defaults (900 / 14400 / 86400)."
     }
   },
   "$defs": {
