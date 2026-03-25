@@ -8,6 +8,7 @@
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
   "description": "Pre-Algebra for grades 6\u20137. Covers variables and expressions, order of operations, single-variable linear equations, multi-step linear equations, and linear inequalities. Students work through 5 gated artifacts activating Laws 1 (Balance Principle) and 2 (Inverse Operations) of the Algebra diagnostic framework. Prerequisite gateway to Algebra Intro (grade 8).\n",
+  "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
     {

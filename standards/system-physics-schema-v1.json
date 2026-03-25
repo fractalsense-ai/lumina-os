@@ -40,6 +40,28 @@
       "type": "string",
       "description": "Human-readable description of this system physics document's scope and purpose"
     },
+    "system_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system_name"
+      ],
+      "properties": {
+        "system_name": {
+          "type": "string",
+          "description": "Canonical platform name (e.g. 'Project Lumina'). Injected into every system prompt to prevent identity hallucination."
+        },
+        "description": {
+          "type": "string",
+          "description": "One-line description of what the system is."
+        },
+        "disambiguation_note": {
+          "type": "string",
+          "description": "Instruction the CI should follow when asked about its own identity. Prevents confusion with domain-level narrative themes."
+        }
+      },
+      "description": "System-level identity grounding. Ensures the CI always knows its own platform name and does not hallucinate names from domain-level immersion themes."
+    },
     "invariants": {
       "type": "array",
       "minItems": 1,

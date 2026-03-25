@@ -86,6 +86,12 @@ def list_operations() -> frozenset[str]:
     return frozenset(_schemas)
 
 
+def get_schema(operation: str) -> dict[str, Any] | None:
+    """Return the raw schema dict for *operation*, or ``None``."""
+    _ensure_loaded()
+    return _schemas.get(operation)
+
+
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------

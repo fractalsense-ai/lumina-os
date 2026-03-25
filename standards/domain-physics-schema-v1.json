@@ -56,6 +56,10 @@
       "type": "string",
       "description": "Human-readable description of this domain"
     },
+    "department": {
+      "type": "string",
+      "description": "Organizational department or division this module belongs to (e.g. 'Mathematics', 'Field Operations'). Used for grouping modules in list_modules output and administrative dashboards."
+    },
     "lumina_core_version": {
       "type": "string",
       "description": "Version of lumina-core-v1 this pack targets"

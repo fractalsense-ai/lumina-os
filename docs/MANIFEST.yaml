@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-03-24
+last_updated: 2026-03-25
 
 artifacts:
 
@@ -47,6 +47,14 @@ artifacts:
     status: active
     last_updated: 2026-03-12
     sha256: ed93ceebaf279cc08c62a8d1b1454d79d1dddc03bbfcdbf0901012c8915c7ba1
+
+  - path: docs/1-commands/list-commands.md
+    type: doc
+    section: 1
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-24
+    sha256: c11faa09535d3f44aa51d39602b96aef227ec7ebced94209ea10343bde59bab6
 
   - path: docs/1-commands/list-domains.md
     type: doc
@@ -622,7 +630,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-15
-    sha256: 7c243a7c5f568ebf8c4d64752660a76cba45a17e546068d32d9e3d05e51ba342
+    sha256: d33994f2a276b15219ee3a74ee4af8d4431b6af660fe562835fa8382ce3a5b1e
 
   - path: standards/domain-registry-schema-v1.json
     type: schema
@@ -685,7 +693,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 9f626ea243f21cc54d97a1101924747eb6a3545bbca95bab9892947328166e1f
+    sha256: 21e457b3893de7e451e644b20b6818decb34284a8510afed193880673812fe63
 
   - path: standards/tool-adapter-schema-v1.json
     type: schema
@@ -759,6 +767,13 @@ artifacts:
     status: active
     last_updated: 2026-03-20
     sha256: 3da68001f50094ee58439e78eb5ed1cea361248257c0c14281496d3d11085f60
+
+  - path: standards/admin-command-schemas/list-commands.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-24
+    sha256: 21e658318e99608268e52b30074fa281ffba9928dbff5b5bf2ec97725d17428f
 
   - path: standards/admin-command-schemas/list-domains.json
     type: schema
@@ -911,14 +926,14 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: bc10fde4864be043a089ee93a71bebb83413303b95146ecaab0916da9b718d24
+    sha256: a84a16850f80d6bfa31f04d6c13bb62089762e564bf6c2817ef046ba694c5453
 
   - path: cfg/system-physics.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 13219a976d798e16d9614d83ea71fbec1e3046bd9e0af66ba3a06a1fca7d0c12
+    sha256: 5e354e0ced1b2fa2edb4e1b04c72291d28be54f7644afcebd73779dc3bea6516
 
   - path: cfg/system-runtime-config.yaml
     type: config

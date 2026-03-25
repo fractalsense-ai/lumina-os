@@ -45,7 +45,7 @@ from lumina.system_log.admin_operations import (
     map_role_to_actor_role,
 )
 from lumina.core.state_machine import StateTransaction, TransactionState, IllegalTransitionError
-from lumina.middleware.command_schema_registry import validate_command
+from lumina.middleware.command_schema_registry import get_schema as _get_cmd_schema, validate_command
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
 from lumina.system_log.commit_guard import requires_log_commit
 
@@ -422,6 +422,7 @@ _KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "invite_user",
     "list_domains",
     "list_modules",
+    "list_commands",
 })
 
 # Read-only operations that bypass HITL staging and execute immediately.
@@ -433,6 +434,7 @@ _HITL_EXEMPT_OPS: frozenset[str] = frozenset({
     "module_status",
     "night_cycle_status",
     "explain_reasoning",
+    "list_commands",
 })
 
 # Staged commands awaiting human resolution (keyed by staged_id).
@@ -1058,6 +1060,32 @@ async def _execute_admin_operation(
         domains = _cfg.DOMAIN_REGISTRY.list_domains()
         result = {"operation": operation, "domains": domains, "count": len(domains)}
 
+    elif operation == "list_commands":
+        include_details = bool(params.get("include_details", True))
+        _MIN_ROLE: dict[str, str] = {
+            "update_domain_physics": "domain_authority",
+            "commit_domain_physics": "domain_authority",
+            "update_user_role": "root",
+            "deactivate_user": "root",
+            "assign_domain_role": "domain_authority",
+            "revoke_domain_role": "domain_authority",
+            "resolve_escalation": "domain_authority",
+            "approve_interpretation": "domain_authority",
+            "reject_ingestion": "domain_authority",
+            "trigger_night_cycle": "domain_authority",
+            "invite_user": "it_support",
+        }
+        commands: list[dict[str, Any]] = []
+        for op_name in sorted(_KNOWN_OPERATIONS):
+            entry: dict[str, Any] = {"name": op_name}
+            if include_details:
+                schema = _get_cmd_schema(op_name)
+                entry["description"] = (schema or {}).get("description", "")
+                entry["hitl_exempt"] = op_name in _HITL_EXEMPT_OPS
+                entry["min_role"] = _MIN_ROLE.get(op_name, "user")
+            commands.append(entry)
+        result = {"operation": operation, "commands": commands, "count": len(commands)}
+
     elif operation == "list_modules":
         domain_id = str(params.get("domain_id", parsed.get("target", "")))
         if not domain_id:
@@ -1156,6 +1184,17 @@ async def admin_command(
             raise
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
+        except RuntimeError as exc:
+            msg = str(exc).lower()
+            if "policy commitment" in msg:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "Domain physics have been modified but not yet committed. "
+                        "Run 'commit domain physics' before this operation."
+                    ),
+                )
+            raise HTTPException(status_code=500, detail=str(exc))
         # Read-only queries don't write a log record; satisfy the commit guard.
         from lumina.system_log.commit_guard import notify_log_commit
         notify_log_commit()

@@ -8,6 +8,7 @@
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
   "description": "Algebra 1 for grade 9. All 6 diagnostic laws are active for the first time. Extends Algebra Intro (domain/edu/algebra-intro/v1) by activating Law 4 (Structure Preservation) and Law 6 (Abstraction/Translation). Covers exponent rules, polynomial operations, factoring quadratics, quadratic graphs, and solving quadratic equations. Artifacts 11\u201315 of 15 in the full curriculum. Prerequisite: Algebra Intro (domain/edu/algebra-intro/v1).\n",
+  "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
     {

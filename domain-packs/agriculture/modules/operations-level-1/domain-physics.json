@@ -8,6 +8,7 @@
   },
   "meta_authority_id": "domain/agriculture/meta/v1",
   "description": "Agriculture operations level 1 demo domain pack.",
+  "department": "Field Operations",
   "lumina_core_version": "1.0.0",
   "invariants": [
     {

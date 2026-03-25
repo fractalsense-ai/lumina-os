@@ -8,6 +8,7 @@
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
   "description": "Algebra Level 1 \u2014 legacy deployed module covering single-variable linear equations (Artifacts 3\u20134 of the Pre-Algebra curriculum: single_step_equations and multi_step_linear_equations), equivalence preservation, and solution verification. Active for current users. The new pre-algebra module (domain/edu/pre-algebra/v1) extends this with variables/expressions, order of operations, and linear inequalities.\n",
+  "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
     {

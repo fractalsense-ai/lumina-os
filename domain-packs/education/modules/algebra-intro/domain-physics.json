@@ -8,6 +8,7 @@
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
   "description": "Algebra Introduction for grade 8. Extends domain/edu/pre-algebra/v1 by activating Law 3 (Interchangeability/Substitution) and Law 5 (Relational Mapping). Covers slope and rate of change, linear forms and graphing, and three methods for solving systems of two linear equations. Artifacts 6\u201310 of 15 in the full curriculum. Prerequisite: Pre-Algebra (domain/edu/pre-algebra/v1). Gateway to Algebra 1 (domain/edu/algebra-1/v1).\n",
+  "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
     {

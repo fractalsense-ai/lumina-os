@@ -170,6 +170,28 @@ async def chat(
         )
     except DomainNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        msg = str(exc).lower()
+        if "policy commitment" in msg:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Domain physics have been modified but not yet committed. "
+                    "An administrator must run 'commit domain physics' before "
+                    "this module can accept conversations."
+                ),
+            )
+        if "system-physics commitment" in msg or "system_physics" in msg:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "System physics are not yet committed. "
+                    "The system administrator must commit the current "
+                    "system-physics.json before the service is available."
+                ),
+            )
+        log.exception("RuntimeError processing message for session %s", session_id)
+        raise HTTPException(status_code=500, detail=str(exc))
     except Exception as exc:
         log.exception("Error processing message for session %s", session_id)
         raise HTTPException(status_code=500, detail=str(exc))
