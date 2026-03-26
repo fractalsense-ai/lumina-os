@@ -7924,6 +7924,62 @@
     "content_type": "schema"
   },
   {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/0aa9c07f-3fcb-499a-a813-ef9fa78f9d81/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
     "source_path": "cfg/profiles/0ab4bdd4-bdb2-416b-a027-0420d6563939/_default.yaml",
     "heading": "student_id",
     "text": "<PSEUDONYMOUS_ID>",

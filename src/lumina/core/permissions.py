@@ -52,6 +52,8 @@ def _is_group_member(
     """Check whether the user is a member of the named group.
 
     Resolution order:
+    0. ``domain_authority`` is always a group member — they are the
+       domain-level administrator regardless of group definition.
     1. If *groups_config* contains *group_name*, check its ``members``
        block against the user's system role and optional domain role.
     2. Fallback: if there is no groups block or the group name is not
@@ -59,6 +61,10 @@ def _is_group_member(
        This preserves backward compatibility with modules that set
        ``permissions.group`` to a system role name.
     """
+    # domain_authority governs the domain — always receives group-tier access.
+    if user_role == "domain_authority":
+        return True
+
     if groups_config and group_name in groups_config:
         members = groups_config[group_name].get("members", {})
         sys_roles = members.get("system_roles", [])
@@ -113,11 +119,6 @@ def check_permission(
     """
     # Step 1: root always bypasses
     if user_role == "root":
-        return True
-
-    # Step 1b: domain_authority is the domain-level administrator —
-    # full access to all domain modules (see ADMIN_ROLES in auth).
-    if user_role == "domain_authority":
         return True
 
     # Step 2: INGEST is ACL-only — never in octal mode bits

@@ -37,6 +37,7 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
     mod.PERSISTENCE = NullPersistenceAdapter()
     mod.BOOTSTRAP_MODE = True
     mod._session_containers.clear()
+    mod._STAGED_COMMANDS.clear()
     monkeypatch.setattr(auth, "JWT_SECRET", "test-secret-admin")
     mod.PERSISTENCE.load_subject_profile = _load_yaml
 
