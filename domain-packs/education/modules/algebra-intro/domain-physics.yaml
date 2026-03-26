@@ -707,3 +707,12 @@ glossary:
     example_in_context: >-
       If earnings increase by $12 for each hour worked, the rate of change
       is $12/hour. That constant rate produces a straight line on a graph.
+
+actor_types:
+  - id: student
+    label: Student
+    description: >-
+      Learner working through algebra-intro artifacts, producing evidence
+      via problem-solving steps.
+    evidence_sources:
+      - adapter/edu/algebra-checker/v1

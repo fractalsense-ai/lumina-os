@@ -163,5 +163,13 @@
   "default_task_spec": {
     "task_id": "system-query-001",
     "nominal_difficulty": 0.0
-  }
+  },
+  "actor_types": [
+    {
+      "id": "administrator",
+      "label": "System Administrator",
+      "description": "Operator managing Lumina OS configuration, RBAC, and domain lifecycle.",
+      "evidence_sources": []
+    }
+  ]
 }

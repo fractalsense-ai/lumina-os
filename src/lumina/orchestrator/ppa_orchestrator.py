@@ -63,6 +63,7 @@ from typing import Any, Callable
 
 from lumina.orchestrator.actor_resolver import ActorResolver
 from lumina.orchestrator.contract_drafter import ContractDrafter
+from lumina.orchestrator.knowledge_retriever import retrieve_grounding
 from lumina.orchestrator.system_log_writer import (
     SystemLogWriter,
     canonical_json as _canonical_json,
@@ -383,15 +384,20 @@ class PPAOrchestrator:
         if standing_order_trigger is None and action is not None:
             standing_order_trigger = action
 
-        # 4. The Clerk drafts the contract
+        # 4. Retrieve grounding references from the KnowledgeIndex
+        domain_id = self.domain.get("id", "")
+        references = retrieve_grounding(task_spec, evidence, domain_id)
+
+        # 5. The Clerk drafts the contract
         prompt_contract = self._drafter.build(
-            task_spec, action, domain_lib_decision, standing_order_trigger
+            task_spec, action, domain_lib_decision, standing_order_trigger,
+            references=references,
         )
 
         trace_metadata = dict(provenance_metadata or {})
         trace_metadata["prompt_contract_hash"] = hash_payload(prompt_contract)
 
-        # 5. The Scribe logs it
+        # 6. The Scribe logs it
         self._writer.write_trace_event(
             task_spec,
             invariant_results,

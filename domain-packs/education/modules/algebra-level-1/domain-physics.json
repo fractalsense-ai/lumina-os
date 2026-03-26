@@ -422,5 +422,13 @@
     "deterministic_tools": [
       "adapter/edu/algebra-checker/v1"
     ]
-  }
+  },
+  "actor_types": [
+    {
+      "id": "student",
+      "label": "Student",
+      "description": "Learner working through algebra level 1 artifacts, producing evidence via problem-solving steps.",
+      "evidence_sources": ["adapter/edu/algebra-checker/v1"]
+    }
+  ]
 }

@@ -612,5 +612,13 @@
     "module_ttl_seconds": 900,
     "domain_ttl_seconds": 14400,
     "system_ttl_seconds": 86400
-  }
+  },
+  "actor_types": [
+    {
+      "id": "student",
+      "label": "Student",
+      "description": "Learner working through algebra 1 artifacts, producing evidence via problem-solving steps.",
+      "evidence_sources": ["adapter/edu/algebra-checker/v1"]
+    }
+  ]
 }

@@ -533,7 +533,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-08
-    sha256: b7d30ceda79a76fcef7d837f94c3b830177373a6e8469ff643800cd32a40ca2f
+    sha256: d3648d45a16862dbe8d3d6ac6ea81f65ea28d9e2e4dcdb1137134c97fe164ff7
 
   - path: specs/evaluation-harness-v1.md
     type: spec
@@ -630,7 +630,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-15
-    sha256: d33994f2a276b15219ee3a74ee4af8d4431b6af660fe562835fa8382ce3a5b1e
+    sha256: 9271fdd560beae76aee0628f042c5705ef4888f72d2a8cd760917bda5911dbb2
 
   - path: standards/domain-registry-schema-v1.json
     type: schema

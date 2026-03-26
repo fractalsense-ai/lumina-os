@@ -412,3 +412,12 @@ world_sim_override:
     - nature_and_outdoors
     - sports_and_games
     - general_math
+
+actor_types:
+  - id: student
+    label: Student
+    description: >-
+      Learner working through algebra level 1 artifacts, producing evidence
+      via problem-solving steps.
+    evidence_sources:
+      - adapter/edu/algebra-checker/v1

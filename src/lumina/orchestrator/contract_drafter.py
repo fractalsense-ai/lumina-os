@@ -55,6 +55,7 @@ class ContractDrafter:
         action: str | None,
         domain_lib_decision: dict[str, Any],
         standing_order_trigger: str | None,
+        references: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """
         Build a prompt_contract dict conforming to prompt-contract-schema.json.
@@ -83,8 +84,8 @@ class ContractDrafter:
             "skills_targeted": list(task_spec.get("skills_required", [])),
             "theme": theme,
             "standing_order_trigger": standing_order_trigger,
-            "references": [],
-            "grounded": True,
+            "references": references or [],
+            "grounded": bool(references),
         }
 
         if prompt_type == "hint":

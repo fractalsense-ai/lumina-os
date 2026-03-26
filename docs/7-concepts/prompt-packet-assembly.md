@@ -34,7 +34,7 @@ The **assembled prompt contract** is the "packet." It is built by stacking heade
 │  Domain Physics                             │  ← domain policy layer header
 ├─────────────────────────────────────────────┤
 │  Module State + Turn Data / NLP Anchors     │  ← session-specific context header
-├══════════════════════════════════════════════╡
+├═════════════════════════════════════════════╡
 │  Assembled Prompt Contract                  │  ← the "packet" sent to the LLM
 ├─────────────────────────────────────────────┤
 │  LLM (Processing Unit)                      │  ← probabilistic; never trusted alone
@@ -43,7 +43,7 @@ The **assembled prompt contract** is the "packet." It is built by stacking heade
 ├─────────────────────────────────────────────┤
 │  Domain Adapter — Signal Synthesis (B)      │  ← computes engine contract fields
 ├─────────────────────────────────────────────┤
-│  System Log (System Logs)                  │  ← structured event + decision logging
+│  System Log (System Logs)                   │  ← structured event + decision logging
 └─────────────────────────────────────────────┘
 ```
 

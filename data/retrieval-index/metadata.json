@@ -5364,15 +5364,15 @@
   {
     "source_path": "standards/domain-physics-schema-v1.json",
     "heading": "properties",
-    "text": "{\n \"id\": {\n  \"type\": \"string\",\n  \"pattern\": \"^domain/[a-z0-9_-]+/[a-z0-9_-]+/v[0-9]+$\",\n  \"description\": \"Globally unique domain identifier. Format: domain/{org}/{name}/v{major}\"\n },\n \"version\": {\n  \"type\": \"string\",\n  \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n  \"description\": \"Semantic version string (major.minor or major.minor.patch)\"\n },\n \"domain_authority\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"name\",\n   \"role\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"name\": {\n    \"type\": \"string\"\n   },\n   \"role\": {\n    \"type\": \"string\"\n   },\n   \"pseudonymous_id\": {\n    \"type\": \"string\"\n   }\n  },\n  \"description\": \"The human Domain Authority who authored this domain pack\"\n },\n \"meta_authority_id\": {\n  \"type\": \"string\",\n  \"description\": \"ID of the domain pack one level above, or 'root' for top-level packs\"\n },\n \"description\": {\n  \"type\": \"string\",\n  \"description\": \"Human-readable description of this domain\"\n },\n \"department\": {\n  \"type\": \"string\",\n  \"description\": \"Organizational department or division this module belongs to (e.g. 'Mathematics', 'Field Operations'). Used for grouping modules in list_modules output and administrative dashboards.\"\n },\n \"lumina_core_version\": {\n  \"type\": \"string\",\n  \"description\": \"Version of lumina-core-v1 this pack targets\"\n },\n \"invariants\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/invariant\"\n  },\n  \"description\": \"List of domain invariants. Must include at least one critical invariant.\"\n },\n \"standing_orders\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/standing_order\"\n  },\n  \"description\": \"List of bounded automated responses the orchestrator may take\"\n },\n \"escalation_triggers\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/escalation_trigger\"\n  },\n  \"description\": \"Conditions that cause the system to escalate to the Meta Authority\"\n },\n \"artifacts\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"$ref\": \"#/$defs/artifact\"\n  },\n  \"description\": \"Domain artifacts (achievements, milestones) that can be earned in this domain\"\n },\n \"subsystem_configs\": {\n  \"type\": \"object\",\n  \"additionalProperties\": {\n   \"type\": \"object\"\n  },\n  \"description\": \"Optional subsystem configuration blocks, keyed by subsystem ID. Each value is a free-form object of parameters specific to that subsystem (e.g. {\\\"zpd_monitor\\\": {\\\"min_challenge\\\": 0.3, ...}} for education, or {\\\"soil_health_monitor\\\": {...}} for agriculture). Omit entirely for domains that use no configurable subsystems.\"\n },\n \"evidence_schema\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"path\": {\n    \"type\": \"string\",\n    \"description\": \"Relative path from the domain module directory to the evidence-schema.json file.\"\n   },\n   \"version\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n    \"description\": \"Version of the evidence schema. Must match the 'version' field in the referenced evidence-schema.json.\"\n   }\n  },\n  \"required\": [\n   \"path\",\n   \"version\"\n  ],\n  \"description\": \"Reference to the domain module's evidence schema declaration file. See standards/domain-evidence-extension-v1.md for the Domain Evidence Extension standard.\"\n },\n \"tool_adapters\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"type\": \"string\"\n  },\n  \"description\": \"List of tool adapter IDs available in this domain\"\n },\n \"glossary\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"$ref\": \"#/$defs/glossary_entry\"\n  },\n  \"description\": \"Domain vocabulary definitions. Students may query these terms during a session; the system performs server-side lookup and returns the definition without penalizing off-task ratio.\"\n },\n \"permissions\": {\n  \"$ref\": \"rbac-permission-schema-v1.json\",\n  \"description\": \"chmod-style permission block controlling read, write, and execute access to this module. See rbac-permission-schema-v1.json for the full schema.\"\n },\n \"guest_access\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, users with the guest role may access this module according to the permissions string. When false or omitted, guests are denied all access.\"\n   },\n   \"permissions\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[rx]{1,2}$\",\n    \"default\": \"r\",\n    \"description\": \"Permission characters granted to guest users: r (read) and/or x (execute). Guests may never write.\"\n   }\n  },\n  \"description\": \"Optional domain-scoped access policy for the guest role (RBAC Level 4). Each domain opts in independently. Omit entirely or set enabled=false to deny guest access.\"\n },\n \"ingestion_config\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, the document ingestion pipeline is available for this module.\"\n   },\n   \"max_file_size_mb\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 100,\n    \"default\": 10,\n    \"description\": \"Maximum upload file size in megabytes.\"\n   },\n   \"accepted_formats\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\",\n     \"enum\": [\n      \"pdf\",\n      \"docx\",\n      \"markdown\",\n      \"csv\",\n      \"json\",\n      \"yaml\"\n     ]\n    },\n    \"default\": [\n     \"pdf\",\n     \"docx\",\n     \"markdown\",\n     \"csv\",\n     \"json\",\n     \"yaml\"\n    ],\n    \"description\": \"Document formats accepted by the ingestion pipeline.\"\n   },\n   \"max_interpretations\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 5,\n    \"default\": 3,\n    \"description\": \"Maximum number of SLM interpretation variants to generate for ambiguous content.\"\n   }\n  },\n  \"description\": \"Configuration for the document ingestion pipeline. Controls which formats are accepted, size limits, and SLM interpretation parameters.\"\n },\n \"cross_domain_synthesis\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, this domain participates in cross-domain synthesis analysis during night cycle processing. When false or omitted, the domain remains fully isolated.\"\n   },\n   \"peer_domains\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Domain IDs this domain allows synthesis comparison with. Both domains in a pair must list each other for analysis to proceed (mutual opt-in). Empty array or omitted means no peers.\"\n   },\n   \"share_glossary\": {\n    \"type\": \"boolean\",\n    \"default\": true,\n    \"description\": \"When true, glossary terms are included in the structural comparison pass.\"\n   },\n   \"share_invariant_structure\": {\n    \"type\": \"boolean\",\n    \"default\": true,\n    \"description\": \"When true, invariant structural patterns are included in the physics comparison pass.\"\n   }\n  },\n  \"description\": \"Opt-in configuration for cross-domain synthesis. Enables controlled bridging between otherwise isolated domain VLANs to identify structural and invariant similarities. Omit entirely or set enabled=false to keep this domain fully isolated. Both domains in a pair must mutually opt in.\"\n },\n \"logic_scraping\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, the logic scraping tool is available for this domain. Only domain authorities may trigger scrapes.\"\n   },\n   \"max_iterations\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 500,\n    \"default\": 100,\n    \"description\": \"Maximum number of LLM iterations per scrape invocation.\"\n   },\n   \"synthesis_yield_threshold\": {\n    \"type\": \"number\",\n    \"minimum\": 0,\n    \"maximum\": 1,\n    \"default\": 0.1,\n    \"description\": \"Minimum novel synthesis yield rate (flagged / total iterations) below which the scrape is considered low-value.\"\n   },\n   \"feedback_mode\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"cumulative\",\n     \"sliding_window\"\n    ],\n    \"default\": \"cumulative\",\n    \"description\": \"How prior responses are fed back to the LLM. cumulative: all prior responses included. sliding_window: only the last N responses included.\"\n   },\n   \"sliding_window_size\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"default\": 10,\n    \"description\": \"Number of prior responses to include when feedback_mode is sliding_window.\"\n   }\n  },\n  \"description\": \"Configuration for the logic scraping tool. Enables iterative LLM probing for novel synthesis discovery. Domain authorities invoke scrapes on-demand; flagged results are escalated for review via the novel synthesis two-key verification gate.\"\n },\n \"domain_roles\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"schema_version\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n    \"description\": \"Version of the domain role schema in use.\"\n   },\n   \"roles\": {\n    \"type\": \"array\",\n    \"minItems\": 1,\n    \"items\": {\n     \"$ref\": \"domain-role-schema-v1.json\"\n    },\n    \"description\": \"Domain-specific role definitions ordered by hierarchy_level. The Domain Authority is implicitly level 0 and must not be listed here.\"\n   },\n   \"role_acl\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"object\",\n     \"required\": [\n      \"domain_role\",\n      \"access\"\n     ],\n     \"additionalProperties\": false,\n     \"properties\": {\n      \"domain_role\": {\n       \"type\": \"string\",\n       \"pattern\": \"^[a-z][a-z0-9_]{1,47}$\",\n       \"description\": \"Domain-scoped role ID receiving the access grant. Must match a role_id in the roles array.\"\n      },\n      \"access\": {\n       \"type\": \"string\",\n       \"pattern\": \"^[rwxi]{1,4}$\",\n       \"description\": \"Permission characters granted.\"\n      },\n      \"scope\": {\n       \"type\": \"string\",\n       \"description\": \"Optional scope qualifier limiting what the access grant applies to. Values are domain-defined (e.g., session_monitoring, log_records_own_students).\"\n      }\n     }\n    },\n    \"description\": \"Extended ACL entries for domain roles. Provides scoped permission overrides beyond the default_access declared on each role definition.\"\n   }\n  },\n  \"required\": [\n   \"schema_version\",\n   \"roles\"\n  ],\n  \"description\": \"Optional domain-scoped role hierarchy. Defines roles that exist only within this domain, beneath the Domain Authority ceiling. Each domain can define its own role tiers (e.g., teacher/teaching-assistant/student for education, site-manager/field-operator/observer for agriculture). The Domain Authority is always the implicit ceiling at hierarchy level 0. Omit entirely for domains that use only the 7 system-level roles.\"\n },\n \"groups\": {\n  \"type\": \"object\",\n  \"propertyNames\": {\n   \"pattern\": \"^[a-z][a-z0-9_]{1,47}$\"\n  },\n  \"additionalProperties\": {\n   \"$ref\": \"group-definition-schema-v1.json\"\n  },\n  \"description\": \"Named groups for chmod-style group permission resolution. Each key is a group name that can be referenced by permissions.group. The kernel checks membership at runtime using the members block — it never interprets the group name semantically. Analogous to /etc/group in UNIX. Omit entirely for modules that rely on the backward-compatible system-role-name matching.\"\n },\n \"execution_policy\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"deterministic_tools\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Tool adapter IDs used to validate proposals before HITL review. These are domain-scoped deterministic tools (e.g. 'adapter/edu/algebra-checker/v1'). Proposals must pass all listed tools before being forwarded to the HITL gate.\"\n   }\n  },\n  \"description\": \"Declares the domain-scoped deterministic tools that must validate proposals before HITL review. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema.\"\n },\n \"temporal_policy\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"module_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 60,\n    \"default\": 900,\n    \"description\": \"Time-to-live in seconds for module-level context entries (e.g. problem state, step history). Default 15 minutes.\"\n   },\n   \"domain_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 300,\n    \"default\": 14400,\n    \"description\": \"Time-to-live in seconds for domain-level context entries (e.g. session-scoped glossary cache, mastery snapshot). Default 4 hours.\"\n   },\n   \"system_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 3600,\n    \"default\": 86400,\n    \"description\": \"Time-to-live in seconds for system-level context entries (e.g. RBAC cache, domain physics snapshot). Default 24 hours.\"\n   }\n  },\n  \"description\": \"Hierarchical time-to-live policy for context pruning. Module < domain < system. The TTL manager prunes entries whose last-touched timestamp exceeds the tier's TTL. Omit to use system defaults (900 / 14400 / 86400).\"\n }\n}",
-    "content_hash": "18423ed59d9b90dd78d1c73b8b4fd42400be8d7fabd8bb3f84d55a15f4db9c21",
+    "text": "{\n \"id\": {\n  \"type\": \"string\",\n  \"pattern\": \"^domain/[a-z0-9_-]+/[a-z0-9_-]+/v[0-9]+$\",\n  \"description\": \"Globally unique domain identifier. Format: domain/{org}/{name}/v{major}\"\n },\n \"version\": {\n  \"type\": \"string\",\n  \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n  \"description\": \"Semantic version string (major.minor or major.minor.patch)\"\n },\n \"domain_authority\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"name\",\n   \"role\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"name\": {\n    \"type\": \"string\"\n   },\n   \"role\": {\n    \"type\": \"string\"\n   },\n   \"pseudonymous_id\": {\n    \"type\": \"string\"\n   }\n  },\n  \"description\": \"The human Domain Authority who authored this domain pack\"\n },\n \"meta_authority_id\": {\n  \"type\": \"string\",\n  \"description\": \"ID of the domain pack one level above, or 'root' for top-level packs\"\n },\n \"description\": {\n  \"type\": \"string\",\n  \"description\": \"Human-readable description of this domain\"\n },\n \"department\": {\n  \"type\": \"string\",\n  \"description\": \"Organizational department or division this module belongs to (e.g. 'Mathematics', 'Field Operations'). Used for grouping modules in list_modules output and administrative dashboards.\"\n },\n \"lumina_core_version\": {\n  \"type\": \"string\",\n  \"description\": \"Version of lumina-core-v1 this pack targets\"\n },\n \"invariants\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/invariant\"\n  },\n  \"description\": \"List of domain invariants. Must include at least one critical invariant.\"\n },\n \"standing_orders\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/standing_order\"\n  },\n  \"description\": \"List of bounded automated responses the orchestrator may take\"\n },\n \"escalation_triggers\": {\n  \"type\": \"array\",\n  \"minItems\": 1,\n  \"items\": {\n   \"$ref\": \"#/$defs/escalation_trigger\"\n  },\n  \"description\": \"Conditions that cause the system to escalate to the Meta Authority\"\n },\n \"artifacts\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"$ref\": \"#/$defs/artifact\"\n  },\n  \"description\": \"Domain artifacts (achievements, milestones) that can be earned in this domain\"\n },\n \"subsystem_configs\": {\n  \"type\": \"object\",\n  \"additionalProperties\": {\n   \"type\": \"object\"\n  },\n  \"description\": \"Optional subsystem configuration blocks, keyed by subsystem ID. Each value is a free-form object of parameters specific to that subsystem (e.g. {\\\"zpd_monitor\\\": {\\\"min_challenge\\\": 0.3, ...}} for education, or {\\\"soil_health_monitor\\\": {...}} for agriculture). Omit entirely for domains that use no configurable subsystems.\"\n },\n \"evidence_schema\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"path\": {\n    \"type\": \"string\",\n    \"description\": \"Relative path from the domain module directory to the evidence-schema.json file.\"\n   },\n   \"version\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n    \"description\": \"Version of the evidence schema. Must match the 'version' field in the referenced evidence-schema.json.\"\n   }\n  },\n  \"required\": [\n   \"path\",\n   \"version\"\n  ],\n  \"description\": \"Reference to the domain module's evidence schema declaration file. See standards/domain-evidence-extension-v1.md for the Domain Evidence Extension standard.\"\n },\n \"tool_adapters\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"type\": \"string\"\n  },\n  \"description\": \"List of tool adapter IDs available in this domain\"\n },\n \"glossary\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"$ref\": \"#/$defs/glossary_entry\"\n  },\n  \"description\": \"Domain vocabulary definitions. Students may query these terms during a session; the system performs server-side lookup and returns the definition without penalizing off-task ratio.\"\n },\n \"permissions\": {\n  \"$ref\": \"rbac-permission-schema-v1.json\",\n  \"description\": \"chmod-style permission block controlling read, write, and execute access to this module. See rbac-permission-schema-v1.json for the full schema.\"\n },\n \"guest_access\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, users with the guest role may access this module according to the permissions string. When false or omitted, guests are denied all access.\"\n   },\n   \"permissions\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[rx]{1,2}$\",\n    \"default\": \"r\",\n    \"description\": \"Permission characters granted to guest users: r (read) and/or x (execute). Guests may never write.\"\n   }\n  },\n  \"description\": \"Optional domain-scoped access policy for the guest role (RBAC Level 4). Each domain opts in independently. Omit entirely or set enabled=false to deny guest access.\"\n },\n \"ingestion_config\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, the document ingestion pipeline is available for this module.\"\n   },\n   \"max_file_size_mb\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 100,\n    \"default\": 10,\n    \"description\": \"Maximum upload file size in megabytes.\"\n   },\n   \"accepted_formats\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\",\n     \"enum\": [\n      \"pdf\",\n      \"docx\",\n      \"markdown\",\n      \"csv\",\n      \"json\",\n      \"yaml\"\n     ]\n    },\n    \"default\": [\n     \"pdf\",\n     \"docx\",\n     \"markdown\",\n     \"csv\",\n     \"json\",\n     \"yaml\"\n    ],\n    \"description\": \"Document formats accepted by the ingestion pipeline.\"\n   },\n   \"max_interpretations\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 5,\n    \"default\": 3,\n    \"description\": \"Maximum number of SLM interpretation variants to generate for ambiguous content.\"\n   }\n  },\n  \"description\": \"Configuration for the document ingestion pipeline. Controls which formats are accepted, size limits, and SLM interpretation parameters.\"\n },\n \"cross_domain_synthesis\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, this domain participates in cross-domain synthesis analysis during night cycle processing. When false or omitted, the domain remains fully isolated.\"\n   },\n   \"peer_domains\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Domain IDs this domain allows synthesis comparison with. Both domains in a pair must list each other for analysis to proceed (mutual opt-in). Empty array or omitted means no peers.\"\n   },\n   \"share_glossary\": {\n    \"type\": \"boolean\",\n    \"default\": true,\n    \"description\": \"When true, glossary terms are included in the structural comparison pass.\"\n   },\n   \"share_invariant_structure\": {\n    \"type\": \"boolean\",\n    \"default\": true,\n    \"description\": \"When true, invariant structural patterns are included in the physics comparison pass.\"\n   }\n  },\n  \"description\": \"Opt-in configuration for cross-domain synthesis. Enables controlled bridging between otherwise isolated domain VLANs to identify structural and invariant similarities. Omit entirely or set enabled=false to keep this domain fully isolated. Both domains in a pair must mutually opt in.\"\n },\n \"logic_scraping\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"enabled\": {\n    \"type\": \"boolean\",\n    \"default\": false,\n    \"description\": \"When true, the logic scraping tool is available for this domain. Only domain authorities may trigger scrapes.\"\n   },\n   \"max_iterations\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"maximum\": 500,\n    \"default\": 100,\n    \"description\": \"Maximum number of LLM iterations per scrape invocation.\"\n   },\n   \"synthesis_yield_threshold\": {\n    \"type\": \"number\",\n    \"minimum\": 0,\n    \"maximum\": 1,\n    \"default\": 0.1,\n    \"description\": \"Minimum novel synthesis yield rate (flagged / total iterations) below which the scrape is considered low-value.\"\n   },\n   \"feedback_mode\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"cumulative\",\n     \"sliding_window\"\n    ],\n    \"default\": \"cumulative\",\n    \"description\": \"How prior responses are fed back to the LLM. cumulative: all prior responses included. sliding_window: only the last N responses included.\"\n   },\n   \"sliding_window_size\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"default\": 10,\n    \"description\": \"Number of prior responses to include when feedback_mode is sliding_window.\"\n   }\n  },\n  \"description\": \"Configuration for the logic scraping tool. Enables iterative LLM probing for novel synthesis discovery. Domain authorities invoke scrapes on-demand; flagged results are escalated for review via the novel synthesis two-key verification gate.\"\n },\n \"domain_roles\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"schema_version\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[0-9]+\\\\.[0-9]+(\\\\.[0-9]+)?$\",\n    \"description\": \"Version of the domain role schema in use.\"\n   },\n   \"roles\": {\n    \"type\": \"array\",\n    \"minItems\": 1,\n    \"items\": {\n     \"$ref\": \"domain-role-schema-v1.json\"\n    },\n    \"description\": \"Domain-specific role definitions ordered by hierarchy_level. The Domain Authority is implicitly level 0 and must not be listed here.\"\n   },\n   \"role_acl\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"object\",\n     \"required\": [\n      \"domain_role\",\n      \"access\"\n     ],\n     \"additionalProperties\": false,\n     \"properties\": {\n      \"domain_role\": {\n       \"type\": \"string\",\n       \"pattern\": \"^[a-z][a-z0-9_]{1,47}$\",\n       \"description\": \"Domain-scoped role ID receiving the access grant. Must match a role_id in the roles array.\"\n      },\n      \"access\": {\n       \"type\": \"string\",\n       \"pattern\": \"^[rwxi]{1,4}$\",\n       \"description\": \"Permission characters granted.\"\n      },\n      \"scope\": {\n       \"type\": \"string\",\n       \"description\": \"Optional scope qualifier limiting what the access grant applies to. Values are domain-defined (e.g., session_monitoring, log_records_own_students).\"\n      }\n     }\n    },\n    \"description\": \"Extended ACL entries for domain roles. Provides scoped permission overrides beyond the default_access declared on each role definition.\"\n   }\n  },\n  \"required\": [\n   \"schema_version\",\n   \"roles\"\n  ],\n  \"description\": \"Optional domain-scoped role hierarchy. Defines roles that exist only within this domain, beneath the Domain Authority ceiling. Each domain can define its own role tiers (e.g., teacher/teaching-assistant/student for education, site-manager/field-operator/observer for agriculture). The Domain Authority is always the implicit ceiling at hierarchy level 0. Omit entirely for domains that use only the 7 system-level roles.\"\n },\n \"groups\": {\n  \"type\": \"object\",\n  \"propertyNames\": {\n   \"pattern\": \"^[a-z][a-z0-9_]{1,47}$\"\n  },\n  \"additionalProperties\": {\n   \"$ref\": \"group-definition-schema-v1.json\"\n  },\n  \"description\": \"Named groups for chmod-style group permission resolution. Each key is a group name that can be referenced by permissions.group. The kernel checks membership at runtime using the members block — it never interprets the group name semantically. Analogous to /etc/group in UNIX. Omit entirely for modules that rely on the backward-compatible system-role-name matching.\"\n },\n \"execution_policy\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"deterministic_tools\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Tool adapter IDs used to validate proposals before HITL review. These are domain-scoped deterministic tools (e.g. 'adapter/edu/algebra-checker/v1'). Proposals must pass all listed tools before being forwarded to the HITL gate.\"\n   }\n  },\n  \"description\": \"Declares the domain-scoped deterministic tools that must validate proposals before HITL review. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema.\"\n },\n \"temporal_policy\": {\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"module_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 60,\n    \"default\": 900,\n    \"description\": \"Time-to-live in seconds for module-level context entries (e.g. problem state, step history). Default 15 minutes.\"\n   },\n   \"domain_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 300,\n    \"default\": 14400,\n    \"description\": \"Time-to-live in seconds for domain-level context entries (e.g. session-scoped glossary cache, mastery snapshot). Default 4 hours.\"\n   },\n   \"system_ttl_seconds\": {\n    \"type\": \"integer\",\n    \"minimum\": 3600,\n    \"default\": 86400,\n    \"description\": \"Time-to-live in seconds for system-level context entries (e.g. RBAC cache, domain physics snapshot). Default 24 hours.\"\n   }\n  },\n  \"description\": \"Hierarchical time-to-live policy for context pruning. Module < domain < system. The TTL manager prunes entries whose last-touched timestamp exceeds the tier's TTL. Omit to use system defaults (900 / 14400 / 86400).\"\n },\n \"actor_types\": {\n  \"type\": \"array\",\n  \"items\": {\n   \"$ref\": \"#/$defs/actor_type\"\n  },\n  \"description\": \"Declares the types of Actors recognised in this domain. An Actor is whatever changes the state of the system relative to this domain — a student in education, a sensor or farmer in agriculture, etc. The AI orchestrator is NOT an Actor. Omit for domains that do not need explicit Actor type declarations.\"\n }\n}",
+    "content_hash": "91b9ea2b6ca289549a8f706c614390f6a9ad872fa327b3d79ff78945a4c3eea0",
     "content_type": "physics"
   },
   {
     "source_path": "standards/domain-physics-schema-v1.json",
     "heading": "$defs",
-    "text": "{\n \"invariant\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"description\",\n   \"severity\"\n  ],\n  \"additionalProperties\": false,\n  \"if\": {\n   \"not\": {\n    \"required\": [\n     \"handled_by\"\n    ]\n   }\n  },\n  \"then\": {\n   \"required\": [\n    \"check\"\n   ]\n  },\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\",\n    \"description\": \"Unique identifier for this invariant within the domain\"\n   },\n   \"description\": {\n    \"type\": \"string\",\n    \"description\": \"Human-readable description of the invariant\"\n   },\n   \"severity\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"critical\",\n     \"warning\"\n    ],\n    \"description\": \"critical: halts autonomous action; warning: triggers a standing order\"\n   },\n   \"check\": {\n    \"type\": \"string\",\n    \"description\": \"Predicate expression evaluated by the orchestrator (e.g. 'step_count >= 3'). Required when handled_by is absent; optional (informational) when handled_by is set.\"\n   },\n   \"handled_by\": {\n    \"type\": \"string\",\n    \"description\": \"ID of the subsystem that evaluates this invariant (e.g. 'zpd_monitor' for education, 'soil_health_monitor' for agriculture). When present, the orchestrator skips its own check evaluation and defers entirely to the named subsystem. Enables domain-agnostic invariant delegation without hardcoding invariant IDs in the engine.\"\n   },\n   \"standing_order_on_violation\": {\n    \"type\": \"string\",\n    \"description\": \"ID of the standing order to invoke when this invariant is violated\"\n   },\n   \"signal_type\": {\n    \"type\": \"string\",\n    \"description\": \"Optional signal type emitted when this invariant fires (e.g., NOVEL_PATTERN)\"\n   }\n  }\n },\n \"standing_order\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"action\",\n   \"trigger_condition\",\n   \"max_attempts\",\n   \"escalation_on_exhaust\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\",\n    \"description\": \"Unique identifier for this standing order\"\n   },\n   \"action\": {\n    \"type\": \"string\",\n    \"description\": \"The automated action taken (e.g., request_more_steps, reduce_challenge). Domain-specific action names such as zpd_scaffold are defined by the domain pack and passed through as-is by the engine.\"\n   },\n   \"trigger_condition\": {\n    \"type\": \"string\",\n    \"description\": \"Invariant ID or drift condition that activates this order\"\n   },\n   \"max_attempts\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"description\": \"Maximum times this order may be applied before escalation\"\n   },\n   \"escalation_on_exhaust\": {\n    \"type\": \"boolean\",\n    \"description\": \"Whether to escalate when max_attempts is reached\"\n   },\n   \"description\": {\n    \"type\": \"string\",\n    \"description\": \"Human-readable description of what this standing order does\"\n   }\n  }\n },\n \"escalation_trigger\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"condition\",\n   \"target_role\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\"\n   },\n   \"condition\": {\n    \"type\": \"string\",\n    \"description\": \"The condition that triggers escalation\"\n   },\n   \"target_role\": {\n    \"type\": \"string\",\n    \"description\": \"Role of the Meta Authority receiving this escalation\"\n   },\n   \"sla_minutes\": {\n    \"type\": \"integer\",\n    \"description\": \"SLA for acknowledgement in minutes; breach is itself a reportable event\"\n   }\n  }\n },\n \"artifact\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"name\",\n   \"unlock_condition\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\"\n   },\n   \"name\": {\n    \"type\": \"string\"\n   },\n   \"description\": {\n    \"type\": \"string\"\n   },\n   \"unlock_condition\": {\n    \"type\": \"string\",\n    \"description\": \"Description of mastery conditions required to earn this artifact\"\n   },\n   \"mastery_threshold\": {\n    \"type\": \"number\",\n    \"minimum\": 0,\n    \"maximum\": 1,\n    \"description\": \"Minimum mastery level required (0..1)\"\n   },\n   \"skills_required\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Skill IDs that must meet the mastery threshold\"\n   }\n  }\n },\n \"glossary_entry\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"term\",\n   \"definition\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"term\": {\n    \"type\": \"string\",\n    \"description\": \"Canonical term (lowercase). The primary lookup key.\"\n   },\n   \"definition\": {\n    \"type\": \"string\",\n    \"description\": \"Concise, student-appropriate definition of the term.\"\n   },\n   \"aliases\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Alternate forms a student might use (plurals, colloquial phrasings).\"\n   },\n   \"related_terms\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Other glossary terms to surface after the definition.\"\n   },\n   \"example_in_context\": {\n    \"type\": \"string\",\n    \"description\": \"A concrete example using the term in a domain-relevant sentence.\"\n   }\n  }\n }\n}",
-    "content_hash": "62199fcbbdf7bb8e319f8a7e68374d79f804b178e69c2c76a53b0983099bbf4d",
+    "text": "{\n \"invariant\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"description\",\n   \"severity\"\n  ],\n  \"additionalProperties\": false,\n  \"if\": {\n   \"not\": {\n    \"required\": [\n     \"handled_by\"\n    ]\n   }\n  },\n  \"then\": {\n   \"required\": [\n    \"check\"\n   ]\n  },\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\",\n    \"description\": \"Unique identifier for this invariant within the domain\"\n   },\n   \"description\": {\n    \"type\": \"string\",\n    \"description\": \"Human-readable description of the invariant\"\n   },\n   \"severity\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"critical\",\n     \"warning\"\n    ],\n    \"description\": \"critical: halts autonomous action; warning: triggers a standing order\"\n   },\n   \"check\": {\n    \"type\": \"string\",\n    \"description\": \"Predicate expression evaluated by the orchestrator (e.g. 'step_count >= 3'). Required when handled_by is absent; optional (informational) when handled_by is set.\"\n   },\n   \"handled_by\": {\n    \"type\": \"string\",\n    \"description\": \"ID of the subsystem that evaluates this invariant (e.g. 'zpd_monitor' for education, 'soil_health_monitor' for agriculture). When present, the orchestrator skips its own check evaluation and defers entirely to the named subsystem. Enables domain-agnostic invariant delegation without hardcoding invariant IDs in the engine.\"\n   },\n   \"standing_order_on_violation\": {\n    \"type\": \"string\",\n    \"description\": \"ID of the standing order to invoke when this invariant is violated\"\n   },\n   \"signal_type\": {\n    \"type\": \"string\",\n    \"description\": \"Optional signal type emitted when this invariant fires (e.g., NOVEL_PATTERN)\"\n   }\n  }\n },\n \"standing_order\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"action\",\n   \"trigger_condition\",\n   \"max_attempts\",\n   \"escalation_on_exhaust\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\",\n    \"description\": \"Unique identifier for this standing order\"\n   },\n   \"action\": {\n    \"type\": \"string\",\n    \"description\": \"The automated action taken (e.g., request_more_steps, reduce_challenge). Domain-specific action names such as zpd_scaffold are defined by the domain pack and passed through as-is by the engine.\"\n   },\n   \"trigger_condition\": {\n    \"type\": \"string\",\n    \"description\": \"Invariant ID or drift condition that activates this order\"\n   },\n   \"max_attempts\": {\n    \"type\": \"integer\",\n    \"minimum\": 1,\n    \"description\": \"Maximum times this order may be applied before escalation\"\n   },\n   \"escalation_on_exhaust\": {\n    \"type\": \"boolean\",\n    \"description\": \"Whether to escalate when max_attempts is reached\"\n   },\n   \"description\": {\n    \"type\": \"string\",\n    \"description\": \"Human-readable description of what this standing order does\"\n   }\n  }\n },\n \"escalation_trigger\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"condition\",\n   \"target_role\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\"\n   },\n   \"condition\": {\n    \"type\": \"string\",\n    \"description\": \"The condition that triggers escalation\"\n   },\n   \"target_role\": {\n    \"type\": \"string\",\n    \"description\": \"Role of the Meta Authority receiving this escalation\"\n   },\n   \"sla_minutes\": {\n    \"type\": \"integer\",\n    \"description\": \"SLA for acknowledgement in minutes; breach is itself a reportable event\"\n   }\n  }\n },\n \"artifact\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"name\",\n   \"unlock_condition\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\"\n   },\n   \"name\": {\n    \"type\": \"string\"\n   },\n   \"description\": {\n    \"type\": \"string\"\n   },\n   \"unlock_condition\": {\n    \"type\": \"string\",\n    \"description\": \"Description of mastery conditions required to earn this artifact\"\n   },\n   \"mastery_threshold\": {\n    \"type\": \"number\",\n    \"minimum\": 0,\n    \"maximum\": 1,\n    \"description\": \"Minimum mastery level required (0..1)\"\n   },\n   \"skills_required\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Skill IDs that must meet the mastery threshold\"\n   }\n  }\n },\n \"glossary_entry\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"term\",\n   \"definition\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"term\": {\n    \"type\": \"string\",\n    \"description\": \"Canonical term (lowercase). The primary lookup key.\"\n   },\n   \"definition\": {\n    \"type\": \"string\",\n    \"description\": \"Concise, student-appropriate definition of the term.\"\n   },\n   \"aliases\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Alternate forms a student might use (plurals, colloquial phrasings).\"\n   },\n   \"related_terms\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Other glossary terms to surface after the definition.\"\n   },\n   \"example_in_context\": {\n    \"type\": \"string\",\n    \"description\": \"A concrete example using the term in a domain-relevant sentence.\"\n   }\n  }\n },\n \"actor_type\": {\n  \"type\": \"object\",\n  \"required\": [\n   \"id\",\n   \"label\",\n   \"description\"\n  ],\n  \"additionalProperties\": false,\n  \"properties\": {\n   \"id\": {\n    \"type\": \"string\",\n    \"pattern\": \"^[a-z][a-z0-9_]{1,47}$\",\n    \"description\": \"Machine-readable identifier for this Actor type (e.g. 'student', 'ph_sensor', 'field_operator').\"\n   },\n   \"label\": {\n    \"type\": \"string\",\n    \"description\": \"Human-readable name for this Actor type.\"\n   },\n   \"description\": {\n    \"type\": \"string\",\n    \"description\": \"How this Actor type changes the state of the system in this domain.\"\n   },\n   \"evidence_sources\": {\n    \"type\": \"array\",\n    \"items\": {\n     \"type\": \"string\"\n    },\n    \"description\": \"Tool adapter IDs or signal sources this Actor type produces evidence through.\"\n   }\n  }\n }\n}",
+    "content_hash": "5ce63cc59fa9b6abb28fdffc7c671153c19fc31885d64ab0ac0d7b999e6c0073",
     "content_type": "physics"
   },
   {
@@ -8708,6 +8708,62 @@
     "content_type": "schema"
   },
   {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/2842c45e-8b63-4973-9f69-f6e1a6486b90/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
     "source_path": "cfg/profiles/293db89f-2535-4f6f-a545-1a1b5c8f776c/_default.yaml",
     "heading": "student_id",
     "text": "<PSEUDONYMOUS_ID>",
@@ -9044,6 +9100,62 @@
     "content_type": "schema"
   },
   {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/33895fad-d38c-4cc0-b265-45ef1e80be55/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
     "source_path": "cfg/profiles/33aef2d8-6b86-4ae1-b5fd-461e6ddde087/_default.yaml",
     "heading": "student_id",
     "text": "<PSEUDONYMOUS_ID>",
@@ -9206,6 +9318,62 @@
   },
   {
     "source_path": "cfg/profiles/38737ca7-68dc-444b-8835-c1ff89c12472/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/39df87b0-427c-4df7-86d5-080a0cfaccac/_default.yaml",
     "heading": "updated_utc",
     "text": "None",
     "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
@@ -9598,6 +9766,62 @@
   },
   {
     "source_path": "cfg/profiles/4e8d2aec-e183-47ad-a97d-e5edeb4c17ee/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/528f416e-01b2-41db-a5a4-41e9a30d169d/_default.yaml",
     "heading": "updated_utc",
     "text": "None",
     "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
@@ -10780,6 +11004,62 @@
     "content_type": "schema"
   },
   {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/7227c5e9-a422-491c-9c87-8c99751419da/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
     "source_path": "cfg/profiles/74593fea-9dcc-4d1e-81e8-7138edea30c4/_default.yaml",
     "heading": "student_id",
     "text": "<PSEUDONYMOUS_ID>",
@@ -10886,6 +11166,62 @@
   },
   {
     "source_path": "cfg/profiles/753642a5-8b7c-41e9-966d-d31189a96993/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/75530b70-23b2-4650-aad6-e5aa8f7d2e32/_default.yaml",
     "heading": "updated_utc",
     "text": "None",
     "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
@@ -12958,6 +13294,62 @@
   },
   {
     "source_path": "cfg/profiles/b71f4ece-b436-4ad6-87ba-079f4d560f66/_default.yaml",
+    "heading": "updated_utc",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "student_id",
+    "text": "<PSEUDONYMOUS_ID>",
+    "content_hash": "68c51c7f93e87be7b5457f8612f9126abd42d0f591bba1eb3b0e0ae4ed781fb8",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "domain_id",
+    "text": "domain/edu/algebra-level-1/v1",
+    "content_hash": "e6af0d93e0238a73caff627009a55f7dcde8f49d885156dbe4e6da5acc36d1a4",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "display_name",
+    "text": "None",
+    "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "preferences",
+    "text": "{\n \"interests\": [],\n \"dislikes\": [],\n \"preferred_explanation_style\": \"step_by_step\",\n \"language\": \"en\"\n}",
+    "content_hash": "2c0bfd997e7cfa6cbc496ce85046e9fad003bd09a66b24316e329d22fc87d457",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "learning_state",
+    "text": "{\n \"affect\": {\n  \"salience\": 0.5,\n  \"valence\": 0.0,\n  \"arousal\": 0.5\n },\n \"mastery\": {\n  \"equivalence_preserved\": 0.0,\n  \"no_illegal_operations\": 0.0,\n  \"solution_verifies\": 0.0,\n  \"show_work_minimum\": 0.0\n },\n \"challenge_band\": {\n  \"min_challenge\": 0.3,\n  \"max_challenge\": 0.7\n },\n \"recent_window\": {\n  \"window_turns\": 10,\n  \"attempts\": 0,\n  \"consecutive_incorrect\": 0,\n  \"hint_count\": 0,\n  \"outside_pct\": 0.0,\n  \"consecutive_outside\": 0,\n  \"outside_flags\": []\n },\n \"challenge\": 0.3,\n \"uncertainty\": 0.8,\n \"fluency\": {\n  \"current_tier\": \"tier_1\",\n  \"consecutive_correct\": 0\n },\n \"updated_utc\": null\n}",
+    "content_hash": "8844080e06c85e01b0707a54a6800c725b17a445bef778219d7ec846cbc30227",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "session_history",
+    "text": "{\n \"total_sessions\": 0,\n \"last_session_utc\": null,\n \"total_turns\": 0\n}",
+    "content_hash": "70d8eef93a2e9c380929ff8929a9e79d8626078bba4bcc159e0ee1d3cee451ea",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
+    "heading": "consent",
+    "text": "{\n \"magic_circle_accepted\": false,\n \"consent_timestamp_utc\": null,\n \"consent_version\": null,\n \"guardian_consent\": null\n}",
+    "content_hash": "10b7b918a7c4aebca289e05ec94f98246d0d3fd650b52eccb9db52f739ee1db0",
+    "content_type": "schema"
+  },
+  {
+    "source_path": "cfg/profiles/ba411556-4212-40b2-817d-6b0de21d51b4/_default.yaml",
     "heading": "updated_utc",
     "text": "None",
     "content_hash": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
@@ -16457,6 +16849,20 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/agriculture/modules/operations-level-1/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"sensor\",\n \"label\": \"Sensor\",\n \"description\": \"IoT device producing field-operations evidence through continuous environmental readings.\",\n \"evidence_sources\": [\n  \"adapter/agri/collar-sensor/v1\"\n ]\n}",
+    "content_hash": "da95005d4fb447c2151df07df46ec3568f829afd195980aa4106706b9bba354a",
+    "content_type": "physics"
+  },
+  {
+    "source_path": "domain-packs/agriculture/modules/operations-level-1/domain-physics.json",
+    "heading": "actor_types[1]",
+    "text": "{\n \"id\": \"operator\",\n \"label\": \"Farm Operator\",\n \"description\": \"Human operator making field decisions and recording observations.\",\n \"evidence_sources\": []\n}",
+    "content_hash": "65540f8fe5ad4855631884793378cb0642227672386c8581ee38e9187c2e62f7",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/agriculture/cfg/runtime-config.yaml",
     "heading": "runtime",
     "text": "{\n \"global_system_prompt_path\": \"specs/global-system-prompt-v1.md\",\n \"domain_system_prompt_path\": \"domain-packs/agriculture/prompts/domain-system-override.md\",\n \"turn_interpretation_prompt_path\": \"domain-packs/agriculture/prompts/turn-interpretation.md\",\n \"domain_physics_path\": \"domain-packs/agriculture/modules/operations-level-1/domain-physics.json\",\n \"subject_profile_path\": \"domain-packs/agriculture/modules/operations-level-1/example-subject.yaml\",\n \"access_control\": {\n  \"required_role\": \"user\",\n  \"allowed_roles\": [\n   \"root\",\n   \"domain_authority\",\n   \"it_support\",\n   \"qa\",\n   \"user\"\n  ]\n },\n \"default_task_spec\": {\n  \"task_id\": \"operations-signal-001\",\n  \"nominal_difficulty\": 0.4,\n  \"skills_required\": [\n   \"monitor_signal\",\n   \"report_variance\"\n  ]\n },\n \"domain_step_params\": {\n  \"window_turns\": 5,\n  \"drift_threshold\": 0.4\n },\n \"turn_input_defaults\": {\n  \"within_tolerance\": true,\n  \"response_latency_sec\": 10.0,\n  \"off_task_ratio\": 0.0,\n  \"step_count\": 0\n },\n \"turn_input_schema\": {\n  \"within_tolerance\": {\n   \"type\": \"bool\",\n   \"default\": true\n  },\n  \"response_latency_sec\": {\n   \"type\": \"float\",\n   \"minimum\": 0.0,\n   \"default\": 10.0\n  },\n  \"off_task_ratio\": {\n   \"type\": \"float\",\n   \"minimum\": 0.0,\n   \"maximum\": 1.0,\n   \"default\": 0.0\n  },\n  \"step_count\": {\n   \"type\": \"int\",\n   \"minimum\": 0,\n   \"default\": 0\n  }\n },\n \"action_prompt_type_map\": {\n  \"request_more_steps\": \"more_steps_request\"\n },\n \"ui_manifest\": {\n  \"title\": \"Project Lumina\",\n  \"subtitle\": \"Operations Level 1 — Field Monitoring\",\n  \"domain_label\": \"Agriculture\",\n  \"consent_heading\": \"Project Lumina\",\n  \"consent_text\": \"This system monitors operational signals and reports variance. It does not store raw sensor data beyond structured telemetry. If conditions exceed tolerance, we escalate to the site manager.\",\n  \"consent_button_label\": \"I Acknowledge Operating Conditions\",\n  \"placeholder_text\": \"Report current signal readings...\",\n  \"theme\": {\n   \"primary\": \"oklch(0.45 0.10 145)\",\n   \"accent\": \"oklch(0.65 0.15 85)\",\n   \"background\": \"oklch(0.95 0.02 100)\"\n  },\n  \"panels\": [\n   {\n    \"id\": \"yield_variance\",\n    \"label\": \"Yield Variance\",\n    \"endpoint\": \"/api/dashboard/agriculture/yield-variance\",\n    \"roles\": [\n     \"root\",\n     \"domain_authority\"\n    ],\n    \"type\": \"chart\"\n   },\n   {\n    \"id\": \"field_signals\",\n    \"label\": \"Field Signals\",\n    \"endpoint\": \"/api/dashboard/agriculture/field-signals\",\n    \"roles\": [\n     \"root\",\n     \"domain_authority\",\n     \"it_support\"\n    ],\n    \"type\": \"table\"\n   }\n  ]\n },\n \"deterministic_templates\": {\n  \"task_presentation\": \"Proceed with {task_id}. Report current operating signal and any drift notes.\",\n  \"more_steps_request\": \"Provide additional operational detail for {task_id} so we can verify tolerance.\",\n  \"default\": \"Continue with {task_id} and share the next operational update.\"\n }\n}",
@@ -16877,6 +17283,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-1/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra 1 artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "c64e492aa1e6be86921a4b11d154f2b4cf0c1fcdc5c4f53a03b58d4ae56346a3",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/algebra-intro/domain-physics.json",
     "heading": "id",
     "text": "domain/edu/algebra-intro/v1",
@@ -17234,6 +17647,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-intro/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra-intro artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "b1580ee9fc2271f5845a2167b009fc02839087346b5e870453cbd7adf42d8b57",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/algebra-level-1/domain-physics.json",
     "heading": "id",
     "text": "domain/edu/algebra-level-1/v1",
@@ -17570,6 +17990,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-level-1/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra level 1 artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "50821cf90373c4d29b604d7509cdb4669294ee2083b49c54e98e6748a2eb3383",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/pre-algebra/domain-physics.json",
     "heading": "id",
     "text": "domain/edu/pre-algebra/v1",
@@ -17896,6 +18323,13 @@
     "heading": "execution_policy",
     "text": "{\n \"deterministic_tools\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
     "content_hash": "fb32cd671a5c5bd40bc2d895ad3aff4bb02f89647997bb205d6da2f119ef9bf4",
+    "content_type": "physics"
+  },
+  {
+    "source_path": "domain-packs/education/modules/pre-algebra/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through pre-algebra artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "1332da3635d4c4012c4b9a50f50f846cf679ba8e0fe2eea95fb12574466b5da9",
     "content_type": "physics"
   },
   {
@@ -18263,6 +18697,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-1/domain-physics.yaml",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra 1 artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "c64e492aa1e6be86921a4b11d154f2b4cf0c1fcdc5c4f53a03b58d4ae56346a3",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/algebra-intro/domain-physics.yaml",
     "heading": "id",
     "text": "domain/edu/algebra-intro/v1",
@@ -18585,6 +19026,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-intro/domain-physics.yaml",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra-intro artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "b1580ee9fc2271f5845a2167b009fc02839087346b5e870453cbd7adf42d8b57",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/algebra-level-1/domain-physics.yaml",
     "heading": "id",
     "text": "domain/edu/algebra-level-1/v1",
@@ -18893,6 +19341,13 @@
     "content_type": "physics"
   },
   {
+    "source_path": "domain-packs/education/modules/algebra-level-1/domain-physics.yaml",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through algebra level 1 artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "50821cf90373c4d29b604d7509cdb4669294ee2083b49c54e98e6748a2eb3383",
+    "content_type": "physics"
+  },
+  {
     "source_path": "domain-packs/education/modules/pre-algebra/domain-physics.yaml",
     "heading": "id",
     "text": "domain/edu/pre-algebra/v1",
@@ -19191,6 +19646,13 @@
     "heading": "glossary[8]",
     "text": "{\n \"term\": \"constant\",\n \"definition\": \"A number on its own that does not change and is not attached to a variable.\",\n \"aliases\": [\n  \"constants\",\n  \"plain number\",\n  \"fixed number\"\n ],\n \"related_terms\": [\n  \"variable\",\n  \"coefficient\",\n  \"expression\"\n ],\n \"example_in_context\": \"In 3x + 7 = 19, the numbers 7 and 19 are constants.\"\n}",
     "content_hash": "94cc8ed15d914a94e670f521b5181c33e311f69151cd830de2fb05ffc5513055",
+    "content_type": "physics"
+  },
+  {
+    "source_path": "domain-packs/education/modules/pre-algebra/domain-physics.yaml",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"student\",\n \"label\": \"Student\",\n \"description\": \"Learner working through pre-algebra artifacts, producing evidence via problem-solving steps.\",\n \"evidence_sources\": [\n  \"adapter/edu/algebra-checker/v1\"\n ]\n}",
+    "content_hash": "1332da3635d4c4012c4b9a50f50f846cf679ba8e0fe2eea95fb12574466b5da9",
     "content_type": "physics"
   },
   {
@@ -19576,6 +20038,13 @@
     "heading": "default_task_spec",
     "text": "{\n \"task_id\": \"system-query-001\",\n \"nominal_difficulty\": 0.0\n}",
     "content_hash": "506f82f2123f0e4d57bdade280c72cd1d35f4b4962adb1fe86ba412af1d8d6a4",
+    "content_type": "physics"
+  },
+  {
+    "source_path": "domain-packs/system/modules/system-core/domain-physics.json",
+    "heading": "actor_types[0]",
+    "text": "{\n \"id\": \"administrator\",\n \"label\": \"System Administrator\",\n \"description\": \"Operator managing Lumina OS configuration, RBAC, and domain lifecycle.\",\n \"evidence_sources\": []\n}",
+    "content_hash": "1fc81c7cf37e5a962494534455f906ba3a6a41be04baeece623161807cfc63b8",
     "content_type": "physics"
   },
   {
