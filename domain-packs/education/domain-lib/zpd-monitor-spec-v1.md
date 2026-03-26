@@ -8,7 +8,7 @@
 
 ## Overview
 
-The **ZPD Monitor** is the core state-management component of the Project Lumina Action layer. It maintains the compressed learner state, detects Zone of Proximal Development drift, and produces a decision tier for each turn.
+The **ZPD Monitor** is the core state-management component of the Project Lumina Actor layer. It maintains the compressed learner state, detects Zone of Proximal Development drift, and produces a decision tier for each turn.
 
 The reference implementation is [`../reference-implementations/zpd-monitor-v0.2.py`](../reference-implementations/zpd-monitor-v0.2.py).
 

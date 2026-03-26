@@ -239,6 +239,30 @@ async def _start_idle_cleanup() -> None:
     _log_router.start()
     await _log_bus.start()
 
+    # Build the global KnowledgeIndex (glossary routing + concept graph).
+    from lumina.core.knowledge_index import KnowledgeIndex
+    from lumina.core.nlp import set_knowledge_index as _set_ki
+
+    _ki = KnowledgeIndex()
+    _ki_dir = _REPO_ROOT / "data" / "knowledge-index"
+    if not _ki.load(_ki_dir):
+        # No persisted index — build from current registry
+        try:
+            _domain_contexts: dict = {}
+            for _d in DOMAIN_REGISTRY.list_domains():
+                _did = _d["domain_id"]
+                try:
+                    _domain_contexts[_did] = DOMAIN_REGISTRY.get_runtime_context(_did)
+                except Exception:
+                    log.warning("KnowledgeIndex: could not load context for %s", _did)
+            if _domain_contexts:
+                _ki.build(_domain_contexts)
+                _ki.save(_ki_dir)
+        except Exception:
+            log.warning("KnowledgeIndex: initial build failed — glossary routing unavailable")
+    _set_ki(_ki)
+    log.info("KnowledgeIndex active: %s", _ki.stats)
+
     # Start the async SLM PPA enrichment worker ("same bus, different lane").
     from lumina.core.slm_ppa_worker import start as _start_slm_ppa_worker
     await _start_slm_ppa_worker()

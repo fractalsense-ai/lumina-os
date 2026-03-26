@@ -377,6 +377,13 @@
         }
       },
       "description": "Hierarchical time-to-live policy for context pruning. Module < domain < system. The TTL manager prunes entries whose last-touched timestamp exceeds the tier's TTL. Omit to use system defaults (900 / 14400 / 86400)."
+    },
+    "actor_types": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actor_type"
+      },
+      "description": "Declares the types of Actors recognised in this domain. An Actor is whatever changes the state of the system relative to this domain — a student in education, a sensor or farmer in agriculture, etc. The AI orchestrator is NOT an Actor. Omit for domains that do not need explicit Actor type declarations."
     }
   },
   "$defs": {
@@ -569,6 +576,37 @@
         "example_in_context": {
           "type": "string",
           "description": "A concrete example using the term in a domain-relevant sentence."
+        }
+      }
+    },
+    "actor_type": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{1,47}$",
+          "description": "Machine-readable identifier for this Actor type (e.g. 'student', 'ph_sensor', 'field_operator')."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable name for this Actor type."
+        },
+        "description": {
+          "type": "string",
+          "description": "How this Actor type changes the state of the system in this domain."
+        },
+        "evidence_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tool adapter IDs or signal sources this Actor type produces evidence through."
         }
       }
     }

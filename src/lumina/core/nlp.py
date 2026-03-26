@@ -121,6 +121,15 @@ def tokenize(text: str) -> list[str]:
 
 _CONFIDENCE_THRESHOLD = 0.6
 
+# Singleton KnowledgeIndex reference — set by server startup.
+_knowledge_index: Any = None
+
+
+def set_knowledge_index(index: Any) -> None:
+    """Inject the global :class:`KnowledgeIndex` for glossary-based routing."""
+    global _knowledge_index
+    _knowledge_index = index
+
 
 def classify_domain(
     text: str,
@@ -158,6 +167,28 @@ def classify_domain(
         return None
 
     text_lower = text.lower()
+
+    # ── Pass 0: glossary routing via KnowledgeIndex ──────────
+    if _knowledge_index is not None:
+        words = text_lower.split()
+        # Check multi-word then single-word terms against the glossary table
+        domain_votes: dict[str, int] = {}
+        for n in (3, 2, 1):
+            for i in range(len(words) - n + 1):
+                phrase = " ".join(words[i : i + n])
+                hit = _knowledge_index.lookup_term(phrase)
+                if hit and hit in candidates:
+                    domain_votes[hit] = domain_votes.get(hit, 0) + 1
+        if domain_votes:
+            best_id = max(domain_votes, key=domain_votes.__getitem__)
+            total_hits = domain_votes[best_id]
+            confidence = min(total_hits * 0.35, 1.0)
+            if confidence >= _CONFIDENCE_THRESHOLD:
+                return {
+                    "domain_id": best_id,
+                    "confidence": round(confidence, 3),
+                    "method": "glossary",
+                }
 
     # ── Pass 1: keyword matching ─────────────────────────────
     scores: dict[str, float] = {}

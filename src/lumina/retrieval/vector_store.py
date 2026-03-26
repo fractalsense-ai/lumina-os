@@ -122,6 +122,7 @@ class VectorStore:
                 heading=r["heading"],
                 text=r["text"],
                 content_hash=r["content_hash"],
+                content_type=r.get("content_type", "doc"),
             )
             for r in raw
         ]

@@ -220,21 +220,45 @@ def knowledge_graph_rebuild(
     domain_physics: dict[str, Any],
     **_kw: Any,
 ) -> TaskResult:
-    """Reindex concepts and relationships from all modules."""
-    start = time.monotonic()
-    modules = domain_physics.get("modules") or []
-    concepts: list[str] = []
+    """Build the global knowledge index from all domain physics.
 
-    for mod in modules:
-        for artifact in mod.get("artifacts") or []:
-            concepts.append(artifact.get("name", ""))
+    This is the per-domain entry point called by the night-cycle scheduler.
+    It feeds the domain_physics into the singleton KnowledgeIndex.  When
+    called for multiple domains during a full night-cycle run, the scheduler
+    accumulates all domain contexts and the final call triggers a full
+    rebuild + persist.
+
+    The *_kw* keyword bag may contain:
+    - ``all_domain_contexts``: dict[str, dict] — when provided, triggers a
+      full multi-domain rebuild instead of a single-domain partial update.
+    - ``knowledge_index``: KnowledgeIndex — explicit index instance (for tests).
+    - ``index_dir``: Path — persistence directory override.
+    """
+    from lumina.core.knowledge_index import KnowledgeIndex
+    from pathlib import Path
+
+    start = time.monotonic()
+
+    # Use provided index or create a fresh one
+    index: KnowledgeIndex = _kw.get("knowledge_index") or KnowledgeIndex()
+    index_dir = _kw.get("index_dir") or Path(__file__).resolve().parents[2] / "data" / "knowledge-index"
+
+    # Full rebuild when all_domain_contexts is supplied
+    all_contexts = _kw.get("all_domain_contexts")
+    if all_contexts:
+        summary = index.build(all_contexts)
+    else:
+        # Single-domain partial: wrap the one domain context
+        summary = index.build({domain_id: {"domain": domain_physics}})
+
+    index.save(Path(index_dir))
 
     return TaskResult(
         task="knowledge_graph_rebuild",
         domain_id=domain_id,
         success=True,
         duration_seconds=time.monotonic() - start,
-        metadata={"concept_count": len(concepts), "module_count": len(modules)},
+        metadata=summary,
     )
 
 

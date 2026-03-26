@@ -4,7 +4,7 @@
 **Status:** Active  
 **Last updated:** 2026-03-21
 
-> **Relationship to PPA:** The D.S.A. Framework is the *structural contract schema* that the Prompt Packet Assembly (PPA) engine uses to assemble each prompt packet. D.S.A. defines the three-pillar model (Domain, State, Action) that governs what goes into the packet; PPA is the mechanism that reads those pillars and produces the assembled `prompt_contract` sent to the LLM. See [`docs/7-concepts/prompt-packet-assembly.md`](../docs/7-concepts/prompt-packet-assembly.md) for the PPA assembly process.
+> **Relationship to PPA:** The D.S.A. Framework is the *structural contract schema* that the Prompt Packet Assembly (PPA) engine uses to assemble each prompt packet. D.S.A. defines the three-pillar model (Domain, State, Actor) that governs what goes into the packet; PPA is the mechanism that reads those pillars and produces the assembled `prompt_contract` sent to the LLM. See [`docs/7-concepts/prompt-packet-assembly.md`](../docs/7-concepts/prompt-packet-assembly.md) for the PPA assembly process.
 
 ---
 
@@ -16,7 +16,7 @@ The **D.S.A. Framework** is the structural foundation of all Project Lumina orch
 |--------|------|------------|-------|
 | **D** | **Domain** | Immutable per session | Domain Authority (human) |
 | **S** | **State** | Mutable, updated from evidence | Orchestrator + Entity |
-| **A** | **Action** | Bounded by Domain | Orchestrator |
+| **A** | **Actor** | Context-dependent per domain | Domain Authority (defined) |
 
 ---
 
@@ -112,24 +112,28 @@ Each domain defines its own evidence schema and runtime pipeline (for example, a
 
 ---
 
-## A — Action
+## A — Actor
 
-The Action layer is the **orchestrator** — the AI component that drives the session. Its role is to:
-1. Observe incoming evidence
+The **Actor** is whatever changes the state of the system relative to a given domain. Actors are context-dependent: in an education domain the Actor may be a student; in agriculture it may be a pH sensor, a farmer operating equipment, or a weather station. The Domain Authority defines which entities qualify as Actors in the domain pack.
+
+The AI orchestrator is **not** an Actor — it is an executor and translator that mediates between the DSA pillars. Its pipeline is: sensor → domain logic → module action → actuator → feedback → system state.
+
+The orchestrator's role with respect to Actor-generated evidence is to:
+1. Observe incoming evidence (produced by Actors)
 2. Update the State
 3. Check the Domain's invariants
 4. Select a response within the Domain's standing orders
 5. Escalate when it cannot stabilize
 
-### Action Constraints
+### Orchestrator Constraints
 
-**The Action layer may ONLY:**
+**The orchestrator may ONLY:**
 - Apply standing orders defined in the current Domain
 - Issue one bounded probe per drift detection cycle
 - Call tool adapters authorized in the Domain
 - Escalate to the Meta Authority per the escalation triggers
 
-**The Action layer may NOT:**
+**The orchestrator may NOT:**
 - **Execute state changes directly** — all state-changing commands (domain-physics updates, RBAC modifications, system configuration changes) must be expressed as structured JSON proposal schemas, validated by the applicable domain deterministic tool, and approved by a system-level user via the HITL review gate (accept / reject / modify) before the actuator layer executes them
 - Override or modify Domain invariants
 - Store transcripts
@@ -161,15 +165,15 @@ One turn of a D.S.A. session:
 ```
 1. [Domain] Domain Physics loaded and hash-verified
 2. [State] Entity profile loaded; compressed state available
-3. [Action] Task presented to entity (within tolerance band)
-4. [Entity] Entity responds
-5. [Runtime] Structured signals/evidence produced by authorized tool adapters
-6. [State] Domain-lib runtime updates machine-readable state summaries from structured signals
-7. [Domain/Action] Orchestrator evaluates module invariants and state signals, then resolves standing order/escalation decisions
-8. [Action] Decision tier calculated: ok / minor / major / escalate
-9. [Action] Standing order applied if needed
-10. [System Log] TraceEvent appended (state hash + decision + evidence summary + provenance hash lineage)
-11. [Action] Response generated (grounded, within Domain scope)
+3. [Actor] Actor produces input or evidence (within tolerance band)
+4. [Runtime] Structured signals/evidence produced by authorized tool adapters
+5. [State] Domain-lib runtime updates machine-readable state summaries from structured signals
+6. [Domain/Orchestrator] Orchestrator evaluates module invariants and state signals, then resolves standing order/escalation decisions
+7. [Orchestrator] Decision tier calculated: ok / minor / major / escalate
+8. [Orchestrator] Standing order applied if needed
+9. [System Log] TraceEvent appended (state hash + decision + evidence summary + provenance hash lineage)
+10. [Orchestrator] Response generated (grounded, within Domain scope)
+11. [Actor] Actor receives response and acts
 12. -> repeat from step 3
 ```
 

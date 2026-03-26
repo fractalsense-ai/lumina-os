@@ -1,8 +1,9 @@
 """housekeeper.py — Background document indexing for the MiniLM retrieval layer.
 
-Walks ``docs/`` trees (root and every ``domain-packs/*/docs/``) and indexes
-all ``.md`` files into a :class:`VectorStore`.  Content-hash dedup ensures
-unchanged files are not re-embedded.
+Walks ``docs/`` trees (root and every ``domain-packs/*/docs/``), domain-physics
+files, schemas, specs, and standards — then indexes all discoverable content
+into a :class:`VectorStore`.  Content-hash dedup ensures unchanged files are
+not re-embedded.
 
 The housekeeper can run in two modes:
 
@@ -14,12 +15,13 @@ The housekeeper can run in two modes:
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import time
 from pathlib import Path
 from typing import Any
 
-from lumina.retrieval.embedder import DocEmbedder, DocChunk, chunk_markdown
+from lumina.retrieval.embedder import DocEmbedder, DocChunk, chunk_markdown, chunk_json
 from lumina.retrieval.vector_store import VectorStore
 
 log = logging.getLogger("lumina-retrieval")
@@ -49,6 +51,37 @@ def collect_md_files(trees: list[Path]) -> list[Path]:
     files: list[Path] = []
     for tree in trees:
         files.extend(sorted(tree.rglob("*.md")))
+    return files
+
+
+def discover_structured_files(repo_root: Path = REPO_ROOT) -> list[Path]:
+    """Discover JSON/YAML files from specs, standards, ledger, cfg, and domain-physics."""
+    files: list[Path] = []
+
+    # Top-level directories that contain indexable structured content
+    for subdir in ("specs", "standards", "ledger", "cfg"):
+        d = repo_root / subdir
+        if d.is_dir():
+            files.extend(sorted(d.rglob("*.json")))
+            files.extend(sorted(d.rglob("*.yaml")))
+
+    # Domain-physics files from domain-packs
+    packs = repo_root / "domain-packs"
+    if packs.is_dir():
+        for pack in sorted(packs.iterdir()):
+            if not pack.is_dir():
+                continue
+            # domain-physics JSON/YAML in modules/*/
+            modules_dir = pack / "modules"
+            if modules_dir.is_dir():
+                files.extend(sorted(modules_dir.rglob("domain-physics.json")))
+                files.extend(sorted(modules_dir.rglob("domain-physics.yaml")))
+            # cfg/ directory in each domain pack
+            pack_cfg = pack / "cfg"
+            if pack_cfg.is_dir():
+                files.extend(sorted(pack_cfg.rglob("*.yaml")))
+                files.extend(sorted(pack_cfg.rglob("*.json")))
+
     return files
 
 
@@ -94,6 +127,12 @@ class Housekeeper:
             text = md_path.read_text(encoding="utf-8", errors="replace")
             all_chunks.extend(chunk_markdown(text, source_path=rel))
 
+        # Structured files: JSON/YAML (physics, schemas, specs, standards)
+        structured_files = discover_structured_files(self._repo_root)
+        for sf in structured_files:
+            rel = sf.relative_to(self._repo_root).as_posix()
+            all_chunks.extend(self._chunk_structured_file(sf, rel))
+
         if all_chunks:
             vectors = self._embedder.embed_chunks(all_chunks)
             self._store.add(all_chunks, vectors)
@@ -103,6 +142,7 @@ class Housekeeper:
         summary = {
             "mode": "full_reindex",
             "doc_files": len(md_files),
+            "structured_files": len(structured_files),
             "chunks_indexed": len(all_chunks),
             "elapsed_seconds": round(elapsed, 2),
         }
@@ -132,6 +172,17 @@ class Housekeeper:
                 else:
                     new_chunks.append(c)
 
+        # Structured files: JSON/YAML
+        structured_files = discover_structured_files(self._repo_root)
+        for sf in structured_files:
+            rel = sf.relative_to(self._repo_root).as_posix()
+            chunks = self._chunk_structured_file(sf, rel)
+            for c in chunks:
+                if self._store.has_hash(c.content_hash):
+                    skipped += 1
+                else:
+                    new_chunks.append(c)
+
         if new_chunks:
             vectors = self._embedder.embed_chunks(new_chunks)
             self._store.add(new_chunks, vectors)
@@ -141,6 +192,7 @@ class Housekeeper:
         summary = {
             "mode": "incremental",
             "doc_files": len(md_files),
+            "structured_files": len(structured_files),
             "new_chunks": len(new_chunks),
             "skipped_chunks": skipped,
             "total_stored": self._store.size,
@@ -148,6 +200,24 @@ class Housekeeper:
         }
         log.info("Housekeeper incremental: %s", summary)
         return summary
+
+    @staticmethod
+    def _chunk_structured_file(path: Path, rel: str) -> list[DocChunk]:
+        """Parse and chunk a JSON or YAML file."""
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if path.suffix == ".json":
+                data = json.loads(text)
+            else:
+                # YAML — use safe loader
+                import yaml
+                data = yaml.safe_load(text)
+            if isinstance(data, dict):
+                content_type = "physics" if "domain-physics" in path.name else "schema"
+                return chunk_json(data, source_path=rel, content_type=content_type)
+        except Exception:
+            log.debug("Housekeeper: skipping unparseable structured file: %s", rel)
+        return []
 
 
 # ── Convenience constructors ─────────────────────────────────

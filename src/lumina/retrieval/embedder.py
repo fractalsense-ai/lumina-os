@@ -9,6 +9,7 @@ so import alone has zero startup cost.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,12 +24,13 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class DocChunk:
-    """One section of a Markdown document."""
+    """One section of a document (Markdown, JSON, YAML, etc.)."""
 
     source_path: str
     heading: str
     text: str
     content_hash: str = field(repr=False)
+    content_type: str = field(default="doc", repr=False)
 
     @staticmethod
     def compute_hash(text: str) -> str:
@@ -72,6 +74,50 @@ def chunk_markdown(text: str, source_path: str) -> list[DocChunk]:
             content_hash=DocChunk.compute_hash(body),
         ))
 
+    return chunks
+
+
+def chunk_json(data: dict, source_path: str, *, content_type: str = "schema") -> list[DocChunk]:
+    """Chunk a JSON/YAML dict into embeddable sections.
+
+    Extracts top-level keys as headings and their stringified values as text.
+    Nested lists (e.g. glossary entries, modules) each become their own chunk.
+    """
+    chunks: list[DocChunk] = []
+    for key, value in data.items():
+        if isinstance(value, list):
+            for i, item in enumerate(value):
+                body = json.dumps(item, ensure_ascii=False, indent=1) if isinstance(item, dict) else str(item)
+                if not body.strip():
+                    continue
+                heading = f"{key}[{i}]"
+                chunks.append(DocChunk(
+                    source_path=source_path,
+                    heading=heading,
+                    text=body,
+                    content_hash=DocChunk.compute_hash(body),
+                    content_type=content_type,
+                ))
+        elif isinstance(value, dict):
+            body = json.dumps(value, ensure_ascii=False, indent=1)
+            if body.strip():
+                chunks.append(DocChunk(
+                    source_path=source_path,
+                    heading=key,
+                    text=body,
+                    content_hash=DocChunk.compute_hash(body),
+                    content_type=content_type,
+                ))
+        else:
+            body = str(value).strip()
+            if body:
+                chunks.append(DocChunk(
+                    source_path=source_path,
+                    heading=key,
+                    text=body,
+                    content_hash=DocChunk.compute_hash(body),
+                    content_type=content_type,
+                ))
     return chunks
 
 

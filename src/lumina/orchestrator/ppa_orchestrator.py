@@ -5,10 +5,10 @@ Version: 0.4.0
 Conforms to: specs/dsa-framework-v1.md
              standards/system-log-v1.md
 
-Implements the Action layer of the D.S.A. framework as a thin pipeline
+Implements the Actor layer of the D.S.A. framework as a thin pipeline
 coordinator.  Heavy concerns are delegated to three focused collaborators:
 
-    ActionResolver  (the Judge)  â€” invariant evaluation + action/escalation logic
+    ActorResolver   (the Judge)  — invariant evaluation + action/escalation logic
     ContractDrafter (the Clerk)  â€” prompt-contract assembly
     SystemLogWriter (the Scribe) â€” hash-chained System Log I/O
 
@@ -61,7 +61,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable
 
-from lumina.orchestrator.action_resolver import ActionResolver
+from lumina.orchestrator.actor_resolver import ActorResolver
 from lumina.orchestrator.contract_drafter import ContractDrafter
 from lumina.orchestrator.system_log_writer import (
     SystemLogWriter,
@@ -131,7 +131,7 @@ from lumina.middleware.invariant_checker import (
 
 class PPAOrchestrator:
     """
-    D.S.A. Action layer orchestrator.
+    D.S.A. Actor layer orchestrator.
 
     Connects Domain Physics â†’ (optional domain lib) â†’ System Log â†’ Prompt Contract
     for a single session.  Decision logic, contract formatting, and log I/O are
@@ -193,7 +193,7 @@ class PPAOrchestrator:
         self.last_domain_lib_decision: dict[str, Any] = {}
 
         # â”€â”€ Three collaborators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        self._resolver = ActionResolver(domain_physics)
+        self._resolver = ActorResolver(domain_physics)
         self._drafter = ContractDrafter(domain_physics, subject_profile, action_prompt_type_map)
         self._writer = SystemLogWriter(
             ledger_path,

@@ -44,3 +44,7 @@ src/web/lib/openaikey.md
 # test artifacts
 cfg/profiles/
 test/artifacts/
+regression_result.txt
+test_output.txt
+testout.txt
+testout2.txt
