@@ -16,7 +16,8 @@ Architectural principles, design frameworks, and system philosophy.
 | Concept | Description |
 |---------|-------------|
 | [principles-v1](../../specs/principles-v1.md) | Non-negotiable system principles |
-| [dsa-framework-v1](../../specs/dsa-framework-v1.md) | D.S.A. structural schema (Domain, State, Action) — the contract model behind PPA |
+| [dsa-framework-v1](../../specs/dsa-framework-v1.md) | D.S.A. structural schema (Domain, State, Actor) — the contract model behind PPA |
+| [dsa-actor-model](dsa-actor-model.md) | D.S.A. Actor pillar: what an Actor is (person, sensor, device), actor types and actor groups, signal flow pipeline, distinction from RBAC roles, checklist for defining actors in new domains |
 | [domain-pack-anatomy](domain-pack-anatomy.md) | What a domain pack is: bounded subject-area authority, six-component anatomy (physics / tool-adapters / runtime-adapter / NLP pre-interpreter / domain-lib / world-sim), NLP information gate, physics as standing orders, self-containment contract, cross-domain comparison |
 | [hmvc-heritage](hmvc-heritage.md) | HMVC architectural lineage: how domain packs map to HMVC modules (Model = physics + schemas, Controller = controllers/, View = prompts + world-sim), self-containment as module isolation, framework-as-engine principle, adding new domains with zero engine changes |
 | [rag-contracts](../../retrieval/rag-contracts.md) | RAG retrieval contract model |

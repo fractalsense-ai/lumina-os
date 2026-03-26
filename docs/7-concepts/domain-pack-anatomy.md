@@ -21,7 +21,7 @@ is the domain's law rather than its executor.
 
 ## A. What Is a Domain Pack?
 
-A domain pack is the **D pillar** of the D.S.A. Framework (Domain, State, Action). It is a
+A domain pack is the **D pillar** of the D.S.A. Framework (Domain, State, Actor). It is a
 self-contained unit of domain knowledge, behavioural constraints, and processing tools that
 brings a specific subject area — education, agriculture, industrial operations, system
 administration — into the Lumina engine as a bounded authority.

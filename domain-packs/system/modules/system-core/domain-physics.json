@@ -169,7 +169,14 @@
       "id": "administrator",
       "label": "System Administrator",
       "description": "Operator managing Lumina OS configuration, RBAC, and domain lifecycle.",
-      "evidence_sources": []
+      "evidence_sources": [],
+      "groups": ["system_operators"]
     }
-  ]
+  ],
+  "actor_groups": {
+    "system_operators": {
+      "description": "Operators responsible for system configuration, RBAC, and domain lifecycle management.",
+      "members": ["administrator"]
+    }
+  }
 }

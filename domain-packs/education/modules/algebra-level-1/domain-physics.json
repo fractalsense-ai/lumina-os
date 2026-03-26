@@ -428,7 +428,14 @@
       "id": "student",
       "label": "Student",
       "description": "Learner working through algebra level 1 artifacts, producing evidence via problem-solving steps.",
-      "evidence_sources": ["adapter/edu/algebra-checker/v1"]
+      "evidence_sources": ["adapter/edu/algebra-checker/v1"],
+      "groups": ["learners"]
     }
-  ]
+  ],
+  "actor_groups": {
+    "learners": {
+      "description": "Actors who produce evidence by working through domain artifacts and problem-solving steps.",
+      "members": ["student"]
+    }
+  }
 }

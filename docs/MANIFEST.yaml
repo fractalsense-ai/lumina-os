@@ -240,7 +240,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-18
-    sha256: 6ca6173e1115e5b314266347fe3ea00e39172322de2760b2df4373508daa7580
+    sha256: 6d4a3e8a1971615f08abb1e3f610e95e7b88ef5b7de8d6d503383febea8ad481
 
   - path: docs/7-concepts/api-server-architecture.md
     type: doc
@@ -257,6 +257,14 @@ artifacts:
     status: active
     last_updated: 2026-03-15
     sha256: 5073487b8707aac3fde79dceb7e0ab42eb08bcdc604315e9d14da0d0a4feb4e1
+
+  - path: docs/7-concepts/dsa-actor-model.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-23
+    sha256: b2b437db92266ba9d2af2dfd2eabfdd2960ec149661dea35da7e388b929cb495
 
   - path: docs/7-concepts/domain-adapter-pattern.md
     type: doc
@@ -360,7 +368,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-13
-    sha256: 61c5bcf54b5012a74580fe91cd9777d4d7ddf22e9012eb2f0db722317c21cfc6
+    sha256: 50dc19c0ff6a408af355c2ffb5ab826514bf392fbd65642b5556cf53d7352c3d
 
   - path: docs/7-concepts/resource-monitor-daemon.md
     type: doc
@@ -432,7 +440,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-21
-    sha256: d2362e7df8853c0b9b4e7dbe7207102e018f55334803369311628906920b6c52
+    sha256: 7d8685ffda4c009df39c94159393095014bec33a6ebb40afc6de0b9cfd0a14cb
 
   - path: docs/7-concepts/hmvc-heritage.md
     type: doc
@@ -440,7 +448,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-23
-    sha256: 3c7d5eeceae62c0791d511ae5a12a2e457b11e8454f174390210155dcddf44ff
+    sha256: 28f488b4429378ab655ed3e2e8738c930d664dd86eec4cb92ea3e9f153d84b4c
 
 
   # ── Section 8: Administration ─────────────────────────────────────────────
@@ -561,7 +569,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: 0f9a23cf767e24dd94939da371caf134c154cfb705131b17e53ac9f36d98b524
+    sha256: 24caded947c2a6baa42d9a6107d38d4359f51c27a8a32c1e1b3d2fd9f2a12ab0
 
   - path: specs/principles-v1.md
     type: spec
@@ -630,7 +638,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-15
-    sha256: 9271fdd560beae76aee0628f042c5705ef4888f72d2a8cd760917bda5911dbb2
+    sha256: 7404abe6fce85a6a6f1ff3d97c0652787e2651ff6dd6e5fdd923c25b91ffd5d5
 
   - path: standards/domain-registry-schema-v1.json
     type: schema

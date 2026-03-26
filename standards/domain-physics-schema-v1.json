@@ -384,6 +384,28 @@
         "$ref": "#/$defs/actor_type"
       },
       "description": "Declares the types of Actors recognised in this domain. An Actor is whatever changes the state of the system relative to this domain — a student in education, a sensor or farmer in agriculture, etc. The AI orchestrator is NOT an Actor. Omit for domains that do not need explicit Actor type declarations."
+    },
+    "actor_groups": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description", "members"],
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Human-readable purpose of this Actor group."
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Actor type IDs that belong to this group."
+          }
+        }
+      },
+      "description": "Named groups of Actor types. Groups allow overlapping membership — a sensor may belong to both an environmental-monitors group and a barn-subsystem group. Mirrors the permissions 'groups' pattern but applies to evidence-producing Actors rather than access-control roles."
     }
   },
   "$defs": {
@@ -607,6 +629,13 @@
             "type": "string"
           },
           "description": "Tool adapter IDs or signal sources this Actor type produces evidence through."
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Actor group IDs this Actor belongs to. Groups may overlap — a sensor can be in both 'environmental_monitors' and 'barn_subsystem'."
         }
       }
     }

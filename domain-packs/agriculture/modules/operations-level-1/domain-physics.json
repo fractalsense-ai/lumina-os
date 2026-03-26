@@ -121,13 +121,25 @@
       "id": "sensor",
       "label": "Sensor",
       "description": "IoT device producing field-operations evidence through continuous environmental readings.",
-      "evidence_sources": ["adapter/agri/collar-sensor/v1"]
+      "evidence_sources": ["adapter/agri/collar-sensor/v1"],
+      "groups": ["environmental_monitors"]
     },
     {
       "id": "operator",
       "label": "Farm Operator",
       "description": "Human operator making field decisions and recording observations.",
-      "evidence_sources": []
+      "evidence_sources": [],
+      "groups": ["field_crew"]
     }
-  ]
+  ],
+  "actor_groups": {
+    "environmental_monitors": {
+      "description": "Sensors and IoT devices that produce continuous environmental readings.",
+      "members": ["sensor"]
+    },
+    "field_crew": {
+      "description": "Human operators and technicians who make field decisions and record observations.",
+      "members": ["operator"]
+    }
+  }
 }

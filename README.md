@@ -301,7 +301,7 @@ See [`docs/1-commands/`](docs/1-commands/README.md) for detailed command referen
 ### Explore the architecture
 
 1. [`specs/principles-v1.md`](specs/principles-v1.md) — the non-negotiables
-2. [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — the D.S.A. structural schema (Domain, State, Action) underlying PPA
+2. [`specs/dsa-framework-v1.md`](specs/dsa-framework-v1.md) — the D.S.A. structural schema (Domain, State, Actor) underlying PPA
 3. [`domain-packs/education/cfg/runtime-config.yaml`](domain-packs/education/cfg/runtime-config.yaml) — how a domain owns its runtime behavior
 4. [`domain-packs/education/modules/algebra-level-1/`](domain-packs/education/modules/algebra-level-1/) — a complete worked domain pack (education)
 5. [`domain-packs/agriculture/modules/operations-level-1/`](domain-packs/agriculture/modules/operations-level-1/) — a sensor/field operations domain pack

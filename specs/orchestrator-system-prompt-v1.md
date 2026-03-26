@@ -214,7 +214,7 @@ context without forcing a theme.
 
 | Document | Relationship |
 |---|---|
-| [`specs/dsa-framework-v1.md`](dsa-framework-v1.md) | D.S.A. structural schema — the A (Action) pillar that produces the `prompt_contract` |
+| [`specs/dsa-framework-v1.md`](dsa-framework-v1.md) | D.S.A. structural schema — the A (Actor) pillar that produces the `prompt_contract` |
 | [`standards/prompt-contract-schema-v1.json`](../standards/prompt-contract-schema-v1.json) | Universal base JSON schema that all `prompt_contract` objects must conform to |
 | [`domain-packs/education/modules/algebra-level-1/prompt-contract-schema.json`](../domain-packs/education/modules/algebra-level-1/prompt-contract-schema.json) | Example: education domain pack's extension of the universal base schema |
 | [`reference-implementations/ppa-orchestrator.py`](../reference-implementations/ppa-orchestrator.py) | Reference implementation that produces the `prompt_contract` |

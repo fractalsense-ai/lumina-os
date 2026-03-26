@@ -220,7 +220,7 @@ file at the root of any domain pack directory.
 |---|---|
 | [`domain-pack-anatomy(7)`](domain-pack-anatomy.md) | Six-component anatomy, self-containment contract, file layout reference |
 | [`domain-adapter-pattern(7)`](domain-adapter-pattern.md) | Engine contract fields, three-layer component distinction, Phase A/B implementation |
-| [`dsa-framework-v1`](../../specs/dsa-framework-v1.md) | D.S.A. structural schema — Domain (Model), State (Model update), Action (Controller output) |
+| [`dsa-framework-v1`](../../specs/dsa-framework-v1.md) | D.S.A. structural schema — Domain (Model), State (Model update), Actor (Controller output) |
 | [`cross-domain-synthesis(7)`](cross-domain-synthesis.md) | HMVC sub-request equivalent — opt-in bridging between domain packs |
 | [`nlp-semantic-router(7)`](nlp-semantic-router.md) | Two-tier NLP routing — framework-level domain classification before per-pack pre-interpretation |
 | [`world-sim-persona-pattern(7)`](world-sim-persona-pattern.md) | View-layer narrative framing pattern |
