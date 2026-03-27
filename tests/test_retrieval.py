@@ -16,7 +16,7 @@ from lumina.retrieval.embedder import (
     DocEmbedder,
     chunk_markdown,
 )
-from lumina.retrieval.vector_store import SearchResult, VectorStore
+from lumina.retrieval.vector_store import SearchResult, VectorStore, VectorStoreRegistry
 from lumina.retrieval.housekeeper import (
     Housekeeper,
     collect_md_files,
@@ -409,3 +409,44 @@ class TestHousekeeperNightCycleTask:
         result = task_fn(domains=[])
         assert result.success is False
         assert "error" in result.metadata
+
+
+# ══════════════════════════════════════════════════════════════
+#  VectorStoreRegistry
+# ══════════════════════════════════════════════════════════════
+
+
+class TestVectorStoreRegistry:
+    def test_get_creates_store(self, tmp_path: Path):
+        registry = VectorStoreRegistry(tmp_path)
+        store = registry.get("edu")
+        assert isinstance(store, VectorStore)
+
+    def test_get_returns_same(self, tmp_path: Path):
+        registry = VectorStoreRegistry(tmp_path)
+        assert registry.get("edu") is registry.get("edu")
+
+    def test_global_store_shortcut(self, tmp_path: Path):
+        registry = VectorStoreRegistry(tmp_path)
+        assert registry.global_store is registry.get(VectorStoreRegistry.GLOBAL_DOMAIN)
+
+    def test_domain_ids_reflects_persisted(self, tmp_path: Path):
+        registry = VectorStoreRegistry(tmp_path)
+        assert registry.domain_ids() == []
+        # Persist one store
+        store = registry.get("test")
+        vec = np.random.randn(1, EMBEDDING_DIM).astype(np.float32)
+        chunk = DocChunk("x.md", "h", "t", "h1", "doc", "test")
+        store.add([chunk], vec)
+        store.save()
+        assert "test" in registry.domain_ids()
+
+    def test_stores_are_isolated(self, tmp_path: Path):
+        registry = VectorStoreRegistry(tmp_path)
+        sa = registry.get("a")
+        sb = registry.get("b")
+        vec = np.random.randn(1, EMBEDDING_DIM).astype(np.float32)
+        chunk = DocChunk("x.md", "h", "t", "h1", "doc", "a")
+        sa.add([chunk], vec)
+        assert sa.size == 1
+        assert sb.size == 0

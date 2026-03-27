@@ -257,3 +257,14 @@ def test_load_yaml_simple_string_list_unchanged(tmp_path: pathlib.Path) -> None:
     )
     result = load_yaml(f)
     assert result["additional_specs"] == ["specs/global.md", "specs/domain.md"]
+
+
+# ─────────────────────────────────────────────────────────────
+# Phase 4: compile_execution_routes is importable and callable
+# ─────────────────────────────────────────────────────────────
+
+
+def test_compile_execution_routes_importable() -> None:
+    """Route compiler module exists and compile_execution_routes is callable."""
+    from lumina.core.route_compiler import compile_execution_routes
+    assert callable(compile_execution_routes)

@@ -23,7 +23,9 @@ def _load_module(script_name: str, module_name: str):
     mod = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = mod
     spec.loader.exec_module(mod)
-    return mod
+    # Shims may replace themselves in sys.modules (e.g. sys.modules[__name__] = _canonical).
+    # Return whatever is registered now, not the original empty shell.
+    return sys.modules[module_name]
 
 
 @pytest.fixture(scope="module")

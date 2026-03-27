@@ -10,8 +10,11 @@ import pytest
 
 from lumina.core.adapter_indexer import (
     AdapterEntry,
+    GroupLibraryEntry,
+    GroupToolEntry,
     RouterIndex,
     build_router_index,
+    scan_group_resources,
     scan_runtime_adapters,
     scan_tool_adapters,
 )
@@ -84,6 +87,30 @@ def fake_domain_pack(tmp_path: Path) -> Path:
 
     # cfg dir (so build_router_index considers it a domain pack)
     (pack / "cfg").mkdir(parents=True, exist_ok=True)
+
+    # domain-physics with group_libraries and group_tools
+    physics = {
+        "domain_id": "domain/test/module-1/v1",
+        "group_libraries": [
+            {
+                "id": "test_helpers",
+                "path": "domain-lib/test_helpers.py",
+                "description": "Shared test helpers.",
+                "shared_with_modules": ["module-1"],
+            }
+        ],
+        "group_tools": [
+            {
+                "id": "test_validator",
+                "path": "domain-lib/test_validator.py",
+                "description": "Validates test artefacts.",
+                "call_types": ["validate"],
+                "shared_with_modules": ["module-1"],
+            }
+        ],
+    }
+    physics_path = pack / "modules" / "module-1" / "domain-physics.json"
+    physics_path.write_text(json.dumps(physics, indent=2), encoding="utf-8")
 
     return pack
 
@@ -272,3 +299,33 @@ class TestAdapterEntry:
         )
         with pytest.raises(AttributeError):
             entry.adapter_id = "y"  # type: ignore[misc]
+
+
+# ===================================================================
+# Test: scan_group_resources integration with fake domain pack
+# ===================================================================
+
+
+class TestScanGroupResourcesIntegration:
+    def test_scan_from_fake_pack(self, fake_domain_pack: Path):
+        libs, tools = scan_group_resources(fake_domain_pack)
+        assert any("test_helpers" in k for k in libs)
+        assert any("test_validator" in k for k in tools)
+
+    def test_build_router_index_includes_groups(self, fake_domain_packs_root: Path):
+        index = build_router_index(fake_domain_packs_root)
+        assert len(index.group_libraries) >= 1
+        assert isinstance(next(iter(index.group_libraries.values())), GroupLibraryEntry)
+
+    def test_router_index_to_dict_has_groups(self, fake_domain_packs_root: Path):
+        d = build_router_index(fake_domain_packs_root).to_dict()
+        assert "group_libraries" in d
+        assert "group_tools" in d
+
+    def test_real_agriculture_group_libraries(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        agri = repo_root / "domain-packs" / "agriculture"
+        if not agri.is_dir():
+            pytest.skip("Agriculture domain pack not found")
+        libs, _ = scan_group_resources(agri)
+        assert any("environmental_sensors" in k for k in libs)

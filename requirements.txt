@@ -7,13 +7,10 @@ python-multipart>=0.0.18
 # Deterministic algebra/symbolic math engine (zero-trust tool adapters)
 sympy>=1.12
 
-# NLP sentence splitting — optional, requires Python <=3.13
-# (spaCy 3.x uses the pydantic.v1 shim which is broken on Python 3.14+;
-#  the runtime falls back to regex sentence splitting when spaCy is unavailable)
-# On Python <=3.13: pip install spacy>=3.7.0 && spacy download en_core_web_md
+# NLP sentence splitting (requires spaCy model: python -m spacy download en_core_web_md)
 # en_core_web_md provides richer word vectors for better sentence segmentation
 # and semantic similarity than en_core_web_sm.
-# spacy>=3.7.0
+spacy>=3.7.0
 
 # Optional providers for live LLM calls (install as needed)
 # openai>=1.0.0
