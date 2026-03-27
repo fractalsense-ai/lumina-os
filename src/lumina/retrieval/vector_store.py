@@ -123,6 +123,7 @@ class VectorStore:
                 text=r["text"],
                 content_hash=r["content_hash"],
                 content_type=r.get("content_type", "doc"),
+                domain_id=r.get("domain_id", ""),
             )
             for r in raw
         ]
@@ -137,3 +138,49 @@ class VectorStore:
     def has_hash(self, content_hash: str) -> bool:
         """Check if a chunk with this content hash is already stored."""
         return any(c.content_hash == content_hash for c in self._chunks)
+
+
+# ── Per-domain store registry ────────────────────────────────
+
+class VectorStoreRegistry:
+    """Manage per-domain :class:`VectorStore` instances.
+
+    Each domain gets its own ``{base_dir}/{domain_id}/`` subdirectory.
+    A special ``_global`` store aggregates lightweight routing vectors.
+
+    Parameters
+    ----------
+    base_dir:
+        Root directory for all per-domain vector stores.
+    """
+
+    GLOBAL_DOMAIN = "_global"
+
+    def __init__(self, base_dir: Path | str) -> None:
+        self._base = Path(base_dir)
+        self._stores: dict[str, VectorStore] = {}
+
+    def get(self, domain_id: str) -> VectorStore:
+        """Return (or create) the store for *domain_id*."""
+        if domain_id not in self._stores:
+            self._stores[domain_id] = VectorStore(self._base / domain_id)
+        return self._stores[domain_id]
+
+    @property
+    def global_store(self) -> VectorStore:
+        """Shortcut for the lightweight routing store."""
+        return self.get(self.GLOBAL_DOMAIN)
+
+    def domain_ids(self) -> list[str]:
+        """List domain-ids that have a persisted store on disk."""
+        if not self._base.is_dir():
+            return []
+        return sorted(
+            d.name for d in self._base.iterdir()
+            if d.is_dir() and (d / "vectors.npz").exists()
+        )
+
+    def load_all(self) -> None:
+        """Load every persisted domain store into memory."""
+        for did in self.domain_ids():
+            self.get(did).load()

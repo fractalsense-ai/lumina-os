@@ -379,30 +379,31 @@ class TestHousekeeperNightCycleTask:
         names = list_cross_domain_tasks()
         assert "housekeeper_full_reindex" in names
 
-    @patch("lumina.retrieval.housekeeper.make_housekeeper")
-    def test_runs_full_reindex(self, mock_make):
+    @patch("lumina.retrieval.housekeeper.rebuild_all_domain_indexes")
+    @patch("lumina.retrieval.housekeeper.make_registry")
+    def test_runs_full_reindex(self, mock_make_reg, mock_rebuild):
         from lumina.nightcycle.tasks import get_cross_domain_task
 
-        mock_hk = MagicMock()
-        mock_hk.full_reindex.return_value = {
-            "mode": "full_reindex",
-            "doc_files": 5,
-            "chunks_indexed": 20,
+        mock_registry = MagicMock()
+        mock_make_reg.return_value = mock_registry
+        mock_rebuild.return_value = {
+            "mode": "full_reindex_per_domain",
+            "domains_rebuilt": 2,
+            "total_chunks": 20,
             "elapsed_seconds": 1.23,
         }
-        mock_make.return_value = mock_hk
 
         task_fn = get_cross_domain_task("housekeeper_full_reindex")
         result = task_fn(domains=[{"domain_id": "test"}])
         assert result.success is True
         assert result.task == "housekeeper_full_reindex"
-        mock_hk.full_reindex.assert_called_once()
+        mock_rebuild.assert_called_once_with(mock_registry)
 
-    @patch("lumina.retrieval.housekeeper.make_housekeeper")
-    def test_handles_failure_gracefully(self, mock_make):
+    @patch("lumina.retrieval.housekeeper.make_registry")
+    def test_handles_failure_gracefully(self, mock_make_reg):
         from lumina.nightcycle.tasks import get_cross_domain_task
 
-        mock_make.side_effect = RuntimeError("model not found")
+        mock_make_reg.side_effect = RuntimeError("model not found")
 
         task_fn = get_cross_domain_task("housekeeper_full_reindex")
         result = task_fn(domains=[])

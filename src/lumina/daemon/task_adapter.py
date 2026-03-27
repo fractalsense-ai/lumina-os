@@ -16,7 +16,7 @@ from typing import Any, Callable
 
 from lumina.daemon.preemption import PreemptionToken, TaskPreempted
 from lumina.nightcycle.report import TaskResult
-from lumina.nightcycle.tasks import get_task
+from lumina.nightcycle.tasks import get_task, get_cross_domain_task
 
 log = logging.getLogger("lumina-daemon")
 
@@ -113,3 +113,42 @@ def _load_domains(
         return [{"domain_id": "default", "physics": {}}]
     domains = domain_loader()
     return domains or [{"domain_id": "default", "physics": {}}]
+
+
+async def run_cross_domain_task_preemptible(
+    task_name: str,
+    token: PreemptionToken,
+    domain_loader: Callable[[], list[dict[str, Any]]] | None = None,
+    **extra_kw: Any,
+) -> dict[str, Any]:
+    """Execute a cross-domain night-cycle task with preemption.
+
+    Cross-domain tasks receive the full domain list and iterate internally.
+    The adapter still checks preemption before dispatch.
+    """
+    task_fn = get_cross_domain_task(task_name)
+    if task_fn is None:
+        return {
+            "task": task_name,
+            "results": [],
+            "preempted": False,
+            "error": f"Unknown cross-domain task: {task_name}",
+        }
+
+    try:
+        token.checkpoint_sync()
+    except TaskPreempted:
+        return {"task": task_name, "results": [], "preempted": True}
+
+    domains = _load_domains(domain_loader)
+
+    try:
+        result = await asyncio.to_thread(task_fn, domains=domains, **extra_kw)
+        if isinstance(result, TaskResult):
+            return {"task": task_name, "results": [result.to_dict()], "preempted": False}
+        return {"task": task_name, "results": [result], "preempted": False}
+    except TaskPreempted:
+        return {"task": task_name, "results": [], "preempted": True}
+    except Exception as exc:
+        log.error("Cross-domain task %s failed: %s", task_name, exc)
+        return {"task": task_name, "results": [], "preempted": False, "error": str(exc)}

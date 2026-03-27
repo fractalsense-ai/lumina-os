@@ -41,6 +41,10 @@ src/web/coverage/
 src/web/test-results/
 src/web/lib/openaikey.md
 
+# Per-domain vector stores (generated at runtime)
+data/retrieval-index/*/vectors.npz
+data/retrieval-index/*/metadata.json
+
 # test artifacts
 cfg/profiles/
 test/artifacts/

@@ -124,11 +124,22 @@ _CONFIDENCE_THRESHOLD = 0.6
 # Singleton KnowledgeIndex reference — set by server startup.
 _knowledge_index: Any = None
 
+# Singleton VectorStoreRegistry — set by server startup for domain-scoped search.
+_vector_registry: Any = None
+_doc_embedder: Any = None
+
 
 def set_knowledge_index(index: Any) -> None:
     """Inject the global :class:`KnowledgeIndex` for glossary-based routing."""
     global _knowledge_index
     _knowledge_index = index
+
+
+def set_vector_registry(registry: Any, embedder: Any = None) -> None:
+    """Inject the :class:`VectorStoreRegistry` and optional embedder."""
+    global _vector_registry, _doc_embedder
+    _vector_registry = registry
+    _doc_embedder = embedder
 
 
 def classify_domain(
@@ -210,6 +221,33 @@ def classify_domain(
                 "method": "keyword",
             }
 
+    # ── Pass 1.5: vector routing via global store ────────────
+    if _vector_registry is not None and _doc_embedder is not None:
+        try:
+            global_store = _vector_registry.global_store
+            if global_store.size > 0:
+                q_vec = _doc_embedder.embed_query(text)
+                hits = global_store.search(q_vec, k=5)
+                # Tally domain_id votes from top results
+                vec_votes: dict[str, float] = {}
+                for h in hits:
+                    did = getattr(h.chunk, "domain_id", "") or ""
+                    if did and did in candidates:
+                        vec_votes[did] = vec_votes.get(did, 0.0) + h.score
+                if vec_votes:
+                    best_id = max(vec_votes, key=vec_votes.__getitem__)
+                    # Average score across hits for this domain
+                    hit_count = sum(1 for h in hits if (getattr(h.chunk, "domain_id", "") or "") == best_id)
+                    avg_score = vec_votes[best_id] / hit_count
+                    if avg_score >= _CONFIDENCE_THRESHOLD:
+                        return {
+                            "domain_id": best_id,
+                            "confidence": round(avg_score, 3),
+                            "method": "vector",
+                        }
+        except Exception:
+            log.debug("Vector routing pass failed, falling through", exc_info=True)
+
     # ── Pass 2: description similarity via spaCy vectors ─────
     nlp = get_nlp()
     if nlp is not None and nlp.meta.get("vectors", {}).get("width", 0) > 0:
@@ -250,3 +288,26 @@ def classify_domain(
                     }
 
     return None
+
+
+# ── Domain-scoped semantic search ────────────────────────────
+
+def search_domain(
+    text: str,
+    domain_id: str,
+    k: int = 5,
+) -> list[Any]:
+    """Search the per-domain vector store for *text*.
+
+    Returns a list of :class:`SearchResult` from the domain's store,
+    or an empty list if the registry/embedder is not configured.
+    """
+    if _vector_registry is None or _doc_embedder is None:
+        return []
+    store = _vector_registry.get(domain_id)
+    if store.size == 0:
+        store.load()
+    if store.size == 0:
+        return []
+    q_vec = _doc_embedder.embed_query(text)
+    return store.search(q_vec, k=k)

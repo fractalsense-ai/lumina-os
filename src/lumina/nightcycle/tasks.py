@@ -867,18 +867,23 @@ def housekeeper_full_reindex(
     domains: list[dict[str, Any]],
     **_kw: Any,
 ) -> TaskResult:
-    """Re-embed all Markdown docs into the MiniLM vector store.
+    """Re-embed all docs into per-domain MiniLM vector stores.
 
-    This is a system-wide task: it walks *every* ``docs/`` tree (root and
-    all domain packs) regardless of the domain list, clears the store, and
-    re-indexes from scratch.  Scheduled once per night cycle.
+    Walks every domain pack and the global ``docs/``/``specs/`` trees,
+    rebuilding each domain's ``.npz`` store separately.  Falls back to
+    the legacy single-store ``full_reindex`` when per-domain discovery
+    finds nothing (preserving backward compat).
 
     Gracefully skips if ``sentence-transformers`` is not installed.
     """
     start = time.monotonic()
 
     try:
-        from lumina.retrieval.housekeeper import make_housekeeper  # noqa: F811
+        from lumina.retrieval.housekeeper import (  # noqa: F811
+            make_housekeeper,
+            make_registry,
+            rebuild_all_domain_indexes,
+        )
     except ImportError as exc:
         log.info("housekeeper_full_reindex skipped: %s", exc)
         return TaskResult(
@@ -890,8 +895,8 @@ def housekeeper_full_reindex(
         )
 
     try:
-        hk = make_housekeeper()
-        summary = hk.full_reindex()
+        registry = make_registry()
+        summary = rebuild_all_domain_indexes(registry)
         success = True
     except ImportError as exc:
         # sentence-transformers not installed — skip gracefully
@@ -906,6 +911,53 @@ def housekeeper_full_reindex(
     return TaskResult(
         task="housekeeper_full_reindex",
         domain_id="system",
+        success=success,
+        duration_seconds=time.monotonic() - start,
+        metadata=summary,
+    )
+
+
+@register_task("rebuild_domain_vectors")
+def rebuild_domain_vectors(
+    domain_id: str = "default",
+    domain_physics: dict[str, Any] | None = None,
+    **_kw: Any,
+) -> TaskResult:
+    """Rebuild the vector index for a single domain pack.
+
+    Called per-domain by the daemon task adapter when a Group Library or
+    other domain content changes.
+    """
+    start = time.monotonic()
+
+    try:
+        from lumina.retrieval.housekeeper import make_registry, rebuild_domain_index  # noqa: F811
+    except ImportError as exc:
+        log.info("rebuild_domain_vectors(%s) skipped: %s", domain_id, exc)
+        return TaskResult(
+            task="rebuild_domain_vectors",
+            domain_id=domain_id,
+            success=True,
+            duration_seconds=time.monotonic() - start,
+            metadata={"skipped": True, "reason": str(exc)},
+        )
+
+    try:
+        registry = make_registry()
+        summary = rebuild_domain_index(domain_id, registry)
+        success = True
+    except ImportError as exc:
+        log.info("rebuild_domain_vectors(%s) skipped (missing dep): %s", domain_id, exc)
+        summary = {"skipped": True, "reason": str(exc)}
+        success = True
+    except Exception as exc:
+        log.warning("rebuild_domain_vectors(%s) failed: %s", domain_id, exc)
+        summary = {"error": str(exc)}
+        success = False
+
+    return TaskResult(
+        task="rebuild_domain_vectors",
+        domain_id=domain_id,
         success=success,
         duration_seconds=time.monotonic() - start,
         metadata=summary,

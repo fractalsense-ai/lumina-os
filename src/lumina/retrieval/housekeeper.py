@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from lumina.retrieval.embedder import DocEmbedder, DocChunk, chunk_markdown, chunk_json
-from lumina.retrieval.vector_store import VectorStore
+from lumina.retrieval.vector_store import VectorStore, VectorStoreRegistry
 
 log = logging.getLogger("lumina-retrieval")
 
@@ -83,6 +83,76 @@ def discover_structured_files(repo_root: Path = REPO_ROOT) -> list[Path]:
                 files.extend(sorted(pack_cfg.rglob("*.json")))
 
     return files
+
+
+# ── Domain-scoped discovery ──────────────────────────────────
+
+def discover_domain_packs(repo_root: Path = REPO_ROOT) -> list[str]:
+    """Return sorted list of domain-pack names that exist on disk."""
+    packs_dir = repo_root / "domain-packs"
+    if not packs_dir.is_dir():
+        return []
+    return sorted(d.name for d in packs_dir.iterdir() if d.is_dir())
+
+
+def discover_domain_files(
+    domain_id: str,
+    repo_root: Path = REPO_ROOT,
+) -> tuple[list[Path], list[Path]]:
+    """Discover Markdown and structured files scoped to a single domain pack.
+
+    Returns ``(md_files, structured_files)``.
+    """
+    pack_root = repo_root / "domain-packs" / domain_id
+    md_files: list[Path] = []
+    structured: list[Path] = []
+
+    if not pack_root.is_dir():
+        return md_files, structured
+
+    # Markdown: docs/ tree inside the domain pack
+    docs = pack_root / "docs"
+    if docs.is_dir():
+        md_files.extend(sorted(docs.rglob("*.md")))
+
+    # Domain-lib specs (markdown)
+    dlib = pack_root / "domain-lib"
+    if dlib.is_dir():
+        md_files.extend(sorted(dlib.rglob("*.md")))
+
+    # Structured: domain-physics files, cfg/, glossaries
+    modules = pack_root / "modules"
+    if modules.is_dir():
+        structured.extend(sorted(modules.rglob("domain-physics.json")))
+        structured.extend(sorted(modules.rglob("domain-physics.yaml")))
+        structured.extend(sorted(modules.rglob("glossary*.yaml")))
+        structured.extend(sorted(modules.rglob("glossary*.json")))
+
+    cfg = pack_root / "cfg"
+    if cfg.is_dir():
+        structured.extend(sorted(cfg.rglob("*.yaml")))
+        structured.extend(sorted(cfg.rglob("*.json")))
+
+    return md_files, structured
+
+
+def discover_global_files(repo_root: Path = REPO_ROOT) -> tuple[list[Path], list[Path]]:
+    """Discover Markdown and structured files outside domain packs (global scope).
+
+    Returns ``(md_files, structured_files)``.
+    """
+    md_files: list[Path] = []
+    root_docs = repo_root / "docs"
+    if root_docs.is_dir():
+        md_files.extend(sorted(root_docs.rglob("*.md")))
+
+    structured: list[Path] = []
+    for subdir in ("specs", "standards", "ledger", "cfg"):
+        d = repo_root / subdir
+        if d.is_dir():
+            structured.extend(sorted(d.rglob("*.json")))
+            structured.extend(sorted(d.rglob("*.yaml")))
+    return md_files, structured
 
 
 # ── Housekeeper core ─────────────────────────────────────────
@@ -232,3 +302,197 @@ def make_housekeeper(
     """Build a Housekeeper with default store location."""
     store = VectorStore(store_dir)
     return Housekeeper(store=store, repo_root=repo_root)
+
+
+# ── Per-domain rebuild helpers ───────────────────────────────
+
+def _chunk_files(
+    md_files: list[Path],
+    structured_files: list[Path],
+    repo_root: Path,
+    domain_id: str,
+) -> list[DocChunk]:
+    """Chunk markdown and structured files, tagging with *domain_id*."""
+    chunks: list[DocChunk] = []
+    for md_path in md_files:
+        rel = md_path.relative_to(repo_root).as_posix()
+        text = md_path.read_text(encoding="utf-8", errors="replace")
+        for c in chunk_markdown(text, source_path=rel):
+            chunks.append(DocChunk(
+                source_path=c.source_path,
+                heading=c.heading,
+                text=c.text,
+                content_hash=c.content_hash,
+                content_type=c.content_type,
+                domain_id=domain_id,
+            ))
+    for sf in structured_files:
+        rel = sf.relative_to(repo_root).as_posix()
+        for c in Housekeeper._chunk_structured_file(sf, rel):
+            chunks.append(DocChunk(
+                source_path=c.source_path,
+                heading=c.heading,
+                text=c.text,
+                content_hash=c.content_hash,
+                content_type=c.content_type,
+                domain_id=domain_id,
+            ))
+    return chunks
+
+
+def rebuild_domain_index(
+    domain_id: str,
+    registry: VectorStoreRegistry,
+    embedder: DocEmbedder | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Clear and re-embed all content for a single domain pack.
+
+    Returns a summary dict.
+    """
+    start = time.monotonic()
+    embedder = embedder or DocEmbedder()
+    store = registry.get(domain_id)
+    store.clear()
+
+    md_files, structured = discover_domain_files(domain_id, repo_root)
+    chunks = _chunk_files(md_files, structured, repo_root, domain_id)
+
+    if chunks:
+        vectors = embedder.embed_chunks(chunks)
+        store.add(chunks, vectors)
+        store.save()
+
+    elapsed = time.monotonic() - start
+    summary = {
+        "domain_id": domain_id,
+        "mode": "domain_reindex",
+        "doc_files": len(md_files),
+        "structured_files": len(structured),
+        "chunks_indexed": len(chunks),
+        "elapsed_seconds": round(elapsed, 2),
+    }
+    log.info("rebuild_domain_index(%s): %s", domain_id, summary)
+    return summary
+
+
+def rebuild_global_index(
+    registry: VectorStoreRegistry,
+    embedder: DocEmbedder | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Rebuild the ``_global`` store from root-level docs/specs/standards."""
+    start = time.monotonic()
+    embedder = embedder or DocEmbedder()
+    store = registry.global_store
+    store.clear()
+
+    md_files, structured = discover_global_files(repo_root)
+    chunks = _chunk_files(md_files, structured, repo_root, VectorStoreRegistry.GLOBAL_DOMAIN)
+
+    if chunks:
+        vectors = embedder.embed_chunks(chunks)
+        store.add(chunks, vectors)
+        store.save()
+
+    elapsed = time.monotonic() - start
+    summary = {
+        "domain_id": VectorStoreRegistry.GLOBAL_DOMAIN,
+        "mode": "global_reindex",
+        "doc_files": len(md_files),
+        "structured_files": len(structured),
+        "chunks_indexed": len(chunks),
+        "elapsed_seconds": round(elapsed, 2),
+    }
+    log.info("rebuild_global_index: %s", summary)
+    return summary
+
+
+def rebuild_all_domain_indexes(
+    registry: VectorStoreRegistry,
+    embedder: DocEmbedder | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Rebuild every domain store plus the global store.
+
+    This replaces the old single-store ``full_reindex`` for the per-domain
+    layout.
+    """
+    start = time.monotonic()
+    embedder = embedder or DocEmbedder()
+
+    domain_ids = discover_domain_packs(repo_root)
+    results: list[dict[str, Any]] = []
+
+    for did in domain_ids:
+        results.append(rebuild_domain_index(did, registry, embedder, repo_root))
+
+    results.append(rebuild_global_index(registry, embedder, repo_root))
+
+    elapsed = time.monotonic() - start
+    total_chunks = sum(r["chunks_indexed"] for r in results)
+    return {
+        "mode": "full_reindex_per_domain",
+        "domains_rebuilt": len(domain_ids),
+        "total_chunks": total_chunks,
+        "elapsed_seconds": round(elapsed, 2),
+        "details": results,
+    }
+
+
+def rebuild_group_library_dependents(
+    library_id: str,
+    registry: VectorStoreRegistry,
+    embedder: DocEmbedder | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Rebuild only domain stores that reference the given group library.
+
+    Scans each domain pack's physics files for ``group_libraries`` entries
+    whose ``id`` matches *library_id*.  Only those domains are re-indexed.
+    """
+    start = time.monotonic()
+    embedder = embedder or DocEmbedder()
+    affected: list[str] = []
+
+    for domain_id in discover_domain_packs(repo_root):
+        pack_root = repo_root / "domain-packs" / domain_id / "modules"
+        if not pack_root.is_dir():
+            continue
+        for physics_path in list(pack_root.rglob("domain-physics.json")) + list(pack_root.rglob("domain-physics.yaml")):
+            try:
+                text = physics_path.read_text(encoding="utf-8")
+                if physics_path.suffix == ".json":
+                    data = json.loads(text)
+                else:
+                    import yaml
+                    data = yaml.safe_load(text)
+                for lib in data.get("group_libraries", []):
+                    if lib.get("id") == library_id:
+                        affected.append(domain_id)
+                        break
+            except Exception:
+                continue
+            if domain_id in affected:
+                break
+
+    results = []
+    for did in affected:
+        results.append(rebuild_domain_index(did, registry, embedder, repo_root))
+
+    elapsed = time.monotonic() - start
+    return {
+        "mode": "group_library_cascade",
+        "library_id": library_id,
+        "affected_domains": affected,
+        "total_chunks": sum(r["chunks_indexed"] for r in results),
+        "elapsed_seconds": round(elapsed, 2),
+        "details": results,
+    }
+
+
+def make_registry(
+    base_dir: Path = _DEFAULT_STORE_DIR,
+) -> VectorStoreRegistry:
+    """Build a VectorStoreRegistry with default base location."""
+    return VectorStoreRegistry(base_dir)
