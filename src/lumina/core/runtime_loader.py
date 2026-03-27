@@ -3,11 +3,14 @@
 import hashlib
 import importlib.util
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any, Callable
 
 from lumina.core.yaml_loader import load_yaml
+
+log = logging.getLogger("lumina.runtime-loader")
 
 
 
@@ -298,5 +301,26 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         ctx["discovered_tool_adapters"] = {}
         ctx["group_libraries"] = {}
         ctx["group_tools"] = {}
+
+    # --- Pre-compile execution routes ("shader cache") ----------------
+    # Resolves invariant → standing-order → tool → library references into
+    # flat lookup tables so the orchestrator does O(1) lookups per turn.
+    try:
+        from lumina.core.route_compiler import compile_execution_routes
+
+        # Build validation indexes from available tools and libraries.
+        _tool_idx = dict(tool_fns)
+        _tool_idx.update(ctx.get("discovered_tool_adapters") or {})
+        _lib_idx = dict(ctx.get("group_libraries") or {})
+
+        ctx["compiled_routes"] = compile_execution_routes(
+            domain_physics,
+            tool_index=_tool_idx or None,
+            library_index=_lib_idx or None,
+            strict=False,  # warn on missing refs, don't block startup
+        )
+    except Exception as _rc_exc:
+        log.warning("Route compilation skipped: %s", _rc_exc)
+        ctx["compiled_routes"] = None
 
     return ctx

@@ -114,7 +114,22 @@
   "execution_policy": {
     "deterministic_tools": [
       "adapter/agri/collar-sensor/v1"
-    ]
+    ],
+    "precompiled_routes": {
+      "invariant_handlers": {
+        "within_tolerance": {
+          "standing_order_id": "request_more_steps",
+          "tool_adapter_id": "adapter/agri/collar-sensor/v1",
+          "library_deps": ["environmental_sensors"]
+        }
+      },
+      "standing_order_tools": {
+        "request_more_steps": {
+          "tool_chain": ["adapter/agri/collar-sensor/v1"],
+          "library_deps": ["environmental_sensors"]
+        }
+      }
+    }
   },
   "actor_types": [
     {

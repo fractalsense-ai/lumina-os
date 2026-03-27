@@ -349,9 +349,61 @@
             "type": "string"
           },
           "description": "Tool adapter IDs used to validate proposals before HITL review. These are domain-scoped deterministic tools (e.g. 'adapter/edu/algebra-checker/v1'). Proposals must pass all listed tools before being forwarded to the HITL gate."
+        },
+        "precompiled_routes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "invariant_handlers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["standing_order_id"],
+                "additionalProperties": false,
+                "properties": {
+                  "standing_order_id": {
+                    "type": "string",
+                    "description": "Standing order ID to invoke when this invariant fires."
+                  },
+                  "tool_adapter_id": {
+                    "type": "string",
+                    "description": "Optional tool adapter ID to call alongside the standing order."
+                  },
+                  "library_deps": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Group library IDs that must be loaded for this handler."
+                  }
+                }
+              },
+              "description": "Maps invariant_id to its pre-resolved handler route. At startup the compiler validates all references exist — fail-fast, not at runtime."
+            },
+            "standing_order_tools": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["tool_chain"],
+                "additionalProperties": false,
+                "properties": {
+                  "tool_chain": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Ordered list of tool adapter IDs to execute for this standing order."
+                  },
+                  "library_deps": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Group library IDs that must be loaded for this tool chain."
+                  }
+                }
+              },
+              "description": "Maps standing_order_id to its pre-resolved tool chain. Resolved at startup so there is zero runtime resolution latency."
+            }
+          },
+          "description": "Pre-compiled execution routes resolved at startup from physics file pointers. Acts as a shader cache — the runtime looks up flat tables instead of walking the invariant → standing-order → tool → library graph on every turn. Optional; when absent the runtime resolves routes dynamically."
         }
       },
-      "description": "Declares the domain-scoped deterministic tools that must validate proposals before HITL review. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema."
+      "description": "Declares the domain-scoped deterministic tools that must validate proposals before HITL review, and optionally pre-compiled execution routes for zero-latency runtime resolution. Omit for domains with no domain-scoped validation requirement beyond the system-level admin command schema."
     },
     "group_libraries": {
       "type": "array",

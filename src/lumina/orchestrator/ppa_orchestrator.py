@@ -158,6 +158,7 @@ class PPAOrchestrator:
         policy_commitment: dict[str, Any] | None = None,
         log_append_callback: Callable[[str, dict[str, Any]], None] | None = None,
         system_physics_hash: str | None = None,
+        compiled_routes: Any | None = None,
     ) -> None:
         """
         Initialise the orchestrator.
@@ -194,7 +195,7 @@ class PPAOrchestrator:
         self.last_domain_lib_decision: dict[str, Any] = {}
 
         # â”€â”€ Three collaborators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        self._resolver = ActorResolver(domain_physics)
+        self._resolver = ActorResolver(domain_physics, compiled_routes=compiled_routes)
         self._drafter = ContractDrafter(domain_physics, subject_profile, action_prompt_type_map)
         self._writer = SystemLogWriter(
             ledger_path,

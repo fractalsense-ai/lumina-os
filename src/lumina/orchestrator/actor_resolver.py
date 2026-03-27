@@ -15,9 +15,12 @@ without mocking a filesystem or ledger.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from lumina.middleware.invariant_checker import evaluate_invariants as _mw_evaluate_invariants
+
+if TYPE_CHECKING:
+    from lumina.core.route_compiler import CompiledRoutes
 
 
 class ActorResolver:
@@ -36,11 +39,27 @@ class ActorResolver:
         action, escalate, trigger = resolver.resolve(invariant_results, domain_lib_decision)
     """
 
-    def __init__(self, domain_physics: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        domain_physics: dict[str, Any],
+        compiled_routes: CompiledRoutes | None = None,
+    ) -> None:
         self._domain = domain_physics
+        self._compiled_routes = compiled_routes
         self._standing_order_attempts: dict[str, int] = {}
         self.last_standing_order_id: str | None = None
         self.last_standing_order_attempt: int | None = None
+        self.last_tool_chain: tuple[str, ...] | None = None
+
+        # Build O(1) standing-order index keyed by both 'id' and 'action'.
+        self._so_index: dict[str, dict[str, Any]] = {}
+        for item in domain_physics.get("standing_orders", []):
+            if not isinstance(item, dict):
+                continue
+            if "id" in item:
+                self._so_index[item["id"]] = item
+            if "action" in item and item["action"] != item.get("id"):
+                self._so_index[item["action"]] = item
 
     # ── Attempt state management (for session-state persistence) ──
 
@@ -99,8 +118,7 @@ class ActorResolver:
         """
         self.last_standing_order_id = None
         self.last_standing_order_attempt = None
-
-        # Reset counter for each invariant that passes this turn.
+        self.last_tool_chain = None
         for result in invariant_results:
             if result["passed"]:
                 so_key = result.get("standing_order_on_violation")
@@ -151,18 +169,7 @@ class ActorResolver:
         if not action:
             return action, False, None
 
-        standing_orders = self._domain.get("standing_orders", [])
-        if not isinstance(standing_orders, list):
-            return action, False, None
-
-        standing_order: dict[str, Any] | None = None
-        for item in standing_orders:
-            if not isinstance(item, dict):
-                continue
-            if item.get("action") == action or item.get("id") == action:
-                standing_order = item
-                break
-
+        standing_order = self._so_index.get(action)
         if standing_order is None:
             return action, False, None
 
@@ -182,6 +189,12 @@ class ActorResolver:
         if max_attempts >= 0 and attempt > max_attempts:
             trigger = f"standing_order_exhausted:{standing_order_id}"
             return None, escalate_on_exhaust, trigger if escalate_on_exhaust else None
+
+        # Populate tool chain from compiled routes when available.
+        if self._compiled_routes is not None:
+            so_route = self._compiled_routes.standing_order_tools(standing_order_id)
+            if so_route is not None:
+                self.last_tool_chain = so_route.tool_chain
 
         return action, False, None
 
