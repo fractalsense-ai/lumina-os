@@ -76,3 +76,10 @@ full_suite_post_fix.txt
 full_suite_post_fix2.txt
 full_suite_march27.txt
 
+# Black box snapshots
+data/blackbox/holodeck-0ed2dfa3-3f72-4c5f-a10a-9f71454967f5_2026-03-28T15-25-44.800838p00-00.json
+data/blackbox/holodeck-5c65eba5-a5f9-48d1-82ec-28a103647d53_2026-03-28T15-25-44.874416p00-00.json
+data/blackbox/holodeck-6ac154fe-4ec7-42f9-b272-4cf6a7f86615_2026-03-28T15-25-44.548273p00-00.json
+data/blackbox/holodeck-11baf0b8-ed01-4ce6-b44a-b88906cd7e54_2026-03-28T15-25-44.413996p00-00.json
+data/blackbox/holodeck-d05bf6ff-9dd9-4704-963b-99730b6bb6c5_2026-03-28T15-25-44.953928p00-00.json
+data/blackbox/test-session-2_2026-03-28T15-29-48.414678p00-00.json

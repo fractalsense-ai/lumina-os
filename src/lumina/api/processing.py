@@ -79,8 +79,7 @@ def _build_clarification_response(
         hints.append("Please rephrase with the required fields.")
 
     return {
-        "type": "action_card",
-        "card_type": "clarification_needed",
+        "type": "clarification",
         "operation": operation,
         "error": error_msg,
         "hints": hints,
@@ -518,8 +517,7 @@ def process_message(
                         _exec_result = asyncio.run(_coro)
 
                     structured_content = {
-                        "type": "action_card",
-                        "card_type": "query_result",
+                        "type": "query_result",
                         "operation": operation,
                         "result": _exec_result,
                     }

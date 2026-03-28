@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Component, type ReactNode } from 'react'
 import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DashboardPage } from '@/components/dashboard/DashboardPage'
 import { ActionCard, type ActionCardData } from '@/components/ActionCard'
+import { QueryResultCard, type QueryResultData } from '@/components/QueryResultCard'
+import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
 import { useEventStream } from '@/hooks/useEventStream'
 
 interface Message {
@@ -18,7 +20,7 @@ interface Message {
     promptType?: string
     escalated?: boolean
   }
-  structured_content?: ActionCardData
+  structured_content?: ActionCardData | QueryResultData | ClarificationData
 }
 
 type ApiChatResponse = {
@@ -27,7 +29,7 @@ type ApiChatResponse = {
   action: string
   prompt_type: string
   escalated: boolean
-  structured_content?: ActionCardData
+  structured_content?: ActionCardData | QueryResultData | ClarificationData
 }
 
 interface UiManifest {
@@ -286,6 +288,29 @@ function ConsentScreen({
   )
 }
 
+class MessageErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="ml-11 text-sm text-destructive">
+          Something went wrong rendering this message.
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function ChatMessage({ message, token }: { message: Message; token?: string }) {
   const isUser = message.role === 'user'
   
@@ -314,7 +339,17 @@ function ChatMessage({ message, token }: { message: Message; token?: string }) {
       </motion.div>
       {message.structured_content?.type === 'action_card' && token && (
         <div className="ml-11 max-w-[75%] md:max-w-[65%]">
-          <ActionCard card={message.structured_content} token={token} />
+          <ActionCard card={message.structured_content as ActionCardData} token={token} />
+        </div>
+      )}
+      {message.structured_content?.type === 'query_result' && (
+        <div className="ml-11 max-w-[75%] md:max-w-[65%]">
+          <QueryResultCard data={message.structured_content as QueryResultData} />
+        </div>
+      )}
+      {message.structured_content?.type === 'clarification' && (
+        <div className="ml-11 max-w-[75%] md:max-w-[65%]">
+          <ClarificationCard data={message.structured_content as ClarificationData} />
         </div>
       )}
     </div>
@@ -531,7 +566,9 @@ function ChatInterface({
           <div className="max-w-3xl mx-auto py-6 flex flex-col gap-4">
             {messages.map((message) => (
               <div key={message.id} className="flex flex-col gap-1">
-                <ChatMessage message={message} token={auth.token} />
+                <MessageErrorBoundary>
+                  <ChatMessage message={message} token={auth.token} />
+                </MessageErrorBoundary>
                 {message.role === 'assistant' && message.meta && (
                   <div className="text-xs text-muted-foreground px-11">
                     action: {message.meta.action ?? 'n/a'} | prompt: {message.meta.promptType ?? 'n/a'}
