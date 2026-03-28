@@ -297,6 +297,32 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         if full_ao.is_file():
             ctx["admin_operations_schema_path"] = str(full_ao)
 
+    # ── Hierarchical profile templates (optional, Base → Domain → Role) ──
+    _base_profile = runtime_cfg.get("base_profile_path")
+    if _base_profile:
+        _bp = repo_root / _base_profile
+        if _bp.is_file():
+            ctx["base_profile_path"] = str(_bp)
+    _domain_ext = runtime_cfg.get("domain_profile_extension_path")
+    if _domain_ext:
+        _de = repo_root / _domain_ext
+        if _de.is_file():
+            ctx["domain_profile_extension_path"] = str(_de)
+    _profile_templates = runtime_cfg.get("profile_templates")
+    if isinstance(_profile_templates, dict) and _profile_templates:
+        resolved_templates: dict[str, str] = {}
+        for _role_key, _tpl_rel in _profile_templates.items():
+            _tpl_abs = repo_root / _tpl_rel
+            if _tpl_abs.is_file():
+                resolved_templates[str(_role_key)] = str(_tpl_abs)
+        if resolved_templates:
+            ctx["profile_templates"] = resolved_templates
+
+    # Module routing map (optional) — used by session.py for profile→physics
+    _module_map = runtime_cfg.get("module_map")
+    if isinstance(_module_map, dict) and _module_map:
+        ctx["module_map"] = _module_map
+
     # --- Optional: merge auto-discovered tool adapter metadata --------
     # Explicit runtime-config declarations always take precedence.
     try:

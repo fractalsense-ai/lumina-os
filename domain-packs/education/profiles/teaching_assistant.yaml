@@ -1,0 +1,14 @@
+# Teaching Assistant Role Profile Extension — Education Domain
+# ============================================================
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+# Assistant state for TAs who support teachers and work with
+# assigned subsets of students.
+# ============================================================
+
+preferences:
+  explanation_style: step_by_step
+
+assistant_state:
+  assigned_students: []
+  supervising_teacher_id: null
+  hint_log: []

@@ -6,6 +6,16 @@ runtime:
   domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
   subject_profile_path: domain-packs/education/modules/algebra-level-1/student-profile-template.yaml
 
+  # ── Hierarchical profile templates (Base → Domain → Role) ──
+  base_profile_path: domain-packs/system/cfg/base-entity-profile.yaml
+  domain_profile_extension_path: domain-packs/education/cfg/domain-profile-extension.yaml
+  profile_templates:
+    default: domain-packs/education/profiles/student.yaml
+    teacher: domain-packs/education/profiles/teacher.yaml
+    teaching_assistant: domain-packs/education/profiles/teaching_assistant.yaml
+    student: domain-packs/education/profiles/student.yaml
+    parent: domain-packs/education/profiles/parent.yaml
+
   # Module routing: maps a student profile's domain_id to the correct domain-physics file.
   # The static domain_physics_path above is the default fallback for sessions without a domain_id.
   module_map:

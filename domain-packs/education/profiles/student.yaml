@@ -1,0 +1,45 @@
+# Student Role Profile Extension — Education Domain
+# ============================================================
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+# Learning state, mastery tracking, challenge bands, and fluency
+# tiers specific to the student role.
+# ============================================================
+
+preferences:
+  interests: []
+  dislikes: []
+  preferred_explanation_style: step_by_step
+
+learning_state:
+  affect:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+
+  mastery:
+    equivalence_preserved: 0.0
+    no_illegal_operations: 0.0
+    solution_verifies: 0.0
+    show_work_minimum: 0.0
+
+  challenge_band:
+    min_challenge: 0.3
+    max_challenge: 0.7
+
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+
+  challenge: 0.3
+  uncertainty: 0.8
+
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null

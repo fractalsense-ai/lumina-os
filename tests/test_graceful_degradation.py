@@ -27,8 +27,7 @@ def test_clarification_response_structure() -> None:
         cmd_dispatch={"operation": "update_user_role", "params": {"user_id": "bob"}},
         user=None,
     )
-    assert result["type"] == "action_card"
-    assert result["card_type"] == "clarification_needed"
+    assert result["type"] == "clarification"
     assert result["operation"] == "update_user_role"
     assert result["error"] == "Something went wrong"
     assert isinstance(result["hints"], list)
@@ -48,7 +47,7 @@ def test_clarification_for_invalid_role() -> None:
         },
         user=None,
     )
-    assert result["card_type"] == "clarification_needed"
+    assert result["type"] == "clarification"
     hints_text = " ".join(result["hints"]).lower()
     assert "domain role" in hints_text
     assert "user" in hints_text
@@ -75,7 +74,7 @@ def test_clarification_for_empty_governed_modules(monkeypatch: pytest.MonkeyPatc
         },
         user=None,
     )
-    assert result["card_type"] == "clarification_needed"
+    assert result["type"] == "clarification"
     hints_text = " ".join(result["hints"]).lower()
     assert "education" in hints_text
     assert "agriculture" in hints_text

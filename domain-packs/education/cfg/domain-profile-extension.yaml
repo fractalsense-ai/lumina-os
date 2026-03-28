@@ -1,0 +1,17 @@
+# Education Domain Profile Extension
+# ============================================================
+# Layer 2 of the hierarchical profile system (Base → Domain → Role).
+# Fields shared by ALL roles in the education domain (teacher, TA,
+# student, parent).  Merged on top of the base entity profile.
+# ============================================================
+
+consent:
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
+
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0

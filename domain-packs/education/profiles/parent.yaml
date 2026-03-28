@@ -1,0 +1,15 @@
+# Parent/Guardian Role Profile Extension — Education Domain
+# ============================================================
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+# Guardian state for parents who monitor child progress and receive
+# escalation notifications.
+# ============================================================
+
+preferences:
+  explanation_style: plain_language
+
+guardian_state:
+  assigned_children: []
+  notification_preferences:
+    receive_escalation_notifications: true
+    receive_progress_reports: true

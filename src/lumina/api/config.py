@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
@@ -118,14 +119,98 @@ def _resolve_user_profile_path(user_id: str, domain_key: str) -> Path:
     return _PROFILES_DIR / safe_uid / f"{safe_domain}.yaml"
 
 
-def _ensure_user_profile(user_id: str, domain_key: str, template_path: str) -> str:
-    """Return a user-specific profile path, copying template if not yet created."""
+# ── Default system-role → domain-role mapping ───────────────
+# Used when the JWT has no explicit domain_roles claim for the target domain.
+_SYSTEM_ROLE_TO_DOMAIN_ROLE: dict[str, str] = {
+    "root": "teacher",
+    "domain_authority": "teacher",
+    "it_support": "teacher",
+    "qa": "student",
+    "auditor": "student",
+    "user": "student",
+}
+
+
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    """Recursively merge *overlay* into a copy of *base*.
+
+    Scalar values in *overlay* overwrite *base*.  Dicts are merged
+    recursively.  Lists in *overlay* replace those in *base*.
+    """
+    result = copy.deepcopy(base)
+    for key, val in overlay.items():
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+            result[key] = _deep_merge(result[key], val)
+        else:
+            result[key] = copy.deepcopy(val)
+    return result
+
+
+def _assemble_profile(
+    base_path: str | None,
+    domain_ext_path: str | None,
+    role_ext_path: str | None,
+) -> dict[str, Any]:
+    """Compose a profile dict by deep-merging Base → Domain → Role layers."""
+    import yaml
+
+    profile: dict[str, Any] = {}
+    for layer_path in (base_path, domain_ext_path, role_ext_path):
+        if layer_path and Path(layer_path).is_file():
+            with open(layer_path, encoding="utf-8") as fh:
+                layer = yaml.safe_load(fh) or {}
+            profile = _deep_merge(profile, layer)
+    return profile
+
+
+def _ensure_user_profile(
+    user_id: str,
+    domain_key: str,
+    template_path: str,
+    *,
+    runtime: dict[str, Any] | None = None,
+    domain_role: str | None = None,
+    system_role: str | None = None,
+) -> str:
+    """Return a user-specific profile path, creating from template layers if needed.
+
+    When the runtime context provides hierarchical profile templates
+    (``base_profile_path``, ``domain_profile_extension_path``,
+    ``profile_templates``), the profile is assembled from three layers
+    (Base → Domain → Role).  Otherwise falls back to a flat copy of
+    *template_path* for backward compatibility.
+    """
     target = _resolve_user_profile_path(user_id, domain_key)
     if not target.exists():
-        import shutil
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(template_path, target)
-        log.info("Initialised profile for user=%s domain=%s at %s", user_id, domain_key, target)
+        rt = runtime or {}
+        profile_templates = rt.get("profile_templates")
+
+        if profile_templates:
+            # Resolve the effective domain role
+            effective_role = domain_role
+            if not effective_role and system_role:
+                effective_role = _SYSTEM_ROLE_TO_DOMAIN_ROLE.get(system_role)
+            role_key = effective_role or "default"
+            role_ext_path = profile_templates.get(role_key) or profile_templates.get("default")
+
+            profile = _assemble_profile(
+                base_path=rt.get("base_profile_path"),
+                domain_ext_path=rt.get("domain_profile_extension_path"),
+                role_ext_path=role_ext_path,
+            )
+            import yaml
+            with open(target, "w", encoding="utf-8") as fh:
+                yaml.safe_dump(profile, fh, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            log.info(
+                "Assembled profile for user=%s domain=%s role=%s at %s",
+                user_id, domain_key, role_key, target,
+            )
+        else:
+            # Backward-compatible flat copy for domains without layered templates
+            import shutil
+            shutil.copy2(template_path, target)
+            log.info("Initialised profile for user=%s domain=%s at %s", user_id, domain_key, target)
     return str(target)
 
 

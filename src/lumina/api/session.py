@@ -186,11 +186,17 @@ def _build_domain_context(
 
     if user is not None:
         domain_key = resolved_domain_id.split("/")[0] if "/" in resolved_domain_id else resolved_domain_id
+        # Extract domain role from JWT claim (e.g. {"domain/edu/algebra-level-1/v1": "teacher"})
+        _user_domain_roles = user.get("domain_roles") or {}
+        _domain_role = _user_domain_roles.get(resolved_domain_id)
         subject_profile_path = Path(
             _ensure_user_profile(
                 user_id=str(user["sub"]),
                 domain_key=domain_key,
                 template_path=str(runtime["subject_profile_path"]),
+                runtime=runtime,
+                domain_role=_domain_role,
+                system_role=user.get("role"),
             )
         )
     else:

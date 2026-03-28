@@ -1,0 +1,17 @@
+# Base Entity Profile — Universal template for all roles and domains
+# Conforms to: standards/entity-profile-schema-v1.json
+# ============================================================
+# Layer 1 of the hierarchical profile system (Base → Domain → Role).
+# This template provides the minimum identity and preference fields
+# shared by every entity in every domain.  Domain extensions and
+# role extensions are deep-merged on top at profile creation time.
+# ============================================================
+
+entity_id: null
+domain_id: null
+display_name: null
+
+preferences:
+  language: en
+
+state: {}
