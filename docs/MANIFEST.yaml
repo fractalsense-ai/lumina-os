@@ -482,6 +482,22 @@ artifacts:
     last_updated: 2026-03-27
     sha256: 3b44796987657b36271bee83f4402a18e4d951e9586773ad44aeb094c40bb96f
 
+  - path: docs/7-concepts/compressed-state-pattern.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-28
+    sha256: 14258166c26df8a03072ebf86d8cec7d95e6b97ccaa342c73bf52b08c2fe9d4d
+
+  - path: docs/7-concepts/holodeck-physics-sandbox.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-28
+    sha256: 68a4a845f404bdb872c6eeedf64604b49323e9141d40338a15208c5d5cc4ce27
+
 
   # ── Section 8: Administration ─────────────────────────────────────────────
 
