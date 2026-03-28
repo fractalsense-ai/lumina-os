@@ -331,8 +331,8 @@ class TestCommandDispatchTypes:
 
 
 @pytest.mark.integration
-def test_invite_user_stages_successfully(client: TestClient, api_module) -> None:
-    """invite_user must be accepted by the staging endpoint (it was missing before)."""
+def test_invite_user_executes_immediately(client: TestClient, api_module) -> None:
+    """invite_user is HITL-exempt — must execute immediately, not stage."""
     token = _register_root(client)
     parsed = {
         "operation": "invite_user",
@@ -350,9 +350,12 @@ def test_invite_user_stages_successfully(client: TestClient, api_module) -> None
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["staged_command"]["operation"] == "invite_user"
-    assert body["staged_id"]
-    assert body["structured_content"]["card_type"] == "command_proposal"
+    assert body["hitl_exempt"] is True
+    assert body["staged_id"] is None
+    result = body["result"]
+    assert result["operation"] == "invite_user"
+    assert result["username"] == "matt"
+    assert "setup_url" in result
 
 
 # ── _stage_command helper ─────────────────────────────────────────────────────

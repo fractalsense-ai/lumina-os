@@ -500,6 +500,38 @@ ADMIN_OPERATIONS: list[dict[str, Any]] = [
             "domain_id": "string -- domain identifier (optional)",
         },
     },
+    {
+        "name": "invite_user",
+        "description": "Create and invite a NEW user to the platform. Use this when someone asks to add, create, or invite a new user.",
+        "params_schema": {
+            "username": "string — the new user's display name",
+            "role": "string — system role: root, domain_authority, it_support, qa, auditor, user, guest",
+            "email": "string — email address (optional)",
+            "governed_modules": (
+                "array of strings — domain module IDs, required when role is"
+                " domain_authority. Omit for other roles."
+            ),
+        },
+    },
+    {
+        "name": "list_commands",
+        "description": "List available admin commands with descriptions, HITL status, and required roles. Use this when someone asks to see or list commands.",
+        "params_schema": {
+            "include_details": "boolean — true (default) for full details, false for names only",
+        },
+    },
+    {
+        "name": "list_domains",
+        "description": "List all registered domains and their modules.",
+        "params_schema": {},
+    },
+    {
+        "name": "list_modules",
+        "description": "List modules within a domain or all domains.",
+        "params_schema": {
+            "domain_id": "string — domain identifier (optional, lists all if omitted)",
+        },
+    },
 ]
 
 

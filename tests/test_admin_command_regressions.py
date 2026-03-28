@@ -72,7 +72,7 @@ def _auth_header(token: str) -> dict:
 
 @pytest.mark.integration
 def test_empty_governed_modules_no_index_error(client: TestClient, api_module) -> None:
-    """Staging a command where SLM returns governed_modules: [] must not IndexError."""
+    """Empty governed_modules: [] must not IndexError."""
     token = _register_root(client)
     parsed = {
         "operation": "invite_user",
@@ -92,10 +92,11 @@ def test_empty_governed_modules_no_index_error(client: TestClient, api_module) -
             json={"instruction": "invite user alice"},
             headers=_auth_header(token),
         )
-    # Should stage successfully — no IndexError on empty list
+    # Should succeed — no IndexError on empty list
+    # invite_user is HITL-exempt, so it executes immediately (staged_id is None)
     assert resp.status_code == 200
     body = resp.json()
-    assert body["staged_id"] is not None
+    assert body["hitl_exempt"] is True
 
 
 @pytest.mark.integration

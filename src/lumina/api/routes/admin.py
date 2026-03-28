@@ -425,7 +425,9 @@ _KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "list_commands",
 })
 
-# Read-only operations that bypass HITL staging and execute immediately.
+# Operations that bypass HITL staging and execute immediately.
+# Includes read-only discovery ops and invite_user (root-only, non-physics
+# mutation — requiring self-approval for the root admin is circular).
 _HITL_EXEMPT_OPS: frozenset[str] = frozenset({
     "list_domains",
     "list_modules",
@@ -435,6 +437,7 @@ _HITL_EXEMPT_OPS: frozenset[str] = frozenset({
     "night_cycle_status",
     "explain_reasoning",
     "list_commands",
+    "invite_user",
 })
 
 # Staged commands awaiting human resolution (keyed by staged_id).
@@ -673,6 +676,7 @@ def _stage_command(
         "staged_at": time.time(),
         "expires_at": expires_at,
         "log_stage_record_id": stage_record["record_id"],
+        "escalation_record_id": esc_record.get("record_id"),
         "resolved": False,
         "transaction": txn,
     }
@@ -1372,6 +1376,33 @@ async def admin_command_resolve(
         "admin", record,
         ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
     )
+
+    # ── Mark the corresponding EscalationRecord as resolved ──
+    _esc_rid = entry.get("escalation_record_id")
+    if _esc_rid:
+        try:
+            _all_esc = _cfg.PERSISTENCE.query_escalations()
+            _esc_target = None
+            for _esc in _all_esc:
+                if _esc.get("record_id") == _esc_rid:
+                    _esc_target = _esc
+                    break
+            if _esc_target is None:
+                # Fallback: match by session_id == staged_id
+                for _esc in _all_esc:
+                    if _esc.get("session_id") == staged_id and _esc.get("status") == "pending":
+                        _esc_target = _esc
+                        break
+            if _esc_target is not None:
+                _resolved_esc = dict(_esc_target)
+                _resolved_esc["status"] = "resolved"
+                _resolved_esc["resolution_commitment_id"] = record["record_id"]
+                _cfg.PERSISTENCE.append_log_record(
+                    "admin", _resolved_esc,
+                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+                )
+        except Exception:
+            log.warning("Failed to mark EscalationRecord resolved for staged command %s", staged_id)
 
     response: dict[str, Any] = {
         "staged_id": staged_id,
