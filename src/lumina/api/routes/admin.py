@@ -401,44 +401,140 @@ async def manifest_regen(
 # HITL Admin Command Staging
 # ─────────────────────────────────────────────────────────────
 
-_KNOWN_OPERATIONS: frozenset[str] = frozenset({
-    "update_domain_physics",
-    "commit_domain_physics",
-    "update_user_role",
-    "deactivate_user",
-    "assign_domain_role",
-    "revoke_domain_role",
-    "resolve_escalation",
-    "list_ingestions",
-    "review_ingestion",
-    "approve_interpretation",
-    "reject_ingestion",
-    "list_escalations",
-    "explain_reasoning",
-    "module_status",
-    "trigger_night_cycle",
-    "night_cycle_status",
-    "review_proposals",
-    "invite_user",
-    "list_domains",
-    "list_modules",
-    "list_commands",
+# ── Governance Config Loader ──────────────────────────────────
+#
+# Canonical source: domain-packs/system/modules/system-core/domain-physics.json
+# → subsystem_configs.admin_operations  (operation_ids, hitl_policy)
+# → subsystem_configs.governance        (role_hierarchy, min_role_policy, domain_role_aliases)
+#
+# The loader reads the JSON once and caches.  If the file is missing or
+# the subsystem_configs blocks are absent, hardcoded fallbacks are used.
+
+_governance_cache: dict[str, Any] | None = None
+
+_FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
+    "update_domain_physics", "commit_domain_physics", "update_user_role",
+    "deactivate_user", "assign_domain_role", "revoke_domain_role",
+    "resolve_escalation", "list_ingestions", "review_ingestion",
+    "approve_interpretation", "reject_ingestion", "list_escalations",
+    "explain_reasoning", "module_status", "trigger_night_cycle",
+    "night_cycle_status", "review_proposals", "invite_user",
+    "list_domains", "list_modules", "list_commands",
 })
 
-# Operations that bypass HITL staging and execute immediately.
-# Includes read-only discovery ops and invite_user (root-only, non-physics
-# mutation — requiring self-approval for the root admin is circular).
-_HITL_EXEMPT_OPS: frozenset[str] = frozenset({
-    "list_domains",
-    "list_modules",
-    "list_ingestions",
-    "list_escalations",
-    "module_status",
-    "night_cycle_status",
-    "explain_reasoning",
-    "list_commands",
-    "invite_user",
+_FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
+    "list_domains", "list_modules", "list_ingestions", "list_escalations",
+    "module_status", "night_cycle_status", "explain_reasoning",
+    "list_commands", "invite_user",
 })
+
+_FALLBACK_ROLE_HIERARCHY: dict[str, int] = {
+    "root": 100, "it_support": 80, "domain_authority": 60,
+    "qa": 40, "auditor": 40, "user": 20, "guest": 10,
+}
+
+_FALLBACK_MIN_ROLE: dict[str, str] = {
+    "update_domain_physics": "domain_authority",
+    "commit_domain_physics": "domain_authority",
+    "update_user_role": "root",
+    "deactivate_user": "root",
+    "assign_domain_role": "domain_authority",
+    "revoke_domain_role": "domain_authority",
+    "resolve_escalation": "domain_authority",
+    "approve_interpretation": "domain_authority",
+    "reject_ingestion": "domain_authority",
+    "trigger_night_cycle": "domain_authority",
+    "invite_user": "it_support",
+}
+
+_FALLBACK_DOMAIN_ROLE_ALIASES: dict[str, str] = {
+    "student": "user", "teacher": "user", "teaching_assistant": "user",
+    "parent": "user", "observer": "user", "field_operator": "user",
+    "site_manager": "user", "ta": "user",
+}
+
+
+def _load_governance_config() -> dict[str, Any]:
+    """Load governance policies from system domain physics with fallback."""
+    global _governance_cache
+    if _governance_cache is not None:
+        return _governance_cache
+
+    repo_root = Path(os.environ.get(
+        "LUMINA_REPO_ROOT", Path(__file__).resolve().parents[4],
+    ))
+    physics_path = repo_root / "domain-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
+
+    result: dict[str, Any] = {
+        "known_operations": _FALLBACK_KNOWN_OPERATIONS,
+        "hitl_exempt": _FALLBACK_HITL_EXEMPT,
+        "role_hierarchy": _FALLBACK_ROLE_HIERARCHY,
+        "min_role_policy": _FALLBACK_MIN_ROLE,
+        "domain_role_aliases": _FALLBACK_DOMAIN_ROLE_ALIASES,
+    }
+
+    if physics_path.is_file():
+        try:
+            import json as _json
+            data = _json.loads(physics_path.read_text(encoding="utf-8"))
+            sub = data.get("subsystem_configs") or {}
+
+            # Admin operations block
+            admin_ops = sub.get("admin_operations") or {}
+            op_ids = admin_ops.get("operation_ids")
+            if isinstance(op_ids, list) and op_ids:
+                result["known_operations"] = frozenset(op_ids)
+
+            hitl = admin_ops.get("hitl_policy") or {}
+            exempt = hitl.get("system_exempt")
+            if isinstance(exempt, list):
+                result["hitl_exempt"] = frozenset(exempt)
+
+            # Governance block
+            gov = sub.get("governance") or {}
+            rh = gov.get("role_hierarchy")
+            if isinstance(rh, dict) and rh:
+                result["role_hierarchy"] = rh
+
+            mrp = gov.get("min_role_policy")
+            if isinstance(mrp, dict) and mrp:
+                result["min_role_policy"] = mrp
+
+            dra = gov.get("domain_role_aliases")
+            if isinstance(dra, dict) and dra:
+                result["domain_role_aliases"] = dra
+
+            log.info("Loaded governance config from %s", physics_path)
+        except Exception as exc:
+            log.warning("Failed to load governance config (%s); using fallback", exc)
+
+    _governance_cache = result
+    return result
+
+
+def _get_known_operations() -> frozenset[str]:
+    return _load_governance_config()["known_operations"]
+
+
+def _get_hitl_exempt_ops() -> frozenset[str]:
+    return _load_governance_config()["hitl_exempt"]
+
+
+def _get_role_hierarchy() -> dict[str, int]:
+    return _load_governance_config()["role_hierarchy"]
+
+
+def _get_min_role_policy() -> dict[str, str]:
+    return _load_governance_config()["min_role_policy"]
+
+
+def _get_domain_role_aliases() -> dict[str, str]:
+    return _load_governance_config()["domain_role_aliases"]
+
+
+# Legacy aliases for backwards compatibility (used in tests and elsewhere).
+_KNOWN_OPERATIONS = _FALLBACK_KNOWN_OPERATIONS
+_HITL_EXEMPT_OPS = _FALLBACK_HITL_EXEMPT
 
 # Staged commands awaiting human resolution (keyed by staged_id).
 _STAGED_COMMANDS: dict[str, dict[str, Any]] = {}
@@ -470,16 +566,8 @@ def _compute_schema_delta(original: dict[str, Any], modified: dict[str, Any]) ->
 # Domain-specific roles the SLM may output that map to the "user" system role.
 # The intended domain role is preserved in params["intended_domain_role"] so
 # downstream logic (e.g. assign_domain_role chaining) can use it.
-_DOMAIN_ROLE_ALIASES: dict[str, str] = {
-    "student": "user",
-    "teacher": "user",
-    "teaching_assistant": "user",
-    "parent": "user",
-    "observer": "user",
-    "field_operator": "user",
-    "site_manager": "user",
-    "ta": "user",
-}
+# Loaded from domain-physics.json subsystem_configs.governance.domain_role_aliases.
+_DOMAIN_ROLE_ALIASES: dict[str, str] = _FALLBACK_DOMAIN_ROLE_ALIASES
 
 
 def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
@@ -527,9 +615,9 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
             if _stripped and _stripped in VALID_ROLES:
                 params["intended_domain_role"] = normalised_role
                 params[role_key] = _stripped
-            elif normalised_role in _DOMAIN_ROLE_ALIASES:
+            elif normalised_role in _get_domain_role_aliases():
                 params["intended_domain_role"] = normalised_role
-                params[role_key] = _DOMAIN_ROLE_ALIASES[normalised_role]
+                params[role_key] = _get_domain_role_aliases()[normalised_role]
             else:
                 # Fuzzy substring match against known system roles
                 matched = [vr for vr in VALID_ROLES if vr in normalised_role]
@@ -588,7 +676,7 @@ def _stage_command(
     from lumina.api.structured_content import build_command_proposal_card
 
     operation = parsed_command.get("operation", "")
-    if operation not in _KNOWN_OPERATIONS:
+    if operation not in _get_known_operations():
         raise ValueError(f"Unknown operation: {operation}")
 
     # Normalise SLM output before schema validation.
@@ -1066,34 +1154,20 @@ async def _execute_admin_operation(
 
     elif operation == "list_commands":
         include_details = bool(params.get("include_details", True))
-        _MIN_ROLE: dict[str, str] = {
-            "update_domain_physics": "domain_authority",
-            "commit_domain_physics": "domain_authority",
-            "update_user_role": "root",
-            "deactivate_user": "root",
-            "assign_domain_role": "domain_authority",
-            "revoke_domain_role": "domain_authority",
-            "resolve_escalation": "domain_authority",
-            "approve_interpretation": "domain_authority",
-            "reject_ingestion": "domain_authority",
-            "trigger_night_cycle": "domain_authority",
-            "invite_user": "it_support",
-        }
-        _ROLE_RANK: dict[str, int] = {
-            "root": 100, "it_support": 80, "domain_authority": 60,
-            "qa": 40, "auditor": 40, "user": 20, "guest": 10,
-        }
-        actor_rank = _ROLE_RANK.get(user_data["role"], 0)
+        _min_role = _get_min_role_policy()
+        _role_rank = _get_role_hierarchy()
+        _hitl_exempt = _get_hitl_exempt_ops()
+        actor_rank = _role_rank.get(user_data["role"], 0)
         commands: list[dict[str, Any]] = []
-        for op_name in sorted(_KNOWN_OPERATIONS):
-            min_role = _MIN_ROLE.get(op_name, "user")
-            if actor_rank < _ROLE_RANK.get(min_role, 0):
+        for op_name in sorted(_get_known_operations()):
+            min_role = _min_role.get(op_name, "user")
+            if actor_rank < _role_rank.get(min_role, 0):
                 continue
             entry: dict[str, Any] = {"name": op_name}
             if include_details:
                 schema = _get_cmd_schema(op_name)
                 entry["description"] = (schema or {}).get("description", "")
-                entry["hitl_exempt"] = op_name in _HITL_EXEMPT_OPS
+                entry["hitl_exempt"] = op_name in _hitl_exempt
                 entry["min_role"] = min_role
             commands.append(entry)
         result = {"operation": operation, "commands": commands, "count": len(commands)}
@@ -1184,11 +1258,11 @@ async def admin_command(
         raise HTTPException(status_code=422, detail="Could not interpret command")
 
     operation = parsed.get("operation", "")
-    if operation not in _KNOWN_OPERATIONS:
+    if operation not in _get_known_operations():
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
 
     # HITL-exempt operations execute immediately without staging.
-    if operation in _HITL_EXEMPT_OPS:
+    if operation in _get_hitl_exempt_ops():
         parsed = _normalize_slm_command(parsed)
         try:
             exec_result = await _execute_admin_operation(user_data, parsed, req.instruction)
@@ -1318,7 +1392,7 @@ async def admin_command_resolve(
         if not req.modified_schema or not isinstance(req.modified_schema, dict):
             raise HTTPException(status_code=422, detail="modified_schema is required for 'modify' action")
         modified_op = req.modified_schema.get("operation", "")
-        if modified_op not in _KNOWN_OPERATIONS:
+        if modified_op not in _get_known_operations():
             raise HTTPException(status_code=422, detail=f"Unknown operation in modified_schema: {modified_op}")
         # Default Deny: validate modified params against registered command schema
         mod_approved, mod_violations = validate_command(

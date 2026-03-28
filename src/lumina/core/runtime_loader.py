@@ -282,6 +282,21 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "pre_turn_checks": runtime_cfg.get("pre_turn_checks") or [],
     }
 
+    # ── Externalized domain config paths (optional) ──────────────
+    # These are read by slm.py and persona_builder.py at first call time.
+    # Storing them in ctx makes them discoverable by session diagnostics.
+    cmd_translator_path = runtime_cfg.get("command_translator_prompt_path")
+    if cmd_translator_path:
+        full_ct = repo_root / cmd_translator_path
+        if full_ct.is_file():
+            ctx["command_translator_prompt_path"] = str(full_ct)
+
+    admin_ops_path = runtime_cfg.get("admin_operations_schema_path")
+    if admin_ops_path:
+        full_ao = repo_root / admin_ops_path
+        if full_ao.is_file():
+            ctx["admin_operations_schema_path"] = str(full_ao)
+
     # --- Optional: merge auto-discovered tool adapter metadata --------
     # Explicit runtime-config declarations always take precedence.
     try:

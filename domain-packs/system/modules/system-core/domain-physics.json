@@ -192,5 +192,83 @@
       "description": "Hardware probe library — passive state estimators for disk, memory, temperature, GPU, loop latency, and HTTP queue depth.",
       "shared_with_modules": ["system-core"]
     }
-  ]
+  ],
+
+  "subsystem_configs": {
+    "admin_operations": {
+      "operations_schema_path": "domain-packs/system/cfg/admin-operations.yaml",
+      "operation_ids": [
+        "update_domain_physics",
+        "commit_domain_physics",
+        "update_user_role",
+        "deactivate_user",
+        "assign_domain_role",
+        "revoke_domain_role",
+        "resolve_escalation",
+        "ingest_document",
+        "list_ingestions",
+        "review_ingestion",
+        "approve_interpretation",
+        "reject_ingestion",
+        "list_escalations",
+        "explain_reasoning",
+        "module_status",
+        "trigger_night_cycle",
+        "night_cycle_status",
+        "review_proposals",
+        "invite_user",
+        "list_commands",
+        "list_domains",
+        "list_modules"
+      ],
+      "hitl_policy": {
+        "system_exempt": [
+          "list_domains",
+          "list_modules",
+          "list_ingestions",
+          "list_escalations",
+          "module_status",
+          "night_cycle_status",
+          "explain_reasoning",
+          "list_commands",
+          "invite_user"
+        ],
+        "per_domain_overrides_enabled": true
+      }
+    },
+    "governance": {
+      "role_hierarchy": {
+        "root": 100,
+        "it_support": 80,
+        "domain_authority": 60,
+        "qa": 40,
+        "auditor": 40,
+        "user": 20,
+        "guest": 10
+      },
+      "min_role_policy": {
+        "update_domain_physics": "domain_authority",
+        "commit_domain_physics": "domain_authority",
+        "update_user_role": "root",
+        "deactivate_user": "root",
+        "assign_domain_role": "domain_authority",
+        "revoke_domain_role": "domain_authority",
+        "resolve_escalation": "domain_authority",
+        "approve_interpretation": "domain_authority",
+        "reject_ingestion": "domain_authority",
+        "trigger_night_cycle": "domain_authority",
+        "invite_user": "it_support"
+      },
+      "domain_role_aliases": {
+        "student": "user",
+        "teacher": "user",
+        "teaching_assistant": "user",
+        "parent": "user",
+        "observer": "user",
+        "field_operator": "user",
+        "site_manager": "user",
+        "ta": "user"
+      }
+    }
+  }
 }

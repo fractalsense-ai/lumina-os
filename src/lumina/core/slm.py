@@ -18,6 +18,7 @@ import enum
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from lumina.core.persona_builder import PersonaContext, build_system_prompt
@@ -354,185 +355,103 @@ def _empty_physics_context() -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────
 
 
-# Operations available for SLM command translation.
-ADMIN_OPERATIONS: list[dict[str, Any]] = [
-    {
-        "name": "update_domain_physics",
-        "description": "Update fields in a domain's physics configuration.",
-        "params_schema": {
-            "domain_id": "string — target domain identifier",
-            "updates": "object — key/value pairs to merge into domain physics",
-        },
-    },
-    {
-        "name": "commit_domain_physics",
-        "description": "Commit the current domain physics hash to the System Logs.",
-        "params_schema": {
-            "domain_id": "string — target domain identifier",
-        },
-    },
-    {
-        "name": "update_user_role",
-        "description": "Change a user's role. When promoting to domain_authority, include governed_modules.",
-        "params_schema": {
-            "user_id": "string — target user identifier",
-            "new_role": "string — one of: root, domain_authority, it_support, qa, auditor, user",
-            "governed_modules": (
-                "array of strings — domain module IDs required when new_role is"
-                " domain_authority (e.g. ['domain/edu/algebra-level-1/v1'])."
-                " Omit for other roles."
-            ),
-        },
-    },
-    {
-        "name": "deactivate_user",
-        "description": "Deactivate a user account (revokes all access).",
-        "params_schema": {
-            "user_id": "string — target user identifier",
-        },
-    },
-    {
-        "name": "assign_domain_role",
-        "description": "Grant a user access to a domain module by assigning a domain role.",
-        "params_schema": {
-            "user_id": "string — target user identifier",
-            "module_id": "string — domain module identifier (e.g. education/algebra-level-1)",
-            "domain_role": "string — domain role to assign",
-        },
-    },
-    {
-        "name": "revoke_domain_role",
-        "description": "Revoke a user's access to a domain module by removing their domain role.",
-        "params_schema": {
-            "user_id": "string — target user identifier",
-            "module_id": "string — domain module identifier to revoke access for",
-        },
-    },
-    {
-        "name": "resolve_escalation",
-        "description": "Approve, reject, or defer an escalation.",
-        "params_schema": {
-            "escalation_id": "string",
-            "resolution": "string -- one of: approved, rejected, deferred",
-            "rationale": "string -- reason for resolution",
-        },
-    },
-    {
-        "name": "ingest_document",
-        "description": "Upload and ingest a document into a domain module.",
-        "params_schema": {
-            "domain_id": "string -- target domain identifier",
-            "module_id": "string -- target module identifier (optional)",
-            "filename": "string -- name of the file to ingest",
-        },
-    },
-    {
-        "name": "list_ingestions",
-        "description": "List pending ingestion drafts for a domain.",
-        "params_schema": {
-            "domain_id": "string -- target domain identifier (optional)",
-            "status": "string -- filter by status (optional)",
-        },
-    },
-    {
-        "name": "review_ingestion",
-        "description": "Show SLM-generated interpretations for an ingestion.",
-        "params_schema": {
-            "ingestion_id": "string -- ingestion document ID",
-        },
-    },
-    {
-        "name": "approve_interpretation",
-        "description": "Approve a specific interpretation variant for an ingestion.",
-        "params_schema": {
-            "ingestion_id": "string -- ingestion document ID",
-            "interpretation_label": "string -- one of: strict, loose, hierarchical, default, or an interpretation ID",
-        },
-    },
-    {
-        "name": "reject_ingestion",
-        "description": "Reject an ingestion with a reason.",
-        "params_schema": {
-            "ingestion_id": "string -- ingestion document ID",
-            "reason": "string -- reason for rejection",
-        },
-    },
-    {
-        "name": "list_escalations",
-        "description": "List open escalation events.",
-        "params_schema": {
-            "domain_id": "string -- domain identifier (optional)",
-            "status": "string -- filter by status (optional, default: open)",
-        },
-    },
-    {
-        "name": "explain_reasoning",
-        "description": "Explain why the system made a specific decision or escalated an event.",
-        "params_schema": {
-            "event_id": "string -- System Log record ID or escalation ID to explain",
-        },
-    },
-    {
-        "name": "module_status",
-        "description": "Show the current status of a domain module.",
-        "params_schema": {
-            "module_id": "string -- module identifier",
-            "domain_id": "string -- domain identifier (optional)",
-        },
-    },
-    {
-        "name": "trigger_night_cycle",
-        "description": "Manually trigger the night cycle batch processing for a domain.",
-        "params_schema": {
-            "domain_id": "string -- domain identifier (optional, runs all if omitted)",
-            "tasks": "array of strings -- specific tasks to run (optional, runs all if omitted)",
-        },
-    },
-    {
-        "name": "night_cycle_status",
-        "description": "Check the status of the night cycle scheduler.",
-        "params_schema": {},
-    },
-    {
-        "name": "review_proposals",
-        "description": "Show pending night cycle proposals for review.",
-        "params_schema": {
-            "domain_id": "string -- domain identifier (optional)",
-        },
-    },
-    {
-        "name": "invite_user",
-        "description": "Create and invite a NEW user to the platform. Use this when someone asks to add, create, or invite a new user.",
-        "params_schema": {
-            "username": "string — the new user's display name",
-            "role": "string — system role: root, domain_authority, it_support, qa, auditor, user, guest",
-            "email": "string — email address (optional)",
-            "governed_modules": (
-                "array of strings — domain module IDs, required when role is"
-                " domain_authority. Omit for other roles."
-            ),
-        },
-    },
-    {
-        "name": "list_commands",
-        "description": "List available admin commands with descriptions, HITL status, and required roles. Use this when someone asks to see or list commands.",
-        "params_schema": {
-            "include_details": "boolean — true (default) for full details, false for names only",
-        },
-    },
-    {
-        "name": "list_domains",
-        "description": "List all registered domains and their modules.",
-        "params_schema": {},
-    },
-    {
-        "name": "list_modules",
-        "description": "List modules within a domain or all domains.",
-        "params_schema": {
-            "domain_id": "string — domain identifier (optional, lists all if omitted)",
-        },
-    },
+# ── Admin Operations Loader ───────────────────────────────────
+#
+# Canonical source: domain-packs/system/cfg/admin-operations.yaml
+# The loader reads the YAML at first access and caches the result.
+# If the file is missing or malformed, a warning is logged and the
+# engine falls back to _FALLBACK_ADMIN_OPERATIONS — a minimal
+# inline copy kept only for graceful degradation.
+
+_admin_ops_cache: list[dict[str, Any]] | None = None
+
+
+def _resolve_admin_ops_path() -> Path | None:
+    """Locate the admin-operations YAML via env → system domain physics → well-known default."""
+    env_path = os.environ.get("LUMINA_ADMIN_OPS_PATH")
+    if env_path:
+        p = Path(env_path)
+        if p.is_file():
+            return p
+
+    # Try well-known default relative to repo root.
+    repo_root = Path(os.environ.get("LUMINA_REPO_ROOT", Path(__file__).resolve().parents[3]))
+    default = repo_root / "domain-packs" / "system" / "cfg" / "admin-operations.yaml"
+    if default.is_file():
+        return default
+
+    return None
+
+
+def _load_admin_operations_from_yaml(yaml_path: Path) -> list[dict[str, Any]]:
+    """Parse admin-operations.yaml into the list shape expected by the SLM."""
+    from lumina.core.yaml_loader import load_yaml
+
+    raw = load_yaml(str(yaml_path))
+    if not isinstance(raw, dict) or "operations" not in raw:
+        raise ValueError(f"admin-operations.yaml must contain an 'operations' key: {yaml_path}")
+    ops = raw["operations"]
+    if not isinstance(ops, list):
+        raise ValueError(f"'operations' must be a list: {yaml_path}")
+    result: list[dict[str, Any]] = []
+    for entry in ops:
+        if not isinstance(entry, dict) or "name" not in entry:
+            continue
+        result.append({
+            "name": entry["name"],
+            "description": entry.get("description", ""),
+            "params_schema": entry.get("params") or {},
+        })
+    return result
+
+
+def _get_admin_operations() -> list[dict[str, Any]]:
+    """Return admin operations, loading from YAML on first call with fallback."""
+    global _admin_ops_cache
+    if _admin_ops_cache is not None:
+        return _admin_ops_cache
+
+    yaml_path = _resolve_admin_ops_path()
+    if yaml_path is not None:
+        try:
+            _admin_ops_cache = _load_admin_operations_from_yaml(yaml_path)
+            log.info("Loaded %d admin operations from %s", len(_admin_ops_cache), yaml_path)
+            return _admin_ops_cache
+        except Exception as exc:
+            log.warning("Failed to load admin-operations.yaml (%s); using fallback", exc)
+
+    _admin_ops_cache = _FALLBACK_ADMIN_OPERATIONS
+    return _admin_ops_cache
+
+
+# Minimal fallback — kept only for graceful degradation when the YAML is absent.
+_FALLBACK_ADMIN_OPERATIONS: list[dict[str, Any]] = [
+    {"name": "update_domain_physics", "description": "Update fields in a domain's physics configuration.", "params_schema": {"domain_id": "string", "updates": "object"}},
+    {"name": "commit_domain_physics", "description": "Commit the current domain physics hash to the System Logs.", "params_schema": {"domain_id": "string"}},
+    {"name": "update_user_role", "description": "Change a user's role.", "params_schema": {"user_id": "string", "new_role": "string", "governed_modules": "array of strings"}},
+    {"name": "deactivate_user", "description": "Deactivate a user account.", "params_schema": {"user_id": "string"}},
+    {"name": "assign_domain_role", "description": "Grant a user access to a domain module.", "params_schema": {"user_id": "string", "module_id": "string", "domain_role": "string"}},
+    {"name": "revoke_domain_role", "description": "Revoke a user's access to a domain module.", "params_schema": {"user_id": "string", "module_id": "string"}},
+    {"name": "resolve_escalation", "description": "Approve, reject, or defer an escalation.", "params_schema": {"escalation_id": "string", "resolution": "string", "rationale": "string"}},
+    {"name": "ingest_document", "description": "Upload and ingest a document.", "params_schema": {"domain_id": "string", "module_id": "string", "filename": "string"}},
+    {"name": "list_ingestions", "description": "List pending ingestion drafts.", "params_schema": {"domain_id": "string", "status": "string"}},
+    {"name": "review_ingestion", "description": "Show SLM-generated interpretations for an ingestion.", "params_schema": {"ingestion_id": "string"}},
+    {"name": "approve_interpretation", "description": "Approve an interpretation variant.", "params_schema": {"ingestion_id": "string", "interpretation_label": "string"}},
+    {"name": "reject_ingestion", "description": "Reject an ingestion with a reason.", "params_schema": {"ingestion_id": "string", "reason": "string"}},
+    {"name": "list_escalations", "description": "List open escalation events.", "params_schema": {"domain_id": "string", "status": "string"}},
+    {"name": "explain_reasoning", "description": "Explain a system decision.", "params_schema": {"event_id": "string"}},
+    {"name": "module_status", "description": "Show the current status of a domain module.", "params_schema": {"module_id": "string", "domain_id": "string"}},
+    {"name": "trigger_night_cycle", "description": "Manually trigger night cycle.", "params_schema": {"domain_id": "string", "tasks": "array of strings"}},
+    {"name": "night_cycle_status", "description": "Check night cycle scheduler status.", "params_schema": {}},
+    {"name": "review_proposals", "description": "Show pending night cycle proposals.", "params_schema": {"domain_id": "string"}},
+    {"name": "invite_user", "description": "Create and invite a new user.", "params_schema": {"username": "string", "role": "string", "email": "string", "governed_modules": "array of strings"}},
+    {"name": "list_commands", "description": "List available admin commands.", "params_schema": {"include_details": "boolean"}},
+    {"name": "list_domains", "description": "List all registered domains.", "params_schema": {}},
+    {"name": "list_modules", "description": "List modules within a domain.", "params_schema": {"domain_id": "string"}},
 ]
+
+# Public alias — existing code references ADMIN_OPERATIONS (read-only).
+ADMIN_OPERATIONS = _FALLBACK_ADMIN_OPERATIONS
 
 
 def _compact_operations(ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -563,7 +482,7 @@ def slm_parse_admin_command(
 
     Returns a dict ``{"operation", "target", "params"}`` or ``None`` if unparseable.
     """
-    ops = available_operations or ADMIN_OPERATIONS
+    ops = available_operations or _get_admin_operations()
     ops = _compact_operations(ops)
     user_payload = json.dumps(
         {"instruction": natural_language, "available_operations": ops},

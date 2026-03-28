@@ -22,7 +22,12 @@ Usage::
 
 from __future__ import annotations
 
+import logging
+import os
 from enum import Enum
+from pathlib import Path
+
+log = logging.getLogger("lumina.persona-builder")
 
 
 # ── Universal Base Identity ───────────────────────────────────
@@ -74,6 +79,72 @@ class PersonaContext(str, Enum):
     NIGHT_CYCLE = "night_cycle"
     """Batch domain knowledge analysis.  Produces structured task results
     only.  No user-facing output."""
+
+
+# ── Prompt File Loader ────────────────────────────────────────
+#
+# Externalised persona prompts live in the system domain pack's prompts/
+# directory.  The loader reads once and caches.  If the file is missing,
+# a warning is logged and the inline fallback string is used.
+
+_prompt_cache: dict[str, str] = {}
+
+_COMMAND_TRANSLATOR_FALLBACK: str = (
+    "# OPERATIONAL CONTEXT: COMMAND TRANSLATOR\n"
+    "In this operational context you are performing admin command translation. "
+    "Parse the user instruction into a structured operation using ONLY the "
+    "operations from the provided list. "
+    "If the instruction does not match any available operation, return null.\n\n"
+    "## Disambiguation rules\n"
+    "- invite_user = CREATE a **new** user account (add, create, invite, onboard a user).\n"
+    "- update_user_role = CHANGE an **existing** user's role (promote, demote, change role).\n"
+    "- list_commands = list available admin commands (what commands, show commands).\n"
+    "- list_ingestions = list pending document ingestion drafts (ingestions, uploads).\n"
+    "- list_domains = list registered domains.\n"
+    "- list_modules = list modules within a domain.\n\n"
+    "## Role mapping\n"
+    "- Domain-specific roles (student, teacher, teaching_assistant, parent, observer, "
+    "field_operator, site_manager) map to system role 'user'. Preserve the original "
+    "name in an 'intended_domain_role' param.\n"
+    "- Valid system roles: root, domain_authority, it_support, qa, auditor, user, guest.\n\n"
+    "Output constraints: Respond in JSON only (or null) — no prose. "
+    "Use this structure:\n"
+    "{\n"
+    '  "operation": "operation_name",\n'
+    '  "target": "target_resource_identifier",\n'
+    '  "params": { ... }\n'
+    "}"
+)
+
+
+def _load_prompt_file(rel_path: str, fallback: str) -> str:
+    """Read a prompt file relative to the repo root; cache the result."""
+    if rel_path in _prompt_cache:
+        return _prompt_cache[rel_path]
+
+    repo_root = Path(os.environ.get("LUMINA_REPO_ROOT", Path(__file__).resolve().parents[3]))
+    prompt_path = repo_root / rel_path
+    if prompt_path.is_file():
+        try:
+            content = prompt_path.read_text(encoding="utf-8").strip()
+            if content:
+                _prompt_cache[rel_path] = content
+                log.info("Loaded prompt from %s", prompt_path)
+                return content
+        except Exception as exc:
+            log.warning("Failed to read prompt file %s (%s); using fallback", prompt_path, exc)
+
+    log.debug("Prompt file not found: %s; using inline fallback", rel_path)
+    _prompt_cache[rel_path] = fallback
+    return fallback
+
+
+def _get_command_translator_directive() -> str:
+    """Return the COMMAND_TRANSLATOR directive, loaded from file if available."""
+    return _load_prompt_file(
+        "domain-packs/system/prompts/command-translator.md",
+        _COMMAND_TRANSLATOR_FALLBACK,
+    )
 
 
 # ── Role Directives ───────────────────────────────────────────
@@ -158,32 +229,7 @@ _ROLE_DIRECTIVES: dict[PersonaContext, str] = {
         "}"
     ),
 
-    PersonaContext.COMMAND_TRANSLATOR: (
-        "# OPERATIONAL CONTEXT: COMMAND TRANSLATOR\n"
-        "In this operational context you are performing admin command translation. "
-        "Parse the user instruction into a structured operation using ONLY the "
-        "operations from the provided list. "
-        "If the instruction does not match any available operation, return null.\n\n"
-        "## Disambiguation rules\n"
-        "- invite_user = CREATE a **new** user account (add, create, invite, onboard a user).\n"
-        "- update_user_role = CHANGE an **existing** user's role (promote, demote, change role).\n"
-        "- list_commands = list available admin commands (what commands, show commands).\n"
-        "- list_ingestions = list pending document ingestion drafts (ingestions, uploads).\n"
-        "- list_domains = list registered domains.\n"
-        "- list_modules = list modules within a domain.\n\n"
-        "## Role mapping\n"
-        "- Domain-specific roles (student, teacher, teaching_assistant, parent, observer, "
-        "field_operator, site_manager) map to system role 'user'. Preserve the original "
-        "name in an 'intended_domain_role' param.\n"
-        "- Valid system roles: root, domain_authority, it_support, qa, auditor, user, guest.\n\n"
-        "Output constraints: Respond in JSON only (or null) — no prose. "
-        "Use this structure:\n"
-        "{\n"
-        '  "operation": "operation_name",\n'
-        '  "target": "target_resource_identifier",\n'
-        '  "params": { ... }\n'
-        "}"
-    ),
+    PersonaContext.COMMAND_TRANSLATOR: "DEFERRED",  # resolved at runtime by build_system_prompt,
 
     PersonaContext.LOGIC_SCRAPER: (
         "# OPERATIONAL CONTEXT: LOGIC SCRAPER\n"
@@ -251,6 +297,8 @@ def build_system_prompt(
         argument to ``call_slm`` or ``call_llm``.
     """
     directives = _ROLE_DIRECTIVES[context]
+    if context == PersonaContext.COMMAND_TRANSLATOR:
+        directives = _get_command_translator_directive()
     prompt = f"{UNIVERSAL_BASE_IDENTITY}\n\n{directives}"
 
     if context == PersonaContext.CONVERSATIONAL and domain_override:

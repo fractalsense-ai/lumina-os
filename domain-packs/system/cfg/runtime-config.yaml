@@ -6,6 +6,12 @@ runtime:
   domain_physics_path: domain-packs/system/modules/system-core/domain-physics.json
   subject_profile_path: domain-packs/system/modules/system-core/operator-profile.yaml
 
+  # Path to the SLM command-translator persona prompt (loaded by persona_builder).
+  command_translator_prompt_path: domain-packs/system/prompts/command-translator.md
+
+  # Path to the admin operations schema consumed by slm_parse_admin_command.
+  admin_operations_schema_path: domain-packs/system/cfg/admin-operations.yaml
+
   access_control:
     required_role: it_support
     allowed_roles:
