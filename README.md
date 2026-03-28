@@ -73,7 +73,7 @@ Every turn follows a strict, auditable sequence:
 
 1. **Domain knowledge** — immutable rules authored by the Domain Authority
 2. **Context (state)** — mutable session state updated from structured evidence
-3. **Intent (action)** — bounded action determined by Domain + State
+3. **Actor evidence** — structured signals produced by the Actor (student, sensor, operator) that update State and inform the orchestrator's action
 4. **Proposal (LLM)** — the LLM processes the assembled prompt contract
 5. **Verification (tools + invariants)** — tool-adapters check the LLM's reasoning; unrecognized patterns are flagged as novel synthesis signals
 6. **Commit / escalate** — verified decisions are committed; violations escalate to a human; novel synthesis events require a two-key gate (LLM flags → Domain Authority confirms or rejects)
@@ -85,7 +85,9 @@ The **D.S.A. structural schema** is the contract model behind PPA. Three pillars
 |--------|------|------|------------|
 | **D**  | Domain | Rules, invariants, standing orders, escalation triggers | Immutable per session |
 | **S**  | State | Compact entity profile updated from structured evidence | Mutable |
-| **A**  | Action | Bounded response produced by the orchestrator | Constrained by Domain |
+| **A**  | Actor | Evidence-producing entity (student, sensor, operator, device) | Identified per session |
+
+> **Note:** The orchestrator's **action** (bounded response) is the *output* derived from all three pillars — it is not itself a pillar. See [`docs/7-concepts/dsa-actor-model.md`](docs/7-concepts/dsa-actor-model.md) for the full Actor definition and signal flow.
 
 The PPA orchestrator assembles a dynamic prompt contract from these D.S.A. components. The LLM is constrained to that contract, tool-adapters verify its output, and the resulting decision is committed or escalated and written to System Log.
 
