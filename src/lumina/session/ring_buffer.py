@@ -70,6 +70,42 @@ class ConversationRingBuffer:
         with self._lock:
             self._buf.clear()
 
+    def hydrate(self, records: list[dict[str, Any]]) -> None:
+        """Re-populate the buffer from verified transcript entries.
+
+        Parameters
+        ----------
+        records:
+            Dicts with keys ``turn_number``, ``user_message``,
+            ``llm_response``, ``timestamp``, ``domain_id``.
+
+        Raises
+        ------
+        ValueError
+            If turn numbers are not strictly monotonically increasing.
+        """
+        prev_turn: int | None = None
+        for r in records:
+            tn = int(r.get("turn_number", 0))
+            if prev_turn is not None and tn <= prev_turn:
+                raise ValueError(
+                    f"Non-monotonic turn numbers: {prev_turn} → {tn}"
+                )
+            prev_turn = tn
+
+        with self._lock:
+            self._buf.clear()
+            for r in records:
+                self._buf.append(
+                    TurnRecord(
+                        timestamp=float(r.get("timestamp", 0.0)),
+                        user_message=str(r.get("user_message", "")),
+                        llm_response=str(r.get("llm_response", "")),
+                        turn_number=int(r.get("turn_number", 0)),
+                        domain_id=str(r.get("domain_id", "")),
+                    )
+                )
+
     # ── Queries ───────────────────────────────────────────────
 
     def snapshot(self) -> list[TurnRecord]:

@@ -13,7 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
-from lumina.api.models import DomainCommitRequest, DomainPhysicsUpdateRequest
+from lumina.api.models import DomainCommitRequest, DomainPhysicsUpdateRequest, SessionResumeRequest
 from lumina.api.session import _close_session, _persist_session_container, _session_containers
 from lumina.core.domain_registry import DomainNotFoundError
 from lumina.system_log.admin_operations import (
@@ -197,3 +197,120 @@ async def close_session(
         "normal",
     )
     return {"status": "closed", "session_id": session_id}
+
+
+# ─────────────────────────────────────────────────────────────
+# Session handoff / resume — client-side transcript sealing
+# ─────────────────────────────────────────────────────────────
+
+
+@router.post("/api/session/{session_id}/handoff", status_code=200)
+async def session_handoff(
+    session_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Return a sealed transcript snapshot for client-side persistence."""
+    import time as _time
+
+    from lumina.auth.auth import sign_transcript
+
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    container = _session_containers.get(session_id)
+    if container is None:
+        raise HTTPException(status_code=404, detail="Session not found or already closed")
+
+    is_owner = container.user is not None and container.user.get("sub") == user_data["sub"]
+    if not is_owner:
+        raise HTTPException(status_code=403, detail="Not session owner")
+
+    user_id: str = user_data["sub"]
+
+    # Build transcript from ring buffer snapshot
+    turns = container.ring_buffer.snapshot()
+    transcript = [
+        {
+            "turn": t.turn_number,
+            "user": t.user_message,
+            "assistant": t.llm_response,
+            "ts": t.timestamp,
+            "domain_id": t.domain_id,
+        }
+        for t in turns
+    ]
+
+    # Metadata — compressed state proof
+    active_ctx = container.contexts.get(container.active_domain_id)
+    turn_count = active_ctx.turn_count if active_ctx else 0
+
+    metadata: dict[str, Any] = {
+        "domain_id": container.active_domain_id,
+        "turn_count": turn_count,
+        "last_activity_utc": container.last_activity,
+    }
+
+    seal_payload = {"transcript": transcript, "metadata": metadata}
+    seal = sign_transcript(user_id, seal_payload)
+
+    return {
+        "session_id": session_id,
+        "transcript": transcript,
+        "metadata": metadata,
+        "seal": seal,
+        "sealed_at_utc": _time.time(),
+    }
+
+
+@router.post("/api/session/{session_id}/resume", status_code=200)
+async def session_resume(
+    session_id: str,
+    req: SessionResumeRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Verify a sealed transcript and re-hydrate the session ring buffer."""
+    from lumina.auth.auth import verify_transcript
+
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+
+    user_id: str = user_data["sub"]
+
+    # Verify HMAC seal
+    seal_payload = {"transcript": req.transcript, "metadata": req.metadata}
+    if not verify_transcript(user_id, seal_payload, req.seal):
+        raise HTTPException(status_code=403, detail="Transcript integrity verification failed")
+
+    # Re-hydrate the ring buffer into an existing or new session
+    from lumina.api.session import get_or_create_session
+    from lumina.core.domain_registry import DomainNotFoundError
+
+    domain_id = req.metadata.get("domain_id")
+    try:
+        get_or_create_session(session_id, domain_id=domain_id, user=user_data)
+    except DomainNotFoundError:
+        # Sealed domain may no longer be registered; fall back to default
+        get_or_create_session(session_id, domain_id=None, user=user_data)
+
+    container = _session_containers.get(session_id)
+    if container is None:
+        raise HTTPException(status_code=500, detail="Session creation failed")
+
+    # Hydrate ring buffer with verified transcript turns
+    records = [
+        {
+            "turn_number": entry.get("turn", 0),
+            "user_message": entry.get("user", ""),
+            "llm_response": entry.get("assistant", ""),
+            "timestamp": entry.get("ts", 0.0),
+            "domain_id": entry.get("domain_id", domain_id or ""),
+        }
+        for entry in req.transcript
+    ]
+    container.ring_buffer.hydrate(records)
+
+    return {
+        "status": "resumed",
+        "session_id": session_id,
+        "turn_count": len(req.transcript),
+    }

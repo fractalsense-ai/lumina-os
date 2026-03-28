@@ -604,6 +604,36 @@ def process_message(
             domain_id=resolved_domain_id,
         )
 
+    # ── Compute rolling transcript seal for client persistence ──
+    _rolling_seal: str | None = None
+    if not holodeck and _container is not None and user:
+        try:
+            from lumina.auth.auth import sign_transcript
+
+            _user_id = user.get("sub", "")
+            if _user_id:
+                _turns = _container.ring_buffer.snapshot()
+                _transcript = [
+                    {
+                        "turn": t.turn_number,
+                        "user": t.user_message,
+                        "assistant": t.llm_response,
+                        "ts": t.timestamp,
+                        "domain_id": t.domain_id,
+                    }
+                    for t in _turns
+                ]
+                _seal_meta = {
+                    "domain_id": resolved_domain_id,
+                    "turn_count": session.get("turn_count", 0),
+                    "last_activity_utc": time.time(),
+                }
+                _rolling_seal = sign_transcript(
+                    _user_id, {"transcript": _transcript, "metadata": _seal_meta}
+                )
+        except Exception:
+            log.debug("Could not compute transcript seal for %s", session_id)
+
     # ── Reset problem_presented_at after response is ready ───
     # Timestamp is anchored to when the outgoing response is fully built so
     # the next turn's solve_elapsed_sec excludes this turn's LLM latency.
@@ -637,6 +667,8 @@ def process_message(
         "tool_results": tool_results,
         "domain_id": resolved_domain_id,
     }
+    if _rolling_seal is not None:
+        result["transcript_seal"] = _rolling_seal
     if structured_content is not None:
         result["structured_content"] = structured_content
 

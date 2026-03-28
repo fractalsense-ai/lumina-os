@@ -51,6 +51,11 @@ PASSWORD_HASH_ALGORITHM: str = os.environ.get(
     "LUMINA_PASSWORD_HASH_ALGORITHM", "argon2id"
 ).lower()
 
+# ── Transcript HMAC seal ──────────────────────────────────────
+# Separate secret for HMAC-sealing client-side transcripts.
+# Falls back to JWT_SECRET when unset.
+TRANSCRIPT_HMAC_SECRET: str = os.environ.get("LUMINA_TRANSCRIPT_HMAC_SECRET", "")
+
 # Valid Lumina roles (see docs/5-standards/rbac-spec.md)
 VALID_ROLES: frozenset[str] = frozenset(
     {"root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"}
@@ -523,3 +528,73 @@ def verify_scoped_jwt(token: str, required_scope: str | None = None) -> dict[str
     # Ensure the payload carries the scope for downstream code
     raw_payload["token_scope"] = token_scope
     return raw_payload
+
+
+# ---------------------------------------------------------------------------
+# Transcript HMAC seal — client-side transcript integrity
+# ---------------------------------------------------------------------------
+
+
+def _get_transcript_secret() -> str:
+    """Return the transcript seal secret, falling back to JWT_SECRET."""
+    secret = TRANSCRIPT_HMAC_SECRET or JWT_SECRET or os.environ.get("LUMINA_TRANSCRIPT_HMAC_SECRET", "") or os.environ.get("LUMINA_JWT_SECRET", "")
+    if not secret:
+        raise AuthError(
+            "No transcript HMAC secret configured. "
+            "Set LUMINA_TRANSCRIPT_HMAC_SECRET or LUMINA_JWT_SECRET."
+        )
+    return secret
+
+
+def derive_transcript_key(user_id: str) -> bytes:
+    """Derive a per-user 32-byte key via HKDF-SHA256.
+
+    Uses ``LUMINA_TRANSCRIPT_HMAC_SECRET`` as the input key material,
+    ``user_id`` as the salt, and a fixed info string to bind the
+    derivation to transcript sealing.
+    """
+    secret = _get_transcript_secret()
+    # HKDF-Extract: PRK = HMAC(salt, IKM)
+    prk = hmac.new(
+        user_id.encode("utf-8"),
+        secret.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+    # HKDF-Expand: OKM = HMAC(PRK, info || 0x01) — single block (32 bytes)
+    info = b"lumina-transcript-seal"
+    okm = hmac.new(prk, info + b"\x01", hashlib.sha256).digest()
+    return okm
+
+
+def _canonical_transcript_json(payload: dict) -> bytes:
+    """Deterministic JSON serialization for transcript sealing."""
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def sign_transcript(user_id: str, payload: dict) -> str:
+    """Compute an HMAC-SHA256 hex digest over *payload* using a per-user key.
+
+    Parameters
+    ----------
+    user_id:
+        The ``sub`` claim from the user's JWT.
+    payload:
+        Dict containing ``transcript`` and ``metadata`` keys.
+
+    Returns
+    -------
+    str
+        Hex-encoded HMAC-SHA256 digest.
+    """
+    key = derive_transcript_key(user_id)
+    msg = _canonical_transcript_json(payload)
+    return hmac.new(key, msg, hashlib.sha256).hexdigest()
+
+
+def verify_transcript(user_id: str, payload: dict, signature: str) -> bool:
+    """Verify a transcript seal.  Constant-time comparison.
+
+    Returns ``True`` if the seal is valid, ``False`` otherwise.
+    """
+    expected = sign_transcript(user_id, payload)
+    return hmac.compare_digest(expected, signature)

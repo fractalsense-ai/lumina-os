@@ -89,3 +89,74 @@ def test_thread_safety() -> None:
     assert len(rb) == 100  # 4 * 50 = 200, but maxlen=100
     snap = rb.snapshot()
     assert len(snap) == 100
+
+
+# ─────────────────────────────────────────────────────────────
+# Hydrate — restore from verified transcript entries
+# ─────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_hydrate_populates_buffer() -> None:
+    rb = ConversationRingBuffer(maxlen=10)
+    rb.hydrate([
+        {"turn_number": 1, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
+        {"turn_number": 2, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
+    ])
+    assert len(rb) == 2
+    snap = rb.snapshot()
+    assert snap[0].user_message == "a"
+    assert snap[1].turn_number == 2
+
+
+@pytest.mark.unit
+def test_hydrate_clears_existing_data() -> None:
+    rb = ConversationRingBuffer(maxlen=10)
+    rb.push("old", "old-resp", 0, "d")
+    rb.hydrate([
+        {"turn_number": 1, "user_message": "new", "llm_response": "new-resp", "timestamp": 1.0, "domain_id": "d"},
+    ])
+    assert len(rb) == 1
+    assert rb.snapshot()[0].user_message == "new"
+
+
+@pytest.mark.unit
+def test_hydrate_rejects_non_monotonic_turns() -> None:
+    rb = ConversationRingBuffer(maxlen=10)
+    with pytest.raises(ValueError, match="Non-monotonic"):
+        rb.hydrate([
+            {"turn_number": 3, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
+            {"turn_number": 2, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
+        ])
+
+
+@pytest.mark.unit
+def test_hydrate_rejects_duplicate_turn_numbers() -> None:
+    rb = ConversationRingBuffer(maxlen=10)
+    with pytest.raises(ValueError, match="Non-monotonic"):
+        rb.hydrate([
+            {"turn_number": 1, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
+            {"turn_number": 1, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
+        ])
+
+
+@pytest.mark.unit
+def test_hydrate_empty_list() -> None:
+    rb = ConversationRingBuffer(maxlen=10)
+    rb.push("a", "b", 1, "d")
+    rb.hydrate([])
+    assert len(rb) == 0
+
+
+@pytest.mark.unit
+def test_hydrate_respects_maxlen() -> None:
+    """If more records than maxlen are hydrated, oldest are evicted."""
+    rb = ConversationRingBuffer(maxlen=3)
+    rb.hydrate([
+        {"turn_number": i, "user_message": f"u{i}", "llm_response": f"r{i}", "timestamp": float(i), "domain_id": "d"}
+        for i in range(1, 6)
+    ])
+    assert len(rb) == 3
+    snap = rb.snapshot()
+    assert snap[0].turn_number == 3
+    assert snap[-1].turn_number == 5

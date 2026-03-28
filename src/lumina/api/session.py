@@ -398,4 +398,6 @@ def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: 
         _cfg.PERSISTENCE.append_system_log_record(record)
 
     _persist_session_container(session_id, container)
+    # Explicitly wipe the ring buffer before dropping the container
+    container.ring_buffer.clear()
     del _session_containers[session_id]

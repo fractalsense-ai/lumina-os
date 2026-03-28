@@ -29,6 +29,7 @@ class ChatResponse(BaseModel):
     tool_results: list[dict[str, Any]] | None = None
     domain_id: str | None = None
     structured_content: dict[str, Any] | None = None
+    transcript_seal: str | None = None
 
 
 # ── Holodeck Sandbox ─────────────────────────────────────────
@@ -160,6 +161,13 @@ class DomainPhysicsUpdateRequest(BaseModel):
 
 class SessionUnlockRequest(BaseModel):
     pin: str
+
+
+class SessionResumeRequest(BaseModel):
+    """Client-side transcript + HMAC seal for session resumption."""
+    transcript: list[dict[str, Any]]
+    metadata: dict[str, Any]
+    seal: str
 
 
 class EscalationResolveRequest(BaseModel):

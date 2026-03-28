@@ -10,6 +10,12 @@ import { ActionCard, type ActionCardData } from '@/components/ActionCard'
 import { QueryResultCard, type QueryResultData } from '@/components/QueryResultCard'
 import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
 import { useEventStream } from '@/hooks/useEventStream'
+import {
+  createTranscriptStore,
+  type TranscriptStore,
+  type TranscriptTurn,
+  type StoredSession,
+} from '@/services/transcriptStore'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -30,6 +36,7 @@ type ApiChatResponse = {
   prompt_type: string
   escalated: boolean
   structured_content?: ActionCardData | QueryResultData | ClarificationData
+  transcript_seal?: string
 }
 
 interface UiManifest {
@@ -492,6 +499,74 @@ function ChatInterface({
   const [sessionId] = useState<string>(`user_${auth.userId}`)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // ── Client-side transcript persistence ───────────────────
+  const transcriptStoreRef = useRef<TranscriptStore>(createTranscriptStore())
+  const sealRef = useRef<string>('')
+  const transcriptRef = useRef<TranscriptTurn[]>([])
+  const turnCounterRef = useRef<number>(0)
+
+  // Attempt to resume a locally-stored session on mount
+  useEffect(() => {
+    const store = transcriptStoreRef.current
+    ;(async () => {
+      try {
+        const stored = await store.loadSession(sessionId)
+        if (!stored || !stored.seal || stored.messages.length === 0) return
+
+        const res = await fetch(`${getApiBase()}/api/session/${sessionId}/resume`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${auth.token}`,
+          },
+          body: JSON.stringify({
+            transcript: stored.messages,
+            metadata: stored.metadata,
+            seal: stored.seal,
+          }),
+        })
+
+        if (res.ok) {
+          // Restore messages to UI state
+          const restored: Message[] = stored.messages.flatMap((t) => [
+            { role: 'user' as const, content: t.user, id: `user-r-${t.turn}` },
+            { role: 'assistant' as const, content: t.assistant, id: `assistant-r-${t.turn}` },
+          ])
+          setMessages(restored)
+          sealRef.current = stored.seal
+          transcriptRef.current = stored.messages
+          turnCounterRef.current = stored.messages.length
+        } else {
+          // Server rejected the seal — wipe stale local data
+          await store.deleteSession(sessionId)
+        }
+      } catch {
+        // Network error or store error — start fresh
+      }
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Best-effort save on tab close / navigation
+  useEffect(() => {
+    const handler = () => {
+      if (sealRef.current && transcriptRef.current.length > 0) {
+        transcriptStoreRef.current.saveSession({
+          sessionId,
+          messages: transcriptRef.current,
+          seal: sealRef.current,
+          metadata: {
+            domain_id: transcriptRef.current[transcriptRef.current.length - 1]?.domain_id ?? '',
+            turn_count: turnCounterRef.current,
+            last_activity_utc: Date.now() / 1000,
+          },
+          updatedAt: Date.now(),
+        }).catch(() => {})
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [sessionId])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -529,6 +604,31 @@ function ChatInterface({
         structured_content: apiResponse.structured_content as ActionCardData | undefined,
       }
       setMessages((prev) => [...prev, assistantMessage])
+
+      // ── Persist transcript locally with rolling seal ───
+      if (apiResponse.transcript_seal) {
+        sealRef.current = apiResponse.transcript_seal
+        turnCounterRef.current += 1
+        const turn: TranscriptTurn = {
+          turn: turnCounterRef.current,
+          user: trimmedInput,
+          assistant: apiResponse.response,
+          ts: Date.now() / 1000,
+          domain_id: apiResponse.session_id?.split('_')[0] ?? '',
+        }
+        transcriptRef.current = [...transcriptRef.current, turn]
+        transcriptStoreRef.current.saveSession({
+          sessionId,
+          messages: transcriptRef.current,
+          seal: sealRef.current,
+          metadata: {
+            domain_id: turn.domain_id,
+            turn_count: turnCounterRef.current,
+            last_activity_utc: turn.ts,
+          },
+          updatedAt: Date.now(),
+        }).catch(() => {})
+      }
     } catch (error) {
       const errorMessage: Message = {
         role: 'assistant',
