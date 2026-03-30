@@ -93,10 +93,11 @@ def test_empty_governed_modules_no_index_error(client: TestClient, api_module) -
             headers=_auth_header(token),
         )
     # Should succeed — no IndexError on empty list
-    # invite_user is HITL-exempt, so it executes immediately (staged_id is None)
+    # invite_user now goes through HITL staging (action card)
     assert resp.status_code == 200
     body = resp.json()
-    assert body["hitl_exempt"] is True
+    assert body["staged_id"] is not None
+    assert body["structured_content"]["type"] == "action_card"
 
 
 @pytest.mark.integration

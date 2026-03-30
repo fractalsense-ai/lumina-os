@@ -148,7 +148,7 @@ def test_deactivate_user_dispatches(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_available", return_value=True),
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
-        # deactivate_user is now HITL-exempt — executes immediately.
+        # deactivate_user now goes through HITL staging (action card).
         resp = client.post(
             "/api/admin/command",
             json={"instruction": "deactivate user user99"},
@@ -156,9 +156,8 @@ def test_deactivate_user_dispatches(client: TestClient, api_module) -> None:
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["hitl_exempt"] is True
-    assert body["result"]["user_id"] == "user99"
-    deactivate_mock.assert_called_once_with("user99")
+    assert body["staged_id"] is not None
+    assert body["structured_content"]["type"] == "action_card"
 
 
 @pytest.mark.integration
@@ -230,14 +229,16 @@ def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_available", return_value=True),
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
-        # update_user_role is now HITL-exempt but still requires root.
-        # domain_authority should get 403 at execution time.
+        # update_user_role now goes through HITL staging.
+        # domain_authority can stage the command but role check happens at approval.
         resp = client.post(
             "/api/admin/command",
             json={"instruction": "change someone's role to auditor"},
             headers=_auth_header(da_token),
         )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["staged_id"] is not None
 
 
 # ── Dispatch-type classification unit tests ───────────────────────────────────
@@ -333,12 +334,9 @@ def test_invite_user_executes_immediately(client: TestClient, api_module) -> Non
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["hitl_exempt"] is True
-    assert body["staged_id"] is None
-    result = body["result"]
-    assert result["operation"] == "invite_user"
-    assert result["username"] == "matt"
-    assert "setup_url" in result
+    # invite_user now requires HITL approval — staged as action card
+    assert body["staged_id"] is not None
+    assert body["structured_content"]["type"] == "action_card"
 
 
 # ── _stage_command helper ─────────────────────────────────────────────────────

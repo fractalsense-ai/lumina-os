@@ -32,10 +32,7 @@ operations:
     params:
       user_id: "string — target user identifier"
       new_role: "string — one of: root, domain_authority, it_support, qa, auditor, user"
-      governed_modules: >-
-        array of strings — domain module IDs required when new_role is
-        domain_authority (e.g. ['domain/edu/algebra-level-1/v1']).
-        Omit for other roles.
+      governed_modules: "array of strings — domain module IDs required when new_role is domain_authority (e.g. ['domain/edu/algebra-level-1/v1']). Omit for other roles."
 
   - name: deactivate_user
     description: "Deactivate a user account (revokes all access)."
@@ -130,9 +127,7 @@ operations:
       username: "string — the new user's display name"
       role: "string — system role: root, domain_authority, it_support, qa, auditor, user, guest"
       email: "string — email address (optional)"
-      governed_modules: >-
-        array of strings — domain module IDs, required when role is
-        domain_authority. Omit for other roles.
+      governed_modules: "array of strings — domain module IDs, required when role is domain_authority. Omit for other roles."
 
   - name: list_commands
     description: "List available admin commands with descriptions, HITL status, and required roles. Use this when someone asks to see or list commands."

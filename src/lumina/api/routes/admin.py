@@ -425,9 +425,7 @@ _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
 _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
     "list_domains", "list_modules", "list_ingestions", "list_escalations",
     "module_status", "night_cycle_status", "explain_reasoning",
-    "list_commands", "invite_user",
-    "update_user_role", "deactivate_user",
-    "assign_domain_role", "revoke_domain_role",
+    "list_commands",
     "review_ingestion", "review_proposals",
 })
 
@@ -662,6 +660,8 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
             _domain_hint = cmd.get("target", "") or params.get("domain_id", "")
             try:
                 if _domain_hint and _cfg.DOMAIN_REGISTRY is not None:
+                    # Resolve prefixes (e.g. "edu" → "education") before lookup
+                    _domain_hint = _cfg.DOMAIN_REGISTRY._prefix_to_domain.get(_domain_hint, _domain_hint)
                     _resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_domain_hint)
                     _mod_list = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(_resolved_domain)
                     if _mod_list:
@@ -683,6 +683,8 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
                     if not _hint:
                         _hint = _parts[-2] if len(_parts) > 1 else ""
                     try:
+                        # Resolve prefixes (e.g. "edu" → "education") before lookup
+                        _hint = _cfg.DOMAIN_REGISTRY._prefix_to_domain.get(_hint, _hint)
                         _resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_hint)
                         _mods = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(_resolved)
                         if _mods:
@@ -1166,7 +1168,7 @@ async def _execute_admin_operation(
 
         invite_token = generate_invite_token(new_user_id, username)
         base_url = os.environ.get("LUMINA_BASE_URL", "").rstrip("/")
-        setup_url = f"{base_url}/api/auth/setup-password?token={invite_token}"
+        setup_url = f"{base_url}/?token={invite_token}"
 
         email_sent = False
         if email:

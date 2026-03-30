@@ -67,10 +67,11 @@ When the operation is `invite_user`, use this exact structure:
 
 When creating or promoting a user to domain_authority and a domain name is
 mentioned (e.g. "education domain"), populate `governed_modules` with the
-module paths for that domain. For example:
+**actual module IDs** for that domain. Use full qualified paths:
   "education" → ["domain/edu/algebra-level-1/v1", "domain/edu/pre-algebra/v1"]
-  "agriculture" → ["domain/ag/operations-level-1/v1"]
-If unsure of exact module IDs, use the domain name prefix: ["domain/edu/*"].
+  "agriculture" → ["domain/agri/operations-level-1/v1"]
+If unsure of exact module IDs, use `list_modules` to discover them first.
+Do NOT use wildcards like `domain/edu/*` — always use full module IDs.
 
 ## Role mapping
 

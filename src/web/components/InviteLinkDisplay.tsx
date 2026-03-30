@@ -38,9 +38,14 @@ export function InviteLinkDisplay({ setupUrl, username, emailSent }: InviteLinkD
         Setup link for {username}
       </p>
       <div className="flex items-center gap-2">
-        <code className="flex-1 text-xs bg-white dark:bg-black/20 border rounded px-2 py-1 truncate select-all">
+        <a
+          href={setupUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 text-xs bg-white dark:bg-black/20 border rounded px-2 py-1 truncate select-all text-blue-600 dark:text-blue-400 hover:underline"
+        >
           {setupUrl}
-        </code>
+        </a>
         <Button
           size="sm"
           variant="outline"

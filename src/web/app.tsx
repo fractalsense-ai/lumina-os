@@ -10,6 +10,7 @@ import { ActionCard, type ActionCardData } from '@/components/ActionCard'
 import { QueryResultCard, type QueryResultData } from '@/components/QueryResultCard'
 import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
 import { useEventStream } from '@/hooks/useEventStream'
+import { SetupPasswordPage } from '@/components/SetupPasswordPage'
 import {
   createTranscriptStore,
   type TranscriptStore,
@@ -777,6 +778,10 @@ function App() {
   }
 
   if (auth === null) {
+    const setupToken = new URLSearchParams(window.location.search).get('token')
+    if (setupToken) {
+      return <SetupPasswordPage token={setupToken} onAuth={handleAuth} title={manifest.title} />
+    }
     return <LoginScreen manifest={manifest} onAuth={handleAuth} />
   }
 
@@ -800,10 +805,27 @@ function App() {
     )
   }
 
-  if (view === 'dashboard' && showDashboard) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <AppHeader
+  const showDashboardView = view === 'dashboard' && showDashboard
+
+  return (
+    <>
+      {showDashboardView && (
+        <div className="min-h-screen flex flex-col">
+          <AppHeader
+            manifest={manifest}
+            auth={auth}
+            onLogout={handleLogout}
+            showDashboard={showDashboard}
+            view={view}
+            onViewChange={setView}
+            unreadCount={unreadCount}
+            onClearUnread={clearUnread}
+          />
+          <DashboardPage auth={auth} manifest={manifest} />
+        </div>
+      )}
+      <div style={{ display: showDashboardView ? 'none' : undefined }}>
+        <ChatInterface
           manifest={manifest}
           auth={auth}
           onLogout={handleLogout}
@@ -813,22 +835,8 @@ function App() {
           unreadCount={unreadCount}
           onClearUnread={clearUnread}
         />
-        <DashboardPage auth={auth} manifest={manifest} />
       </div>
-    )
-  }
-
-  return (
-    <ChatInterface
-      manifest={manifest}
-      auth={auth}
-      onLogout={handleLogout}
-      showDashboard={showDashboard}
-      view={view}
-      onViewChange={setView}
-      unreadCount={unreadCount}
-      onClearUnread={clearUnread}
-    />
+    </>
   )
 }
 

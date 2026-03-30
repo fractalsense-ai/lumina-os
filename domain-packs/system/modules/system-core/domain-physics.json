@@ -243,11 +243,6 @@
           "night_cycle_status",
           "explain_reasoning",
           "list_commands",
-          "invite_user",
-          "update_user_role",
-          "deactivate_user",
-          "assign_domain_role",
-          "revoke_domain_role",
           "review_ingestion",
           "review_proposals"
         ],
