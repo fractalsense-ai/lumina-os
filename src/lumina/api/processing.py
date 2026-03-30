@@ -289,6 +289,26 @@ def process_message(
         )
         turn_data["_slm_context"] = slm_context
 
+    # ── Per-domain vector retrieval (RAG grounding) ───────────
+    # Query the pre-built per-domain vector store so the LLM receives
+    # pre-digested document chunks alongside physics context.
+    try:
+        from lumina.core.nlp import search_domain as _search_domain
+
+        _rag_hits = _search_domain(input_text, resolved_domain_id, k=3)
+        if _rag_hits:
+            turn_data["_rag_context"] = [
+                {
+                    "text": hit.chunk.text[:500],
+                    "source": hit.chunk.source_path,
+                    "heading": hit.chunk.heading,
+                    "score": round(hit.score, 4),
+                }
+                for hit in _rag_hits
+            ]
+    except Exception:
+        pass  # Vector retrieval is optional — never blocks the pipeline
+
     # Inject the universal base field response_latency_sec (sampled at request
     # arrival, before any LLM/SLM calls — excludes server-side inference latency).
     # Domain adapters are responsible for mapping this to any domain-specific
@@ -559,6 +579,21 @@ def process_message(
         llm_payload["tool_results"] = tool_results
     if turn_data.get("_system_telemetry"):
         llm_payload["system_telemetry"] = turn_data["_system_telemetry"]
+
+    # ── Inject RAG grounding into LLM payload ────────────────
+    _rag = turn_data.get("_rag_context")
+    if _rag:
+        llm_payload["grounding_context"] = _rag
+
+    # ── Strip internal-only metadata from LLM payload ────────
+    # Keys prefixed with '_' are machine metadata for the orchestrator;
+    # they waste LLM reasoning tokens and may leak internal state.
+    _internal_keys = [k for k in llm_payload if k.startswith("_")]
+    for k in _internal_keys:
+        del llm_payload[k]
+
+    _payload_json = json.dumps(llm_payload, indent=2, ensure_ascii=False)
+    log.debug("[%s] LLM payload: ~%d tokens (%d chars)", session_id, len(_payload_json) // 4, len(_payload_json))
 
     # When a query_result structured_content is present, the UI renders the
     # data directly — skip LLM summarisation to avoid redundant narration.

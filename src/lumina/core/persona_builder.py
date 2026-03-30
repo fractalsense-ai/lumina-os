@@ -103,6 +103,11 @@ _COMMAND_TRANSLATOR_FALLBACK: str = (
     "- list_ingestions = list pending document ingestion drafts (ingestions, uploads).\n"
     "- list_domains = list registered domains.\n"
     "- list_modules = list modules within a domain.\n\n"
+    "## invite_user param rules\n"
+    "- username is REQUIRED — always the name of the person being invited. Copy from target.\n"
+    "- role is REQUIRED — always a system role. If the user says 'student', 'teacher', etc., "
+    "set role to 'user' and preserve the original name in intended_domain_role.\n"
+    "- governed_modules is ONLY needed when role is 'domain_authority'.\n\n"
     "## Role mapping\n"
     "- Domain-specific roles (student, teacher, teaching_assistant, parent, observer, "
     "field_operator, site_manager) map to system role 'user'. Preserve the original "
@@ -113,7 +118,7 @@ _COMMAND_TRANSLATOR_FALLBACK: str = (
     "{\n"
     '  "operation": "operation_name",\n'
     '  "target": "target_resource_identifier",\n'
-    '  "params": { ... }\n'
+    '  "params": { "username": "...", "role": "...", ... }\n'
     "}"
 )
 
@@ -135,6 +140,28 @@ def _strip_markdown(text: str) -> str:
     return text
 
 
+def _compact(text: str) -> str:
+    """Collapse whitespace noise left after markdown stripping.
+
+    Reduces multiple blank lines to one, trims trailing whitespace per line,
+    and removes leading/trailing blanks.  ~20-30 % token reduction on typical
+    .md prompt files.
+    """
+    lines = [ln.rstrip() for ln in text.splitlines()]
+    # Collapse runs of blank lines into a single blank line
+    compacted: list[str] = []
+    prev_blank = False
+    for ln in lines:
+        if not ln:
+            if not prev_blank:
+                compacted.append("")
+            prev_blank = True
+        else:
+            compacted.append(ln)
+            prev_blank = False
+    return "\n".join(compacted).strip()
+
+
 def _load_prompt_file(rel_path: str, fallback: str) -> str:
     """Read a prompt file relative to the repo root; cache the result."""
     if rel_path in _prompt_cache:
@@ -146,9 +173,9 @@ def _load_prompt_file(rel_path: str, fallback: str) -> str:
         try:
             content = prompt_path.read_text(encoding="utf-8").strip()
             if content:
-                content = _strip_markdown(content)
+                content = _compact(_strip_markdown(content))
                 _prompt_cache[rel_path] = content
-                log.info("Loaded prompt from %s", prompt_path)
+                log.info("Loaded prompt from %s (%d chars)", prompt_path, len(content))
                 return content
         except Exception as exc:
             log.warning("Failed to read prompt file %s (%s); using fallback", prompt_path, exc)

@@ -229,6 +229,14 @@ async def _session_idle_cleanup() -> None:
 @app.on_event("startup")
 async def _start_idle_cleanup() -> None:
     _assert_system_physics_commitment()
+
+    # ── Seal diagnostic: surface missing secrets early ────────
+    _seal_secret = os.environ.get("LUMINA_TRANSCRIPT_HMAC_SECRET") or os.environ.get("LUMINA_JWT_SECRET")
+    if _seal_secret:
+        log.info("Transcript seal: configured (chat persistence enabled)")
+    else:
+        log.warning("Transcript seal: NOT CONFIGURED — set LUMINA_JWT_SECRET or LUMINA_TRANSCRIPT_HMAC_SECRET for chat persistence")
+
     if SESSION_IDLE_TIMEOUT_MINUTES > 0:
         asyncio.create_task(_session_idle_cleanup())
         log.info("Session idle timeout enabled: %d minutes", SESSION_IDLE_TIMEOUT_MINUTES)

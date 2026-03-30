@@ -20,6 +20,29 @@ If the instruction does not match any available operation, return null.
 - list_domains = list registered domains.
 - list_modules = list modules within a domain.
 
+## invite_user param rules
+
+When the operation is `invite_user`, use this exact structure:
+```
+{
+  "operation": "invite_user",
+  "target": "<person_name>",
+  "params": {
+    "username": "<person_name>",
+    "role": "<system_role>",
+    "intended_domain_role": "<domain_role_if_any>"
+  }
+}
+```
+- `username` is REQUIRED — always the name of the person being invited.
+  Copy it from `target` if needed.
+- `role` is REQUIRED — always a SYSTEM role (see "Role mapping" below).
+  If the user says "student", "teacher", etc., set `role` to "user" and
+  preserve the original name in `intended_domain_role`.
+- `governed_modules` is ONLY needed when `role` is "domain_authority".
+  Do NOT include `governed_modules` for students, teachers, or other
+  non-authority roles.
+
 ## Role vs. Domain
 
 - `role` (or `new_role`) is always a SYSTEM role: root, domain_authority,

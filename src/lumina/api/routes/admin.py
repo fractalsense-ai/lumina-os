@@ -628,6 +628,21 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
                     params["intended_domain_role"] = normalised_role
                     params[role_key] = max(matched, key=len)
 
+        # ── invite_user: infer missing role from intended_domain_role ──
+        if operation == "invite_user":
+            if not params.get(role_key):
+                _idr = params.get("intended_domain_role", "")
+                if _idr and _idr in _get_domain_role_aliases():
+                    params[role_key] = _get_domain_role_aliases()[_idr]
+                elif _idr:
+                    params[role_key] = "user"
+                else:
+                    params[role_key] = "user"
+            # Remove governed_modules for non-authority roles — only
+            # domain_authority needs module governance scope.
+            if params.get(role_key) != "domain_authority":
+                params.pop("governed_modules", None)
+
         # ── governed_modules: may appear at top level or inside params ──
         if "governed_modules" not in params and cmd.get("governed_modules"):
             params["governed_modules"] = cmd.pop("governed_modules")
