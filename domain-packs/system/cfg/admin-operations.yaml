@@ -144,6 +144,21 @@ operations:
     params:
       domain_id: "string — domain identifier (optional, lists all if omitted)"
 
+  - name: list_users
+    description: "List registered users, optionally filtered by role. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role."
+    params:
+      role: "string — filter by system role (optional)"
+
+  - name: get_domain_physics
+    description: "Retrieve the current domain physics configuration for a domain and module. Use this to inspect current physics fields before updating them with update_domain_physics."
+    params:
+      domain_id: "string — target domain identifier"
+      module_id: "string — specific module identifier (optional, returns default module if omitted)"
+
+  - name: list_daemon_tasks
+    description: "List available daemon batch-processing tasks with their priority order. Use this to discover valid task names before passing them to trigger_daemon_task."
+    params: {}
+
   - name: list_domain_rbac_roles
     description: "List domain-specific roles defined in a domain's physics configuration. Use this to discover valid role names before assigning domain roles."
     params:

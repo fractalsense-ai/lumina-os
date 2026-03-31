@@ -1,0 +1,23 @@
+{
+  "$id": "list-users",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-31",
+  "type": "object",
+  "description": "List registered users, optionally filtered by role. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role.",
+  "properties": {
+    "operation": { "const": "list_users" },
+    "target": { "type": "string" },
+    "params": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "Filter by system role (optional).",
+          "enum": ["root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation"]
+}

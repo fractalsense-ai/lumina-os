@@ -1,13 +1,13 @@
 ---
-version: 1.1.0
-last_updated: 2026-03-27
+version: 1.2.0
+last_updated: 2026-03-31
 ---
 
 # Concept — Resource Monitor Daemon
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-27  
+**Last updated:** 2026-03-31  
 
 ---
 
@@ -23,9 +23,8 @@ is idle.  If user activity spikes while a task is running, the daemon requests
 cooperative preemption, pausing background work so latency-sensitive requests
 are not degraded.
 
-The daemon is the primary dispatch mechanism for batch processing tasks,
-replacing the former cron-based night cycle.  Manual triggers via the
-`trigger_daemon_task` admin command are also supported.
+The daemon is the primary dispatch mechanism for batch processing tasks.
+Manual triggers via the `trigger_daemon_task` admin command are also supported.
 
 ---
 
@@ -166,8 +165,9 @@ loop is never created).
   `daemon.stop()` at shutdown.
 - **Middleware** — `_InFlightCounterMiddleware` increments/decrements the
   `hw_http_queue` probe around every HTTP request.
-- **Night cycle** — The daemon calls `NightCycleScheduler.trigger_opportunistic()`
-  to execute a single task, reusing existing task implementations.
+- **Batch task dispatch** — The daemon dispatches maintenance tasks directly
+  via `TaskAdapter.run_task_preemptible()`, walking the `task_priority` list
+  in round-robin order each time the system becomes idle.
 - **System health** — `SystemHealthMonitor.sample()` exposes all three daemon
   probes (loop latency, HTTP queue, GPU) in the health state.
 
@@ -192,4 +192,4 @@ loop is never created).
 - [`edge-vectorization(7)`](edge-vectorization.md) — per-domain vector stores and daemon-driven rebuild triggers
 - [`group-libraries-and-tools(7)`](group-libraries-and-tools.md) — Group Library dependency-aware rebuilds via `rebuild_group_library_dependents()`
 - [`execution-route-compilation(7)`](execution-route-compilation.md) — ahead-of-time route compilation (may be re-triggered after physics changes)
-- [`night-cycle-processing(7)`](night-cycle-processing.md) — batch processing subsystem that the daemon dispatches into
+- [`daemon-batch-processing(7)`](daemon-batch-processing.md) — batch processing subsystem that the daemon dispatches into

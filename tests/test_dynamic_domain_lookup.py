@@ -4,6 +4,9 @@ Covers:
 - resolve_domain_id prefix / path-style resolution
 - list_domain_rbac_roles admin operation
 - get_domain_module_manifest admin operation
+- list_users admin operation
+- get_domain_physics admin operation
+- list_daemon_tasks admin operation
 - Absence of hardcoded domain knowledge in command-interpreter-spec-v1.md
 """
 
@@ -11,6 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -243,3 +247,265 @@ def test_admin_operations_has_daemon_ops() -> None:
     assert "daemon_status" in content
     assert "list_domain_rbac_roles" in content
     assert "get_domain_module_manifest" in content
+
+
+@pytest.mark.unit
+def test_admin_operations_has_new_discovery_ops() -> None:
+    """admin-operations.yaml includes list_users, get_domain_physics, list_daemon_tasks."""
+    fpath = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "admin-operations.yaml"
+    content = fpath.read_text(encoding="utf-8")
+    assert "list_users" in content
+    assert "get_domain_physics" in content
+    assert "list_daemon_tasks" in content
+
+
+# ── Domain-physics.json includes all discovery operations ──────
+
+
+@pytest.mark.unit
+def test_domain_physics_operation_ids_complete() -> None:
+    """All discovery operations are in the domain-physics operation_ids list."""
+    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp = json.loads(dp_path.read_text(encoding="utf-8"))
+    op_ids = dp["subsystem_configs"]["admin_operations"]["operation_ids"]
+    for op in [
+        "list_users", "get_domain_physics", "list_daemon_tasks",
+        "list_domain_rbac_roles", "get_domain_module_manifest",
+        "list_domains", "list_modules", "list_commands",
+    ]:
+        assert op in op_ids, f"{op} missing from operation_ids"
+
+
+@pytest.mark.unit
+def test_domain_physics_hitl_exempt_complete() -> None:
+    """All discovery operations are in the hitl_policy.system_exempt list."""
+    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp = json.loads(dp_path.read_text(encoding="utf-8"))
+    exempt = dp["subsystem_configs"]["admin_operations"]["hitl_policy"]["system_exempt"]
+    for op in [
+        "list_users", "get_domain_physics", "list_daemon_tasks",
+        "list_domain_rbac_roles", "get_domain_module_manifest",
+    ]:
+        assert op in exempt, f"{op} missing from hitl_policy.system_exempt"
+
+
+@pytest.mark.unit
+def test_domain_physics_min_role_for_sensitive_ops() -> None:
+    """list_users requires it_support; get_domain_physics requires domain_authority."""
+    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp = json.loads(dp_path.read_text(encoding="utf-8"))
+    min_role = dp["subsystem_configs"]["governance"]["min_role_policy"]
+    assert min_role["list_users"] == "it_support"
+    assert min_role["get_domain_physics"] == "domain_authority"
+    assert min_role["list_daemon_tasks"] == "domain_authority"
+
+
+# ── Command interpreter spec references new discovery ops ──────
+
+
+@pytest.mark.unit
+def test_command_interpreter_spec_mentions_list_users() -> None:
+    spec_path = (
+        _REPO_ROOT
+        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+    )
+    content = spec_path.read_text(encoding="utf-8")
+    assert "list_users" in content
+
+
+@pytest.mark.unit
+def test_command_interpreter_spec_mentions_get_domain_physics() -> None:
+    spec_path = (
+        _REPO_ROOT
+        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+    )
+    content = spec_path.read_text(encoding="utf-8")
+    assert "get_domain_physics" in content
+
+
+@pytest.mark.unit
+def test_command_interpreter_spec_mentions_list_daemon_tasks() -> None:
+    spec_path = (
+        _REPO_ROOT
+        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+    )
+    content = spec_path.read_text(encoding="utf-8")
+    assert "list_daemon_tasks" in content
+
+
+# ── Admin operation handler unit tests ─────────────────────────
+
+
+@pytest.mark.unit
+def test_list_users_handler_returns_users() -> None:
+    """list_users operation returns user records without password_hash."""
+    from lumina.api.routes.admin import _execute_admin_operation
+    from lumina.api import config as _cfg
+    import asyncio
+
+    mock_persistence = MagicMock()
+    mock_persistence.list_users.return_value = [
+        {"user_id": "u1", "username": "alice", "role": "root", "active": True},
+        {"user_id": "u2", "username": "bob", "role": "user", "active": True, "password_hash": "SHOULD_NOT_APPEAR"},
+    ]
+    mock_persistence.append_log_record = MagicMock()
+    mock_persistence.get_log_ledger_path = MagicMock(return_value="test.jsonl")
+
+    user_data = {"sub": "admin", "role": "root"}
+    parsed = {
+        "operation": "list_users",
+        "target": "",
+        "params": {},
+    }
+
+    original_persistence = _cfg.PERSISTENCE
+    _cfg.PERSISTENCE = mock_persistence
+    try:
+        result = asyncio.run(_execute_admin_operation(user_data, parsed, "list users"))
+    finally:
+        _cfg.PERSISTENCE = original_persistence
+
+    assert result["operation"] == "list_users"
+    assert result["count"] == 2
+    for u in result["users"]:
+        assert "password_hash" not in u
+
+
+@pytest.mark.unit
+def test_list_users_handler_filters_by_role() -> None:
+    """list_users with role filter returns only matching users."""
+    from lumina.api.routes.admin import _execute_admin_operation
+    from lumina.api import config as _cfg
+    import asyncio
+
+    mock_persistence = MagicMock()
+    mock_persistence.list_users.return_value = [
+        {"user_id": "u1", "username": "alice", "role": "root", "active": True},
+        {"user_id": "u2", "username": "bob", "role": "user", "active": True},
+        {"user_id": "u3", "username": "carol", "role": "user", "active": True},
+    ]
+    mock_persistence.append_log_record = MagicMock()
+    mock_persistence.get_log_ledger_path = MagicMock(return_value="test.jsonl")
+
+    user_data = {"sub": "admin", "role": "root"}
+    parsed = {
+        "operation": "list_users",
+        "target": "",
+        "params": {"role": "user"},
+    }
+
+    original_persistence = _cfg.PERSISTENCE
+    _cfg.PERSISTENCE = mock_persistence
+    try:
+        result = asyncio.run(_execute_admin_operation(user_data, parsed, "list users with role user"))
+    finally:
+        _cfg.PERSISTENCE = original_persistence
+
+    assert result["count"] == 2
+    assert all(u["role"] == "user" for u in result["users"])
+
+
+@pytest.mark.unit
+def test_get_domain_physics_handler_returns_physics(registry: DomainRegistry) -> None:
+    """get_domain_physics returns governance fields for a domain."""
+    from lumina.api.routes.admin import _execute_admin_operation
+    from lumina.api import config as _cfg
+    import asyncio
+
+    mock_persistence = MagicMock()
+    mock_persistence.append_log_record = MagicMock()
+    mock_persistence.get_log_ledger_path = MagicMock(return_value="test.jsonl")
+
+    user_data = {"sub": "admin", "role": "root"}
+    parsed = {
+        "operation": "get_domain_physics",
+        "target": "system",
+        "params": {"domain_id": "system"},
+    }
+
+    original_persistence = _cfg.PERSISTENCE
+    original_registry = _cfg.DOMAIN_REGISTRY
+    _cfg.PERSISTENCE = mock_persistence
+    _cfg.DOMAIN_REGISTRY = registry
+    try:
+        result = asyncio.run(_execute_admin_operation(user_data, parsed, "show physics for system"))
+    finally:
+        _cfg.PERSISTENCE = original_persistence
+        _cfg.DOMAIN_REGISTRY = original_registry
+
+    assert result["operation"] == "get_domain_physics"
+    assert result["domain_id"] == "system"
+    assert result["count"] >= 1
+    # Should include governance info
+    entry = result["physics"][0]
+    assert "module_id" in entry
+    assert "governance" in entry or "label" in entry
+
+
+@pytest.mark.unit
+def test_list_daemon_tasks_handler_returns_tasks() -> None:
+    """list_daemon_tasks returns the task priority list."""
+    from lumina.api.routes.admin import _execute_admin_operation
+    from lumina.api import config as _cfg
+    import asyncio
+
+    mock_persistence = MagicMock()
+    mock_persistence.append_log_record = MagicMock()
+    mock_persistence.get_log_ledger_path = MagicMock(return_value="test.jsonl")
+
+    user_data = {"sub": "admin", "role": "root"}
+    parsed = {
+        "operation": "list_daemon_tasks",
+        "target": "",
+        "params": {},
+    }
+
+    original_persistence = _cfg.PERSISTENCE
+    _cfg.PERSISTENCE = mock_persistence
+    try:
+        result = asyncio.run(_execute_admin_operation(user_data, parsed, "list daemon tasks"))
+    finally:
+        _cfg.PERSISTENCE = original_persistence
+
+    assert result["operation"] == "list_daemon_tasks"
+    # Should have tasks from runtime config
+    assert isinstance(result["tasks"], list)
+    assert result["count"] == len(result["tasks"])
+    assert "daemon_state" in result
+    assert "daemon_enabled" in result
+
+
+# ── Schema files exist for all new operations ──────────────────
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("schema_name", [
+    "list-users", "get-domain-physics", "list-daemon-tasks",
+    "list-domain-rbac-roles", "get-domain-module-manifest",
+    "daemon-status", "trigger-daemon-task",
+])
+def test_admin_command_schema_exists(schema_name: str) -> None:
+    """Each discovery operation has a JSON schema in standards/admin-command-schemas/."""
+    schema_path = _REPO_ROOT / "standards" / "admin-command-schemas" / f"{schema_name}.json"
+    assert schema_path.exists(), f"Schema missing: {schema_name}.json"
+    data = json.loads(schema_path.read_text(encoding="utf-8"))
+    assert "description" in data
+    assert "schema_version" in data
+
+
+# ── resource-monitor-daemon.md has no night-cycle references ───
+
+
+@pytest.mark.unit
+def test_resource_monitor_daemon_doc_no_night_cycle() -> None:
+    """resource-monitor-daemon.md should not reference night cycle."""
+    doc_path = _REPO_ROOT / "docs" / "7-concepts" / "resource-monitor-daemon.md"
+    if not doc_path.exists():
+        pytest.skip("Doc not found")
+    content = doc_path.read_text(encoding="utf-8")
+    assert "night_cycle" not in content.lower().replace("-", "_").replace(" ", "_"), \
+        "Night cycle reference found in resource-monitor-daemon.md"
+    assert "NightCycleScheduler" not in content, \
+        "NightCycleScheduler reference found in resource-monitor-daemon.md"
+    assert "night-cycle-processing.md" not in content, \
+        "Link to night-cycle-processing.md found in resource-monitor-daemon.md"

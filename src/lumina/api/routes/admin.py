@@ -483,6 +483,7 @@ _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "daemon_status", "review_proposals", "invite_user",
     "list_domains", "list_modules", "list_commands",
     "list_domain_rbac_roles", "get_domain_module_manifest",
+    "list_users", "get_domain_physics", "list_daemon_tasks",
 })
 
 _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
@@ -490,6 +491,7 @@ _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
     "module_status", "daemon_status", "explain_reasoning",
     "list_commands", "review_ingestion", "review_proposals",
     "list_domain_rbac_roles", "get_domain_module_manifest",
+    "list_users", "get_domain_physics", "list_daemon_tasks",
 })
 
 _FALLBACK_ROLE_HIERARCHY: dict[str, int] = {
@@ -510,6 +512,9 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "trigger_daemon_task": "domain_authority",
     "trigger_night_cycle": "domain_authority",
     "invite_user": "it_support",
+    "list_users": "it_support",
+    "get_domain_physics": "domain_authority",
+    "list_daemon_tasks": "domain_authority",
 }
 
 _FALLBACK_DOMAIN_ROLE_ALIASES: dict[str, str] = {
@@ -1365,6 +1370,82 @@ async def _execute_admin_operation(
             manifest_entries.append(entry)
         result = {"operation": operation, "domain_id": resolved, "modules": manifest_entries, "count": len(manifest_entries)}
 
+    elif operation == "list_users":
+        role_filter = params.get("role")
+        users = _cfg.PERSISTENCE.list_users()
+        if role_filter:
+            users = [u for u in users if u.get("role") == role_filter]
+        # Strip sensitive fields
+        safe_users = []
+        for u in users:
+            safe_users.append({
+                k: v for k, v in u.items()
+                if k not in ("password_hash", "invite_token", "invite_expires_at")
+            })
+        result = {"operation": operation, "users": safe_users, "count": len(safe_users)}
+
+    elif operation == "get_domain_physics":
+        domain_id = str(params.get("domain_id", parsed.get("target", "")))
+        if not domain_id:
+            raise HTTPException(status_code=422, detail="domain_id required")
+        try:
+            resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except DomainNotFoundError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        module_id_filter = params.get("module_id")
+        modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved)
+        physics_entries: list[dict[str, Any]] = []
+        for mod in modules:
+            if module_id_filter and mod["module_id"] != module_id_filter:
+                continue
+            dp_path = mod.get("domain_physics_path", "")
+            if not dp_path:
+                continue
+            try:
+                dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
+                dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
+                # Remove internal file paths, keep governance-relevant fields
+                entry: dict[str, Any] = {
+                    "module_id": mod["module_id"],
+                    "label": dp_data.get("label", ""),
+                    "version": dp_data.get("version", ""),
+                    "domain": dp_data.get("domain", resolved),
+                }
+                subsys = dp_data.get("subsystem_configs", {})
+                if subsys.get("governance"):
+                    entry["governance"] = subsys["governance"]
+                if subsys.get("admin_operations"):
+                    entry["admin_operations"] = subsys["admin_operations"]
+                if dp_data.get("topics"):
+                    entry["topics"] = dp_data["topics"]
+                if dp_data.get("standing_orders"):
+                    entry["standing_order_count"] = len(dp_data["standing_orders"])
+                physics_entries.append(entry)
+            except Exception:
+                log.debug("Could not read domain physics for %s", mod.get("module_id"))
+        result = {"operation": operation, "domain_id": resolved, "physics": physics_entries, "count": len(physics_entries)}
+
+    elif operation == "list_daemon_tasks":
+        from lumina.daemon import resource_monitor as _daemon_mod
+        status = _daemon_mod.get_status()
+        # Get task list from the daemon singleton or fall back to runtime config
+        task_list: list[str] = []
+        if _daemon_mod._daemon is not None and _daemon_mod._daemon._task_priority:
+            task_list = list(_daemon_mod._daemon._task_priority)
+        else:
+            try:
+                rt = load_yaml(Path("domain-packs/system/cfg/runtime-config.yaml"))
+                task_list = rt.get("daemon", {}).get("task_priority", [])
+            except Exception:
+                pass
+        result = {
+            "operation": operation,
+            "tasks": task_list,
+            "count": len(task_list),
+            "daemon_state": status.get("state", "UNKNOWN"),
+            "daemon_enabled": status.get("enabled", False),
+        }
+
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
 
@@ -1372,8 +1453,9 @@ async def _execute_admin_operation(
     _READ_ONLY_OPS = frozenset({
         "list_domains", "list_modules", "list_commands", "list_ingestions",
         "list_escalations", "module_status", "daemon_status",
-        "night_cycle_status", "explain_reasoning", "review_proposals",
+        "explain_reasoning", "review_proposals",
         "list_domain_rbac_roles", "get_domain_module_manifest",
+        "list_users", "get_domain_physics", "list_daemon_tasks",
     })
     if operation not in _READ_ONLY_OPS:
         try:

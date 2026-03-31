@@ -1,0 +1,27 @@
+{
+  "$id": "get-domain-physics",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-31",
+  "type": "object",
+  "description": "Retrieve the current domain physics configuration for a domain and module. Use this to inspect physics fields before updating with update_domain_physics.",
+  "properties": {
+    "operation": { "const": "get_domain_physics" },
+    "target": { "type": "string" },
+    "params": {
+      "type": "object",
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "description": "Target domain identifier."
+        },
+        "module_id": {
+          "type": "string",
+          "description": "Specific module identifier (optional, returns default module if omitted)."
+        }
+      },
+      "required": ["domain_id"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation", "params"]
+}

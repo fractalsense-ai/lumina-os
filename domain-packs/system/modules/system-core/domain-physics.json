@@ -365,7 +365,10 @@
         "list_domains",
         "list_modules",
         "list_domain_rbac_roles",
-        "get_domain_module_manifest"
+        "get_domain_module_manifest",
+        "list_users",
+        "get_domain_physics",
+        "list_daemon_tasks"
       ],
       "hitl_policy": {
         "system_exempt": [
@@ -380,7 +383,10 @@
           "review_ingestion",
           "review_proposals",
           "list_domain_rbac_roles",
-          "get_domain_module_manifest"
+          "get_domain_module_manifest",
+          "list_users",
+          "get_domain_physics",
+          "list_daemon_tasks"
         ],
         "per_domain_overrides_enabled": true
       }
@@ -406,7 +412,10 @@
         "approve_interpretation": "domain_authority",
         "reject_ingestion": "domain_authority",
         "trigger_daemon_task": "domain_authority",
-        "invite_user": "it_support"
+        "invite_user": "it_support",
+        "list_users": "it_support",
+        "get_domain_physics": "domain_authority",
+        "list_daemon_tasks": "domain_authority"
       },
       "domain_role_aliases": {
         "student": "user",

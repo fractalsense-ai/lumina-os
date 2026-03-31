@@ -1,0 +1,17 @@
+{
+  "$id": "list-daemon-tasks",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-31",
+  "type": "object",
+  "description": "List available daemon batch-processing tasks with their priority order. Use this to discover valid task names before passing them to trigger_daemon_task.",
+  "properties": {
+    "operation": { "const": "list_daemon_tasks" },
+    "target": { "type": "string" },
+    "params": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation"]
+}

@@ -376,7 +376,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-06-15
-    sha256: c85138f06f834c415bef43562ff462cf1eda261083d98a1cd3f5e773e99d9733
+    sha256: 4d6703b8441e3f4d84f70dfe6ebe8655a1495abf44a52696320f110d772b33e0
 
   - path: docs/7-concepts/slm-compute-distribution.md
     type: doc
@@ -912,6 +912,27 @@ artifacts:
     status: active
     last_updated: 2026-03-31
     sha256: 7c1f2bb8cdd1b4dea2200241606579bbc468605c5a85fdbf0e1301a6001cab84
+
+  - path: standards/admin-command-schemas/list-users.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-31
+    sha256: 012e5970b26dfd8b1dc9b2806235438c52909837211718eb17ad09ac74f77272
+
+  - path: standards/admin-command-schemas/get-domain-physics.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-31
+    sha256: eadf73a37be2c37d9a96b498ff31df266413bdd2c9e9554d4b9588fc07940c95
+
+  - path: standards/admin-command-schemas/list-daemon-tasks.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-31
+    sha256: 46d7c1b8b447bece7e715b03fbe4208ed46bd2217da8468ffbc428630857e49f
 
   - path: standards/admin-command-schemas/reject-ingestion.json
     type: schema

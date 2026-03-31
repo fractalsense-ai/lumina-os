@@ -26,6 +26,9 @@ via discovery operations:
 - `list_modules` — discover modules within a domain.
 - `list_domain_rbac_roles` — discover domain-specific roles for a domain.
 - `get_domain_module_manifest` — retrieve a domain's full module manifest.
+- `list_users` — discover registered users and their IDs.
+- `get_domain_physics` — inspect current physics configuration before updating.
+- `list_daemon_tasks` — discover available batch-processing task names.
 
 NEVER guess or fabricate module IDs, domain role names, or module paths.
 When domain-specific information is needed, emit the appropriate discovery
@@ -47,6 +50,9 @@ operation first, then use the returned values in subsequent commands.
 - list_modules = list modules within a domain.
 - list_domain_rbac_roles = list domain-specific roles defined in a domain's physics.
 - get_domain_module_manifest = retrieve a domain's module manifest.
+- list_users = list registered users (who are the users, show users, list accounts).
+- get_domain_physics = inspect current physics config for a domain (show physics, what are the physics fields).
+- list_daemon_tasks = list available batch-processing tasks (what tasks can the daemon run, show daemon tasks).
 
 ## Domain ID rules
 
@@ -89,6 +95,19 @@ Procedure:
 
 Do NOT use wildcards like `domain/edu/*` — always use full module IDs
 returned by `list_modules`.
+
+## User discovery
+
+When an operation requires a `user_id` (update_user_role, deactivate_user,
+assign_domain_role, revoke_domain_role), and the caller provides only a
+username or description rather than a UUID, emit `list_users` first to
+discover the exact `user_id`. NEVER guess or fabricate user IDs.
+
+## Physics inspection
+
+Before calling `update_domain_physics`, emit `get_domain_physics` to
+discover what fields exist and their current values. NEVER guess physics
+field names.
 
 ## Role vs. Domain
 
