@@ -709,6 +709,7 @@ def process_message(
     }
     if _rolling_seal is not None:
         result["transcript_seal"] = _rolling_seal
+        result["transcript_seal_metadata"] = _seal_meta
     if structured_content is not None:
         result["structured_content"] = structured_content
 

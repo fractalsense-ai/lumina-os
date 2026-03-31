@@ -15,6 +15,7 @@ import {
   createTranscriptStore,
   type TranscriptStore,
   type TranscriptTurn,
+  type TranscriptMetadata,
   type StoredSession,
 } from '@/services/transcriptStore'
 
@@ -38,6 +39,7 @@ type ApiChatResponse = {
   escalated: boolean
   structured_content?: ActionCardData | QueryResultData | ClarificationData
   transcript_seal?: string
+  transcript_seal_metadata?: TranscriptMetadata
 }
 
 interface UiManifest {
@@ -503,6 +505,7 @@ function ChatInterface({
   // ── Client-side transcript persistence ───────────────────
   const transcriptStoreRef = useRef<TranscriptStore>(createTranscriptStore())
   const sealRef = useRef<string>('')
+  const sealMetadataRef = useRef<TranscriptMetadata | null>(null)
   const transcriptRef = useRef<TranscriptTurn[]>([])
   const turnCounterRef = useRef<number>(0)
 
@@ -536,6 +539,7 @@ function ChatInterface({
           ])
           setMessages(restored)
           sealRef.current = stored.seal
+          sealMetadataRef.current = stored.metadata
           transcriptRef.current = stored.messages
           turnCounterRef.current = stored.messages.length
         } else {
@@ -551,16 +555,13 @@ function ChatInterface({
   // Best-effort save on tab close / navigation
   useEffect(() => {
     const handler = () => {
-      if (sealRef.current && transcriptRef.current.length > 0) {
+      const meta = sealMetadataRef.current
+      if (sealRef.current && transcriptRef.current.length > 0 && meta) {
         transcriptStoreRef.current.saveSession({
           sessionId,
           messages: transcriptRef.current,
           seal: sealRef.current,
-          metadata: {
-            domain_id: transcriptRef.current[transcriptRef.current.length - 1]?.domain_id ?? '',
-            turn_count: turnCounterRef.current,
-            last_activity_utc: Date.now() / 1000,
-          },
+          metadata: meta,
           updatedAt: Date.now(),
         }).catch(() => {})
       }
@@ -608,8 +609,9 @@ function ChatInterface({
       setMessages((prev) => [...prev, assistantMessage])
 
       // ── Persist transcript locally with rolling seal ───
-      if (apiResponse.transcript_seal) {
+      if (apiResponse.transcript_seal && apiResponse.transcript_seal_metadata) {
         sealRef.current = apiResponse.transcript_seal
+        sealMetadataRef.current = apiResponse.transcript_seal_metadata
         turnCounterRef.current += 1
         const turn: TranscriptTurn = {
           turn: turnCounterRef.current,
@@ -623,11 +625,7 @@ function ChatInterface({
           sessionId,
           messages: transcriptRef.current,
           seal: sealRef.current,
-          metadata: {
-            domain_id: turn.domain_id,
-            turn_count: turnCounterRef.current,
-            last_activity_utc: turn.ts,
-          },
+          metadata: apiResponse.transcript_seal_metadata!,
           updatedAt: Date.now(),
         }).catch(() => {})
       } else {

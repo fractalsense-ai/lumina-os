@@ -177,6 +177,8 @@ def _validate_object(
     for key, prop_schema in properties.items():
         if key not in value:
             continue
+        if value[key] is None and key not in required:
+            continue
         _validate_value(value[key], prop_schema, f"{path}.{key}", violations)
 
 

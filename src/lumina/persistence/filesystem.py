@@ -383,6 +383,32 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         self._save_users(users)
         return {k: v for k, v in users[user_id].items() if k != "password_hash"}
 
+    def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
+        users = self._load_users()
+        if user_id not in users:
+            return False
+        users[user_id]["invite_token"] = token
+        users[user_id]["invite_token_expires_at"] = expires_at
+        self._save_users(users)
+        return True
+
+    def get_user_by_invite_token(self, token: str) -> dict[str, Any] | None:
+        import time as _time
+        now = _time.time()
+        for u in self._load_users().values():
+            if u.get("invite_token") == token and u.get("invite_token_expires_at", 0) > now:
+                return {k: v for k, v in u.items() if k != "password_hash"}
+        return None
+
+    def clear_user_invite_token(self, user_id: str) -> bool:
+        users = self._load_users()
+        if user_id not in users:
+            return False
+        users[user_id].pop("invite_token", None)
+        users[user_id].pop("invite_token_expires_at", None)
+        self._save_users(users)
+        return True
+
     def query_log_records(
         self,
         session_id: str | None = None,

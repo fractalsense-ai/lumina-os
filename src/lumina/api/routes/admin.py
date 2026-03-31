@@ -34,7 +34,10 @@ from lumina.auth.auth import VALID_ROLES
 from lumina.core.domain_registry import DomainNotFoundError
 from lumina.core import slm as _slm_mod
 from lumina.core.email_sender import send_invite_email
-from lumina.core.invite_store import generate_invite_token
+from lumina.core.invite_store import (
+    generate_invite_token,
+    _INVITE_TOKEN_TTL_SECONDS as _INVITE_TOKEN_TTL,
+)
 from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
     build_commitment_record,
@@ -1167,6 +1170,7 @@ async def _execute_admin_operation(
         )
 
         invite_token = generate_invite_token(new_user_id, username)
+        _cfg.PERSISTENCE.set_user_invite_token(new_user_id, invite_token, time.time() + _INVITE_TOKEN_TTL)
         base_url = os.environ.get("LUMINA_BASE_URL", "").rstrip("/")
         setup_url = f"{base_url}/?token={invite_token}"
 

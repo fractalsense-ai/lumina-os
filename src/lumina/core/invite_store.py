@@ -4,10 +4,10 @@ When an admin invites a new user via ``POST /api/auth/invite``, a one-time
 setup token is generated here.  The invited user visits the setup URL, submits
 the token alongside their chosen password, and the account is activated.
 
-Storage is intentionally in-memory (same pattern as ``session_unlock.py``):
-  - No sensitive data persists beyond the process lifetime.
-  - Expired entries are lazily purged on each generate/validate call.
-  - Default TTL is 24 hours; configurable via ``LUMINA_INVITE_TOKEN_TTL_SECONDS``.
+Primary storage is an in-memory cache for fast lookups.  A persistence adapter
+(set via ``register_persistence``) is used as a durable fallback so that tokens
+survive server restarts.  Expired entries are lazily purged on each call.
+Default TTL is 24 hours; configurable via ``LUMINA_INVITE_TOKEN_TTL_SECONDS``.
 """
 
 from __future__ import annotations
@@ -15,12 +15,24 @@ from __future__ import annotations
 import os
 import secrets
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from lumina.persistence.adapter import PersistenceAdapter
 
 _INVITE_TOKEN_TTL_SECONDS: int = int(os.environ.get("LUMINA_INVITE_TOKEN_TTL_SECONDS", "86400"))
 
 # token → {user_id, username, expires_at}
 _INVITE_TOKENS: dict[str, dict[str, Any]] = {}
+
+# Optional persistence adapter for durable fallback (set by the server on startup).
+_persistence: "PersistenceAdapter | None" = None
+
+
+def register_persistence(adapter: "PersistenceAdapter") -> None:
+    """Register a persistence adapter so tokens survive server restarts."""
+    global _persistence  # noqa: PLW0603
+    _persistence = adapter
 
 
 def _purge_expired() -> None:
@@ -54,16 +66,28 @@ def generate_invite_token(user_id: str, username: str) -> str:
 def validate_invite_token(token: str) -> str | None:
     """Return the *user_id* and remove the token if valid and unexpired.
 
+    Checks the in-memory cache first, then falls back to the persistence adapter
+    (if registered) so that tokens survive server restarts.
     Returns ``None`` for an unknown, expired, or already-consumed token.
-    Expired entries are purged on every call.
     """
     _purge_expired()
     entry = _INVITE_TOKENS.get(token)
-    if entry is None:
-        return None
-    user_id = entry["user_id"]
-    del _INVITE_TOKENS[token]
-    return user_id
+    if entry is not None:
+        user_id = entry["user_id"]
+        del _INVITE_TOKENS[token]
+        if _persistence is not None:
+            _persistence.clear_user_invite_token(user_id)
+        return user_id
+
+    # Cache miss — check durable persistence (handles post-restart lookups).
+    if _persistence is not None:
+        record = _persistence.get_user_by_invite_token(token)
+        if record is not None:
+            user_id = record["user_id"]
+            _persistence.clear_user_invite_token(user_id)
+            return user_id
+
+    return None
 
 
 def has_pending_invite(user_id: str) -> bool:

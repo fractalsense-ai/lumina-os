@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 import uuid
 from typing import Any
 
@@ -41,7 +42,11 @@ from lumina.system_log.admin_operations import (
 )
 from lumina.system_log.commit_guard import requires_log_commit
 from lumina.core.email_sender import send_invite_email
-from lumina.core.invite_store import generate_invite_token, validate_invite_token
+from lumina.core.invite_store import (
+    generate_invite_token,
+    validate_invite_token,
+    _INVITE_TOKEN_TTL_SECONDS as _INVITE_TOKEN_TTL,
+)
 
 log = logging.getLogger("lumina-api")
 
@@ -443,8 +448,9 @@ async def invite_user(
     )
 
     token = generate_invite_token(user_id, req.username)
+    _cfg.PERSISTENCE.set_user_invite_token(user_id, token, time.time() + _INVITE_TOKEN_TTL)
     base_url = os.environ.get("LUMINA_BASE_URL", "").rstrip("/")
-    setup_url = f"{base_url}/api/auth/setup-password?token={token}"
+    setup_url = f"{base_url}/?token={token}"
 
     email_sent = False
     if req.email:

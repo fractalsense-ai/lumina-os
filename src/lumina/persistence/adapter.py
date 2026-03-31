@@ -119,6 +119,18 @@ class PersistenceAdapter(ABC):
         """Update stored password hash. Returns True if user found and updated."""
 
     @abstractmethod
+    def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
+        """Persist an invite token for a pending user.  Returns True if stored."""
+
+    @abstractmethod
+    def get_user_by_invite_token(self, token: str) -> dict[str, Any] | None:
+        """Return user record for a matching, non-expired invite token, or None."""
+
+    @abstractmethod
+    def clear_user_invite_token(self, user_id: str) -> bool:
+        """Remove the invite token from a user record.  Returns True if found."""
+
+    @abstractmethod
     def update_user_domain_roles(
         self,
         user_id: str,
@@ -325,6 +337,31 @@ class NullPersistenceAdapter(PersistenceAdapter):
         existing.update(domain_roles)
         self._users[user_id]["domain_roles"] = existing
         return {k: v for k, v in self._users[user_id].items() if k != "password_hash"}
+
+    def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
+        self.__init_users()
+        if user_id not in self._users:
+            return False
+        self._users[user_id]["invite_token"] = token
+        self._users[user_id]["invite_token_expires_at"] = expires_at
+        return True
+
+    def get_user_by_invite_token(self, token: str) -> dict[str, Any] | None:
+        import time as _time
+        self.__init_users()
+        now = _time.time()
+        for u in self._users.values():
+            if u.get("invite_token") == token and u.get("invite_token_expires_at", 0) > now:
+                return {k: v for k, v in u.items() if k != "password_hash"}
+        return None
+
+    def clear_user_invite_token(self, user_id: str) -> bool:
+        self.__init_users()
+        if user_id not in self._users:
+            return False
+        self._users[user_id].pop("invite_token", None)
+        self._users[user_id].pop("invite_token_expires_at", None)
+        return True
 
     def query_log_records(
         self,

@@ -69,6 +69,8 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             governed_modules_json = Column(Text, nullable=False, server_default="[]")
             domain_roles_json = Column(Text, nullable=False, server_default="{}")
             active = Column(Boolean, nullable=False, server_default="1")
+            invite_token = Column(String(128), nullable=True)
+            invite_token_expires_at = Column(Text, nullable=True)
             created_at_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
             updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -113,6 +115,15 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
                 )
             except Exception:
                 pass  # Column already exists
+            # Add invite_token columns to existing databases (no-op for new ones).
+            for _col_ddl in (
+                "ALTER TABLE users ADD COLUMN invite_token TEXT",
+                "ALTER TABLE users ADD COLUMN invite_token_expires_at TEXT",
+            ):
+                try:
+                    await conn.execute(text(_col_ddl))
+                except Exception:
+                    pass  # Column already exists
 
     def load_domain_physics(self, path: str) -> dict[str, Any]:
         with open(path, encoding="utf-8") as fh:
@@ -554,6 +565,51 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         self, user_id: str, domain_roles: dict[str, str]
     ) -> dict[str, Any] | None:
         return asyncio.run(self._update_user_domain_roles_async(user_id, domain_roles))
+
+    def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
+        return asyncio.run(self._set_user_invite_token_async(user_id, token, expires_at))
+
+    async def _set_user_invite_token_async(self, user_id: str, token: str, expires_at: float) -> bool:
+        from sqlalchemy import update
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                update(self._User)
+                .where(self._User.user_id == user_id)
+                .values(invite_token=token, invite_token_expires_at=expires_at)
+            )
+        return result.rowcount > 0
+
+    def get_user_by_invite_token(self, token: str) -> dict[str, Any] | None:
+        return asyncio.run(self._get_user_by_invite_token_async(token))
+
+    async def _get_user_by_invite_token_async(self, token: str) -> dict[str, Any] | None:
+        import time as _time
+        from sqlalchemy import select
+        now = _time.time()
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                select(self._User).where(
+                    self._User.invite_token == token,
+                    self._User.invite_token_expires_at > now,
+                )
+            )
+            row = result.first()
+        if row is None:
+            return None
+        return await self._get_user_async(row.user_id)
+
+    def clear_user_invite_token(self, user_id: str) -> bool:
+        return asyncio.run(self._clear_user_invite_token_async(user_id))
+
+    async def _clear_user_invite_token_async(self, user_id: str) -> bool:
+        from sqlalchemy import update
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                update(self._User)
+                .where(self._User.user_id == user_id)
+                .values(invite_token=None, invite_token_expires_at=None)
+            )
+        return result.rowcount > 0
 
     async def _update_user_domain_roles_async(
         self, user_id: str, domain_roles: dict[str, str]
