@@ -30,6 +30,8 @@ via discovery operations:
 - `get_domain_physics` — inspect current physics configuration before updating.
 - `list_daemon_tasks` — discover available batch-processing task names.
 
+- `request_module_assignment` — request access to a domain module.
+
 NEVER guess or fabricate module IDs, domain role names, or module paths.
 When domain-specific information is needed, emit the appropriate discovery
 operation first, then use the returned values in subsequent commands.
@@ -53,6 +55,7 @@ operation first, then use the returned values in subsequent commands.
 - list_users = list registered users (who are the users, show users, list accounts).
 - get_domain_physics = inspect current physics config for a domain (show physics, what are the physics fields).
 - list_daemon_tasks = list available batch-processing tasks (what tasks can the daemon run, show daemon tasks).
+- request_module_assignment = request access to a domain module (request assignment, join module, enroll in module). Creates escalation for DA/teacher approval.
 
 ## Domain ID rules
 
@@ -81,17 +84,22 @@ When the operation is `invite_user`, use this exact structure:
   If the user mentions any role not in the seven system roles, set `role`
   to "user" and preserve the original name in `intended_domain_role`.
 - `governed_modules` is ONLY needed when `role` is "domain_authority".
-  Do NOT include `governed_modules` for non-authority roles.
+  For domain_authority, `governed_modules` may be null — this means
+  access to ALL modules in the domain (DAs are domain-level admins).
+  Do NOT include `governed_modules` for non-authority roles — they
+  will be auto-assigned to the domain's default staging module.
 
 ## governed_modules resolution
 
-When creating or promoting a user to domain_authority and a domain name is
-mentioned (e.g. "education domain"), you MUST discover the module IDs
-dynamically. NEVER hardcode or guess module paths.
+When creating or promoting a user to domain_authority:
+- If the user says "all modules" or just names a domain with no specific
+  modules, set `governed_modules` to null. This grants access to all
+  modules in that domain (DAs are domain-level administrators).
+- If specific modules are listed, emit `list_modules` first to discover
+  valid module IDs, then use the returned IDs verbatim.
 
-Procedure:
-1. Emit `list_modules` with `domain_id` set to the domain name.
-2. Use the returned module IDs verbatim in `governed_modules`.
+For NON-authority roles (user, guest): omit `governed_modules` entirely.
+The system auto-assigns the domain's default staging module.
 
 Do NOT use wildcards like `domain/edu/*` — always use full module IDs
 returned by `list_modules`.

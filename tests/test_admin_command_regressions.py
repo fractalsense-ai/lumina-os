@@ -147,12 +147,17 @@ def test_domain_prefix_stripped(api_module) -> None:
 
 @pytest.mark.integration
 def test_governed_modules_all_expansion(api_module, monkeypatch: pytest.MonkeyPatch) -> None:
-    """governed_modules: 'all' should expand to actual module IDs from the registry."""
+    """governed_modules: 'all' should expand to actual module IDs from the registry.
+
+    Only domain_authority may carry governed_modules; non-DA roles have it
+    stripped by _normalize_slm_command (Phase 6).
+    """
     from lumina.api import config as _cfg
     from lumina.api.routes.admin import _normalize_slm_command
 
     mock_registry = MagicMock()
     mock_registry.resolve_domain_id.return_value = "education"
+    mock_registry._prefix_to_domain = {}
     mock_registry.list_modules_for_domain.return_value = [
         {"module_id": "algebra-1", "domain_physics_path": "..."},
         {"module_id": "pre-algebra", "domain_physics_path": "..."},
@@ -164,7 +169,7 @@ def test_governed_modules_all_expansion(api_module, monkeypatch: pytest.MonkeyPa
         "target": "education",
         "params": {
             "username": "eve",
-            "role": "user",
+            "role": "domain_authority",
             "governed_modules": "all",
         },
     }
@@ -182,7 +187,7 @@ def test_governed_modules_all_string_coerced_to_list(api_module) -> None:
         "target": "frank",
         "params": {
             "username": "frank",
-            "role": "user",
+            "role": "domain_authority",
             "governed_modules": "some_module",
         },
     }

@@ -1,0 +1,31 @@
+{
+  "id": "domain/edu/general-education/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Education Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_education_lead_001"
+  },
+  "meta_authority_id": "domain/edu/curriculum/v1",
+  "description": "General Education — default staging module for users who have not yet been assigned to a specific curriculum module. Users in this module can browse domain information, request module assignments, and interact with general domain resources. No subject-specific invariants or standing orders apply.",
+  "department": "General",
+  "lumina_core_version": "1.0.0",
+  "invariants": [],
+  "standing_orders": [],
+  "artifact_sequence": [],
+  "domain_step_params": {
+    "window_turns": 10,
+    "drift_threshold": 0.5
+  },
+  "subsystem_configs": {
+    "governance": {
+      "domain_role_aliases": {
+        "student": "user",
+        "teacher": "it_support",
+        "teaching_assistant": "it_support",
+        "parent": "user",
+        "observer": "guest"
+      }
+    }
+  }
+}

@@ -484,6 +484,7 @@ _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "list_domains", "list_modules", "list_commands",
     "list_domain_rbac_roles", "get_domain_module_manifest",
     "list_users", "get_domain_physics", "list_daemon_tasks",
+    "request_module_assignment",
 })
 
 _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
@@ -515,6 +516,7 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "list_users": "it_support",
     "get_domain_physics": "domain_authority",
     "list_daemon_tasks": "domain_authority",
+    "request_module_assignment": "user",
 }
 
 _FALLBACK_DOMAIN_ROLE_ALIASES: dict[str, str] = {
@@ -599,7 +601,42 @@ def _get_min_role_policy() -> dict[str, str]:
 
 
 def _get_domain_role_aliases() -> dict[str, str]:
-    return _load_governance_config()["domain_role_aliases"]
+    """Dynamically aggregate domain role → system role mappings.
+
+    Scans all modules across all domains, reading the ``domain_roles.roles``
+    block for ``maps_to_system_role``.  Falls back to the static governance
+    config ``domain_role_aliases`` if no dynamic roles are found.
+    """
+    aliases: dict[str, str] = {}
+    try:
+        for dom in _cfg.DOMAIN_REGISTRY.list_domains():
+            dom_id = dom.get("domain_id", "")
+            if not dom_id:
+                continue
+            modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(dom_id)
+            for mod in modules:
+                dp_path = mod.get("domain_physics_path", "")
+                if not dp_path:
+                    continue
+                try:
+                    dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
+                    dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
+                    for role in dp_data.get("domain_roles", {}).get("roles", []):
+                        if isinstance(role, dict) and role.get("role_id"):
+                            aliases[role["role_id"]] = role.get(
+                                "maps_to_system_role", "user"
+                            )
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    # Fall back to static governance config if nothing found dynamically
+    if not aliases:
+        try:
+            aliases = _load_governance_config().get("domain_role_aliases", {})
+        except Exception:
+            pass
+    return aliases
 
 
 # Legacy aliases for backwards compatibility (used in tests and elsewhere).
@@ -705,10 +742,12 @@ def _normalize_slm_command(parsed_command: dict[str, Any]) -> dict[str, Any]:
                     params[role_key] = "user"
                 else:
                     params[role_key] = "user"
-                # When we inferred the role (SLM omitted it), also clean up
-                # governed_modules — non-authority roles don't need it.
-                if params.get(role_key) != "domain_authority":
-                    params.pop("governed_modules", None)
+
+            # ── Strip governed_modules for non-DA roles unconditionally ──
+            # The SLM frequently hallucinates governed_modules for student/user
+            # invites.  Only domain_authority should ever have governed_modules.
+            if params.get(role_key) != "domain_authority":
+                params.pop("governed_modules", None)
 
         # ── governed_modules: may appear at top level or inside params ──
         if "governed_modules" not in params and cmd.get("governed_modules"):
@@ -999,6 +1038,24 @@ async def _execute_admin_operation(
             raise HTTPException(status_code=422, detail="user_id, module_id, and domain_role required")
         if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
+        # Validate role_id against the module's actual domain_roles block
+        try:
+            _mod_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(module_id)
+            _mod_runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(_mod_domain)
+            _dp_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _mod_runtime["domain_physics_path"]
+            _dp_data = json.loads(_dp_path.read_text(encoding="utf-8"))
+            _valid_roles = [
+                r.get("role_id") for r in (_dp_data.get("domain_roles", {}).get("roles") or [])
+                if isinstance(r, dict) and r.get("role_id")
+            ]
+            if _valid_roles and domain_role not in _valid_roles:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Unknown domain role {domain_role!r} for module {module_id!r}. "
+                    f"Valid roles: {_valid_roles}. Use list_domain_rbac_roles to discover.",
+                )
+        except (DomainNotFoundError, FileNotFoundError, KeyError):
+            pass  # Module not in registry or no physics file — allow assignment
         target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, target_user_id)
         if target is None:
             raise HTTPException(status_code=404, detail="User not found")
@@ -1181,8 +1238,12 @@ async def _execute_admin_operation(
             raise HTTPException(status_code=403, detail="Only root, it_support, or domain_authority can invite users")
         username = str(params.get("username", parsed.get("target", "")))
         role = str(params.get("role", "user"))
-        governed_modules_raw = params.get("governed_modules", [])
-        governed_modules: list[str] = list(governed_modules_raw) if governed_modules_raw else []
+        governed_modules_raw = params.get("governed_modules")
+        # None / absent means "all modules" for DA; [] means explicitly empty; present list → validate
+        if governed_modules_raw is None:
+            governed_modules = None  # explicit null or absent = all modules for DA
+        else:
+            governed_modules: list[str] = list(governed_modules_raw) if governed_modules_raw else []
         email = str(params.get("email", "")) or None
 
         # Validate governed_modules against real module IDs (only when
@@ -1204,10 +1265,14 @@ async def _execute_admin_operation(
             raise HTTPException(status_code=422, detail="username required")
         if role not in VALID_ROLES:
             raise HTTPException(status_code=400, detail=f"Invalid role: {role}")
-        if role == "domain_authority" and not governed_modules:
+        # domain_authority with governed_modules=None means access to ALL
+        # modules in their domain. This is intentional — DAs are the
+        # subject-matter experts / domain administrators.
+        # An explicit empty list [] is rejected — use None for "all".
+        if role == "domain_authority" and governed_modules is not None and len(governed_modules) == 0:
             raise HTTPException(
                 status_code=400,
-                detail="governed_modules is required when role is domain_authority",
+                detail="governed_modules is required when role is domain_authority (use null for all modules)",
             )
 
         # DA-scoped invite: domain_authority can only invite "user" role within their governed modules
@@ -1228,12 +1293,46 @@ async def _execute_admin_operation(
         if existing is not None:
             raise HTTPException(status_code=409, detail="Username already taken")
 
+        # ── Auto-assign default module for non-DA users without modules ──
+        # When a user is invited without governed_modules and there is a
+        # domain context (from intended_domain_role or the current session),
+        # assign the domain's default staging module so the user has at least
+        # one module to land in.
+        if role != "domain_authority" and not governed_modules and _cfg.DOMAIN_REGISTRY is not None:
+            _idr = params.get("intended_domain_role", "")
+            _domain_hint = params.get("domain_id", "")
+            # Try to resolve domain from intended_domain_role context
+            if not _domain_hint and _idr:
+                # intended_domain_role might be "student", "teacher" etc.
+                # — not a domain ID.  But domain context may come from
+                # the SLM's target or domain_id param.
+                pass
+            if _domain_hint:
+                try:
+                    _resolved_dom = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_domain_hint)
+                    _default_mod = _cfg.DOMAIN_REGISTRY.get_default_module_id(_resolved_dom)
+                    if _default_mod:
+                        governed_modules = [_default_mod]
+                except Exception:
+                    pass
+
         import uuid as _uuid_mod
         new_user_id = str(_uuid_mod.uuid4())
         await run_in_threadpool(
             _cfg.PERSISTENCE.create_user,
             new_user_id, username, "", role, governed_modules or None, False,
         )
+
+        # ── Pre-assign domain role so it's ready when the user activates ──
+        _intended_dr = params.get("intended_domain_role", "")
+        if _intended_dr and governed_modules:
+            _dr_map = {mod: _intended_dr for mod in governed_modules}
+            try:
+                await run_in_threadpool(
+                    _cfg.PERSISTENCE.update_user_domain_roles, new_user_id, _dr_map,
+                )
+            except Exception:
+                log.debug("Could not pre-assign domain role for %s", new_user_id)
 
         invite_token = generate_invite_token(new_user_id, username)
         _cfg.PERSISTENCE.set_user_invite_token(new_user_id, invite_token, time.time() + _INVITE_TOKEN_TTL)
@@ -1323,7 +1422,7 @@ async def _execute_admin_operation(
             resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
         except DomainNotFoundError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
-        # Collect domain_role_aliases from all physics files in the domain
+        # Collect domain_roles from the actual domain_roles.roles block
         modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved)
         domain_roles: dict[str, Any] = {}
         for mod in modules:
@@ -1333,12 +1432,22 @@ async def _execute_admin_operation(
             try:
                 dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
                 dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
-                governance = dp_data.get("subsystem_configs", {}).get("governance", {})
-                aliases = governance.get("domain_role_aliases", {})
-                if aliases:
+                dr_block = dp_data.get("domain_roles", {})
+                roles_list = dr_block.get("roles", [])
+                if roles_list:
                     domain_roles[mod["module_id"]] = {
-                        "roles": list(aliases.keys()),
-                        "maps_to_system_role": aliases,
+                        "roles": [
+                            {
+                                "role_id": r.get("role_id"),
+                                "role_name": r.get("role_name"),
+                                "hierarchy_level": r.get("hierarchy_level"),
+                                "maps_to_system_role": r.get("maps_to_system_role"),
+                                "default_access": r.get("default_access"),
+                                "scoped_capabilities": r.get("scoped_capabilities", {}),
+                            }
+                            for r in roles_list
+                            if isinstance(r, dict)
+                        ],
                     }
             except Exception:
                 log.debug("Could not read domain physics for %s", mod.get("module_id"))
@@ -1444,6 +1553,65 @@ async def _execute_admin_operation(
             "count": len(task_list),
             "daemon_state": status.get("state", "UNKNOWN"),
             "daemon_enabled": status.get("enabled", False),
+        }
+
+    elif operation == "request_module_assignment":
+        # Creates an escalation record for a domain authority / teacher to approve.
+        domain_id = str(params.get("domain_id", ""))
+        module_id = str(params.get("module_id", ""))
+        reason = str(params.get("reason", "")) or "User requested module assignment"
+
+        if not domain_id:
+            raise HTTPException(status_code=422, detail="domain_id is required")
+        if not module_id:
+            raise HTTPException(status_code=422, detail="module_id is required")
+
+        # Resolve and validate domain + module
+        try:
+            resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+        _mods = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved_domain)
+        _valid_mod_ids = {m["module_id"] for m in _mods}
+        if module_id not in _valid_mod_ids:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown module_id: {module_id}. Valid modules: {sorted(_valid_mod_ids)}",
+            )
+
+        # Build an escalation record for the DA / teacher to resolve
+        import uuid as _uuid_mod
+        escalation_id = str(_uuid_mod.uuid4())
+        escalation_record = {
+            "record_type": "EscalationRecord",
+            "escalation_id": escalation_id,
+            "session_id": user_data.get("session_id", "admin"),
+            "actor_id": user_data["sub"],
+            "domain_id": resolved_domain,
+            "module_id": module_id,
+            "escalation_type": "module_assignment_request",
+            "summary": f"User {user_data.get('username', user_data['sub'])} requests assignment to {module_id}",
+            "reason": reason,
+            "status": "open",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        try:
+            _cfg.PERSISTENCE.append_log_record(
+                "admin", escalation_record,
+                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            )
+        except Exception:
+            log.debug("Could not write module_assignment_request escalation")
+
+        result = {
+            "operation": operation,
+            "escalation_id": escalation_id,
+            "domain_id": resolved_domain,
+            "module_id": module_id,
+            "status": "pending_approval",
+            "message": f"Module assignment request submitted. A domain authority for '{resolved_domain}' will review this request.",
         }
 
     else:

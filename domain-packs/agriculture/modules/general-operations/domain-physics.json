@@ -1,0 +1,29 @@
+{
+  "id": "domain/agri/general-operations/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Agriculture Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_agriculture_lead_001"
+  },
+  "meta_authority_id": "domain/agri/operations/v1",
+  "description": "General Operations — default staging module for users who have not yet been assigned to a specific operations module. Users in this module can browse domain information, request module assignments, and interact with general domain resources. No operational invariants or standing orders apply.",
+  "department": "General",
+  "lumina_core_version": "1.0.0",
+  "invariants": [],
+  "standing_orders": [],
+  "artifact_sequence": [],
+  "domain_step_params": {
+    "window_turns": 10,
+    "drift_threshold": 0.5
+  },
+  "subsystem_configs": {
+    "governance": {
+      "domain_role_aliases": {
+        "field_operator": "user",
+        "site_manager": "it_support",
+        "observer": "guest"
+      }
+    }
+  }
+}

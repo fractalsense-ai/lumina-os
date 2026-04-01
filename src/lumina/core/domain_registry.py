@@ -265,7 +265,13 @@ class DomainRegistry:
         if requested and requested in self._domains:
             return requested
 
-        if requested and requested not in self._domains:
+        if not requested:
+            # Fall back to the configured default domain
+            if self._default_domain:
+                return self._default_domain
+            return None  # type: ignore[return-value]
+
+        if requested not in self._domains:
             # Try prefix lookup (e.g. "edu" → "education")
             resolved = self._prefix_to_domain.get(requested)
             if resolved:
@@ -287,6 +293,49 @@ class DomainRegistry:
                     return resolved
 
             raise DomainNotFoundError(requested, list(self._domains.keys()))
+
+    def get_default_module_id(self, domain_id: str) -> str | None:
+        """Return the default (staging) module ID for a domain, if configured.
+
+        Reads ``default_module`` from the domain's ``pack.yaml``, then
+        searches the runtime config's ``module_map`` for the matching module
+        to return its full module ID (e.g. ``domain/edu/general-education/v1``).
+        Returns ``None`` if no default module is configured.
+        """
+        entry = self._domains.get(domain_id)
+        if entry is None:
+            return None
+
+        # Derive pack.yaml path from runtime_config_path
+        cfg_path = entry.get("runtime_config_path", "")
+        if not cfg_path:
+            return None
+        # runtime_config_path is like "domain-packs/education/cfg/runtime-config.yaml"
+        # pack.yaml is at "domain-packs/education/pack.yaml"
+        cfg_dir = Path(cfg_path).parent.parent  # go up from cfg/ to domain root
+        pack_path = self._repo_root / cfg_dir / "pack.yaml"
+        if not pack_path.exists():
+            return None
+
+        try:
+            pack_data = load_yaml(str(pack_path))
+            default_module_name = pack_data.get("default_module")
+            if not default_module_name:
+                return None
+        except Exception:
+            return None
+
+        # Find the full module ID in module_map that contains the default_module name
+        runtime_raw = load_yaml(str(self._repo_root / cfg_path))
+        runtime_block = runtime_raw.get("runtime") or runtime_raw
+        module_map = runtime_block.get("module_map") or {}
+        for mod_id in module_map:
+            # Match by module name segment, e.g. "general-education" in
+            # "domain/edu/general-education/v1"
+            if default_module_name in mod_id:
+                return mod_id
+
+        return None
 
         if self._default_domain:
             return self._default_domain

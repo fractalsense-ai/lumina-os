@@ -88,14 +88,20 @@ async def run_tool(
         domain_physics_path = runtime["domain_physics_path"]
         domain = await run_in_threadpool(_cfg.PERSISTENCE.load_domain_physics, str(domain_physics_path))
         module_perms = domain.get("permissions")
-        if module_perms and not check_permission(
-            user_id=user["sub"],
-            user_role=user["role"],
-            module_permissions=module_perms,
-            operation=Operation.EXECUTE,
-            groups_config=domain.get("groups"),
-        ):
-            raise HTTPException(status_code=403, detail="Module access denied")
+        if module_perms:
+            user_domain_roles = user.get("domain_roles") or {}
+            mod_id = runtime.get("module_id", resolved)
+            user_dr = user_domain_roles.get(mod_id) or user_domain_roles.get(resolved)
+            if not check_permission(
+                user_id=user["sub"],
+                user_role=user["role"],
+                module_permissions=module_perms,
+                operation=Operation.EXECUTE,
+                domain_role=user_dr,
+                domain_roles_config=domain.get("domain_roles"),
+                groups_config=domain.get("groups"),
+            ):
+                raise HTTPException(status_code=403, detail="Module access denied")
     try:
         result = await run_in_threadpool(invoke_runtime_tool, tool_id, req.payload, runtime)
     except Exception as exc:

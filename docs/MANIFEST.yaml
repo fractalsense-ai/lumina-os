@@ -934,6 +934,13 @@ artifacts:
     last_updated: 2026-03-31
     sha256: 46d7c1b8b447bece7e715b03fbe4208ed46bd2217da8468ffbc428630857e49f
 
+  - path: standards/admin-command-schemas/request-module-assignment.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-31
+    sha256: 010e92e3c66710edeecdb15e388ec802229d0a011ae965b8104a423bb713ab3d
+
   - path: standards/admin-command-schemas/reject-ingestion.json
     type: schema
     doc_version: 1.0.0

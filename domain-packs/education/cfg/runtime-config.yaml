@@ -19,6 +19,8 @@ runtime:
   # Module routing: maps a student profile's domain_id to the correct domain-physics file.
   # The static domain_physics_path above is the default fallback for sessions without a domain_id.
   module_map:
+    domain/edu/general-education/v1:
+      domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
     domain/edu/pre-algebra/v1:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
     domain/edu/algebra-intro/v1:

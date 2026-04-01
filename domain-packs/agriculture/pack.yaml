@@ -6,9 +6,7 @@
 
 pack_id: agriculture
 version: "0.1.0"
-description: >-
-  Agricultural operations domain — signal monitoring, variance reporting,
-  and operational decision support for field-level activities.
+description: "Agricultural operations domain — signal monitoring, variance reporting, and operational decision support for field-level activities."
 
 # ── HMVC Layer Map ────────────────────────────────────────────────────
 layers:
@@ -26,7 +24,12 @@ layers:
 
 # ── Modules ───────────────────────────────────────────────────────────
 modules:
+  - general-operations
   - operations-level-1
+
+# ── Default Module ────────────────────────────────────────────────────
+# Users invited without a specific module assignment land here.
+default_module: general-operations
 
 # ── Entry Points ──────────────────────────────────────────────────────
 entry_points:

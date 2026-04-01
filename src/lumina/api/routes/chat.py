@@ -33,6 +33,7 @@ def _get_accessible_domain_ids(
         return list(routing_map.keys())
 
     accessible: list[str] = []
+    user_domain_roles = user.get("domain_roles") or {}
     for domain_id in routing_map:
         try:
             runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(domain_id)
@@ -42,11 +43,16 @@ def _get_accessible_domain_ids(
             if module_perms is None:
                 accessible.append(domain_id)
                 continue
+            # Resolve the user's domain role for this module
+            mod_id = runtime.get("module_id", domain_id)
+            user_dr = user_domain_roles.get(mod_id) or user_domain_roles.get(domain_id)
             if check_permission(
                 user_id=user["sub"],
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                domain_role=user_dr,
+                domain_roles_config=domain.get("domain_roles"),
                 groups_config=domain.get("groups"),
             ):
                 accessible.append(domain_id)
@@ -136,11 +142,16 @@ async def chat(
         domain = await run_in_threadpool(_cfg.PERSISTENCE.load_domain_physics, str(domain_physics_path))
         module_perms = domain.get("permissions")
         if module_perms:
+            user_domain_roles = user.get("domain_roles") or {}
+            mod_id = runtime.get("module_id", resolved_domain_id)
+            user_dr = user_domain_roles.get(mod_id) or user_domain_roles.get(resolved_domain_id)
             has_access = check_permission(
                 user_id=user["sub"],
                 user_role=user["role"],
                 module_permissions=module_perms,
                 operation=Operation.EXECUTE,
+                domain_role=user_dr,
+                domain_roles_config=domain.get("domain_roles"),
                 groups_config=domain.get("groups"),
             )
             if not has_access:

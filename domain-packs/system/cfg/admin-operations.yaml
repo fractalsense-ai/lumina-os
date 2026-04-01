@@ -168,3 +168,10 @@ operations:
     description: "Retrieve a domain's full module manifest including module IDs, labels, and versions. Use this to discover valid module IDs before referencing them."
     params:
       domain_id: "string — target domain identifier"
+
+  - name: request_module_assignment
+    description: "Request assignment to a specific domain module. Creates a HITL escalation for the module's domain authority or assigned teacher to approve. Used when a user needs access to a module they are not currently assigned to."
+    params:
+      domain_id: "string — target domain identifier"
+      module_id: "string — module to request assignment to"
+      reason: "string — brief reason for the assignment request (optional)"

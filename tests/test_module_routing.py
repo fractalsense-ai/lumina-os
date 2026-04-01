@@ -25,9 +25,10 @@ _EXPECTED_MODULE_IDS = [
     "domain/edu/algebra-1/v1",
 ]
 
-# All module_map entries (includes the legacy module added for explicit routing)
+# All module_map entries (includes the legacy module and default staging module)
 _ALL_MODULE_MAP_IDS = _EXPECTED_MODULE_IDS + [
     "domain/edu/algebra-level-1/v1",
+    "domain/edu/general-education/v1",
 ]
 
 _EXPECTED_SCHEMA_IDS = {
@@ -69,9 +70,9 @@ class TestModuleMapStructure:
             "runtime-config.yaml missing 'module_map' under runtime:"
         )
 
-    def test_module_map_has_four_entries(self, module_map):
-        assert len(module_map) == 4, (
-            f"Expected 4 module_map entries, got {len(module_map)}: {list(module_map.keys())}"
+    def test_module_map_has_five_entries(self, module_map):
+        assert len(module_map) == 5, (
+            f"Expected 5 module_map entries, got {len(module_map)}: {list(module_map.keys())}"
         )
 
     @pytest.mark.parametrize("domain_id", _ALL_MODULE_MAP_IDS)

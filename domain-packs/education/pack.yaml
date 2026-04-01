@@ -6,10 +6,7 @@
 
 pack_id: education
 version: "0.1.0"
-description: >-
-  Adaptive maths tutoring domain — algebra sequence from pre-algebra
-  through algebra-1, with ZPD tracking, fluency monitoring, and optional
-  world-sim persona theming.
+description: "Adaptive maths tutoring domain — algebra sequence from pre-algebra through algebra-1, with ZPD tracking, fluency monitoring, and optional world-sim persona theming."
 
 # ── HMVC Layer Map ────────────────────────────────────────────────────
 layers:
@@ -42,10 +39,15 @@ layers:
 
 # ── Modules ───────────────────────────────────────────────────────────
 modules:
+  - general-education
   - pre-algebra
   - algebra-intro
   - algebra-level-1
   - algebra-1
+
+# ── Default Module ────────────────────────────────────────────────────
+# Users invited without a specific module assignment land here.
+default_module: general-education
 
 # ── Entry Points ──────────────────────────────────────────────────────
 entry_points:

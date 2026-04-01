@@ -413,7 +413,7 @@ async def invite_user(
     activate the account.  No password is accepted in this request.
 
     Required roles: ``root``, ``it_support``.
-    ``governed_modules`` is required when ``role == "domain_authority"``.
+    ``governed_modules`` is optional for domain_authority (null = all modules).
     """
     current = await get_current_user(credentials)
     user_data = require_auth(current)
@@ -425,11 +425,9 @@ async def invite_user(
     if not req.username:
         raise HTTPException(status_code=400, detail="username is required")
 
-    if req.role == "domain_authority" and not req.governed_modules:
-        raise HTTPException(
-            status_code=400,
-            detail="governed_modules is required when role is domain_authority",
-        )
+    # domain_authority with governed_modules=None means access to ALL
+    # modules in their domain. This is intentional — DAs are the
+    # subject-matter experts / domain administrators.
 
     existing = await run_in_threadpool(_cfg.PERSISTENCE.get_user_by_username, req.username)
     if existing is not None:

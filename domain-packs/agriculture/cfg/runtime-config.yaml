@@ -6,6 +6,12 @@ runtime:
   domain_physics_path: domain-packs/agriculture/modules/operations-level-1/domain-physics.json
   subject_profile_path: domain-packs/agriculture/modules/operations-level-1/example-subject.yaml
 
+  module_map:
+    domain/agri/general-operations/v1:
+      domain_physics_path: domain-packs/agriculture/modules/general-operations/domain-physics.json
+    domain/agri/operations-level-1/v1:
+      domain_physics_path: domain-packs/agriculture/modules/operations-level-1/domain-physics.json
+
   access_control:
     required_role: user
     allowed_roles:

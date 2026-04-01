@@ -174,17 +174,17 @@ class TestInviteEndpoint:
         assert user["active"] is False
         assert user["password_hash"] == ""
 
-    def test_invite_domain_authority_requires_governed_modules(
+    def test_invite_domain_authority_without_governed_modules_succeeds(
         self, client: TestClient
     ) -> None:
+        """DA with null governed_modules = access to ALL modules (Phase 6)."""
         root_token = _register_root(client)
         resp = client.post(
             "/api/auth/invite",
             json={"username": "da-nomod", "role": "domain_authority"},
             headers=_auth(root_token),
         )
-        assert resp.status_code == 400
-        assert "governed_modules" in resp.json()["detail"].lower()
+        assert resp.status_code == 200
 
     def test_invite_domain_authority_with_modules_succeeds(
         self, client: TestClient, api_module: Any

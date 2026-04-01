@@ -114,13 +114,30 @@ async def assign_domain_role(
     if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
-    # Validate that the requested role_id is known
-    if get_domain_role_def(req.domain_role) is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown domain role: {req.domain_role!r}. "
-            "Use GET /api/domain-roles/defaults to list valid role IDs.",
+    # Validate that the requested role_id is known for this module
+    try:
+        mod_resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(module_id)
+        mod_runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(mod_resolved)
+        mod_physics = await run_in_threadpool(
+            _cfg.PERSISTENCE.load_domain_physics, mod_runtime["domain_physics_path"]
         )
+        active_roles = get_active_role_defs(mod_physics)
+        valid_ids = [r["role_id"] for r in active_roles if "role_id" in r]
+        if valid_ids and req.domain_role not in valid_ids:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown domain role: {req.domain_role!r}. "
+                f"Valid roles for {module_id}: {valid_ids}. "
+                "Use GET /api/domain-roles/{module_id} to list.",
+            )
+    except DomainNotFoundError:
+        # Module not in domain registry — fall back to generic defaults
+        if get_domain_role_def(req.domain_role) is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown domain role: {req.domain_role!r}. "
+                "Use GET /api/domain-roles/defaults to list valid role IDs.",
+            )
 
     target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, req.user_id)
     if target is None:

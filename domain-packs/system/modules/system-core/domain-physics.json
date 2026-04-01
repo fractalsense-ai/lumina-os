@@ -368,7 +368,8 @@
         "get_domain_module_manifest",
         "list_users",
         "get_domain_physics",
-        "list_daemon_tasks"
+        "list_daemon_tasks",
+        "request_module_assignment"
       ],
       "hitl_policy": {
         "system_exempt": [
@@ -415,17 +416,8 @@
         "invite_user": "it_support",
         "list_users": "it_support",
         "get_domain_physics": "domain_authority",
-        "list_daemon_tasks": "domain_authority"
-      },
-      "domain_role_aliases": {
-        "student": "user",
-        "teacher": "user",
-        "teaching_assistant": "user",
-        "parent": "user",
-        "observer": "user",
-        "field_operator": "user",
-        "site_manager": "user",
-        "ta": "user"
+        "list_daemon_tasks": "domain_authority",
+        "request_module_assignment": "user"
       }
     }
   }

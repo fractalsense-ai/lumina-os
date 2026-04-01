@@ -1,0 +1,36 @@
+{
+  "$id": "lumina://admin-command-schemas/request-module-assignment",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-03-31",
+  "type": "object",
+  "title": "request_module_assignment",
+  "description": "Request assignment to a specific domain module. Creates a HITL escalation for the module's domain authority to approve.",
+  "properties": {
+    "operation": {
+      "const": "request_module_assignment"
+    },
+    "target": {
+      "type": "string",
+      "description": "Module or domain identifier (informational)"
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "description": "Target domain identifier"
+        },
+        "module_id": {
+          "type": "string",
+          "description": "Module to request assignment to"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Brief reason for the assignment request"
+        }
+      },
+      "required": ["domain_id", "module_id"]
+    }
+  },
+  "required": ["operation", "params"]
+}
