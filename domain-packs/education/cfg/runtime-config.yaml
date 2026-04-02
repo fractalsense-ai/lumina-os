@@ -11,6 +11,7 @@ runtime:
   domain_profile_extension_path: domain-packs/education/cfg/domain-profile-extension.yaml
   profile_templates:
     default: domain-packs/education/profiles/student.yaml
+    domain_authority: domain-packs/education/profiles/domain_authority.yaml
     teacher: domain-packs/education/profiles/teacher.yaml
     teaching_assistant: domain-packs/education/profiles/teaching_assistant.yaml
     student: domain-packs/education/profiles/student.yaml

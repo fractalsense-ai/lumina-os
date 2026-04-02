@@ -734,6 +734,14 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
 
         # ── invite_user: infer missing role from intended_domain_role ──
         if operation == "invite_user":
+            # ── Reject system roles leaked into intended_domain_role ──
+            # The SLM sometimes puts system roles ("user", "domain_authority")
+            # into intended_domain_role.  That field is exclusively for
+            # domain-specific roles like "student", "teacher", etc.
+            _idr_raw = params.get("intended_domain_role", "")
+            if _idr_raw and _idr_raw in VALID_ROLES:
+                params["intended_domain_role"] = None
+
             if not params.get(role_key):
                 _idr = params.get("intended_domain_role", "")
                 if _idr and _idr in _get_domain_role_aliases():

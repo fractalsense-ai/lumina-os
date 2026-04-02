@@ -122,8 +122,8 @@ def _resolve_user_profile_path(user_id: str, domain_key: str) -> Path:
 # ── Default system-role → domain-role mapping ───────────────
 # Used when the JWT has no explicit domain_roles claim for the target domain.
 _SYSTEM_ROLE_TO_DOMAIN_ROLE: dict[str, str] = {
-    "root": "teacher",
-    "domain_authority": "teacher",
+    "root": "domain_authority",
+    "domain_authority": "domain_authority",
     "it_support": "teacher",
     "qa": "student",
     "auditor": "student",

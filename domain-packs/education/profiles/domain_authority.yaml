@@ -1,0 +1,28 @@
+# Domain Authority Role Profile Extension — Education Domain
+# ============================================================
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+# Full domain management capabilities: escalation oversight,
+# teacher/module management, and domain-wide monitoring.
+# Domain authorities inherit all teacher capabilities and add
+# domain-level administrative functions.
+# ============================================================
+
+preferences:
+  explanation_style: technical
+
+educator_state:
+  assigned_students: []
+  assigned_rooms: []
+  escalation_preferences:
+    receive_escalations: true
+    auto_defer_minutes: null
+  active_standing_order_overrides: {}
+
+management_state:
+  domain_overview_enabled: true
+  manage_teachers: true
+  manage_modules: true
+  view_all_progress: true
+  modify_standing_orders: true
+  trigger_logic_scrape: true
+  test_as_role: true

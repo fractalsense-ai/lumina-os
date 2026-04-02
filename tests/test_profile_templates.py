@@ -189,6 +189,12 @@ class TestEnsureUserProfile:
             "educator_state": {"assigned_students": []},
         }), encoding="utf-8")
 
+        domain_authority = layers / "domain_authority.yaml"
+        domain_authority.write_text(yaml.safe_dump({
+            "educator_state": {"assigned_students": []},
+            "management_state": {"domain_overview_enabled": True},
+        }), encoding="utf-8")
+
         flat_template = layers / "flat.yaml"
         flat_template.write_text(yaml.safe_dump({
             "student_id": None, "domain_id": "domain/edu/algebra-level-1/v1",
@@ -201,6 +207,7 @@ class TestEnsureUserProfile:
             "domain": str(domain_ext),
             "student": str(student),
             "teacher": str(teacher),
+            "domain_authority": str(domain_authority),
             "flat_template": str(flat_template),
         }
 
@@ -253,6 +260,7 @@ class TestEnsureUserProfile:
                 "default": profile_env["student"],
                 "student": profile_env["student"],
                 "teacher": profile_env["teacher"],
+                "domain_authority": profile_env["domain_authority"],
             },
         }
         path = _ensure_user_profile(
@@ -261,8 +269,9 @@ class TestEnsureUserProfile:
             runtime=runtime, domain_role=None, system_role="domain_authority",
         )
         profile = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-        # domain_authority maps to teacher
+        # domain_authority maps to domain_authority profile
         assert "educator_state" in profile
+        assert "management_state" in profile
         assert "learning_state" not in profile
 
     def test_backward_compat_flat_copy(self, profile_env):
@@ -369,9 +378,12 @@ class TestSystemRoleMapping:
         expected_roles = {"root", "domain_authority", "it_support", "qa", "auditor", "user"}
         assert set(_SYSTEM_ROLE_TO_DOMAIN_ROLE.keys()) == expected_roles
 
-    def test_authority_roles_map_to_teacher(self):
-        for role in ("root", "domain_authority", "it_support"):
-            assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "teacher"
+    def test_authority_roles_map_to_domain_authority(self):
+        for role in ("root", "domain_authority"):
+            assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "domain_authority"
+
+    def test_support_roles_map_to_teacher(self):
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["it_support"] == "teacher"
 
     def test_regular_roles_map_to_student(self):
         for role in ("qa", "auditor", "user"):

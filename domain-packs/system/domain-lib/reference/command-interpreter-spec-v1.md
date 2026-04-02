@@ -105,12 +105,20 @@ When the operation is `invite_user`, use this exact structure:
 
 ### invite_user examples
 
+**IMPORTANT**: `intended_domain_role` is for domain-specific roles only
+(any role not in the seven system roles). System roles like
+`domain_authority`, `user`, `root` MUST NEVER appear in
+`intended_domain_role`. When the user says "domain authority", set
+`role: "domain_authority"` and leave `intended_domain_role` null —
+domain_authority is a system role, not a domain role.
+
 | User instruction | Correct params |
 |---|---|
 | "create user Clanker4 as a student in the education domain" | `{"username": "Clanker4", "role": "user", "intended_domain_role": "student", "domain_id": "education"}` |
 | "invite Alice as a teacher in edu" | `{"username": "Alice", "role": "user", "intended_domain_role": "teacher", "domain_id": "education"}` |
 | "add a new user Bob" | `{"username": "Bob", "role": "user"}` |
-| "create a domain authority for agriculture" | `{"username": "...", "role": "domain_authority", "governed_modules": null, "domain_id": "agriculture"}` |
+| "create a domain authority for agriculture" | `{"username": "...", "role": "domain_authority", "domain_id": "agriculture"}` |
+| "create TestAuthority as a domain authority in education" | `{"username": "TestAuthority", "role": "domain_authority", "domain_id": "education"}` |
 
 ## governed_modules resolution
 

@@ -498,6 +498,24 @@
     "schema_version": "1.0",
     "roles": [
       {
+        "role_id": "domain_authority",
+        "role_name": "Domain Authority",
+        "hierarchy_level": 0,
+        "description": "Domain-level administrator with full oversight of the education domain. Inherits all teacher capabilities and adds domain-wide management: teacher roster, module assignments, standing-order modifications, and logic-scrape triggers.",
+        "maps_to_system_role": "domain_authority",
+        "default_access": "rwx",
+        "may_assign_domain_roles": true,
+        "max_assignable_level": 3,
+        "scoped_capabilities": {
+          "receive_escalations": true,
+          "modify_standing_orders": true,
+          "view_all_student_progress": true,
+          "trigger_logic_scrape": true,
+          "manage_teachers": true,
+          "assign_modules": true
+        }
+      },
+      {
         "role_id": "teacher",
         "role_name": "Teacher",
         "hierarchy_level": 1,
@@ -577,7 +595,7 @@
     "educators": {
       "description": "Teaching staff with group-level permissions on education modules.",
       "members": {
-        "domain_roles": ["teacher", "teaching_assistant"]
+        "domain_roles": ["domain_authority", "teacher", "teaching_assistant"]
       }
     },
     "learners": {

@@ -20,6 +20,7 @@
   "subsystem_configs": {
     "governance": {
       "domain_role_aliases": {
+        "domain_authority": "domain_authority",
         "student": "user",
         "teacher": "it_support",
         "teaching_assistant": "it_support",
