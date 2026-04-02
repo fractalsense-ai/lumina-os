@@ -257,6 +257,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
 
     ctx = {
         "domain_physics_path": str(domain_physics_path),
+        "module_id": domain_physics.get("id", ""),
         "subject_profile_path": str(repo_root / runtime_cfg["subject_profile_path"]),
         "default_task_spec": runtime_cfg.get("default_task_spec") or {},
         "domain_step_params": runtime_cfg.get("domain_step_params") or {},

@@ -145,6 +145,15 @@ async def chat(
             user_domain_roles = user.get("domain_roles") or {}
             mod_id = runtime.get("module_id", resolved_domain_id)
             user_dr = user_domain_roles.get(mod_id) or user_domain_roles.get(resolved_domain_id)
+            # Fallback: domain_roles are keyed by full module path
+            # (e.g. "domain/edu/general-education/v1") but mod_id may be
+            # just the domain registry key ("education").  Search for any
+            # matching entry whose key contains the resolved domain ID.
+            if not user_dr:
+                for _dr_key, _dr_val in user_domain_roles.items():
+                    if resolved_domain_id in _dr_key:
+                        user_dr = _dr_val
+                        break
             has_access = check_permission(
                 user_id=user["sub"],
                 user_role=user["role"],
