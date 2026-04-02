@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
 function getApiBase(): string {
-  return import.meta.env.VITE_API_BASE ?? ''
+  return (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
 }
 
 interface AuthState {
