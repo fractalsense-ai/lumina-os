@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Role Layout Schema v1",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-02",
+  "description": "Defines role-based UI layouts for domain packs. Each role gets a layout controlling sidebar panels and capabilities. The 'inherits' field flattens the parent chain so downstream roles compose upward.",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/definitions/role_layout"
+  },
+  "definitions": {
+    "role_layout": {
+      "type": "object",
+      "properties": {
+        "inherits": {
+          "type": "string",
+          "description": "Role ID whose panels and capabilities are inherited (flattened at resolve time)."
+        },
+        "sidebar_panels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/sidebar_panel"
+          },
+          "description": "Panels shown in the sidebar for this role. Inherited panels appear first, then these."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Capability tokens for this role. Used by the frontend to gate UI elements."
+        }
+      },
+      "required": ["sidebar_panels", "capabilities"],
+      "additionalProperties": false
+    },
+    "sidebar_panel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique panel identifier."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable panel label."
+        },
+        "component": {
+          "type": "string",
+          "description": "Frontend component name to render from the panel registry."
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Optional API endpoint for data-driven panels. Used by generic components like DataPanel."
+        }
+      },
+      "required": ["id", "label", "component"],
+      "additionalProperties": false
+    }
+  }
+}

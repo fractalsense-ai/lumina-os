@@ -21,6 +21,81 @@ log = logging.getLogger("lumina-api")
 router = APIRouter()
 
 
+# ── Role-layout resolution ──────────────────────────────────
+
+def _resolve_role_layout(
+    manifest: dict[str, Any],
+    user: dict[str, Any] | None,
+    domain: dict[str, Any],
+) -> dict[str, Any]:
+    """Flatten the ``role_layouts`` inheritance chain for the current user.
+
+    Returns a dict with ``sidebar_panels`` (list) and ``capabilities`` (list)
+    that the frontend uses to render the correct UI.  Unauthenticated
+    requests receive the most restrictive layout (student / empty).
+    """
+    from lumina.api.config import _SYSTEM_ROLE_TO_DOMAIN_ROLE
+
+    role_layouts: dict[str, Any] = manifest.get("role_layouts") or {}
+    if not role_layouts:
+        return {"sidebar_panels": [], "capabilities": [], "effective_role": None}
+
+    # Determine the user's effective domain role
+    effective_role: str | None = None
+    if user is not None:
+        system_role = user.get("role", "user")
+        # Try explicit domain_roles from JWT first
+        domain_roles_map = user.get("domain_roles") or {}
+        domain_id_prefix = domain.get("id", "")
+        for key, val in domain_roles_map.items():
+            if domain_id_prefix and domain_id_prefix in key:
+                effective_role = val
+                break
+            # Bare domain ID match (e.g. "education")
+            parts = domain_id_prefix.split("/")
+            if len(parts) >= 2 and key == parts[1]:
+                effective_role = val
+                break
+        # Fallback: map system role to domain role via domain pack config,
+        # then fall back to _SYSTEM_ROLE_TO_DOMAIN_ROLE mapping.
+        if not effective_role:
+            pack_mapping = manifest.get("system_role_to_domain_role") or {}
+            effective_role = pack_mapping.get(system_role) or _SYSTEM_ROLE_TO_DOMAIN_ROLE.get(system_role)
+
+    # No match → empty layout (no panels, no capabilities)
+    if effective_role is None or effective_role not in role_layouts:
+        return {"sidebar_panels": [], "capabilities": [], "effective_role": effective_role}
+
+    # Flatten the inherits chain (guard against cycles)
+    panels: list[dict[str, Any]] = []
+    capabilities: list[str] = []
+    seen_ids: set[str] = set()
+    visited: set[str] = set()
+    current: str | None = effective_role
+
+    while current and current not in visited:
+        visited.add(current)
+        layout = role_layouts.get(current)
+        if layout is None:
+            break
+        # Prepend inherited panels (parent panels come first)
+        for panel in reversed(layout.get("sidebar_panels") or []):
+            pid = panel.get("id", "")
+            if pid not in seen_ids:
+                panels.insert(0, panel)
+                seen_ids.add(pid)
+        for cap in layout.get("capabilities") or []:
+            if cap not in capabilities:
+                capabilities.append(cap)
+        current = layout.get("inherits")
+
+    return {
+        "sidebar_panels": panels,
+        "capabilities": capabilities,
+        "effective_role": effective_role,
+    }
+
+
 @router.get("/api/health")
 async def health() -> dict[str, Any]:
     from lumina.daemon.resource_monitor import get_status as _daemon_status
@@ -63,10 +138,15 @@ async def domain_info(
     domain_physics_path = runtime["domain_physics_path"]
     domain = _cfg.PERSISTENCE.load_domain_physics(str(domain_physics_path))
     manifest = runtime.get("ui_manifest") or {}
+
+    # ── Resolve role-based layout for the authenticated user ──
+    role_layout = _resolve_role_layout(manifest, user, domain)
+
     return {
         "domain_id": domain.get("id", "unknown"),
         "domain_version": domain.get("version", "unknown"),
         "ui_manifest": manifest,
+        "role_layout": role_layout,
     }
 
 

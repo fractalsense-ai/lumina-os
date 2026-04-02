@@ -123,11 +123,20 @@ async def list_escalations(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
+    # System roles that can always view escalations
     allowed_roles = ("root", "it_support", "qa", "auditor")
-    if user_data["role"] not in allowed_roles:
-        if user_data["role"] == "domain_authority":
-            pass
-        else:
+    is_domain_authority = user_data["role"] == "domain_authority"
+
+    # Teachers (system role "user") with receive_escalations capability
+    # can also access escalations scoped to their modules.
+    has_esc_capability = False
+    if user_data["role"] not in allowed_roles and not is_domain_authority:
+        domain_roles_map = user_data.get("domain_roles") or {}
+        for mod_id in domain_roles_map:
+            if _has_escalation_capability(user_data, mod_id):
+                has_esc_capability = True
+                break
+        if not has_esc_capability:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     records = await run_in_threadpool(
@@ -135,9 +144,16 @@ async def list_escalations(
         status=status, domain_id=domain_id, limit=limit, offset=offset,
     )
 
-    if user_data["role"] == "domain_authority":
+    if is_domain_authority:
         governed = user_data.get("governed_modules") or []
         records = [r for r in records if r.get("domain_pack_id") in governed]
+    elif has_esc_capability:
+        # Scope to modules where the user has escalation capability
+        allowed_modules = {
+            mod_id for mod_id in (user_data.get("domain_roles") or {})
+            if _has_escalation_capability(user_data, mod_id)
+        }
+        records = [r for r in records if r.get("domain_pack_id") in allowed_modules]
 
     return records
 
@@ -152,8 +168,14 @@ async def get_escalation_detail(
     user_data = require_auth(current)
 
     allowed_roles = ("root", "it_support", "qa", "auditor", "domain_authority")
-    if user_data["role"] not in allowed_roles:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    quick_pass = user_data["role"] in allowed_roles
+
+    # Users without a privileged system role must have at least one module
+    # with receive_escalations capability; reject early if not.
+    if not quick_pass:
+        domain_roles_map = user_data.get("domain_roles") or {}
+        if not any(_has_escalation_capability(user_data, m) for m in domain_roles_map):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     all_escalations = await run_in_threadpool(_cfg.PERSISTENCE.query_escalations)
     target = None
@@ -165,10 +187,14 @@ async def get_escalation_detail(
     if target is None:
         raise HTTPException(status_code=404, detail="Escalation not found")
 
+    module_id = target.get("domain_pack_id", "")
+
     if user_data["role"] == "domain_authority":
-        domain = target.get("domain_pack_id", "")
-        if not can_govern_domain(user_data, domain):
+        if not can_govern_domain(user_data, module_id):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
+    elif not quick_pass:
+        if not _has_escalation_capability(user_data, module_id):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     return target
 

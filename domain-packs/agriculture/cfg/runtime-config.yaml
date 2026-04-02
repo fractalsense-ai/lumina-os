@@ -102,6 +102,40 @@ runtime:
         roles: [root, domain_authority, it_support]
         type: table
 
+    role_layouts:
+      site_manager:
+        inherits: field_operator
+        sidebar_panels:
+          - id: escalation_queue
+            label: "Escalation Queue"
+            component: EscalationQueue
+          - id: yield_variance
+            label: "Yield Variance"
+            component: DataPanel
+            endpoint: "/api/dashboard/agriculture/yield-variance"
+          - id: field_signals
+            label: "Field Signals"
+            component: DataPanel
+            endpoint: "/api/dashboard/agriculture/field-signals"
+        capabilities:
+          - manage_operators
+          - view_all_signals
+          - resolve_escalations
+          - modify_thresholds
+      field_operator:
+        inherits: observer
+        sidebar_panels:
+          - id: field_signals
+            label: "My Field Signals"
+            component: DataPanel
+            endpoint: "/api/dashboard/agriculture/field-signals"
+        capabilities:
+          - log_observations
+          - trigger_alerts
+      observer:
+        sidebar_panels: []
+        capabilities: []
+
   deterministic_templates:
     task_presentation: "Proceed with {task_id}. Report current operating signal and any drift notes."
     more_steps_request: "Provide additional operational detail for {task_id} so we can verify tolerance."

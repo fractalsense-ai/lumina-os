@@ -62,6 +62,38 @@ runtime:
         roles: [root, it_support]
         type: metric
 
+    system_role_to_domain_role:
+      root: system_admin
+      it_support: system_operator
+
+    role_layouts:
+      system_admin:
+        inherits: system_operator
+        sidebar_panels:
+          - id: system_log
+            label: "System Log"
+            component: SystemLogPanel
+          - id: pack_integrity
+            label: "Pack Integrity"
+            component: DataPanel
+            endpoint: "/api/dashboard/system/pack-integrity"
+        capabilities:
+          - full_system_access
+          - view_all_logs
+      system_operator:
+        sidebar_panels:
+          - id: runtime_status
+            label: "Runtime Status"
+            component: DataPanel
+            endpoint: "/api/dashboard/system/runtime-status"
+          - id: log_health
+            label: "Log Health"
+            component: DataPanel
+            endpoint: "/api/dashboard/system/log-health"
+        capabilities:
+          - view_runtime_status
+          - view_log_health
+
   # All system action types use the SLM (low weight).  The built-in
   # classify_task_weight table does not include these action codes, so they
   # would default to HIGH (→ LLM) without these overrides.

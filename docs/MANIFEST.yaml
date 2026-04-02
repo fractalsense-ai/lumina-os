@@ -756,6 +756,13 @@ artifacts:
     last_updated: 2026-03-08
     sha256: 7d38c0f14be4b364684fddf7b6ec19fe989a86fc85e1d5233fecaca720b38b9a
 
+  - path: standards/role-layout-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-02
+    sha256: 6d0267809a6e01f6e55c1d514e2151d44c4854a1c16d0ed6a4ebf3ecdeaf550d
+
   - path: standards/staged-file-schema-v1.json
     type: schema
     doc_version: 1.0.0

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Component, type ReactNode } from 'react'
-import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell } from '@phosphor-icons/react'
+import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import { QueryResultCard, type QueryResultData } from '@/components/QueryResultC
 import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
 import { useEventStream } from '@/hooks/useEventStream'
 import { SetupPasswordPage } from '@/components/SetupPasswordPage'
+import { RoleSidebar } from '@/components/sidebar/RoleSidebar'
 import {
   createTranscriptStore,
   type TranscriptStore,
@@ -58,10 +59,24 @@ interface UiManifest {
   }
 }
 
+interface SidebarPanel {
+  id: string
+  label: string
+  component: string
+  endpoint?: string
+}
+
+interface RoleLayout {
+  sidebar_panels: SidebarPanel[]
+  capabilities: string[]
+  effective_role: string
+}
+
 interface DomainInfo {
   domain_id: string
   domain_version: string
   ui_manifest: UiManifest
+  role_layout?: RoleLayout
 }
 
 interface AuthState {
@@ -406,6 +421,9 @@ function AppHeader({
   onViewChange,
   unreadCount,
   onClearUnread,
+  hasSidebar,
+  sidebarOpen,
+  onToggleSidebar,
 }: {
   manifest: UiManifest
   auth: AuthState
@@ -415,6 +433,9 @@ function AppHeader({
   onViewChange: (v: 'chat' | 'dashboard') => void
   unreadCount?: number
   onClearUnread?: () => void
+  hasSidebar?: boolean
+  sidebarOpen?: boolean
+  onToggleSidebar?: () => void
 }) {
   return (
     <header className="border-b border-border bg-card px-6 py-4">
@@ -435,6 +456,17 @@ function AppHeader({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {hasSidebar && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleSidebar}
+              title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <SidebarSimple size={18} />
+            </Button>
+          )}
           {showDashboard && (
             <Button
               variant="ghost"
@@ -485,6 +517,7 @@ function ChatInterface({
   onViewChange,
   unreadCount,
   onClearUnread,
+  roleLayout,
 }: {
   manifest: UiManifest
   auth: AuthState
@@ -494,10 +527,12 @@ function ChatInterface({
   onViewChange: (v: 'chat' | 'dashboard') => void
   unreadCount?: number
   onClearUnread?: () => void
+  roleLayout?: RoleLayout
 }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   // Stable session_id tied to the authenticated user
   const [sessionId] = useState<string>(`user_${auth.userId}`)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -678,52 +713,67 @@ function ChatInterface({
         onViewChange={onViewChange}
         unreadCount={unreadCount}
         onClearUnread={onClearUnread}
+        hasSidebar={(roleLayout?.sidebar_panels?.length ?? 0) > 0}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1 px-6">
-          <div className="max-w-3xl mx-auto py-6 flex flex-col gap-4">
-            {messages.map((message) => (
-              <div key={message.id} className="flex flex-col gap-1">
-                <MessageErrorBoundary>
-                  <ChatMessage message={message} token={auth.token} />
-                </MessageErrorBoundary>
-                {message.role === 'assistant' && message.meta && (
-                  <div className="text-xs text-muted-foreground px-11">
-                    action: {message.meta.action ?? 'n/a'} | prompt: {message.meta.promptType ?? 'n/a'}
-                    {message.meta.escalated ? ' | escalated: yes' : ''}
-                  </div>
-                )}
-              </div>
-            ))}
-            <AnimatePresence>
-              {isLoading && <LoadingIndicator />}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Chat column */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 px-6">
+            <div className="max-w-3xl mx-auto py-6 flex flex-col gap-4">
+              {messages.map((message) => (
+                <div key={message.id} className="flex flex-col gap-1">
+                  <MessageErrorBoundary>
+                    <ChatMessage message={message} token={auth.token} />
+                  </MessageErrorBoundary>
+                  {message.role === 'assistant' && message.meta && (
+                    <div className="text-xs text-muted-foreground px-11">
+                      action: {message.meta.action ?? 'n/a'} | prompt: {message.meta.promptType ?? 'n/a'}
+                      {message.meta.escalated ? ' | escalated: yes' : ''}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <AnimatePresence>
+                {isLoading && <LoadingIndicator />}
+              </AnimatePresence>
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
 
-        <div className="border-t border-border bg-card px-6 py-4">
-          <div className="max-w-3xl mx-auto flex gap-3 items-end">
-            <Input
-              id="chat-input"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder={manifest.input_placeholder ?? manifest.placeholder_text}
-              disabled={isLoading}
-              className="flex-1 text-base"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isLoading}
-              size="icon"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10"
-            >
-              <PaperPlaneRight size={20} weight="bold" />
-            </Button>
+          <div className="border-t border-border bg-card px-6 py-4">
+            <div className="max-w-3xl mx-auto flex gap-3 items-end">
+              <Input
+                id="chat-input"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder={manifest.input_placeholder ?? manifest.placeholder_text}
+                disabled={isLoading}
+                className="flex-1 text-base"
+              />
+              <Button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isLoading}
+                size="icon"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 w-10"
+              >
+                <PaperPlaneRight size={20} weight="bold" />
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Role sidebar */}
+        {sidebarOpen && roleLayout && (roleLayout.sidebar_panels?.length ?? 0) > 0 && (
+          <RoleSidebar
+            roleLayout={roleLayout}
+            auth={auth}
+            onClose={() => setSidebarOpen(false)}
+          />
+        )}
       </div>
     </div>
   )
@@ -744,6 +794,7 @@ function App() {
     return window.localStorage.getItem('lumina.consent_given') === 'true'
   })
   const [manifest, setManifest] = useState<UiManifest>(DEFAULT_MANIFEST)
+  const [roleLayout, setRoleLayout] = useState<RoleLayout | undefined>(undefined)
   const [view, setView] = useState<'chat' | 'dashboard'>('chat')
   const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'domain_authority')
 
@@ -773,6 +824,7 @@ function App() {
       if (!info) return
       setManifest(info.ui_manifest)
       applyThemeOverrides(info.ui_manifest.theme)
+      setRoleLayout(info.role_layout)
     })
   }, [auth?.token])
 
@@ -849,6 +901,7 @@ function App() {
           onViewChange={setView}
           unreadCount={unreadCount}
           onClearUnread={clearUnread}
+          roleLayout={roleLayout}
         />
       </div>
     </>
