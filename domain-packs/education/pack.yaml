@@ -44,6 +44,10 @@ modules:
   - algebra-intro
   - algebra-level-1
   - algebra-1
+  - domain-authority
+  - teacher
+  - teaching-assistant
+  - guardian
 
 # ── Default Module ────────────────────────────────────────────────────
 # Users invited without a specific module assignment land here.

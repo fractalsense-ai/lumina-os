@@ -1,0 +1,180 @@
+{
+  "id": "domain/edu/teacher/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Education Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_education_lead_001"
+  },
+  "meta_authority_id": "domain/edu/curriculum/v1",
+  "description": "Teacher classroom management module — operational physics for certified instructors who deliver lessons, monitor student progress, handle escalations, and request module assignments or physics changes. Teachers see their assigned students and manage classroom-level operations.",
+  "department": "Instruction",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "escalation_response_timely",
+      "description": "Escalation packets routed to this teacher must be acknowledged within the configured SLA window. Unacknowledged escalations are re-escalated to the domain authority.",
+      "severity": "warning",
+      "check": "escalation_ack_within_sla",
+      "standing_order_on_violation": "prompt_escalation_review"
+    },
+    {
+      "id": "student_progress_reviewed",
+      "description": "Teachers must review flagged student drift reports within the review window. Persistent unreviewed drift flags escalate to the domain authority.",
+      "severity": "warning",
+      "check": "drift_review_current",
+      "standing_order_on_violation": "prompt_drift_review"
+    },
+    {
+      "id": "module_assignment_justified",
+      "description": "Module assignment requests must include a justification referencing student readiness evidence (mastery threshold or teacher assessment).",
+      "severity": "warning",
+      "check": "assignment_has_justification",
+      "standing_order_on_violation": "request_assignment_justification"
+    },
+    {
+      "id": "standing_order_override_logged",
+      "description": "Any teacher override of a standing order outcome (e.g. accepting a non-standard method) must be logged with the teacher's rationale.",
+      "severity": "critical",
+      "check": "override_audit_exists"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "prompt_escalation_review",
+      "action": "prompt_escalation_review",
+      "trigger_condition": "escalation_response_timely",
+      "max_attempts": 2,
+      "escalation_on_exhaust": true,
+      "description": "Notify the teacher of a pending escalation packet and present it for review. If not resolved after 2 prompts, forward to domain authority."
+    },
+    {
+      "id": "prompt_drift_review",
+      "action": "prompt_drift_review",
+      "trigger_condition": "student_progress_reviewed",
+      "max_attempts": 2,
+      "escalation_on_exhaust": true,
+      "description": "Present student drift flags for teacher review with recommended interventions."
+    },
+    {
+      "id": "request_assignment_justification",
+      "action": "request_assignment_justification",
+      "trigger_condition": "module_assignment_justified",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Ask the teacher to provide a justification for the module assignment request before it is submitted."
+    },
+    {
+      "id": "handle_student_escalation",
+      "action": "handle_student_escalation",
+      "trigger_condition": "student_escalation_received",
+      "max_attempts": 3,
+      "escalation_on_exhaust": true,
+      "description": "Present a student escalation packet with context. Teacher may resolve, defer, or forward to domain authority."
+    },
+    {
+      "id": "request_physics_update",
+      "action": "request_physics_update",
+      "trigger_condition": "teacher_physics_change_request",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Submit a physics change proposal to the domain authority staging queue with the teacher's rationale."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "escalation_sla_breach",
+      "condition": "A student escalation packet assigned to this teacher has exceeded the SLA window without acknowledgment.",
+      "target_role": "domain_authority",
+      "sla_minutes": 60
+    },
+    {
+      "id": "repeated_student_drift",
+      "condition": "A student has been flagged for ZPD drift across multiple review cycles without teacher intervention.",
+      "target_role": "domain_authority",
+      "sla_minutes": 120
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/edu/student-roster/v1",
+    "adapter/edu/module-assignment/v1",
+    "adapter/edu/escalation-handler/v1"
+  ],
+  "domain_roles": {
+    "schema_version": "1.0",
+    "roles": [
+      {
+        "role_id": "teacher",
+        "role_name": "Teacher",
+        "hierarchy_level": 1,
+        "description": "Certified instructor who delivers lessons, monitors student progress, handles escalations, and requests module assignments.",
+        "maps_to_system_role": "user",
+        "default_access": "rwx",
+        "may_assign_domain_roles": true,
+        "max_assignable_level": 2,
+        "scoped_capabilities": {
+          "receive_escalations": true,
+          "modify_standing_orders": false,
+          "view_all_student_progress": true,
+          "trigger_logic_scrape": false,
+          "assign_modules_to_students": true,
+          "resolve_escalations": true,
+          "request_physics_change": true,
+          "view_classroom_overview": true
+        }
+      }
+    ]
+  },
+  "groups": {
+    "classroom_staff": {
+      "description": "Teaching staff with classroom-level permissions.",
+      "members": {
+        "domain_roles": ["teacher"]
+      }
+    }
+  },
+  "permissions": {
+    "mode": "750",
+    "owner": "da_education_lead_001",
+    "group": "classroom_staff",
+    "acl": [
+      { "role": "domain_authority", "access": "rwx", "scope": "full" },
+      { "role": "auditor", "access": "rx", "scope": "log_records_only" }
+    ]
+  },
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/student-roster/v1",
+      "adapter/edu/escalation-handler/v1"
+    ],
+    "precompiled_routes": {
+      "invariant_handlers": {
+        "escalation_response_timely": {
+          "standing_order_id": "prompt_escalation_review",
+          "tool_adapter_id": "adapter/edu/escalation-handler/v1"
+        },
+        "module_assignment_justified": {
+          "standing_order_id": "request_assignment_justification",
+          "tool_adapter_id": "adapter/edu/module-assignment/v1"
+        }
+      },
+      "standing_order_tools": {
+        "handle_student_escalation": {
+          "tool_chain": ["adapter/edu/escalation-handler/v1"]
+        },
+        "prompt_drift_review": {
+          "tool_chain": ["adapter/edu/student-roster/v1"]
+        }
+      }
+    }
+  },
+  "subsystem_configs": {
+    "classroom": {
+      "default_task_spec": {
+        "task_id": "teacher-classroom-001",
+        "description": "Teacher classroom management landing — student monitoring, escalation handling, module assignments."
+      }
+    }
+  }
+}

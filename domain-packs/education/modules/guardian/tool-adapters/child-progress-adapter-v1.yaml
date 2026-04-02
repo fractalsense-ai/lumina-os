@@ -1,0 +1,62 @@
+# child-progress-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Read-only child progress view for guardians, scoped to
+# assigned children via consent records.
+# ============================================================
+
+id: adapter/edu/child-progress/v1
+version: "1.0.0"
+tool_name: "Child Progress Viewer"
+description: >
+  Provides read-only access to progress data for children
+  assigned to the guardian via an active consent record.
+  Queries for unassigned children are rejected per the
+  child_data_only invariant.
+
+domain_id: domain/edu/guardian/v1
+
+call_types:
+  - view_child_list
+  - view_child_progress
+  - view_child_escalation_history
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [view_child_list, view_child_progress, view_child_escalation_history]
+    child_id:
+      type: string
+      description: "Pseudonymous child ID (for view_child_progress, view_child_escalation_history)"
+      maxLength: 128
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    children:
+      type: array
+      description: "List of assigned children with basic status (for view_child_list)"
+    progress:
+      type: object
+      description: "Child progress detail including mastery, module, and recent activity"
+    escalation_history:
+      type: array
+      description: "List of escalation events for the child (informational only)"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_entity_consent: true
+  max_calls_per_session: 50
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: notify_consent_required

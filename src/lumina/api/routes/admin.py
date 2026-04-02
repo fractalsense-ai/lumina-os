@@ -1370,7 +1370,9 @@ async def _execute_admin_operation(
             if _domain_hint:
                 try:
                     _resolved_dom = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_domain_hint)
-                    _default_mod = _cfg.DOMAIN_REGISTRY.get_default_module_id(_resolved_dom)
+                    _default_mod = _cfg.DOMAIN_REGISTRY.get_default_module_id(
+                        _resolved_dom, domain_role=_idr,
+                    )
                     if _default_mod:
                         governed_modules = [_default_mod]
                 except Exception:

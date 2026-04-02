@@ -29,6 +29,10 @@ _EXPECTED_MODULE_IDS = [
 _ALL_MODULE_MAP_IDS = _EXPECTED_MODULE_IDS + [
     "domain/edu/algebra-level-1/v1",
     "domain/edu/general-education/v1",
+    "domain/edu/domain-authority/v1",
+    "domain/edu/teacher/v1",
+    "domain/edu/teaching-assistant/v1",
+    "domain/edu/guardian/v1",
 ]
 
 _EXPECTED_SCHEMA_IDS = {
@@ -71,8 +75,8 @@ class TestModuleMapStructure:
         )
 
     def test_module_map_has_five_entries(self, module_map):
-        assert len(module_map) == 5, (
-            f"Expected 5 module_map entries, got {len(module_map)}: {list(module_map.keys())}"
+        assert len(module_map) == 9, (
+            f"Expected 9 module_map entries, got {len(module_map)}: {list(module_map.keys())}"
         )
 
     @pytest.mark.parametrize("domain_id", _ALL_MODULE_MAP_IDS)

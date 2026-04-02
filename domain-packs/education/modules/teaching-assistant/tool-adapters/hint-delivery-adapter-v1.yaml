@@ -1,0 +1,67 @@
+# hint-delivery-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Budget-controlled hint delivery for teaching assistants.
+# ============================================================
+
+id: adapter/edu/hint-delivery/v1
+version: "1.0.0"
+tool_name: "Hint Delivery"
+description: >
+  Issues scaffolding hints to students within a budget-controlled
+  framework. Each call decrements the session hint budget. When
+  the budget is exhausted, further hint requests are forwarded
+  to the assigned teacher.
+
+domain_id: domain/edu/teaching-assistant/v1
+
+call_types:
+  - issue_hint
+  - check_hint_budget
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [issue_hint, check_hint_budget]
+    student_id:
+      type: string
+      description: "Pseudonymous student ID"
+      maxLength: 128
+    hint_type:
+      type: string
+      description: "Type of hint: procedural, conceptual, or worked_example"
+      enum: [procedural, conceptual, worked_example]
+    context_note:
+      type: string
+      description: "Optional note from the TA about what the student is struggling with"
+      maxLength: 512
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    hints_remaining:
+      type: integer
+      description: "Number of hints remaining in this session's budget"
+    hint_content:
+      type: string
+      description: "The generated hint text (for issue_hint)"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_entity_consent: false
+  max_calls_per_session: 10
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: forward_to_teacher_hint_exhausted

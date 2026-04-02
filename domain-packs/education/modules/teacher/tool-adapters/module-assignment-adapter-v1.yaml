@@ -1,0 +1,72 @@
+# module-assignment-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Wraps request_module_assignment for teachers to assign
+# students to curriculum modules.
+# ============================================================
+
+id: adapter/edu/module-assignment/v1
+version: "1.0.0"
+tool_name: "Module Assignment Request"
+description: >
+  Allows teachers to request module assignments for students.
+  Requests include a justification and are queued for approval
+  by the domain authority when required by physics invariants.
+
+domain_id: domain/edu/teacher/v1
+
+call_types:
+  - request_module_assignment
+  - query_assignment_status
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [request_module_assignment, query_assignment_status]
+    student_id:
+      type: string
+      description: "Pseudonymous student ID"
+      maxLength: 128
+    target_module_id:
+      type: string
+      description: "Module to assign the student to"
+      maxLength: 128
+    justification:
+      type: string
+      description: "Teacher's rationale for the assignment (required for request_module_assignment)"
+      maxLength: 1024
+    request_id:
+      type: string
+      description: "Assignment request ID (for query_assignment_status)"
+      maxLength: 128
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    request_id:
+      type: string
+      description: "ID of the created assignment request"
+    status:
+      type: string
+      description: "Current status: pending, approved, rejected"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - domain_authority
+  requires_entity_consent: false
+  max_calls_per_session: 25
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: request_assignment_justification

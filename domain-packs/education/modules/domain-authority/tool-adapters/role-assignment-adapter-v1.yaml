@@ -1,0 +1,65 @@
+# role-assignment-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Wraps the assign_domain_role and revoke_domain_role admin
+# operations for use by the Domain Authority module.
+# ============================================================
+
+id: adapter/edu/role-assignment/v1
+version: "1.0.0"
+tool_name: "Role Assignment Manager"
+description: >
+  Assigns or revokes domain roles for entities within the education
+  domain. All operations produce an audit log entry. Only the domain
+  authority may invoke this adapter.
+
+domain_id: domain/edu/domain-authority/v1
+
+call_types:
+  - assign_domain_role
+  - revoke_domain_role
+
+input_schema:
+  type: object
+  required: [call_type, target_entity_id, role_id]
+  properties:
+    call_type:
+      type: string
+      enum: [assign_domain_role, revoke_domain_role]
+    target_entity_id:
+      type: string
+      description: "Pseudonymous ID of the entity to assign/revoke"
+      maxLength: 128
+    role_id:
+      type: string
+      description: "Domain role identifier (e.g. teacher, teaching_assistant, student, parent)"
+      maxLength: 64
+    justification:
+      type: string
+      description: "Reason for the role change"
+      maxLength: 512
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    audit_record_id:
+      type: string
+      description: "ID of the generated audit log entry"
+    error:
+      type: [string, "null"]
+      description: "Error message if the operation failed"
+
+authorization:
+  who_may_call:
+    - domain_authority
+  requires_entity_consent: false
+  max_calls_per_session: 25
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: escalate
+  fallback_standing_order_id: null

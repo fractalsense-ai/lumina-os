@@ -1,0 +1,136 @@
+{
+  "id": "domain/edu/guardian/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Education Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_education_lead_001"
+  },
+  "meta_authority_id": "domain/edu/curriculum/v1",
+  "description": "Guardian module — operational physics for parents and guardians with read-only access to their assigned child's progress and escalation notifications. Guardians cannot intervene directly in student sessions or modify any domain data.",
+  "department": "Family Engagement",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "child_data_only",
+      "description": "Guardians may only view data for children explicitly assigned to them via the assigned_children relationship. Queries for other students are rejected.",
+      "severity": "critical",
+      "check": "target_child_in_assigned_set"
+    },
+    {
+      "id": "no_direct_intervention",
+      "description": "Guardians may not issue hints, resolve escalations, assign modules, or trigger any write operation on student sessions.",
+      "severity": "critical",
+      "check": "action_is_read_only"
+    },
+    {
+      "id": "consent_gate_enforced",
+      "description": "Guardian access requires an active consent record linking the guardian to the child. Expired or missing consent blocks all data access.",
+      "severity": "critical",
+      "check": "consent_record_active",
+      "standing_order_on_violation": "notify_consent_required"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "notify_consent_required",
+      "action": "notify_consent_required",
+      "trigger_condition": "consent_gate_enforced",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "Inform the guardian that a valid consent record is required before child data can be accessed. If consent cannot be established, escalate to domain authority."
+    },
+    {
+      "id": "notify_escalation",
+      "action": "notify_escalation",
+      "trigger_condition": "child_escalation_occurred",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Send a notification to the guardian when their child's session produces an escalation event. Notification is informational only."
+    },
+    {
+      "id": "progress_summary_available",
+      "action": "progress_summary_available",
+      "trigger_condition": "periodic_summary_due",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Make a periodic progress summary available for the guardian to review. Includes mastery progress, module status, and any flagged concerns."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "consent_not_given",
+      "condition": "A guardian attempted to access child data but no valid consent record exists and the guardian has been notified.",
+      "target_role": "domain_authority",
+      "sla_minutes": 1440
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/edu/child-progress/v1"
+  ],
+  "domain_roles": {
+    "schema_version": "1.0",
+    "roles": [
+      {
+        "role_id": "parent",
+        "role_name": "Parent / Guardian",
+        "hierarchy_level": 3,
+        "description": "Parents or guardians who can view their assigned child's progress and receive escalation notifications. Read-only access.",
+        "maps_to_system_role": "user",
+        "default_access": "r",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "view_assigned_child_progress": true,
+          "receive_escalation_notifications": true,
+          "query_glossary": true,
+          "view_other_progress": false,
+          "modify_domain_physics": false
+        }
+      }
+    ]
+  },
+  "groups": {
+    "guardians": {
+      "description": "Parents and guardians with view access to their assigned child's progress.",
+      "members": {
+        "domain_roles": ["parent"]
+      }
+    }
+  },
+  "permissions": {
+    "mode": "740",
+    "owner": "da_education_lead_001",
+    "group": "guardians",
+    "acl": [
+      { "role": "domain_authority", "access": "rwx", "scope": "full" },
+      { "domain_role": "parent", "access": "r", "scope": "assigned_children_only" }
+    ]
+  },
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/child-progress/v1"
+    ],
+    "precompiled_routes": {
+      "invariant_handlers": {
+        "consent_gate_enforced": {
+          "standing_order_id": "notify_consent_required",
+          "tool_adapter_id": "adapter/edu/child-progress/v1"
+        }
+      },
+      "standing_order_tools": {
+        "notify_escalation": {
+          "tool_chain": ["adapter/edu/child-progress/v1"]
+        }
+      }
+    }
+  },
+  "subsystem_configs": {
+    "family": {
+      "default_task_spec": {
+        "task_id": "guardian-overview-001",
+        "description": "Guardian landing — child progress viewing and notification receipt."
+      }
+    }
+  }
+}

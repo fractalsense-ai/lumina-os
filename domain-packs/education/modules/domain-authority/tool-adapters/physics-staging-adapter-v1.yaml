@@ -1,0 +1,73 @@
+# physics-staging-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Wraps the update_domain_physics and commit_domain_physics admin
+# operations for the gated staging workflow.
+# ============================================================
+
+id: adapter/edu/physics-staging/v1
+version: "1.0.0"
+tool_name: "Physics Staging Manager"
+description: >
+  Manages the domain-physics staging workflow. Allows the domain
+  authority to review, approve, or reject staged physics changes
+  before they are committed to the active physics file.
+
+domain_id: domain/edu/domain-authority/v1
+
+call_types:
+  - stage_physics_update
+  - commit_physics
+  - reject_physics_proposal
+  - view_staged_diff
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [stage_physics_update, commit_physics, reject_physics_proposal, view_staged_diff]
+    module_id:
+      type: string
+      description: "Target module whose physics is being updated"
+      maxLength: 128
+    patch:
+      type: object
+      description: "JSON patch to apply to the domain physics (for stage_physics_update)"
+    commit_message:
+      type: string
+      description: "Audit message for the commit (for commit_physics)"
+      maxLength: 512
+    rejection_reason:
+      type: string
+      description: "Reason for rejecting the proposal (for reject_physics_proposal)"
+      maxLength: 512
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    staged_version:
+      type: string
+      description: "Version identifier for the staged proposal"
+    diff_summary:
+      type: string
+      description: "Human-readable summary of changes (for view_staged_diff)"
+    error:
+      type: [string, "null"]
+      description: "Error message if the operation failed"
+
+authorization:
+  who_may_call:
+    - domain_authority
+  requires_entity_consent: false
+  max_calls_per_session: 20
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: escalate
+  fallback_standing_order_id: null

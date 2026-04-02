@@ -30,6 +30,22 @@ runtime:
       domain_physics_path: domain-packs/education/modules/algebra-1/domain-physics.json
     domain/edu/algebra-level-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
+    domain/edu/domain-authority/v1:
+      domain_physics_path: domain-packs/education/modules/domain-authority/domain-physics.json
+    domain/edu/teacher/v1:
+      domain_physics_path: domain-packs/education/modules/teacher/domain-physics.json
+    domain/edu/teaching-assistant/v1:
+      domain_physics_path: domain-packs/education/modules/teaching-assistant/domain-physics.json
+    domain/edu/guardian/v1:
+      domain_physics_path: domain-packs/education/modules/guardian/domain-physics.json
+
+  # Role-to-default-module routing: maps domain roles to their default module.
+  role_to_default_module:
+    domain_authority: domain/edu/domain-authority/v1
+    teacher: domain/edu/teacher/v1
+    teaching_assistant: domain/edu/teaching-assistant/v1
+    student: domain/edu/general-education/v1
+    parent: domain/edu/guardian/v1
 
   access_control:
     required_role: user

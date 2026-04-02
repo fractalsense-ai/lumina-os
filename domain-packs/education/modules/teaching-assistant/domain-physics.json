@@ -1,0 +1,153 @@
+{
+  "id": "domain/edu/teaching-assistant/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Education Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_education_lead_001"
+  },
+  "meta_authority_id": "domain/edu/curriculum/v1",
+  "description": "Teaching Assistant support module — operational physics for paraprofessionals who provide supervised student support. TAs can view assigned students, issue budget-controlled hints, and forward escalations to teachers. Cannot resolve escalations or modify physics.",
+  "department": "Instruction Support",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "hint_budget_respected",
+      "description": "The teaching assistant may not exceed the configured hint budget per student per session. Exceeding the budget triggers a forward to the teacher.",
+      "severity": "warning",
+      "check": "hints_issued <= hint_budget",
+      "standing_order_on_violation": "forward_to_teacher_hint_exhausted"
+    },
+    {
+      "id": "supervision_scope_enforced",
+      "description": "The teaching assistant may only interact with students explicitly assigned to them. Queries for unassigned students are rejected.",
+      "severity": "critical",
+      "check": "student_in_assigned_set"
+    },
+    {
+      "id": "escalation_forwarded_not_resolved",
+      "description": "Teaching assistants may not resolve escalation packets. They may only forward them to a teacher. Attempted resolutions are blocked.",
+      "severity": "critical",
+      "check": "action != resolve_escalation"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "forward_to_teacher_hint_exhausted",
+      "action": "forward_escalation_to_teacher",
+      "trigger_condition": "hint_budget_respected",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "The hint budget is exhausted for this student. Forward the situation to the assigned teacher for further intervention."
+    },
+    {
+      "id": "forward_escalation_to_teacher",
+      "action": "forward_escalation_to_teacher",
+      "trigger_condition": "student_escalation_received",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "Forward any received escalation packet to the assigned teacher. The TA may add context notes but cannot resolve."
+    },
+    {
+      "id": "provide_hint",
+      "action": "provide_hint",
+      "trigger_condition": "student_requests_help",
+      "max_attempts": 3,
+      "escalation_on_exhaust": true,
+      "description": "Issue a scaffolding hint to the student. Each hint decrements the session hint budget. If budget is exhausted, forward to teacher."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "hint_budget_exhausted",
+      "condition": "The teaching assistant has exhausted the hint budget for a student and the student still requires assistance.",
+      "target_role": "teacher",
+      "sla_minutes": 30
+    },
+    {
+      "id": "out_of_scope_student",
+      "condition": "The teaching assistant received a request concerning a student not in their assigned set.",
+      "target_role": "teacher",
+      "sla_minutes": 15
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/edu/hint-delivery/v1",
+    "adapter/edu/student-view/v1"
+  ],
+  "domain_roles": {
+    "schema_version": "1.0",
+    "roles": [
+      {
+        "role_id": "teaching_assistant",
+        "role_name": "Teaching Assistant / Paraprofessional",
+        "hierarchy_level": 2,
+        "description": "Support staff who help students with guided practice. Can view progress and issue hints but cannot modify domain physics or resolve escalations.",
+        "maps_to_system_role": "user",
+        "default_access": "rx",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "receive_escalations": false,
+          "view_student_progress": true,
+          "issue_hints": true,
+          "view_log_records": true,
+          "modify_domain_physics": false,
+          "forward_escalations": true
+        }
+      }
+    ]
+  },
+  "groups": {
+    "support_staff": {
+      "description": "Teaching assistant support staff with supervised access.",
+      "members": {
+        "domain_roles": ["teaching_assistant"]
+      }
+    }
+  },
+  "permissions": {
+    "mode": "750",
+    "owner": "da_education_lead_001",
+    "group": "support_staff",
+    "acl": [
+      { "role": "domain_authority", "access": "rwx", "scope": "full" },
+      { "domain_role": "teacher", "access": "rx", "scope": "supervision" }
+    ]
+  },
+  "execution_policy": {
+    "deterministic_tools": [
+      "adapter/edu/hint-delivery/v1",
+      "adapter/edu/student-view/v1"
+    ],
+    "precompiled_routes": {
+      "invariant_handlers": {
+        "hint_budget_respected": {
+          "standing_order_id": "forward_to_teacher_hint_exhausted",
+          "tool_adapter_id": "adapter/edu/hint-delivery/v1"
+        },
+        "supervision_scope_enforced": {
+          "standing_order_id": "forward_escalation_to_teacher",
+          "tool_adapter_id": "adapter/edu/student-view/v1"
+        }
+      },
+      "standing_order_tools": {
+        "provide_hint": {
+          "tool_chain": ["adapter/edu/hint-delivery/v1"]
+        },
+        "forward_escalation_to_teacher": {
+          "tool_chain": ["adapter/edu/student-view/v1"]
+        }
+      }
+    }
+  },
+  "subsystem_configs": {
+    "hints": {
+      "default_hint_budget_per_session": 5,
+      "default_task_spec": {
+        "task_id": "ta-support-001",
+        "description": "Teaching assistant support landing — student hints, progress viewing, escalation forwarding."
+      }
+    }
+  }
+}

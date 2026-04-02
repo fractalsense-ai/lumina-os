@@ -294,12 +294,17 @@ class DomainRegistry:
 
             raise DomainNotFoundError(requested, list(self._domains.keys()))
 
-    def get_default_module_id(self, domain_id: str) -> str | None:
-        """Return the default (staging) module ID for a domain, if configured.
+    def get_default_module_id(
+        self, domain_id: str, domain_role: str | None = None,
+    ) -> str | None:
+        """Return the default module ID for a domain, optionally scoped by role.
 
-        Reads ``default_module`` from the domain's ``pack.yaml``, then
-        searches the runtime config's ``module_map`` for the matching module
-        to return its full module ID (e.g. ``domain/edu/general-education/v1``).
+        Resolution order:
+        1. If *domain_role* is given and the runtime config contains a
+           ``role_to_default_module`` mapping with that role, return the
+           mapped module ID (if it exists in ``module_map``).
+        2. Otherwise, read ``default_module`` from the domain's
+           ``pack.yaml`` and search ``module_map`` for the matching module.
         Returns ``None`` if no default module is configured.
         """
         entry = self._domains.get(domain_id)
@@ -310,8 +315,20 @@ class DomainRegistry:
         cfg_path = entry.get("runtime_config_path", "")
         if not cfg_path:
             return None
-        # runtime_config_path is like "domain-packs/education/cfg/runtime-config.yaml"
-        # pack.yaml is at "domain-packs/education/pack.yaml"
+
+        # Load runtime config (needed for both role and fallback paths)
+        runtime_raw = load_yaml(str(self._repo_root / cfg_path))
+        runtime_block = runtime_raw.get("runtime") or runtime_raw
+        module_map = runtime_block.get("module_map") or {}
+
+        # Step 1 — role-based routing
+        if domain_role:
+            role_map = runtime_block.get("role_to_default_module") or {}
+            role_mod_id = role_map.get(domain_role)
+            if role_mod_id and role_mod_id in module_map:
+                return role_mod_id
+
+        # Step 2 — pack.yaml default_module fallback
         cfg_dir = Path(cfg_path).parent.parent  # go up from cfg/ to domain root
         pack_path = self._repo_root / cfg_dir / "pack.yaml"
         if not pack_path.exists():
@@ -326,9 +343,6 @@ class DomainRegistry:
             return None
 
         # Find the full module ID in module_map that contains the default_module name
-        runtime_raw = load_yaml(str(self._repo_root / cfg_path))
-        runtime_block = runtime_raw.get("runtime") or runtime_raw
-        module_map = runtime_block.get("module_map") or {}
         for mod_id in module_map:
             # Match by module name segment, e.g. "general-education" in
             # "domain/edu/general-education/v1"
@@ -336,15 +350,6 @@ class DomainRegistry:
                 return mod_id
 
         return None
-
-        if self._default_domain:
-            return self._default_domain
-
-        # Single-domain legacy mode
-        if "_default" in self._domains:
-            return "_default"
-
-        raise RuntimeError("No domain_id provided and no default_domain configured")
 
     def get_runtime_context(self, domain_id: str) -> dict[str, Any]:
         """Return (cached) runtime context for a domain. Thread-safe."""

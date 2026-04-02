@@ -1,0 +1,68 @@
+# progress-overview-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Provides domain-wide progress overview for the Domain Authority.
+# ============================================================
+
+id: adapter/edu/progress-overview/v1
+version: "1.0.0"
+tool_name: "Domain Progress Overview"
+description: >
+  Queries domain-wide progress data across all modules and students.
+  Returns aggregate metrics including module enrollment counts,
+  mastery distribution, escalation summaries, and drift rates.
+
+domain_id: domain/edu/domain-authority/v1
+
+call_types:
+  - query_domain_progress
+  - query_module_enrollment
+  - query_escalation_summary
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [query_domain_progress, query_module_enrollment, query_escalation_summary]
+    module_id:
+      type: string
+      description: "Optional module filter (for query_module_enrollment)"
+      maxLength: 128
+    time_range_hours:
+      type: integer
+      description: "Lookback window in hours (default: 24)"
+      minimum: 1
+      maximum: 720
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    total_students:
+      type: integer
+    modules:
+      type: array
+      description: "Per-module summary (for query_domain_progress)"
+    enrollment_counts:
+      type: object
+      description: "Module ID → student count (for query_module_enrollment)"
+    escalation_summary:
+      type: object
+      description: "Counts by status: pending, resolved, breached (for query_escalation_summary)"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - domain_authority
+    - orchestrator
+  requires_entity_consent: false
+  max_calls_per_session: 50
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: review_pending_escalations

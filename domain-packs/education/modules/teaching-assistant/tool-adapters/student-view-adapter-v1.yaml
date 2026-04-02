@@ -1,0 +1,58 @@
+# student-view-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Read-only student progress view for teaching assistants.
+# Scoped to assigned students only.
+# ============================================================
+
+id: adapter/edu/student-view/v1
+version: "1.0.0"
+tool_name: "Student View (Read-Only)"
+description: >
+  Provides read-only access to progress data for students
+  assigned to the teaching assistant. Queries for unassigned
+  students are rejected per the supervision_scope_enforced
+  invariant.
+
+domain_id: domain/edu/teaching-assistant/v1
+
+call_types:
+  - view_assigned_students
+  - view_student_progress
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [view_assigned_students, view_student_progress]
+    student_id:
+      type: string
+      description: "Pseudonymous student ID (for view_student_progress)"
+      maxLength: 128
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    students:
+      type: array
+      description: "List of assigned student summaries (for view_assigned_students)"
+    progress:
+      type: object
+      description: "Student progress detail (for view_student_progress)"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_entity_consent: false
+  max_calls_per_session: 50
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: forward_escalation_to_teacher

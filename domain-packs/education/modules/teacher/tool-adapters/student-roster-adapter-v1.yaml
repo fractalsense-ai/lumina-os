@@ -1,0 +1,65 @@
+# student-roster-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Provides student roster and progress queries for teachers.
+# ============================================================
+
+id: adapter/edu/student-roster/v1
+version: "1.0.0"
+tool_name: "Student Roster & Progress"
+description: >
+  Queries the teacher's assigned student roster with progress
+  summaries. Returns mastery levels, current module, drift flags,
+  and recent activity for each student.
+
+domain_id: domain/edu/teacher/v1
+
+call_types:
+  - query_roster
+  - query_student_detail
+  - query_drift_flags
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [query_roster, query_student_detail, query_drift_flags]
+    student_id:
+      type: string
+      description: "Pseudonymous student ID (for query_student_detail)"
+      maxLength: 128
+    module_filter:
+      type: string
+      description: "Optional module ID to filter roster by"
+      maxLength: 128
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    roster:
+      type: array
+      description: "List of student summaries (for query_roster)"
+    student_detail:
+      type: object
+      description: "Detailed progress for a single student (for query_student_detail)"
+    drift_flags:
+      type: array
+      description: "Students with active ZPD drift flags (for query_drift_flags)"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - domain_authority
+  requires_entity_consent: false
+  max_calls_per_session: 50
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: fallback_to_standing_order
+  fallback_standing_order_id: prompt_drift_review

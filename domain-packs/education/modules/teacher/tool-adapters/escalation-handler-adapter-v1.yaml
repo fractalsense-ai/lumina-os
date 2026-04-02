@@ -1,0 +1,69 @@
+# escalation-handler-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Wraps escalation resolve/defer/forward for teachers.
+# ============================================================
+
+id: adapter/edu/escalation-handler/v1
+version: "1.0.0"
+tool_name: "Escalation Handler"
+description: >
+  Allows teachers to view, resolve, defer, or forward escalation
+  packets from student sessions. Resolution records are logged
+  in the system log with the teacher's action and rationale.
+
+domain_id: domain/edu/teacher/v1
+
+call_types:
+  - view_escalation
+  - resolve_escalation
+  - defer_escalation
+  - forward_escalation
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [view_escalation, resolve_escalation, defer_escalation, forward_escalation]
+    escalation_id:
+      type: string
+      description: "ID of the escalation packet"
+      maxLength: 128
+    resolution_note:
+      type: string
+      description: "Teacher's resolution or deferral rationale"
+      maxLength: 1024
+    forward_target:
+      type: string
+      description: "Target role to forward to (for forward_escalation)"
+      maxLength: 64
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    escalation:
+      type: object
+      description: "Escalation packet detail (for view_escalation)"
+    audit_record_id:
+      type: string
+      description: "ID of the resolution audit entry"
+    error:
+      type: [string, "null"]
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - domain_authority
+  requires_entity_consent: false
+  max_calls_per_session: 30
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: escalate
+  fallback_standing_order_id: null
