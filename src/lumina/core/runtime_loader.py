@@ -324,6 +324,11 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if isinstance(_module_map, dict) and _module_map:
         ctx["module_map"] = _module_map
 
+    # Role-to-default-module routing (optional)
+    _role_to_mod = runtime_cfg.get("role_to_default_module")
+    if isinstance(_role_to_mod, dict) and _role_to_mod:
+        ctx["role_to_default_module"] = _role_to_mod
+
     # --- Optional: merge auto-discovered tool adapter metadata --------
     # Explicit runtime-config declarations always take precedence.
     try:

@@ -23,7 +23,7 @@ function getApiBase(): string {
   return (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
 }
 
-export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?: string }) {
+export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?: string; domainKey?: string }) {
   const [escalations, setEscalations] = useState<Escalation[]>([])
   const [error, setError] = useState<string | null>(null)
   const [resolving, setResolving] = useState<string | null>(null)

@@ -26,6 +26,7 @@ export interface PanelComponentProps {
   panelId: string
   endpoint?: string
   domainId?: string
+  domainKey?: string
 }
 
 /**
@@ -33,10 +34,10 @@ export interface PanelComponentProps {
  * `{ auth, domainId? }`) to the PanelComponentProps interface.
  */
 function wrapLegacy(
-  Comp: ComponentType<{ auth: AuthState; domainId?: string }>,
+  Comp: ComponentType<{ auth: AuthState; domainId?: string; domainKey?: string }>,
 ): ComponentType<PanelComponentProps> {
-  return function LegacyWrapper({ auth, domainId }: PanelComponentProps) {
-    return <Comp auth={auth} domainId={domainId} />
+  return function LegacyWrapper({ auth, domainId, domainKey }: PanelComponentProps) {
+    return <Comp auth={auth} domainId={domainId} domainKey={domainKey} />
   }
 }
 

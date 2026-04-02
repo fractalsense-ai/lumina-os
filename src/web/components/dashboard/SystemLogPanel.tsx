@@ -54,7 +54,7 @@ function getRecordSummary(rec: LogRecord): string {
   return ''
 }
 
-export function SystemLogPanel({ auth, domainId }: { auth: AuthState; domainId?: string }) {
+export function SystemLogPanel({ auth, domainId, domainKey }: { auth: AuthState; domainId?: string; domainKey?: string }) {
   const [records, setRecords] = useState<LogRecord[]>([])
   const [filter, setFilter] = useState<LogFilter>('all')
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +67,9 @@ export function SystemLogPanel({ auth, domainId }: { auth: AuthState; domainId?:
     setLoading(true)
     try {
       let url: string
-      const domainParam = domainId ? `&domain_id=${encodeURIComponent(domainId)}` : ''
+      // Use domain_key for broader domain-level scoping when available
+      const scopeId = domainKey || domainId
+      const domainParam = scopeId ? `&domain_id=${encodeURIComponent(scopeId)}` : ''
       if (filter === 'warnings') {
         url = `${getApiBase()}/api/system-log/warnings?limit=50${domainParam}`
       } else if (filter === 'alerts') {
@@ -83,7 +85,7 @@ export function SystemLogPanel({ auth, domainId }: { auth: AuthState; domainId?:
     } finally {
       setLoading(false)
     }
-  }, [auth.token, filter, domainId])
+  }, [auth.token, filter, domainId, domainKey])
 
   useEffect(() => { load() }, [load])
 
@@ -91,7 +93,7 @@ export function SystemLogPanel({ auth, domainId }: { auth: AuthState; domainId?:
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          System Log{domainId ? ` — ${domainId}` : ''}
+          System Log{domainKey ? ` — ${domainKey}` : domainId ? ` — ${domainId}` : ''}
         </h3>
         <div className="flex items-center gap-2">
           {(['all', 'warnings', 'alerts'] as LogFilter[]).map((f) => (

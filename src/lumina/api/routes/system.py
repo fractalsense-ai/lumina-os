@@ -158,6 +158,7 @@ async def domain_info(
 
     return {
         "domain_id": domain.get("id", "unknown"),
+        "domain_key": resolved,
         "domain_version": domain.get("version", "unknown"),
         "ui_manifest": manifest,
         "role_layout": role_layout,

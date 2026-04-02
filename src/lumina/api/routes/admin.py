@@ -1102,7 +1102,11 @@ async def _execute_admin_operation(
         try:
             _mod_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(module_id)
             _mod_runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(_mod_domain)
-            _dp_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _mod_runtime["domain_physics_path"]
+            _module_map = _mod_runtime.get("module_map") or {}
+            if module_id in _module_map:
+                _dp_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _module_map[module_id]["domain_physics_path"]
+            else:
+                _dp_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _mod_runtime["domain_physics_path"]
             _dp_data = json.loads(_dp_path.read_text(encoding="utf-8"))
             _valid_roles = [
                 r.get("role_id") for r in (_dp_data.get("domain_roles", {}).get("roles") or [])

@@ -74,6 +74,7 @@ interface RoleLayout {
 
 interface DomainInfo {
   domain_id: string
+  domain_key?: string
   domain_version: string
   ui_manifest: UiManifest
   role_layout?: RoleLayout
@@ -519,6 +520,7 @@ function ChatInterface({
   onClearUnread,
   roleLayout,
   domainId,
+  domainKey,
 }: {
   manifest: UiManifest
   auth: AuthState
@@ -530,6 +532,7 @@ function ChatInterface({
   onClearUnread?: () => void
   roleLayout?: RoleLayout
   domainId?: string
+  domainKey?: string
 }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -775,6 +778,7 @@ function ChatInterface({
             auth={auth}
             onClose={() => setSidebarOpen(false)}
             domainId={domainId}
+            domainKey={domainKey}
           />
         )}
       </div>
@@ -799,6 +803,7 @@ function App() {
   const [manifest, setManifest] = useState<UiManifest>(DEFAULT_MANIFEST)
   const [roleLayout, setRoleLayout] = useState<RoleLayout | undefined>(undefined)
   const [domainId, setDomainId] = useState<string | undefined>(undefined)
+  const [domainKey, setDomainKey] = useState<string | undefined>(undefined)
   const [view, setView] = useState<'chat' | 'dashboard'>('chat')
   const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'domain_authority')
 
@@ -830,6 +835,7 @@ function App() {
       applyThemeOverrides(info.ui_manifest.theme)
       setRoleLayout(info.role_layout)
       setDomainId(info.domain_id)
+      setDomainKey(info.domain_key)
     })
   }, [auth?.token])
 
@@ -908,6 +914,7 @@ function App() {
           onClearUnread={clearUnread}
           roleLayout={roleLayout}
           domainId={domainId}
+          domainKey={domainKey}
         />
       </div>
     </>

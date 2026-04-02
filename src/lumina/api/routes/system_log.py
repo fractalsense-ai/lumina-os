@@ -34,15 +34,14 @@ async def query_log_records(
     allowed_roles = ("root", "qa", "auditor")
     if user_data["role"] not in allowed_roles:
         if user_data["role"] == "domain_authority":
-            # DA sees only records scoped to their governed modules
+            # DA scoping: empty governed_modules = full domain access,
+            # non-empty = restricted to those modules.
             governed = user_data.get("governed_modules") or []
-            if not governed:
-                return []
-            # If caller didn't specify domain_id, restrict to first governed domain
-            if not domain_id and governed:
-                domain_id = governed[0]
-            elif domain_id and domain_id not in governed:
-                raise HTTPException(status_code=403, detail="Domain not in governed scope")
+            if governed and domain_id:
+                # Module-level IDs (contain "/") must be in governed list;
+                # domain-level keys (e.g. "education") are accepted as broader scope.
+                if "/" in domain_id and domain_id not in governed:
+                    raise HTTPException(status_code=403, detail="Domain not in governed scope")
         else:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -91,10 +90,11 @@ async def get_log_record(
     all_records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records, limit=10000)
     for r in all_records:
         if r.get("record_id") == record_id:
-            # DA users may only view records from their governed scope
+            # DA users: non-empty governed restricts to those modules
             if user_data["role"] == "domain_authority":
                 governed = user_data.get("governed_modules") or []
-                if r.get("domain_pack_id") and r["domain_pack_id"] not in governed:
+                dpid = r.get("domain_pack_id", "")
+                if governed and dpid and dpid not in governed:
                     raise HTTPException(status_code=403, detail="Record not in governed scope")
             return r
 
@@ -117,13 +117,12 @@ async def query_warnings(
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    # DA users are auto-scoped to their governed domain
+    # DA users: empty governed_modules = full domain access
     if user_data["role"] == "domain_authority":
         governed = user_data.get("governed_modules") or []
-        if not domain_id and governed:
-            domain_id = governed[0]
-        elif domain_id and domain_id not in governed:
-            raise HTTPException(status_code=403, detail="Domain not in governed scope")
+        if governed and domain_id:
+            if "/" in domain_id and domain_id not in governed:
+                raise HTTPException(status_code=403, detail="Domain not in governed scope")
 
     return warning_store.query(limit=limit, offset=offset, category_filter=category, domain_id=domain_id)
 
@@ -143,12 +142,11 @@ async def query_alerts(
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    # DA users are auto-scoped to their governed domain
+    # DA users: empty governed_modules = full domain access
     if user_data["role"] == "domain_authority":
         governed = user_data.get("governed_modules") or []
-        if not domain_id and governed:
-            domain_id = governed[0]
-        elif domain_id and domain_id not in governed:
-            raise HTTPException(status_code=403, detail="Domain not in governed scope")
+        if governed and domain_id:
+            if "/" in domain_id and domain_id not in governed:
+                raise HTTPException(status_code=403, detail="Domain not in governed scope")
 
     return alert_store.query(limit=limit, offset=offset, domain_id=domain_id)
