@@ -518,6 +518,7 @@ function ChatInterface({
   unreadCount,
   onClearUnread,
   roleLayout,
+  domainId,
 }: {
   manifest: UiManifest
   auth: AuthState
