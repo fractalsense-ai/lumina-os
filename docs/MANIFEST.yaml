@@ -240,7 +240,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-18
-    sha256: c58da34b582921b48587ac6f731e3b0b4d3fd539a5016f15f8f619c0364cb48a
+    sha256: e56f15442cda7d81e2c3e4fd6bcb86b368b34e8929a48cab608d728fcf3de6e0
 
   - path: docs/7-concepts/api-server-architecture.md
     type: doc
@@ -329,6 +329,14 @@ artifacts:
     status: active
     last_updated: 2026-03-20
     sha256: 3a2f0346f4f2e5f18bcdf31be4f8d6cf7c0b0f80970fcf6efe226b74a877d2ec
+
+  - path: docs/7-concepts/llm-assisted-governance-adapters.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-03
+    sha256: 677245429b7b1e56bb86b4bd161305ee076351adc8688db794ddb2a5d8c15681
 
   - path: docs/7-concepts/logic-scraping.md
     type: doc

@@ -36,5 +36,6 @@ Architectural principles, design frameworks, and system philosophy.
 | [group-libraries-and-tools](group-libraries-and-tools.md) | Group Libraries and Group Tools: domain-scoped shared resources for cross-module reuse within a domain pack. Physics file declaration, adapter-indexer discovery, runtime resolution, agriculture reference implementation. |
 | [edge-vectorization](edge-vectorization.md) | Per-domain vector isolation: VectorStoreRegistry, domain-scoped ingestion and rebuild, daemon-driven maintenance, global routing index, NLP Pass 1.5 vector classification. |
 | [execution-route-compilation](execution-route-compilation.md) | Ahead-of-time compilation of domain-physics execution routes into flat O(1) lookup tables. The "semantic compiler" / shader cache optimisation. InvariantRoute, StandingOrderRoute, CompiledRoutes, deterministic gate integration. |
+| [llm-assisted-governance-adapters](llm-assisted-governance-adapters.md) | LLM-assisted governance adapter pattern: per-module persona separation, governance turn interpretation, task weight routing, LLM-assisted physics editing with form pre-population, document ingestion integration, novel synthesis detection. Replication guide for new domain packs. |
 
 These documents define the foundational design philosophy of Project Lumina. All implementation decisions trace back to these concepts.
