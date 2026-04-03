@@ -66,6 +66,11 @@ _LOW_WEIGHT_TYPES: frozenset[str] = frozenset(
         "admin_command",
         "field_validation",
         "document_extraction",
+        "governance_general",
+        "governance_status",
+        "governance_progress",
+        "governance_escalation",
+        "governance_management",
     }
 )
 

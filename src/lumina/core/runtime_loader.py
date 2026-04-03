@@ -327,7 +327,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         for _mod_id, _mod_cfg in _module_map.items():
             _mod_adapters = _mod_cfg.get("adapters")
             if isinstance(_mod_adapters, dict):
-                for _ak in ("state_builder", "domain_step"):
+                for _ak in ("state_builder", "domain_step", "turn_interpreter"):
                     _acfg = _mod_adapters.get(_ak)
                     if isinstance(_acfg, dict) and _acfg.get("module_path") and _acfg.get("callable"):
                         try:
@@ -336,6 +336,23 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                             )
                         except Exception as _e:
                             log.warning("Failed to load module adapter %s.%s: %s", _mod_id, _ak, _e)
+            # Pre-compile per-module system prompt and turn interpretation prompt
+            # so governance modules get a governance-specific persona instead of
+            # inheriting the domain-wide (learning) persona.
+            _mod_sys_prompt_path = _mod_cfg.get("domain_system_prompt_path")
+            if _mod_sys_prompt_path:
+                try:
+                    _mod_persona_text = _read_text(repo_root, _mod_sys_prompt_path)
+                    from lumina.core.persona_builder import build_system_prompt as _bsp, PersonaContext as _PC
+                    _mod_cfg["system_prompt"] = _bsp(_PC.CONVERSATIONAL, domain_override=_mod_persona_text.strip())
+                except Exception as _e:
+                    log.warning("Failed to load module system prompt %s: %s", _mod_id, _e)
+            _mod_ti_path = _mod_cfg.get("turn_interpretation_prompt_path")
+            if _mod_ti_path:
+                try:
+                    _mod_cfg["turn_interpretation_prompt"] = _read_text(repo_root, _mod_ti_path)
+                except Exception as _e:
+                    log.warning("Failed to load module turn-interp prompt %s: %s", _mod_id, _e)
         ctx["module_map"] = _module_map
 
     # Role-to-default-module routing (optional)

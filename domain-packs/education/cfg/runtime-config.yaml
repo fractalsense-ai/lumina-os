@@ -32,6 +32,8 @@ runtime:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
     domain/edu/domain-authority/v1:
       domain_physics_path: domain-packs/education/modules/domain-authority/domain-physics.json
+      domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
+      turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
       ui_overrides:
         subtitle: "Domain Authority — Governance"
       adapters:
@@ -41,8 +43,13 @@ runtime:
         domain_step:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: governance_domain_step
+        turn_interpreter:
+          module_path: domain-packs/education/controllers/governance_adapters.py
+          callable: interpret_turn_input
     domain/edu/teacher/v1:
       domain_physics_path: domain-packs/education/modules/teacher/domain-physics.json
+      domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
+      turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
       ui_overrides:
         subtitle: "Teacher — Classroom Management"
       adapters:
@@ -52,8 +59,13 @@ runtime:
         domain_step:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: governance_domain_step
+        turn_interpreter:
+          module_path: domain-packs/education/controllers/governance_adapters.py
+          callable: interpret_turn_input
     domain/edu/teaching-assistant/v1:
       domain_physics_path: domain-packs/education/modules/teaching-assistant/domain-physics.json
+      domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
+      turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
       ui_overrides:
         subtitle: "Teaching Assistant"
       adapters:
@@ -63,8 +75,13 @@ runtime:
         domain_step:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: governance_domain_step
+        turn_interpreter:
+          module_path: domain-packs/education/controllers/governance_adapters.py
+          callable: interpret_turn_input
     domain/edu/guardian/v1:
       domain_physics_path: domain-packs/education/modules/guardian/domain-physics.json
+      domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
+      turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
       ui_overrides:
         subtitle: "Guardian — Student Progress"
       adapters:
@@ -74,6 +91,9 @@ runtime:
         domain_step:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: governance_domain_step
+        turn_interpreter:
+          module_path: domain-packs/education/controllers/governance_adapters.py
+          callable: interpret_turn_input
 
   # Role-to-default-module routing: maps domain roles to their default module.
   role_to_default_module:

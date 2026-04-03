@@ -166,6 +166,24 @@ def process_message(
     runtime_provenance = dict(runtime.get("runtime_provenance") or {})
     system_prompt = runtime["system_prompt"]
 
+    # ── Per-module prompt overrides (governance persona) ──────
+    # Governance modules pre-compile a module-specific system_prompt and
+    # turn_interpretation_prompt in runtime_loader.  When present, these
+    # replace the domain-wide (learning) prompts so governance roles are
+    # never addressed with algebra/curriculum context.
+    _module_map = runtime.get("module_map") or {}
+    _active_mod = _module_map.get(resolved_domain_id) or {}
+    if _active_mod.get("system_prompt"):
+        system_prompt = _active_mod["system_prompt"]
+    if _active_mod.get("turn_interpretation_prompt") or _active_mod.get("turn_interpreter_fn"):
+        # Shallow-copy runtime so interpret_turn_input reads the override
+        # without mutating the cached domain-wide context.
+        runtime = dict(runtime)
+        if _active_mod.get("turn_interpretation_prompt"):
+            runtime["turn_interpretation_prompt"] = _active_mod["turn_interpretation_prompt"]
+        if _active_mod.get("turn_interpreter_fn"):
+            runtime["turn_interpreter_fn"] = _active_mod["turn_interpreter_fn"]
+
     # ── Magic-circle consent gate ─────────────────────────────
     # Only "user" role needs consent; governance roles and unauthenticated
     # sessions bypass entirely.
@@ -253,7 +271,7 @@ def process_message(
         turn_data = dict(runtime.get("turn_input_defaults") or {})
     elif runtime.get("local_only"):
         if slm_available():
-            _li_interpreter = runtime["turn_interpreter_fn"]
+            _li_interpreter = _active_mod.get("turn_interpreter_fn") or runtime["turn_interpreter_fn"]
             _li_sig = inspect.signature(_li_interpreter)
             _li_kwargs: dict[str, Any] = {
                 "call_llm": call_slm,
@@ -498,10 +516,11 @@ def process_message(
                 esc_records[-1], session_context=session_ctx,
             )
 
-    # Build structured command-proposal card when a system_command was dispatched.
+    # Build structured command-proposal card when a command was dispatched
+    # (system_command for system domain, governance_command for education governance).
     if (
         structured_content is None
-        and resolved_action == "system_command"
+        and resolved_action in ("system_command", "governance_command")
         and isinstance(turn_data.get("command_dispatch"), dict)
     ):
         cmd_dispatch = turn_data["command_dispatch"]
