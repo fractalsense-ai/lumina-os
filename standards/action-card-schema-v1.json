@@ -14,7 +14,7 @@
     },
     "card_type": {
       "type": "string",
-      "enum": ["escalation", "command_proposal"],
+      "enum": ["escalation", "command_proposal", "physics_edit_proposal", "ingestion_review"],
       "description": "The category of action card."
     },
     "id": {

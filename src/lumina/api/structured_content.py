@@ -29,6 +29,12 @@ _COMMAND_ACTIONS: list[dict[str, str]] = [
     {"id": "modify", "label": "Modify", "style": "outline"},
 ]
 
+_PHYSICS_EDIT_ACTIONS: list[dict[str, str]] = [
+    {"id": "accept", "label": "Accept & Stage", "style": "primary"},
+    {"id": "modify", "label": "Modify", "style": "outline"},
+    {"id": "reject", "label": "Reject", "style": "destructive"},
+]
+
 
 # ── Builders ──────────────────────────────────────────────────
 
@@ -134,5 +140,144 @@ def build_command_proposal_card(
             "staged_at": staged_command.get("staged_at"),
             "expires_at": staged_command.get("expires_at"),
             "log_stage_record_id": staged_command.get("log_stage_record_id", ""),
+        },
+    }
+
+
+def build_physics_edit_card(
+    staged_command: dict[str, Any],
+    proposal: dict[str, Any],
+    domain_physics: dict[str, Any],
+    requires_escalation: bool = False,
+    escalation_record_id: str | None = None,
+) -> dict[str, Any]:
+    """Build a structured action card for an LLM-assisted physics edit proposal.
+
+    Args:
+        staged_command:       The staged command entry from ``_STAGED_COMMANDS``.
+        proposal:             The LLM-generated proposal dict with keys
+                              ``target_section``, ``operation_type``,
+                              ``proposed_patch``, ``diff_summary``,
+                              ``affected_ids``, ``confidence``.
+        domain_physics:       Current domain-physics.json snapshot.
+        requires_escalation:  Whether the proposing actor is below DA level.
+        escalation_record_id: EscalationRecord ID for teacher/TA proposals.
+
+    Returns:
+        A dict conforming to the physics-edit-proposal-schema-v1 JSON Schema.
+    """
+    staged_id = staged_command.get("staged_id", "")
+    parsed = staged_command.get("parsed_command") or {}
+    original = staged_command.get("original_instruction", "")
+    domain_id = (parsed.get("params") or {}).get("domain_id", "")
+    target_section = proposal.get("target_section", "other")
+
+    body = f"Proposed physics edit: {proposal.get('diff_summary', original[:200])}"
+    if requires_escalation:
+        body += "\n⚠ This proposal requires Domain Authority approval."
+
+    # Snapshot the target section for diff rendering.
+    current_snapshot: dict[str, Any] = {}
+    if target_section != "other" and target_section in domain_physics:
+        section_val = domain_physics[target_section]
+        # For list sections, keep only the first 20 entries to bound card size.
+        if isinstance(section_val, list):
+            current_snapshot[target_section] = section_val[:20]
+        elif isinstance(section_val, dict):
+            current_snapshot[target_section] = section_val
+        else:
+            current_snapshot[target_section] = section_val
+
+    ctx: dict[str, Any] = {
+        "domain_id": domain_id,
+        "target_section": target_section,
+        "operation_type": proposal.get("operation_type", "modify"),
+        "proposed_patch": proposal.get("proposed_patch", {}),
+        "affected_ids": proposal.get("affected_ids") or [],
+        "current_snapshot": current_snapshot,
+        "diff_summary": proposal.get("diff_summary", ""),
+        "confidence": proposal.get("confidence", 0.0),
+        "actor_id": staged_command.get("actor_id", ""),
+        "actor_role": staged_command.get("actor_role", ""),
+        "requires_escalation": requires_escalation,
+        "original_instruction": original,
+    }
+    if escalation_record_id:
+        ctx["escalation_record_id"] = escalation_record_id
+
+    return {
+        "type": "action_card",
+        "card_type": "physics_edit_proposal",
+        "id": staged_id,
+        "title": "Physics Edit Proposal",
+        "body": body,
+        "context": ctx,
+        "actions": list(_PHYSICS_EDIT_ACTIONS),
+        "resolve_endpoint": f"/api/admin/command/{staged_id}/resolve",
+        "metadata": {
+            "staged_at": staged_command.get("staged_at"),
+            "expires_at": staged_command.get("expires_at"),
+            "log_stage_record_id": staged_command.get("log_stage_record_id", ""),
+        },
+    }
+
+
+# ── Ingestion review actions ─────────────────────────────────
+
+_INGESTION_REVIEW_ACTIONS: list[dict[str, str]] = [
+    {"id": "approve", "label": "Approve Interpretation", "style": "primary"},
+    {"id": "reject", "label": "Reject", "style": "destructive"},
+]
+
+
+def build_ingestion_review_card(
+    ingestion_record: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a structured action card for reviewing an ingestion record.
+
+    Args:
+        ingestion_record: An IngestionRecord dict from the ingestion
+                          service, expected to be in ``review_pending``
+                          or ``extraction_complete`` status.
+
+    Returns:
+        A dict conforming to the action-card-schema-v1 JSON Schema
+        with card_type ``ingestion_review``.
+    """
+    record_id = ingestion_record.get("document_id", ingestion_record.get("record_id", ""))
+    filename = ingestion_record.get("original_filename", "unknown")
+    status = ingestion_record.get("status", "unknown")
+    domain_id = ingestion_record.get("domain_id", "")
+    interpretations = ingestion_record.get("interpretations") or []
+
+    body = f"Document: {filename} — status: {status}"
+    if interpretations:
+        labels = [i.get("label", "?") for i in interpretations]
+        body += f"\nInterpretations: {', '.join(labels)}"
+        best = max(interpretations, key=lambda i: float(i.get("confidence", 0)))
+        body += f"\nRecommended: {best.get('label', '?')} (confidence: {best.get('confidence', 0):.0%})"
+
+    ctx: dict[str, Any] = {
+        "domain_id": domain_id,
+        "filename": filename,
+        "content_type": ingestion_record.get("content_type", ""),
+        "content_hash": ingestion_record.get("content_hash", ""),
+        "ingesting_actor_id": ingestion_record.get("ingesting_actor_id", ""),
+        "interpretations": interpretations,
+        "status": status,
+    }
+
+    return {
+        "type": "action_card",
+        "card_type": "ingestion_review",
+        "id": record_id,
+        "title": "Ingestion Review",
+        "body": body,
+        "context": ctx,
+        "actions": list(_INGESTION_REVIEW_ACTIONS),
+        "resolve_endpoint": f"/api/ingest/{record_id}/review",
+        "metadata": {
+            "timestamp_utc": ingestion_record.get("timestamp_utc", ""),
+            "module_id": ingestion_record.get("module_id", ""),
         },
     }

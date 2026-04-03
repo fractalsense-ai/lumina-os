@@ -735,6 +735,13 @@ artifacts:
     last_updated: 2026-03-20
     sha256: 18b44ed3d755dbb1b259e230f9e3665633b2f5238eb1fba1f41caca9bb60a7ac
 
+  - path: standards/physics-edit-proposal-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-20
+    sha256: 43506bcce29a531e0b9c91f8d879ec2575656801abcb4ec25af14d79ed1fe80a
+
   - path: standards/prompt-contract-schema-v1.json
     type: schema
     doc_version: 1.0.0
@@ -810,7 +817,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-06-15
-    sha256: d11df995c9b4b4e3276b047738a6d0d18901f86d6b0e425cc9992668eb257ad3
+    sha256: ab1a95c51acaaa5a69493134b5fac8e06e776cdadf4da27dc6dc660830ea2a09
 
 
   # ── Admin Command Schemas ─────────────────────────────────────────────────

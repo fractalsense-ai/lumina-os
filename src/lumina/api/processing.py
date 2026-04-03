@@ -563,13 +563,104 @@ def process_message(
                         "result": _exec_result,
                     }
                 else:
+                    # ── LLM-assisted physics edit proposal ────────
+                    # When the operation is update_domain_physics and we are
+                    # in a governance context, call the LLM to interpret the
+                    # NL instruction into a structured patch and build a
+                    # form-like physics_edit_proposal card instead of the
+                    # generic command_proposal card.
+                    _is_physics_edit = (
+                        operation == "update_domain_physics"
+                        and resolved_action == "governance_command"
+                    )
+                    _physics_proposal: dict[str, Any] | None = None
+                    if _is_physics_edit and domain_physics:
+                        try:
+                            from domain_packs.education.controllers.governance_adapters import (
+                                extract_physics_patch,
+                            )
+                            _physics_proposal = extract_physics_patch(
+                                call_llm, input_text, domain_physics,
+                            )
+                            # Enrich the command dispatch params with the
+                            # LLM-generated updates so _stage_command gets
+                            # a fully-populated command.
+                            if _physics_proposal.get("proposed_patch"):
+                                cmd_dispatch.setdefault("params", {})
+                                cmd_dispatch["params"]["domain_id"] = (
+                                    cmd_dispatch["params"].get("domain_id")
+                                    or resolved_domain_id
+                                )
+                                cmd_dispatch["params"]["updates"] = (
+                                    _physics_proposal["proposed_patch"]
+                                )
+                        except Exception:
+                            log.warning(
+                                "LLM physics patch extraction failed, "
+                                "falling back to standard staging",
+                                exc_info=True,
+                            )
+
+                    # ── Teacher / TA escalation for physics edits ─
+                    # Non-DA governance roles proposing physics changes
+                    # get an auto-escalation so a DA must approve.
+                    _requires_escalation = (
+                        _is_physics_edit
+                        and _actor_role not in ("root", "domain_authority")
+                    )
+
                     _staged = _stage_command(
                         parsed_command=cmd_dispatch,
                         original_instruction=input_text,
                         actor_id=_actor_id,
                         actor_role=_actor_role,
                     )
-                    structured_content = _staged.get("structured_content")
+
+                    if _is_physics_edit and _physics_proposal is not None:
+                        from lumina.api.structured_content import build_physics_edit_card
+
+                        structured_content = build_physics_edit_card(
+                            _staged,
+                            _physics_proposal,
+                            domain_physics,
+                            requires_escalation=_requires_escalation,
+                            escalation_record_id=_staged.get("escalation_record_id"),
+                        )
+
+                        # ── Novel synthesis detection ─────────
+                        # If the proposal adds genuinely new entries,
+                        # flag it and log a TraceEvent so the escalation
+                        # pipeline can present it for two-key verification.
+                        try:
+                            from domain_packs.education.controllers.governance_adapters import (
+                                detect_novel_synthesis,
+                            )
+                            _novel_ids = detect_novel_synthesis(
+                                _physics_proposal, domain_physics,
+                            )
+                            if _novel_ids:
+                                structured_content["context"]["novel_synthesis_ids"] = _novel_ids
+                                orch.append_provenance_trace(
+                                    task_id=str(task_spec.get("task_id", "")),
+                                    action="novel_synthesis_flagged",
+                                    prompt_type="governance_command",
+                                    metadata={
+                                        "novel_synthesis_signal": "NOVEL_PATTERN",
+                                        "novel_ids": _novel_ids,
+                                        "domain_id": resolved_domain_id,
+                                        "staged_id": _staged.get("staged_id", ""),
+                                        "actor_id": _actor_id,
+                                    },
+                                )
+                                log.info(
+                                    "[%s] Novel synthesis detected in physics edit: %s",
+                                    session_id,
+                                    _novel_ids,
+                                )
+                        except Exception:
+                            log.debug("Novel synthesis detection skipped", exc_info=True)
+                    else:
+                        structured_content = _staged.get("structured_content")
             except ValueError as _val_err:
                 log.warning("Auto-stage failed for command_dispatch: %s", _val_err, exc_info=True)
                 # Build a clarification response instead of silently swallowing

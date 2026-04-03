@@ -1,0 +1,80 @@
+# ingestion-adapter-v1.yaml
+# Project Lumina — Tool Adapter Definition
+# ============================================================
+# Wraps the document ingestion pipeline operations for governance
+# roles.  Allows DA and teacher to upload, review, and commit
+# ingested domain-library content via chat.
+# ============================================================
+
+id: adapter/edu/ingestion/v1
+version: "1.0.0"
+tool_name: "Document Ingestion Manager"
+description: >
+  Manages document ingestion for the education domain.  Governance
+  roles upload documents (PDF, DOCX, Markdown, CSV, JSON, YAML)
+  which are processed by the SLM into structured interpretation
+  variants.  The domain authority reviews and commits approved
+  interpretations into the domain library.
+
+domain_id: domain/edu/domain-authority/v1
+
+call_types:
+  - list_ingestions
+  - review_ingestion
+  - approve_interpretation
+  - reject_ingestion
+
+input_schema:
+  type: object
+  required: [call_type]
+  properties:
+    call_type:
+      type: string
+      enum: [list_ingestions, review_ingestion, approve_interpretation, reject_ingestion]
+    ingestion_id:
+      type: string
+      format: uuid
+      description: "Target ingestion record ID (for review/approve/reject)"
+    interpretation_id:
+      type: string
+      description: "ID of the interpretation variant to approve (for approve_interpretation)"
+    domain_id:
+      type: string
+      description: "Domain filter for listing ingestions"
+    status_filter:
+      type: string
+      enum: [pending_extraction, extracting, extraction_complete, review_pending, approved, rejected, committed]
+      description: "Status filter for listing ingestions"
+    reason:
+      type: string
+      description: "Rejection reason (for reject_ingestion)"
+      maxLength: 512
+
+output_schema:
+  type: object
+  properties:
+    call_type:
+      type: string
+    success:
+      type: boolean
+    records:
+      type: array
+      description: "List of ingestion records (for list_ingestions)"
+    record:
+      type: object
+      description: "Single ingestion record with interpretations (for review_ingestion)"
+    error:
+      type: [string, "null"]
+      description: "Error message if the operation failed"
+
+authorization:
+  who_may_call:
+    - domain_authority
+    - teacher
+  requires_entity_consent: false
+  max_calls_per_session: 30
+  logged_in_system_log: true
+
+error_handling:
+  on_failure: log_and_continue
+  fallback_standing_order_id: null

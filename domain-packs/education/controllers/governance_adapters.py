@@ -35,6 +35,7 @@ _COMMAND_DISPATCH_TYPES: frozenset[str] = frozenset(
 _READ_VERBS = frozenset({"show", "list", "get", "check", "view", "what", "status", "display", "find"})
 _ASSIGN_VERBS = frozenset({"assign", "grant", "give"})
 _REVOKE_VERBS = frozenset({"remove", "revoke", "delete"})
+_INGEST_VERBS = frozenset({"ingest", "upload", "import", "add"})
 _DOMAIN_MENTION = re.compile(
     r"\b(?:in|to|for|from|of)\s+(?:the\s+)?(\w+)\s+domain\b", re.IGNORECASE,
 )
@@ -80,6 +81,20 @@ def _deterministic_command_fallback(
         return {"operation": "assign_domain_role", "params": {}}
     if first_verb in _REVOKE_VERBS:
         return {"operation": "revoke_domain_role", "params": {}}
+
+    # ── Ingestion operations ──────────────────────────────────
+    if first_verb in _INGEST_VERBS or any(v in tokens for v in _INGEST_VERBS):
+        if any(w in tokens for w in ("document", "file", "doc", "pdf", "upload")):
+            return {"operation": "list_ingestions", "params": {}}
+        return {"operation": "list_ingestions", "params": {}}
+    if any(w in tokens for w in ("ingestion", "ingestions", "ingested")):
+        if any(w in tokens for w in ("approve", "accept")):
+            return {"operation": "approve_interpretation", "params": {}}
+        if any(w in tokens for w in ("reject", "deny")):
+            return {"operation": "reject_ingestion", "params": {}}
+        if any(w in tokens for w in ("review",)):
+            return {"operation": "review_ingestion", "params": {}}
+        return {"operation": "list_ingestions", "params": {}}
 
     return None
 
@@ -225,3 +240,148 @@ def interpret_turn_input(
         evidence["command_dispatch"] = None
 
     return evidence
+
+
+# ─────────────────────────────────────────────────────────────
+# LLM-assisted physics patch extraction
+# ─────────────────────────────────────────────────────────────
+
+_PHYSICS_PATCH_SYSTEM_PROMPT = """\
+You are a domain-physics patch generator for Project Lumina.
+Given the operator's natural-language instruction and a snapshot of the
+current domain-physics.json, produce a JSON object with these fields:
+
+{
+  "target_section": "<invariants|standing_orders|escalation_triggers|subsystem_configs|glossary|artifacts|ingestion_config|tool_adapters|other>",
+  "operation_type": "<add|modify|remove>",
+  "proposed_patch": { "<field>": <new_value>, ... },
+  "affected_ids": ["<id_of_affected_entry>", ...],
+  "diff_summary": "<one-sentence human-readable summary of what changed>",
+  "confidence": <0.0-1.0>
+}
+
+Rules:
+- proposed_patch must be a dict whose keys are top-level domain-physics
+  fields (e.g. "invariants", "standing_orders").  Values are the COMPLETE
+  replacement for that field, not a partial merge.
+- For list-typed sections (invariants, standing_orders, escalation_triggers,
+  glossary, artifacts), include the FULL updated list with the change applied.
+- For "add" operations, append the new entry to the existing list.
+- For "modify" operations, include the full list with the target entry updated.
+- For "remove" operations, include the full list with the target entry removed.
+- affected_ids lists the IDs of entries that were added, modified, or removed.
+- Keep confidence between 0.5 and 1.0.  Use lower values when the
+  instruction is ambiguous.
+- Return ONLY valid JSON.  No markdown fences.  No commentary.
+"""
+
+
+def extract_physics_patch(
+    call_llm: Callable[[str, str, str | None], str],
+    input_text: str,
+    domain_physics: dict[str, Any],
+) -> dict[str, Any]:
+    """Use the LLM to interpret a natural-language physics edit instruction.
+
+    Args:
+        call_llm:       ``(system, user, model) -> str`` callable.
+        input_text:     The operator's natural-language instruction.
+        domain_physics: Current domain-physics.json dict.
+
+    Returns:
+        A proposal dict with ``target_section``, ``operation_type``,
+        ``proposed_patch``, ``affected_ids``, ``diff_summary``, ``confidence``.
+        On failure returns a minimal fallback with confidence 0.
+    """
+    # Build a compact physics snapshot — omit large sections the LLM
+    # doesn't need (permissions, groups, execution_policy, etc.)
+    _sections_for_context = (
+        "invariants", "standing_orders", "escalation_triggers",
+        "subsystem_configs", "glossary", "artifacts", "ingestion_config",
+        "tool_adapters",
+    )
+    snapshot: dict[str, Any] = {
+        "id": domain_physics.get("id", ""),
+        "version": domain_physics.get("version", ""),
+    }
+    for section in _sections_for_context:
+        if section in domain_physics:
+            val = domain_physics[section]
+            # Truncate large lists to keep token count manageable.
+            if isinstance(val, list) and len(val) > 30:
+                snapshot[section] = val[:30]
+            else:
+                snapshot[section] = val
+
+    user_prompt = (
+        f"Operator instruction: {input_text}\n\n"
+        f"Current domain-physics.json (relevant sections):\n"
+        f"{json.dumps(snapshot, indent=2, ensure_ascii=False)}"
+    )
+
+    try:
+        raw = call_llm(_PHYSICS_PATCH_SYSTEM_PROMPT, user_prompt, None)
+        proposal = json.loads(_strip_markdown_fences(raw))
+    except (json.JSONDecodeError, Exception) as exc:
+        log.warning("LLM physics patch extraction failed: %s", exc)
+        proposal = {}
+
+    # Apply defaults for missing fields.
+    proposal.setdefault("target_section", "other")
+    proposal.setdefault("operation_type", "modify")
+    proposal.setdefault("proposed_patch", {})
+    proposal.setdefault("affected_ids", [])
+    proposal.setdefault("diff_summary", input_text[:200])
+    proposal.setdefault("confidence", 0.0)
+
+    return proposal
+
+
+# ─────────────────────────────────────────────────────────────
+# Novel synthesis detection for physics edits
+# ─────────────────────────────────────────────────────────────
+
+# Sections whose entries carry an ``id`` field — additions to these
+# sections are potentially novel synthesis events.
+_ID_BEARING_SECTIONS: frozenset[str] = frozenset(
+    {"invariants", "standing_orders", "escalation_triggers", "glossary", "artifacts"}
+)
+
+
+def detect_novel_synthesis(
+    proposal: dict[str, Any],
+    domain_physics: dict[str, Any],
+) -> list[str]:
+    """Check whether a physics edit proposal introduces genuinely new entries.
+
+    Returns a list of IDs that are new (not present in the current physics).
+    An empty list means no novel synthesis detected.
+    """
+    if proposal.get("operation_type") != "add":
+        return []
+
+    target_section = proposal.get("target_section", "other")
+    if target_section not in _ID_BEARING_SECTIONS:
+        return []
+
+    patch = proposal.get("proposed_patch", {})
+    proposed_list = patch.get(target_section)
+    if not isinstance(proposed_list, list):
+        return []
+
+    existing_list = domain_physics.get(target_section) or []
+    existing_ids = {
+        entry.get("id") or entry.get("term", "")
+        for entry in existing_list
+        if isinstance(entry, dict)
+    }
+
+    novel_ids: list[str] = []
+    for entry in proposed_list:
+        if not isinstance(entry, dict):
+            continue
+        entry_id = entry.get("id") or entry.get("term", "")
+        if entry_id and entry_id not in existing_ids:
+            novel_ids.append(entry_id)
+
+    return novel_ids

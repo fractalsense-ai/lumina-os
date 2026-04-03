@@ -107,7 +107,8 @@
   "tool_adapters": [
     "adapter/edu/role-assignment/v1",
     "adapter/edu/physics-staging/v1",
-    "adapter/edu/progress-overview/v1"
+    "adapter/edu/progress-overview/v1",
+    "adapter/edu/ingestion/v1"
   ],
   "domain_roles": {
     "schema_version": "1.0",
@@ -184,5 +185,11 @@
         "description": "Domain authority governance landing — escalation review, physics staging, role management."
       }
     }
+  },
+  "ingestion_config": {
+    "enabled": true,
+    "max_file_size_mb": 10,
+    "accepted_formats": ["pdf", "docx", "markdown", "csv", "json", "yaml"],
+    "max_interpretations": 3
   }
 }
