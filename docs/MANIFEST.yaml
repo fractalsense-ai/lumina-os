@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 
 artifacts:
 

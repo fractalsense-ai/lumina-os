@@ -1,4 +1,11 @@
-"""Core D.S.A. → LLM pipeline: process_message()."""
+"""Core D.S.A. → LLM pipeline: process_message().
+
+See also:
+    docs/7-concepts/dsa-framework.md
+    docs/7-concepts/prompt-packet-assembly.md
+    docs/7-concepts/slm-compute-distribution.md
+    docs/7-concepts/zero-trust-architecture.md
+"""
 
 from __future__ import annotations
 
@@ -183,6 +190,16 @@ def process_message(
             runtime["turn_interpretation_prompt"] = _active_mod["turn_interpretation_prompt"]
         if _active_mod.get("turn_interpreter_fn"):
             runtime["turn_interpreter_fn"] = _active_mod["turn_interpreter_fn"]
+    # Per-module turn_input_defaults / turn_input_schema override so
+    # governance modules produce governance-shaped evidence instead of
+    # inheriting algebra-shaped defaults.
+    # See: docs/7-concepts/llm-assisted-governance-adapters.md
+    if _active_mod.get("turn_input_defaults"):
+        runtime = dict(runtime)
+        runtime["turn_input_defaults"] = _active_mod["turn_input_defaults"]
+    if _active_mod.get("turn_input_schema"):
+        runtime = dict(runtime)
+        runtime["turn_input_schema"] = _active_mod["turn_input_schema"]
 
     # ── Magic-circle consent gate ─────────────────────────────
     # Only "user" role needs consent; governance roles and unauthenticated
@@ -827,6 +844,11 @@ def process_message(
     if _rolling_seal is not None:
         result["transcript_seal"] = _rolling_seal
         result["transcript_seal_metadata"] = _seal_meta
+        # Include the server-authoritative transcript snapshot so the client
+        # stores exactly what was sealed — eliminates timestamp drift between
+        # client Date.now() and server time.time().
+        # See: docs/7-concepts/zero-trust-architecture.md
+        result["transcript_snapshot"] = _transcript
     if structured_content is not None:
         result["structured_content"] = structured_content
 

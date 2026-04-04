@@ -4,6 +4,11 @@ Governance roles (domain_authority, teacher, teaching_assistant, guardian) use
 these adapters instead of the learning-specific ZPD/fluency monitors.  The
 pattern mirrors the system domain's ``build_system_state`` /
 ``system_domain_step`` in domain-packs/system/controllers/runtime_adapters.py.
+
+See also:
+    docs/7-concepts/llm-assisted-governance-adapters.md
+    docs/7-concepts/slm-compute-distribution.md
+    docs/7-concepts/domain-adapter-pattern.md
 """
 
 from __future__ import annotations
@@ -194,7 +199,11 @@ def interpret_turn_input(
                 context_hint = "\n" + "\n".join(lines)
 
     # ── SLM classification ────────────────────────────────────
-    raw_response = call_llm(
+    # Governance turn classification is a LOW-weight task — prefer the
+    # local SLM when available to avoid unnecessary LLM round-trips.
+    # See: docs/7-concepts/slm-compute-distribution.md
+    _classify = call_slm or call_llm
+    raw_response = _classify(
         system=prompt_text,
         user=f"Operator message: {input_text}{context_hint}",
         model=None,

@@ -653,14 +653,22 @@ function ChatInterface({
         sealRef.current = apiResponse.transcript_seal
         sealMetadataRef.current = apiResponse.transcript_seal_metadata
         turnCounterRef.current += 1
-        const turn: TranscriptTurn = {
-          turn: turnCounterRef.current,
-          user: trimmedInput,
-          assistant: apiResponse.response,
-          ts: Date.now() / 1000,
-          domain_id: apiResponse.transcript_seal_metadata?.domain_id ?? '',
+        // Use the server-authoritative transcript snapshot when available
+        // to eliminate timestamp drift between client and server that
+        // causes HMAC seal verification to fail on session resume.
+        // See: docs/7-concepts/zero-trust-architecture.md
+        if (apiResponse.transcript_snapshot && Array.isArray(apiResponse.transcript_snapshot)) {
+          transcriptRef.current = apiResponse.transcript_snapshot as TranscriptTurn[]
+        } else {
+          const turn: TranscriptTurn = {
+            turn: turnCounterRef.current,
+            user: trimmedInput,
+            assistant: apiResponse.response,
+            ts: Date.now() / 1000,
+            domain_id: apiResponse.transcript_seal_metadata?.domain_id ?? '',
+          }
+          transcriptRef.current = [...transcriptRef.current, turn]
         }
-        transcriptRef.current = [...transcriptRef.current, turn]
         transcriptStoreRef.current.saveSession({
           sessionId,
           messages: transcriptRef.current,
@@ -693,16 +701,18 @@ function ChatInterface({
   // Save transcript to IndexedDB before calling the parent logout handler.
   // The beforeunload handler does NOT fire on React state-driven logouts,
   // so we must explicitly save here to survive the re-login cycle.
-  const handleLogoutWithSave = () => {
+  const handleLogoutWithSave = async () => {
     const meta = sealMetadataRef.current
     if (sealRef.current && transcriptRef.current.length > 0 && meta) {
-      transcriptStoreRef.current.saveSession({
-        sessionId,
-        messages: transcriptRef.current,
-        seal: sealRef.current,
-        metadata: meta,
-        updatedAt: Date.now(),
-      }).catch(() => {})
+      try {
+        await transcriptStoreRef.current.saveSession({
+          sessionId,
+          messages: transcriptRef.current,
+          seal: sealRef.current,
+          metadata: meta,
+          updatedAt: Date.now(),
+        })
+      } catch { /* best-effort — proceed to logout */ }
     }
     onLogout()
   }

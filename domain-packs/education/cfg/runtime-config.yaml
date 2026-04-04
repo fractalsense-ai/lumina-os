@@ -46,6 +46,22 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+      turn_input_defaults:
+        query_type: general
+        target_component: null
+        urgency: routine
+        response_latency_sec: 5.0
+        off_task_ratio: 0.0
+      turn_input_schema:
+        query_type:
+          type: enum
+          values: [general, status_check, admin_command, module_management, escalation_review, physics_edit]
+        target_component:
+          type: string
+          nullable: true
+        urgency:
+          type: enum
+          values: [routine, elevated, critical]
     domain/edu/teacher/v1:
       domain_physics_path: domain-packs/education/modules/teacher/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
@@ -62,6 +78,22 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+      turn_input_defaults:
+        query_type: general
+        target_component: null
+        urgency: routine
+        response_latency_sec: 5.0
+        off_task_ratio: 0.0
+      turn_input_schema:
+        query_type:
+          type: enum
+          values: [general, status_check, admin_command, module_management, escalation_review, physics_edit]
+        target_component:
+          type: string
+          nullable: true
+        urgency:
+          type: enum
+          values: [routine, elevated, critical]
     domain/edu/teaching-assistant/v1:
       domain_physics_path: domain-packs/education/modules/teaching-assistant/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
@@ -78,6 +110,22 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+      turn_input_defaults:
+        query_type: general
+        target_component: null
+        urgency: routine
+        response_latency_sec: 5.0
+        off_task_ratio: 0.0
+      turn_input_schema:
+        query_type:
+          type: enum
+          values: [general, status_check, admin_command, module_management, escalation_review, physics_edit]
+        target_component:
+          type: string
+          nullable: true
+        urgency:
+          type: enum
+          values: [routine, elevated, critical]
     domain/edu/guardian/v1:
       domain_physics_path: domain-packs/education/modules/guardian/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
@@ -94,6 +142,22 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+      turn_input_defaults:
+        query_type: general
+        target_component: null
+        urgency: routine
+        response_latency_sec: 5.0
+        off_task_ratio: 0.0
+      turn_input_schema:
+        query_type:
+          type: enum
+          values: [general, status_check, admin_command, module_management, escalation_review, physics_edit]
+        target_component:
+          type: string
+          nullable: true
+        urgency:
+          type: enum
+          values: [routine, elevated, critical]
 
   # Role-to-default-module routing: maps domain roles to their default module.
   role_to_default_module:

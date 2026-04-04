@@ -1,4 +1,9 @@
-"""Runtime-driven helpers: contract rendering, turn interpretation, tool invocation."""
+"""Runtime-driven helpers: contract rendering, turn interpretation, tool invocation.
+
+See also:
+    docs/7-concepts/domain-adapter-pattern.md
+    docs/7-concepts/slm-compute-distribution.md
+"""
 
 from __future__ import annotations
 

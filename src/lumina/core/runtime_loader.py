@@ -1,4 +1,8 @@
-﻿from __future__ import annotations
+﻿# See also:
+#   docs/7-concepts/domain-pack-anatomy.md
+#   docs/7-concepts/domain-adapter-pattern.md
+#   docs/7-concepts/execution-route-compilation.md
+from __future__ import annotations
 
 import hashlib
 import importlib.util
@@ -353,6 +357,16 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                     _mod_cfg["turn_interpretation_prompt"] = _read_text(repo_root, _mod_ti_path)
                 except Exception as _e:
                     log.warning("Failed to load module turn-interp prompt %s: %s", _mod_id, _e)
+            # Per-module turn_input_defaults / turn_input_schema override
+            # so governance modules get governance-shaped evidence instead
+            # of inheriting the domain-wide (learning) defaults.
+            # See: docs/7-concepts/llm-assisted-governance-adapters.md
+            _mod_tid = _mod_cfg.get("turn_input_defaults")
+            if isinstance(_mod_tid, dict) and _mod_tid:
+                _mod_cfg["turn_input_defaults"] = dict(_mod_tid)
+            _mod_tis = _mod_cfg.get("turn_input_schema")
+            if isinstance(_mod_tis, dict) and _mod_tis:
+                _mod_cfg["turn_input_schema"] = dict(_mod_tis)
         ctx["module_map"] = _module_map
 
     # Role-to-default-module routing (optional)
