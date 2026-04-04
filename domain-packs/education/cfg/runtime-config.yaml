@@ -1,3 +1,5 @@
+# version: 1.0.0
+# last_updated: 2026-04-04
 runtime:
   global_system_prompt_path: docs/5-standards/global-system-prompt.md
   domain_system_prompt_path: domain-packs/education/prompts/domain-persona-v1.md

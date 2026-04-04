@@ -4,6 +4,8 @@
 # See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
 # ──────────────────────────────────────────────────────────────────────
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 pack_id: system
 version: "0.1.0"
 description: >-

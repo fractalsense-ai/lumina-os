@@ -8,6 +8,8 @@
 # with the student's assigned pseudonymous token.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 student_id: "<PSEUDONYMOUS_ID>"
 domain_id: "domain/edu/pre-algebra/v1"
 display_name: null  # Optional nickname; not required

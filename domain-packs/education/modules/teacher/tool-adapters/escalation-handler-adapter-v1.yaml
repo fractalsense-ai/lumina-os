@@ -4,6 +4,8 @@
 # Wraps escalation resolve/defer/forward for teachers.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/escalation-handler/v1
 version: "1.0.0"
 tool_name: "Escalation Handler"

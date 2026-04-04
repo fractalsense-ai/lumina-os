@@ -25,6 +25,8 @@
 # DO NOT reorder or delete the "general_math" entry — it must be last and
 # must have an empty preference_keywords list so it serves as the fallback.
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 version: "1.0.0"
 last_updated: "2026-03-16"
 

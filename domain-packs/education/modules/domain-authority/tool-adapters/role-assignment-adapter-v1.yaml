@@ -5,6 +5,8 @@
 # operations for use by the Domain Authority module.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/role-assignment/v1
 version: "1.0.0"
 tool_name: "Role Assignment Manager"

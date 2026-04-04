@@ -1,4 +1,9 @@
-"""Tests verifying schema_version + last_updated metadata on all versioned artifacts."""
+"""Tests verifying schema_version + last_updated metadata on all versioned artifacts.
+
+See also:
+    docs/7-concepts/state-change-commit-policy.md — audit requirement for state mutations
+    docs/7-concepts/domain-pack-anatomy.md        — domain pack structure & runtime state
+"""
 from __future__ import annotations
 
 import json
@@ -133,6 +138,20 @@ class TestManifestCoverage:
         missing = on_disk - tracked
         assert not missing, f"Docs not in MANIFEST: {missing}"
 
+    def test_all_config_yamls_tracked(self, manifest):
+        """All YAML files in domain-packs/ that affect system state must be tracked."""
+        tracked = {a["path"] for a in manifest["artifacts"]}
+        on_disk = set()
+        for p in (REPO_ROOT / "domain-packs").rglob("*.yaml"):
+            rel = str(p.relative_to(REPO_ROOT)).replace("\\", "/")
+            # Skip domain-pack doc manifests and directories outside state scope
+            if "/docs/" in rel:
+                continue
+            on_disk.add(rel)
+        missing = on_disk - tracked
+        # See: docs/7-concepts/state-change-commit-policy.md
+        assert not missing, f"Config YAMLs not in MANIFEST: {missing}"
+
     def test_no_pending_hashes(self, manifest):
         pending = [a["path"] for a in manifest["artifacts"]
                    if a.get("sha256") == "pending"]
@@ -146,7 +165,19 @@ class TestManifestCoverage:
 
 # ── Config file versioning ──────────────────────────────────────────────────
 
-CONFIG_FILES = ["domain-packs/system/cfg/domain-registry.yaml"]
+# Auto-discover all YAML files in domain-packs/ that affect system state.
+# See: docs/7-concepts/domain-pack-anatomy.md
+def _collect_config_yamls() -> list[str]:
+    paths: list[str] = []
+    for p in sorted((REPO_ROOT / "domain-packs").rglob("*.yaml")):
+        rel = str(p.relative_to(REPO_ROOT)).replace("\\", "/")
+        if "/docs/" in rel:
+            continue
+        paths.append(rel)
+    return paths
+
+
+CONFIG_FILES = _collect_config_yamls()
 
 
 @pytest.mark.unit

@@ -5,6 +5,8 @@
 # student, parent).  Merged on top of the base entity profile.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 consent:
   magic_circle_accepted: false
   consent_timestamp_utc: null

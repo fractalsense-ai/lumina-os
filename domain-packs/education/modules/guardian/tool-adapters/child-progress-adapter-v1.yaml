@@ -5,6 +5,8 @@
 # assigned children via consent records.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/child-progress/v1
 version: "1.0.0"
 tool_name: "Child Progress Viewer"

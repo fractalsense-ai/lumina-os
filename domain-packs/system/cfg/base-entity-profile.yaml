@@ -7,6 +7,8 @@
 # role extensions are deep-merged on top at profile creation time.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 entity_id: null
 domain_id: null
 display_name: null

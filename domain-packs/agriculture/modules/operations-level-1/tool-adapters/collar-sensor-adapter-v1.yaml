@@ -1,6 +1,8 @@
 # collar-sensor-adapter-v1.yaml
 # Project Lumina — Tool Adapter Definition
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/agri/collar-sensor/v1
 version: "1.0.0"
 tool_name: "Cattle Collar Sensor Reader"

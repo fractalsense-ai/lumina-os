@@ -17,6 +17,8 @@
 
 # ── Step 1: Root authenticates ──────────────────────────────
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 login_request:
   method: POST
   url: /api/auth/login

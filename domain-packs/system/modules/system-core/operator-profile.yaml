@@ -4,6 +4,8 @@
 # Real operator state is not tracked across sessions the way learner state is.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 operator_id: null
 domain_id: "domain/sys/system-core/v1"
 display_name: null

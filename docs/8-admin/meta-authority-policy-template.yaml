@@ -7,6 +7,8 @@
 # a Meta Authority level (e.g., Department Head, School Admin).
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 meta_authority:
   id: "meta/{org}/{scope}/v1"             # Unique ID for this Meta Authority level
   version: "1.0.0"

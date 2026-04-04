@@ -13,6 +13,8 @@
 # This EscalationRecord would be appended to the System Logs
 # and the teacher would receive a notification.
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 record_type: EscalationRecord
 record_id: "esc-a1b2c3d4-0042-4000-8000-000000000099"
 prev_record_hash: "9f8e7d6c5b4a3928172615049382716050493827160504938271605049382716"

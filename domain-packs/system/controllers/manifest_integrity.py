@@ -10,8 +10,13 @@ regen  Recompute all SHA-256 hashes and rewrite docs/MANIFEST.yaml in-place.
        Preserves comments, formatting, and all non-hash fields.
        Also updates the top-level last_updated date to today.
 
-discover  Scan domain-packs/*/docs/ for .md files not yet listed in
-          docs/MANIFEST.yaml and print them (optionally append with --add).
+discover  Scan domain-packs/ for .md docs and state-affecting .yaml files not
+          yet listed in docs/MANIFEST.yaml (optionally append with --add).
+
+See also:
+    docs/7-concepts/principles.md              — universal integrity & audit principles
+    docs/7-concepts/zero-trust-architecture.md — artifact integrity verification
+    docs/7-concepts/state-change-commit-policy.md — audit requirement for state mutations
 """
 from __future__ import annotations
 
@@ -93,6 +98,8 @@ def check_manifest(repo_root: Path = REPO_ROOT) -> int:
     Returns 0 when all recorded hashes match the files on disk.
     PENDING and MISSING entries produce warnings but do not cause failure.
     Returns 1 if any MISMATCH is detected.
+
+    See: docs/7-concepts/zero-trust-architecture.md
     """
     manifest_path = repo_root / "docs" / "MANIFEST.yaml"
     artifacts = _parse_artifacts(manifest_path)
@@ -287,6 +294,69 @@ def discover_domain_pack_docs(repo_root: Path = REPO_ROOT, *, add: bool = False)
     return regen_manifest(repo_root)
 
 
+def discover_domain_pack_yamls(repo_root: Path = REPO_ROOT, *, add: bool = False) -> int:
+    """Scan domain-packs/ for state-affecting YAML files not yet in MANIFEST.yaml.
+
+    Covers runtime configs, tool adapters, profiles, templates, domain physics,
+    pack manifests, and world-sim templates — any YAML file that influences
+    AI reasoning at runtime.
+
+    If *add* is True, append new entries (with sha256 set to ``pending``)
+    to the manifest and then run :func:`regen_manifest` to compute hashes.
+
+    See also:
+        docs/7-concepts/domain-pack-anatomy.md
+        docs/7-concepts/domain-adapter-pattern.md
+        docs/7-concepts/state-change-commit-policy.md
+    """
+    manifest_path = repo_root / "docs" / "MANIFEST.yaml"
+    existing = _parse_artifacts(manifest_path)
+    tracked = {e["path"] for e in existing}
+
+    packs_dir = repo_root / "domain-packs"
+    if not packs_dir.is_dir():
+        print("[INFO] No domain-packs/ directory found")
+        return 0
+
+    new_paths: list[str] = []
+    for yaml_file in sorted(packs_dir.rglob("*.yaml")):
+        rel = yaml_file.relative_to(repo_root).as_posix()
+        # Skip domain-pack docs (covered by discover_domain_pack_docs)
+        if "/docs/" in rel:
+            continue
+        if rel not in tracked:
+            new_paths.append(rel)
+
+    if not new_paths:
+        print("[INFO] All domain-pack YAML files are already tracked in MANIFEST.yaml")
+        return 0
+
+    print(f"Found {len(new_paths)} untracked domain-pack YAML(s):")
+    for p in new_paths:
+        print(f"  + {p}")
+
+    if not add:
+        print("\nRe-run with --add to append these entries and compute hashes.")
+        return 0
+
+    # Append new entries to the end of the manifest
+    lines = manifest_path.read_text(encoding="utf-8")
+    if not lines.endswith("\n"):
+        lines += "\n"
+    lines += "\n  # ── Auto-discovered domain-pack YAMLs ───────────────────────────────────\n\n"
+    for p in new_paths:
+        lines += f"  - path: {p}\n"
+        lines += f"    type: config\n"
+        lines += f"    doc_version: 1.0.0\n"
+        lines += f"    status: active\n"
+        lines += f"    last_updated: {date.today().isoformat()}\n"
+        lines += f"    sha256: pending\n\n"
+    manifest_path.write_text(lines, encoding="utf-8")
+    print(f"\n[DONE] Appended {len(new_paths)} entry/entries to MANIFEST.yaml")
+
+    return regen_manifest(repo_root)
+
+
 # ─────────────────────────────────────────────────────────────
 # API-compatible report functions (return dicts; no side-effects)
 # ─────────────────────────────────────────────────────────────
@@ -409,7 +479,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     disc = sub.add_parser(
         "discover",
-        help="Find domain-pack doc files not yet in MANIFEST.yaml",
+        help="Find domain-pack doc AND YAML files not yet in MANIFEST.yaml",
     )
     disc.add_argument(
         "--add",
@@ -423,7 +493,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "regen":
         return regen_manifest()
     if args.command == "discover":
-        return discover_domain_pack_docs(add=args.add)
+        rc1 = discover_domain_pack_docs(add=args.add)
+        rc2 = discover_domain_pack_yamls(add=args.add)
+        return rc1 or rc2
     return 1
 
 

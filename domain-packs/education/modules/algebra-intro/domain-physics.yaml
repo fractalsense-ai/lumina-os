@@ -13,6 +13,8 @@
 # Prerequisite: domain/edu/pre-algebra/v1 — all 5 artifacts passed
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: domain/edu/algebra-intro/v1
 version: "0.1.0"
 

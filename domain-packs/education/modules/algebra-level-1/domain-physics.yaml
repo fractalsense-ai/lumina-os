@@ -3,6 +3,8 @@
 # Conforms to: lumina-core-v1.0.0
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: domain/edu/algebra-level-1/v1
 version: "0.4.0"
 

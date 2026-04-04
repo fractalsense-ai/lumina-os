@@ -6,6 +6,8 @@
 # tier_level: lower = more privileged (1 = top)
 # default_access: permission chars (r=read, w=write, x=execute, i=ingest)
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 domain_role_defaults:
   - role_id: supervisor
     label: Supervisor

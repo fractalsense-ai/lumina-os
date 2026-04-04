@@ -4,6 +4,8 @@
 # Budget-controlled hint delivery for teaching assistants.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/hint-delivery/v1
 version: "1.0.0"
 tool_name: "Hint Delivery"

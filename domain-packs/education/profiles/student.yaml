@@ -5,6 +5,8 @@
 # tiers specific to the student role.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 preferences:
   interests: []
   dislikes: []

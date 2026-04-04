@@ -5,6 +5,8 @@
 # operations for the gated staging workflow.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/physics-staging/v1
 version: "1.0.0"
 tool_name: "Physics Staging Manager"

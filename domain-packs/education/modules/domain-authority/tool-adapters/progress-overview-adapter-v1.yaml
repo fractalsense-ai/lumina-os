@@ -4,6 +4,8 @@
 # Provides domain-wide progress overview for the Domain Authority.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/progress-overview/v1
 version: "1.0.0"
 tool_name: "Domain Progress Overview"

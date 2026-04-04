@@ -6,6 +6,8 @@
 # ingested domain-library content via chat.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/ingestion/v1
 version: "1.0.0"
 tool_name: "Document Ingestion Manager"

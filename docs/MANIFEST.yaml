@@ -1079,7 +1079,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-12
-    sha256: 0bb5b9635c0cc6a57a6a6b7ab1fece6464a6f81d5f84f0fe94ddb39c1726f24e
+    sha256: ce0201c73f94c066ebeb672ce31626d43c29bb7676613cb9d0d85e06c92714d5
 
 
   # ── Retrieval (relocated) ─────────────────────────────────────────────────
@@ -1127,3 +1127,329 @@ artifacts:
     sha256: 68f5b0fdbac1ab1ba86265f817359976e1ea72119d179e96fafa13407476bace
   - path: domain-packs/system/docs/README.md
     sha256: 384cf5fb74bdb74dbece6b5b8d121574edfc78a4f8f2c37798291fcf00c8092b
+
+
+  # ── Domain Pack Configs ───────────────────────────────────────────────────
+
+  - path: domain-packs/system/cfg/admin-operations.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: db6f020fd8d81d715eeeea8693f9471ca462bcf76d43b4188d72fe2839ac2a7d
+
+  - path: domain-packs/system/cfg/base-entity-profile.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 65db313a7735b7a5ef39ef1d7d79a265527aded8a715ec280d79b7e87892faad
+
+  - path: domain-packs/system/cfg/domain-role-defaults.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: d98ad40310ce2f91461f807e37bc059ae3c46352daa034fafc60204d264b13f9
+
+  - path: domain-packs/system/cfg/runtime-config.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 1fd1c516d1318d528f5826213fc5302fda1d93fba272ca808e02d1f82844ed7a
+
+  - path: domain-packs/education/cfg/runtime-config.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 92b48d30a0f6ec419b6beccc108e60774b28f286a8697f29773beeaf945a85ff
+
+  - path: domain-packs/education/cfg/domain-profile-extension.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 7c93bcd230f1ec4e6514fafdac867e887fee163d039b4e2a48f46552e89ca637
+
+  - path: domain-packs/agriculture/cfg/runtime-config.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
+
+
+  # ── Domain Physics (YAML) ────────────────────────────────────────────────
+
+  - path: domain-packs/education/modules/pre-algebra/domain-physics.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: fd317779148a9623fbdd1064c66a426bd68667e484b7a0a4279b82fec9046209
+
+  - path: domain-packs/education/modules/algebra-intro/domain-physics.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 9ce15fdd639a7144196cbd302f0f6a7f40a399fe795a518d23c2396a1895584c
+
+  - path: domain-packs/education/modules/algebra-1/domain-physics.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: fa0e835e7ded48b882bea508d41581c637cfe58d67ac06392f586c8befa549f8
+
+  - path: domain-packs/education/modules/algebra-level-1/domain-physics.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: f4f182f22e922a3edc1d9b40681553942a1198dcdfd40ea3a8fe63568664647f
+
+
+  # ── Tool Adapters ─────────────────────────────────────────────────────────
+
+  - path: domain-packs/education/modules/teaching-assistant/tool-adapters/student-view-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 5f1b248f7c57670a2e259387350f1909ae484f225e1d34a6cbd2382b22c4f1fb
+
+  - path: domain-packs/education/modules/teaching-assistant/tool-adapters/hint-delivery-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: ecd0cf14aef9f922f774c34bdc1db4c7a7a6003130883e43939054f5a7b0629d
+
+  - path: domain-packs/education/modules/teacher/tool-adapters/student-roster-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: d19a343631215bf027bed0a2a7044b10f43e25e1467d40d52a7e029847473616
+
+  - path: domain-packs/education/modules/teacher/tool-adapters/module-assignment-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 679558d5a0fb421ea1f97bb14e1be89ac9fe1768eb86dca1f7bcb894e27d6b56
+
+  - path: domain-packs/education/modules/teacher/tool-adapters/escalation-handler-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: a766abd2992e805b02434ee52774817508fefb5437d8ee2f372fe8ec1fe64023
+
+  - path: domain-packs/education/modules/domain-authority/tool-adapters/role-assignment-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 955d30cf9f4e946b85a636b0c759d706c51fdb24ac6ad89f8fb79ced4b90c02b
+
+  - path: domain-packs/education/modules/domain-authority/tool-adapters/progress-overview-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 7eac524b85ed7e9990923ce133ae7609a5b9b64c8198bfd9ee4527950a870da1
+
+  - path: domain-packs/education/modules/domain-authority/tool-adapters/physics-staging-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 88f99f5e020d0c63d9d80da532b0865b13c86c80b9cc9f5200d1272214e7dc45
+
+  - path: domain-packs/education/modules/domain-authority/tool-adapters/ingestion-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: ddc4e82f351f3918eecae6fb66aa9b9ef2d9a46d66a34bb61b8536eabecf9216
+
+  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/substitution-checker-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 85fbaff36ff9e7369794b8e38f20fe0f1fc0e834f15897667a83adebe6bed6a0
+
+  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/calculator-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: e498137770078791d1e6c75e27af53a480c3a1e6426baeee9cb3c4ed90d4f769
+
+  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/algebra-parser-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 7517fb5d9b3ca1e4f07173de5f388ff4031e166845eed839c317cc214fdee2e7
+
+  - path: domain-packs/agriculture/modules/operations-level-1/tool-adapters/collar-sensor-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: db9db79bb78682b86351f32167cdf61290091825b8776f6d4f855067a1efdc5f
+
+  - path: domain-packs/education/modules/guardian/tool-adapters/child-progress-adapter-v1.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 5640264d48a26ec501b0b464ae2a0fe703d3f8545a6110154fca1b43784a4852
+
+
+  # ── Profiles & Templates ─────────────────────────────────────────────────
+
+  - path: domain-packs/education/profiles/domain_authority.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 4d010a813ff98a642da6578e0f76ee4cfc0b1a93c92afbca4d4db4b546791bda
+
+  - path: domain-packs/education/profiles/teacher.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 825726204564d305f41adc6ab00698c33320a92a1a656a763e5a9a0ff05278e3
+
+  - path: domain-packs/education/profiles/teaching_assistant.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: c165ee7af1cf3c7379a068ba014136fdfa97ebdba12b4ceb76c5df6c282d8db5
+
+  - path: domain-packs/education/profiles/student.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: e925b880b5f09ce40a606645a94f89bf311fa4e6bfef88e7ac1e3f3026147062
+
+  - path: domain-packs/education/profiles/parent.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 6f32785d744391a0cc4b6d7c678d5cd7be0b33151afa11bab6c94769e855fd4e
+
+  - path: domain-packs/system/modules/system-core/operator-profile.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 84d761fee68adc2a64df1c52fbb1d16335e9fb4bb9cdaadb2d6346b87a07c1d5
+
+  - path: domain-packs/education/modules/pre-algebra/student-profile-template.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 0b3bbe4dfe46da02c2ef085d8f785ed7c3712a9d67ca3a02bb3e9bdc4e6df4d4
+
+  - path: domain-packs/education/modules/algebra-intro/student-profile-template.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: b8b9f9f9d9b4a907616f6c3ccbfd25d7572f8273beb3dc0de367564f068a7ec8
+
+  - path: domain-packs/education/modules/algebra-1/student-profile-template.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: a15f04d601713ad4b5d01e3b78e78ab28b9f24c0fffd0153b0e394ff957f091e
+
+  - path: domain-packs/education/modules/algebra-level-1/student-profile-template.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: bc084fdff8b48650a603987bc8c0c26f0b98f9089dc854db6a48b8a175687b04
+
+  - path: domain-packs/education/modules/algebra-level-1/example-student-alice.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 489e400765d0dc9a59d6335d423b64aea3b2f66f1376d1027712e456b311d228
+
+  - path: domain-packs/agriculture/modules/operations-level-1/example-subject.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 44c70b9e1c75b17e6149811322f58d27e477023c64d969aabfdc758eff9eb6a9
+
+
+  # ── Pack Metadata ─────────────────────────────────────────────────────────
+
+  - path: domain-packs/system/pack.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 2bb29c3b1c5d305aa46262a13988143c40a0af850014f2f03f263595c9465af4
+
+  - path: domain-packs/education/pack.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: b7a645723815eeeb1732d6c54d693f8a1d17080dfd62ef68066e7cc2d98b1d43
+
+  - path: domain-packs/agriculture/pack.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 95718a2ff385ed40278a4322b0b257359bfedbf7dfa5f544a68aaa4e92f11783
+
+  - path: domain-packs/education/world-sim/mud-world-templates.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: 08baab90e60c42b314963f039043778c2d082bccf6e7aef132a8896a18e5e0d5
+
+
+  # ── Examples (YAML) ───────────────────────────────────────────────────────
+
+  - path: examples/escalation-example-packet.yaml
+    type: doc
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: c0fcd0defc647fa4af0588fca1377fdcdd94dfba27dec19a951176e385172d83
+
+  - path: examples/invite-onboarding-example.yaml
+    type: doc
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: f56d51a6dd9ec706fdb9ce68e4215c9fdcffdadc7d4c12190c1ffe89784c73e1
+
+  - path: docs/8-admin/meta-authority-policy-template.yaml
+    type: doc
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-04
+    sha256: f733e89037f3e2817288883d71ee536d327b2953973af65b7bd4c45aa2a47e6e

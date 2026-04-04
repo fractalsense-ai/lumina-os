@@ -5,6 +5,8 @@
 # the original equation by substitution.
 # ============================================================
 
+# version: 1.0.0
+# last_updated: 2026-04-04
 id: adapter/edu/substitution-checker/v1
 version: "1.0.0"
 tool_name: "Solution Substitution Checker"
