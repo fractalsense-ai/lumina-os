@@ -190,7 +190,7 @@ async def get_escalation_detail(
     module_id = target.get("domain_pack_id", "")
 
     if user_data["role"] == "domain_authority":
-        if not can_govern_domain(user_data, module_id):
+        if not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
     elif not quick_pass:
         if not _has_escalation_capability(user_data, module_id):
@@ -271,7 +271,7 @@ async def resolve_escalation(
     module_id = target.get("domain_pack_id", "")
 
     if _role == "domain_authority":
-        if not can_govern_domain(user_data, module_id):
+        if not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
     elif not _quick_pass:
         # Not root/DA — check for domain-role escalation capability
@@ -872,6 +872,22 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
         if not params.get("user_id") and target:
             params["user_id"] = target
 
+    elif operation in ("list_users", "list_escalations", "list_modules"):
+        # ── Infer domain_id from target or instruction context ──
+        # Follow the same pattern as invite_user: when the SLM didn't
+        # set domain_id, check whether any registered domain ID appears
+        # in the target field or the original instruction.
+        if not params.get("domain_id") and _cfg.DOMAIN_REGISTRY is not None:
+            _search_text = f"{target or ''} {original_instruction}".lower()
+            try:
+                for _dom in _cfg.DOMAIN_REGISTRY.list_domains():
+                    _did = _dom.get("domain_id", "")
+                    if _did and _did.lower() in _search_text:
+                        params["domain_id"] = _did
+                        break
+            except Exception:
+                pass
+
     cmd["params"] = params
     return cmd
 
@@ -1003,7 +1019,7 @@ async def _execute_admin_operation(
         updates = params.get("updates") or {}
         if not domain_id or not updates:
             raise HTTPException(status_code=422, detail="domain_id and updates required")
-        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
         try:
             resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
@@ -1043,7 +1059,7 @@ async def _execute_admin_operation(
         domain_id = str(params.get("domain_id", parsed.get("target", "")))
         if not domain_id:
             raise HTTPException(status_code=422, detail="domain_id required")
-        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
         try:
             resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
@@ -1098,7 +1114,7 @@ async def _execute_admin_operation(
         domain_role = str(params.get("domain_role", ""))
         if not target_user_id or not module_id or not domain_role:
             raise HTTPException(status_code=422, detail="user_id, module_id, and domain_role required")
-        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
         # Validate role_id against the module's actual domain_roles block
         try:
@@ -1154,7 +1170,7 @@ async def _execute_admin_operation(
         module_id = str(params.get("module_id", ""))
         if not target_user_id or not module_id:
             raise HTTPException(status_code=422, detail="user_id and module_id required")
-        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
         target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, target_user_id)
         if target is None:
@@ -1247,6 +1263,14 @@ async def _execute_admin_operation(
 
     elif operation == "list_escalations":
         domain_id = str(params.get("domain_id", "")) or None
+        # DA boundary check: must govern the requested domain
+        if domain_id and user_data["role"] == "domain_authority":
+            try:
+                _resolved_esc = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+            except DomainNotFoundError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+            if not can_govern_domain(user_data, _resolved_esc, registry=_cfg.DOMAIN_REGISTRY):
+                raise HTTPException(status_code=403, detail="Not authorized for this domain")
         escalations = await run_in_threadpool(
             _cfg.PERSISTENCE.query_escalations, domain_id=domain_id, status="pending",
         )
@@ -1479,7 +1503,7 @@ async def _execute_admin_operation(
         except DomainNotFoundError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         # DA scoping: domain_authority sees only governed domain modules
-        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, resolved):
+        if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, resolved, registry=_cfg.DOMAIN_REGISTRY):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
         modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved)
         result = {"operation": operation, "domain_id": resolved, "modules": modules, "count": len(modules)}
@@ -1551,9 +1575,37 @@ async def _execute_admin_operation(
 
     elif operation == "list_users":
         role_filter = params.get("role")
+        domain_id_filter = params.get("domain_id", "")
+        module_id_filter = params.get("module_id", "")
+        domain_role_filter = params.get("domain_role", "")
+
+        # Resolve domain_id to canonical name and get its module IDs
+        domain_module_ids: set[str] | None = None
+        if domain_id_filter:
+            try:
+                resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id_filter)
+            except DomainNotFoundError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+            # DA boundary check: must govern the requested domain
+            if user_data["role"] == "domain_authority" and not can_govern_domain(
+                user_data, resolved_domain, registry=_cfg.DOMAIN_REGISTRY
+            ):
+                raise HTTPException(status_code=403, detail="Not authorized for this domain")
+            domain_modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved_domain)
+            domain_module_ids = {m["module_id"] for m in domain_modules}
+        elif user_data["role"] == "domain_authority":
+            # No domain_id given — scope to DA's own governed modules
+            pass  # handled below in DA scoping block
+
+        # Specific module filter — also enforce DA boundary
+        if module_id_filter and user_data["role"] == "domain_authority":
+            if not can_govern_domain(user_data, module_id_filter, registry=_cfg.DOMAIN_REGISTRY):
+                raise HTTPException(status_code=403, detail="Not authorized for this module")
+
         users = _cfg.PERSISTENCE.list_users()
         if role_filter:
             users = [u for u in users if u.get("role") == role_filter]
+
         # Domain-scoped filtering: DAs only see users in their governed modules.
         # See: docs/7-concepts/domain-role-hierarchy.md
         # See: docs/7-concepts/zero-trust-architecture.md
@@ -1569,6 +1621,32 @@ async def _execute_admin_operation(
                     if u_modules & da_modules or set(u_domain_roles) & da_modules:
                         scoped.append(u)
                 users = scoped
+
+        # Apply domain_id filter (narrow to users in domain's modules)
+        if domain_module_ids is not None:
+            filtered: list[dict[str, Any]] = []
+            for u in users:
+                u_modules = set(u.get("governed_modules") or [])
+                u_domain_roles = u.get("domain_roles") or {}
+                if u_modules & domain_module_ids or set(u_domain_roles) & domain_module_ids:
+                    filtered.append(u)
+            users = filtered
+
+        # Apply module_id filter (narrow to users in a specific module)
+        if module_id_filter:
+            users = [
+                u for u in users
+                if module_id_filter in (u.get("governed_modules") or [])
+                or module_id_filter in (u.get("domain_roles") or {})
+            ]
+
+        # Apply domain_role filter (narrow to users with a specific domain role)
+        if domain_role_filter:
+            users = [
+                u for u in users
+                if domain_role_filter in (u.get("domain_roles") or {}).values()
+            ]
+
         # Strip sensitive fields
         safe_users = []
         for u in users:

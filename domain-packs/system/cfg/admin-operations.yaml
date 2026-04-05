@@ -151,9 +151,12 @@ operations:
       domain_id: "string — domain identifier (optional, lists all if omitted)"
 
   - name: list_users
-    description: "List registered users, optionally filtered by role. Domain authorities see only users within their governed modules. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role."
+    description: "List registered users, optionally filtered by role, domain, module, or domain role. Domain authorities see only users within their governed modules. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role."
     params:
       role: "string — filter by system role (optional)"
+      domain_id: "string — filter to users in a specific domain (optional)"
+      module_id: "string — filter to users in a specific module (optional)"
+      domain_role: "string — filter to users with a specific domain role (optional)"
 
   - name: get_domain_physics
     description: "Retrieve the current domain physics configuration for a domain and module. Use this to inspect current physics fields before updating them with update_domain_physics."

@@ -27,9 +27,12 @@ operations:
       include_details: "boolean — true (default) for full details, false for names only"
 
   - name: list_users
-    description: "List students, teachers, and staff in the education domain. Domain authorities see only users within their governed modules."
+    description: "List students, teachers, and staff in the education domain. Domain authorities see only users within their governed modules. Supports filtering by module or domain role."
     params:
       role: "string — filter by system role (optional)"
+      domain_id: "string — filter to users in a specific domain (defaults to 'education')"
+      module_id: "string — filter to users in a specific education module (optional)"
+      domain_role: "string — filter to users with a specific domain role, e.g. 'student', 'teacher' (optional)"
 
   - name: list_modules
     description: "List education modules (e.g. algebra-level-1, pre-algebra, general-education)."

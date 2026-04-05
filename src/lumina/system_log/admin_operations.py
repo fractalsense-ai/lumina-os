@@ -106,15 +106,40 @@ def build_commitment_record(
 # ─────────────────────────────────────────────────────────────
 
 
-def can_govern_domain(user: dict[str, Any], domain_id: str) -> bool:
-    """Check if a domain_authority user governs a specific domain."""
+def can_govern_domain(
+    user: dict[str, Any],
+    domain_id: str,
+    *,
+    registry: Any | None = None,
+) -> bool:
+    """Check if a domain_authority user governs a specific domain or module.
+
+    Performs a direct membership check first.  When *registry* is supplied
+    and the direct check fails, resolves *domain_id* to its module list
+    and checks whether the user governs at least one of those modules.
+    This handles the common case where ``governed_modules`` contains full
+    module IDs (e.g. ``domain/edu/algebra-level-1/v1``) while the caller
+    passes a domain name (e.g. ``education``).
+    """
     role = user.get("role", "")
     if role == "root":
         return True
     if role != "domain_authority":
         return False
     governed = user.get("governed_modules") or []
-    return domain_id in governed
+    if domain_id in governed:
+        return True
+    # Registry-assisted domain-level check
+    if registry is not None:
+        try:
+            resolved = registry.resolve_domain_id(domain_id)
+            modules = registry.list_modules_for_domain(resolved)
+            module_ids = {m["module_id"] for m in modules}
+            if module_ids & set(governed):
+                return True
+        except Exception:
+            pass
+    return False
 
 
 def map_role_to_actor_role(role: str) -> str:

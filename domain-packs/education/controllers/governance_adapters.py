@@ -79,13 +79,13 @@ def _deterministic_command_fallback(
         if any(w in tokens for w in ("command", "commands")):
             return {"operation": "list_commands", "params": {}}
         if any(w in tokens for w in ("escalation", "escalations")):
-            return {"operation": "list_escalations", "params": {}}
+            return {"operation": "list_escalations", "params": {"domain_id": "education"}}
         if any(w in tokens for w in ("module", "modules")):
-            return {"operation": "list_modules", "params": {}}
+            return {"operation": "list_modules", "params": {"domain_id": "education"}}
         if any(w in tokens for w in ("domain", "domains")):
             return {"operation": "list_domains", "params": {}}
         if any(w in tokens for w in ("user", "users")):
-            return {"operation": "list_users", "params": {}}
+            return {"operation": "list_users", "params": {"domain_id": "education"}}
         if any(w in tokens for w in ("role", "roles")):
             return {"operation": "list_domain_rbac_roles", "params": {}}
         if any(w in tokens for w in ("physics",)):
