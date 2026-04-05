@@ -314,4 +314,6 @@ If `command_dispatch` is non-null in evidence (populated by `slm_parse_admin_com
 - [`execution-route-compilation(7)`](execution-route-compilation.md) — ahead-of-time route compilation from physics pointers (validates tool and library references)
 - [`nlp-semantic-router(7)`](nlp-semantic-router.md) — Tier 1 domain classification and Tier 2 NLP pre-interpreter
 - [`edge-vectorization(7)`](edge-vectorization.md) — per-domain vector stores built from the same adapter-indexer discovery pass
+- [`domain-packs/education/controllers/governance_adapters.py`](../../domain-packs/education/controllers/governance_adapters.py) — education governance adapter with domain-specific NLP verb/noun command routing
+- [`domain-packs/education/cfg/admin-operations.yaml`](../../domain-packs/education/cfg/admin-operations.yaml) — education-tailored admin operations descriptions for SLM intent matching
 

@@ -370,10 +370,14 @@ def _empty_physics_context() -> dict[str, Any]:
 # ── Admin Operations Loader ───────────────────────────────────
 #
 # Canonical source: domain-packs/system/cfg/admin-operations.yaml
+# Per-domain override: domain-packs/<domain>/cfg/admin-operations.yaml
 # The loader reads the YAML at first access and caches the result.
 # If the file is missing or malformed, a warning is logged and the
 # engine falls back to _FALLBACK_ADMIN_OPERATIONS — a minimal
 # inline copy kept only for graceful degradation.
+#
+# See: docs/7-concepts/command-execution-pipeline.md
+# See: docs/7-concepts/domain-adapter-pattern.md
 
 _admin_ops_cache: list[dict[str, Any]] | None = None
 

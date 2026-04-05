@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-04-04
+last_updated: 2026-04-05
 
 artifacts:
 
@@ -272,7 +272,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-18
-    sha256: 4da2964c463fd88f90c3bb69322f3c189dbefa2ae992f1cd0827ee3e56d4189e
+    sha256: e47d85fce25384c3b1c1618af6e5bba740d1cd5e6197ee50e3e7aa59bdc45114
 
   - path: docs/7-concepts/domain-evidence-extension.md
     type: doc
@@ -288,7 +288,7 @@ artifacts:
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-19
-    sha256: 5e8bd53b3dff2e22c38d95c1d1b97ff8f3613f97662790298129c90b0bf2afb8
+    sha256: 7112e38caa6f49119235b661e1260b15ea60a6dfecea016736abcdd8f7c3a72d
 
   - path: docs/7-concepts/file-generation-staging.md
     type: doc
@@ -360,7 +360,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-13
-    sha256: 115b346b78e8f9a0535cb03e96fc36a2d7c868093dc12789b60e5ad091e8904a
+    sha256: 94dced2fc34c2252f077558cf4cb72e26ef15b330464b14f22557be2eb3d3415
 
   - path: docs/7-concepts/novel-synthesis-framework.md
     type: doc
@@ -448,7 +448,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-21
-    sha256: 372e6c2cca3369f70d063037515c7492f74668c26f855014a8f5024c1ee64e44
+    sha256: ad8949c2e4a5cec234095d0782aa4a4ea5062366548123a801b42874e8cf2521
 
   - path: docs/7-concepts/domain-pack-anatomy.md
     type: doc
@@ -825,7 +825,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-06-15
-    sha256: ab1a95c51acaaa5a69493134b5fac8e06e776cdadf4da27dc6dc660830ea2a09
+    sha256: 4e9fae537d4c643a4b673dd2f2e107141643139def6f2073afba26c8fc517a3d
 
 
   # ── Admin Command Schemas ─────────────────────────────────────────────────
@@ -1135,8 +1135,8 @@ artifacts:
     type: config
     doc_version: 1.0.0
     status: active
-    last_updated: 2026-04-04
-    sha256: db6f020fd8d81d715eeeea8693f9471ca462bcf76d43b4188d72fe2839ac2a7d
+    last_updated: 2026-04-05
+    sha256: 1d3b5be9fa62dd9e8935eb0ac5baed886caf1712c7cf16aadcc6ac612bb4eeea
 
   - path: domain-packs/system/cfg/base-entity-profile.yaml
     type: config
@@ -1172,6 +1172,13 @@ artifacts:
     status: active
     last_updated: 2026-04-04
     sha256: 7c93bcd230f1ec4e6514fafdac867e887fee163d039b4e2a48f46552e89ca637
+
+  - path: domain-packs/education/cfg/admin-operations.yaml
+    type: config
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-05
+    sha256: 69ec0e3ee21b51272287909d410644e24b5dd303d10076c15e0d74d4f1519dc5
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config

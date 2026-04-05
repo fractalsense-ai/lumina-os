@@ -1,13 +1,19 @@
 """Structured content builders for chat action cards.
 
 Factory functions that populate ``ChatResponse.structured_content``
-(historically always ``None``).  Two card types are supported:
+(historically always ``None``).  Card types supported:
 
 - **escalation** — surfaces an EscalationRecord to the session
   supervisor (teacher) or domain authority so they can approve / reject /
   defer directly in the chat interface.
 - **command_proposal** — surfaces a staged HITL admin command so the
   authority can accept / reject / modify it inline.
+- **command_list** — read-only card grouping available commands into
+  *Immediate* (HITL-exempt) and *Staged* (require approval) sections.
+
+See also:
+    docs/7-concepts/command-execution-pipeline.md
+    docs/7-concepts/domain-adapter-pattern.md
 """
 
 from __future__ import annotations
@@ -280,4 +286,56 @@ def build_ingestion_review_card(
             "timestamp_utc": ingestion_record.get("timestamp_utc", ""),
             "module_id": ingestion_record.get("module_id", ""),
         },
+    }
+
+
+# ── Command list card ────────────────────────────────────────
+
+def build_command_list_card(
+    list_commands_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a structured card grouping commands into immediate / staged.
+
+    The input is the raw result dict from the ``list_commands`` admin
+    operation (keys: ``commands``, ``count``).  Each command entry must
+    contain at least ``name``; ``hitl_exempt``, ``description``, and
+    ``min_role`` are used when present.
+
+    Returns a ``command_list`` structured_content (read-only, not an
+    ``action_card`` — no resolve_endpoint or interactive actions).
+
+    See also:
+        docs/7-concepts/command-execution-pipeline.md
+    """
+    commands = list_commands_result.get("commands") or []
+
+    immediate: list[dict[str, Any]] = []
+    staged: list[dict[str, Any]] = []
+    for cmd in commands:
+        entry: dict[str, Any] = {
+            "name": cmd.get("name", ""),
+            "description": cmd.get("description", ""),
+            "min_role": cmd.get("min_role", ""),
+        }
+        if cmd.get("hitl_exempt"):
+            immediate.append(entry)
+        else:
+            staged.append(entry)
+
+    return {
+        "type": "command_list",
+        "title": "Available Commands",
+        "sections": [
+            {
+                "heading": "Immediate Actions",
+                "description": "These commands execute immediately without human approval.",
+                "commands": immediate,
+            },
+            {
+                "heading": "Staged Actions (require approval)",
+                "description": "These commands are staged for human-in-the-loop review before execution.",
+                "commands": staged,
+            },
+        ],
+        "total_count": len(commands),
     }

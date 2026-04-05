@@ -295,11 +295,12 @@ def test_domain_physics_hitl_exempt_complete() -> None:
 
 @pytest.mark.unit
 def test_domain_physics_min_role_for_sensitive_ops() -> None:
-    """list_users requires it_support; get_domain_physics requires domain_authority."""
+    """list_users and invite_user require domain_authority; get_domain_physics requires domain_authority."""
     dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     min_role = dp["subsystem_configs"]["governance"]["min_role_policy"]
-    assert min_role["list_users"] == "it_support"
+    assert min_role["list_users"] == "domain_authority"
+    assert min_role["invite_user"] == "domain_authority"
     assert min_role["get_domain_physics"] == "domain_authority"
     assert min_role["list_daemon_tasks"] == "domain_authority"
 

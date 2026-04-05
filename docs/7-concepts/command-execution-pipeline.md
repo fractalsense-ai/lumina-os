@@ -199,3 +199,6 @@ intent. This is the same TM/SOP separation that governs all domain pack componen
 - [`specs/orchestrator-system-prompt-v1.md`](../../specs/orchestrator-system-prompt-v1.md) — COMMAND EXECUTION DIRECTIVE
 - [`docs/7-concepts/file-generation-staging.md`](file-generation-staging.md) — three-phase Brain/Checkpoint/Actuator pipeline
 - [`src/lumina/api/routes/admin.py`](../../src/lumina/api/routes/admin.py) — HITL implementation
+- [`src/lumina/api/structured_content.py`](../../src/lumina/api/structured_content.py) — `build_command_list_card()` — groups commands by HITL-exempt status into Immediate / Staged sections
+- [`src/lumina/api/processing.py`](../../src/lumina/api/processing.py) — `list_commands` → `command_list` card wiring in the turn-processing pipeline
+- [`standards/action-card-schema-v1.json`](../../standards/action-card-schema-v1.json) — action card schema including `command_list` card type

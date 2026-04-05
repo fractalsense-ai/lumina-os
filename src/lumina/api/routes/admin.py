@@ -500,6 +500,8 @@ async def manifest_regen(
 
 _governance_cache: dict[str, Any] | None = None
 
+# See: docs/7-concepts/domain-role-hierarchy.md
+# See: docs/7-concepts/command-execution-pipeline.md
 _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "update_domain_physics", "commit_domain_physics", "update_user_role",
     "deactivate_user", "assign_domain_role", "revoke_domain_role",
@@ -538,8 +540,8 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "reject_ingestion": "domain_authority",
     "trigger_daemon_task": "domain_authority",
     "trigger_night_cycle": "domain_authority",
-    "invite_user": "it_support",
-    "list_users": "it_support",
+    "invite_user": "domain_authority",
+    "list_users": "domain_authority",
     "get_domain_physics": "domain_authority",
     "list_daemon_tasks": "domain_authority",
     "request_module_assignment": "user",
@@ -1298,6 +1300,8 @@ async def _execute_admin_operation(
             result = {"operation": operation, "proposals": proposals, "count": len(proposals)}
 
     elif operation == "invite_user":
+        # See: docs/7-concepts/domain-role-hierarchy.md
+        # See: docs/7-concepts/domain-adapter-pattern.md
         if user_data["role"] not in ("root", "it_support", "domain_authority"):
             raise HTTPException(status_code=403, detail="Only root, it_support, or domain_authority can invite users")
         username = str(params.get("username", parsed.get("target", "")))
@@ -1550,6 +1554,21 @@ async def _execute_admin_operation(
         users = _cfg.PERSISTENCE.list_users()
         if role_filter:
             users = [u for u in users if u.get("role") == role_filter]
+        # Domain-scoped filtering: DAs only see users in their governed modules.
+        # See: docs/7-concepts/domain-role-hierarchy.md
+        # See: docs/7-concepts/zero-trust-architecture.md
+        if user_data["role"] == "domain_authority":
+            da_modules = set(user_data.get("governed_modules") or [])
+            if da_modules:
+                scoped: list[dict[str, Any]] = []
+                for u in users:
+                    u_modules = set(u.get("governed_modules") or [])
+                    u_domain_roles = u.get("domain_roles") or {}
+                    # Include if user shares any governed module OR has a
+                    # domain role in any of the DA's modules.
+                    if u_modules & da_modules or set(u_domain_roles) & da_modules:
+                        scoped.append(u)
+                users = scoped
         # Strip sensitive fields
         safe_users = []
         for u in users:

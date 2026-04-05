@@ -302,3 +302,5 @@ See [`standards/group-definition-schema-v1.json`](../../standards/group-definiti
 - [`docs/8-admin/rbac-administration.md`](../8-admin/rbac-administration.md) — Role management procedures
 - [`docs/8-admin/escalation-pin-unlock.md`](../8-admin/escalation-pin-unlock.md) — Teacher-initiated session freeze and PIN unlock workflow
 - [`docs/7-concepts/zero-trust-architecture.md`](zero-trust-architecture.md) — Zero-trust architecture
+- [`src/lumina/api/routes/admin.py`](../../src/lumina/api/routes/admin.py) — domain-scoped `list_users` filtering and `invite_user` DA access enforcement
+- [`domain-packs/system/modules/system-core/domain-physics.json`](../../domain-packs/system/modules/system-core/domain-physics.json) — canonical `min_role_policy` and role hierarchy configuration

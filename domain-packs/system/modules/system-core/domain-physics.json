@@ -413,8 +413,8 @@
         "approve_interpretation": "domain_authority",
         "reject_ingestion": "domain_authority",
         "trigger_daemon_task": "domain_authority",
-        "invite_user": "it_support",
-        "list_users": "it_support",
+        "invite_user": "domain_authority",
+        "list_users": "domain_authority",
         "get_domain_physics": "domain_authority",
         "list_daemon_tasks": "domain_authority",
         "request_module_assignment": "user"

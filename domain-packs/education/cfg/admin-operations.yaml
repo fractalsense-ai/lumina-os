@@ -1,0 +1,151 @@
+# ─────────────────────────────────────────────────────────────
+# Admin Operations Schema — Education Domain
+# ─────────────────────────────────────────────────────────────
+#
+# Education-specific subset of admin operations with descriptions
+# tailored for school/university contexts.  Referenced by the SLM
+# command translator when operating in the education domain.
+#
+# Inherits execution semantics (RBAC gates, HITL staging, etc.)
+# from the system-level admin pipeline.  This file customises only
+# the *description* field so the SLM can produce higher-quality
+# intent matching for education-specific natural language.
+#
+# See: docs/7-concepts/command-execution-pipeline.md
+# See: docs/7-concepts/domain-adapter-pattern.md
+# See: docs/7-concepts/nlp-semantic-router.md
+# ─────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-05
+operations:
+
+  # ── Read-only / informational (HITL-exempt) ──────────────
+  - name: list_commands
+    description: "List available admin commands for the education domain. Shows which commands are immediate vs staged."
+    params:
+      include_details: "boolean — true (default) for full details, false for names only"
+
+  - name: list_users
+    description: "List students, teachers, and staff in the education domain. Domain authorities see only users within their governed modules."
+    params:
+      role: "string — filter by system role (optional)"
+
+  - name: list_modules
+    description: "List education modules (e.g. algebra-level-1, pre-algebra, general-education)."
+    params:
+      domain_id: "string — defaults to 'education' when omitted"
+
+  - name: list_escalations
+    description: "List open escalation events for education modules (e.g. unresolved student incidents, assignment disputes)."
+    params:
+      domain_id: "string — defaults to 'education' when omitted"
+      status: "string — filter by status (optional, default: open)"
+
+  - name: module_status
+    description: "Show the current status of an education module (e.g. algebra-level-1 active learner count, physics hash)."
+    params:
+      module_id: "string — education module identifier"
+      domain_id: "string — defaults to 'education' when omitted"
+
+  - name: get_domain_physics
+    description: "Retrieve the current domain physics configuration for an education module. Inspect invariants, standing orders, and escalation triggers."
+    params:
+      domain_id: "string — defaults to 'education'"
+      module_id: "string — specific education module (optional, returns default module if omitted)"
+
+  - name: list_domain_rbac_roles
+    description: "List education-specific roles (student, teacher, teaching_assistant, guardian, domain_authority) defined in domain physics."
+    params:
+      domain_id: "string — defaults to 'education'"
+
+  - name: get_domain_module_manifest
+    description: "Retrieve the education domain's full module manifest including module IDs, labels, and versions."
+    params:
+      domain_id: "string — defaults to 'education'"
+
+  - name: explain_reasoning
+    description: "Explain why the system made a specific decision — e.g. why a student was escalated or why a score threshold triggered."
+    params:
+      event_id: "string — System Log record ID or escalation ID to explain"
+
+  # ── User management (DA-scoped) ─────────────────────────
+  - name: invite_user
+    description: "Invite a new student, teacher, or teaching assistant to the education domain. Domain authorities may invite users with 'user' or 'guest' role within their governed modules."
+    params:
+      username: "string — the new user's display name"
+      role: "string — system role: user or guest (for domain authorities)"
+      intended_domain_role: "string — education role such as student, teacher, teaching_assistant, guardian (advisory, preserved for domain-role assignment)"
+      domain_id: "string — defaults to 'education'"
+      email: "string — email address (optional)"
+
+  - name: assign_domain_role
+    description: "Assign an education role (student, teacher, teaching_assistant, guardian) to a user for a specific module."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — education module identifier (e.g. education/algebra-level-1)"
+      domain_role: "string — education role to assign"
+
+  - name: revoke_domain_role
+    description: "Remove a user's education role from a module (e.g. un-enrol a student from algebra-level-1)."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — education module identifier to revoke access for"
+
+  - name: request_module_assignment
+    description: "Request enrolment in an education module. Creates a HITL escalation for the module's teacher or domain authority to approve."
+    params:
+      domain_id: "string — defaults to 'education'"
+      module_id: "string — module to request enrolment in"
+      reason: "string — brief reason for the enrolment request (optional)"
+
+  # ── Escalation / governance ──────────────────────────────
+  - name: resolve_escalation
+    description: "Approve, reject, or defer an education escalation (e.g. academic integrity incident, grade dispute)."
+    params:
+      escalation_id: "string"
+      resolution: "string — one of: approved, rejected, deferred"
+      rationale: "string — reason for resolution"
+
+  # ── Physics management ───────────────────────────────────
+  - name: update_domain_physics
+    description: "Update fields in an education module's physics configuration (e.g. adjust score thresholds, modify standing orders)."
+    params:
+      domain_id: "string — defaults to 'education'"
+      updates: "object — key/value pairs to merge into domain physics"
+
+  - name: commit_domain_physics
+    description: "Commit the current education domain physics hash to the System Logs after staged changes are approved."
+    params:
+      domain_id: "string — defaults to 'education'"
+
+  # ── Content ingestion ────────────────────────────────────
+  - name: ingest_document
+    description: "Upload and ingest educational material (lesson plans, worksheets, assessments) into an education module."
+    params:
+      domain_id: "string — defaults to 'education'"
+      module_id: "string — target education module (optional)"
+      filename: "string — name of the file to ingest"
+
+  - name: list_ingestions
+    description: "List pending content ingestion drafts for education modules."
+    params:
+      domain_id: "string — defaults to 'education'"
+      status: "string — filter by status (optional)"
+
+  - name: review_ingestion
+    description: "Show SLM-generated interpretations for an ingested educational document."
+    params:
+      ingestion_id: "string — ingestion document ID"
+
+  - name: approve_interpretation
+    description: "Approve a specific interpretation of ingested educational content."
+    params:
+      ingestion_id: "string — ingestion document ID"
+      interpretation_label: "string — one of: strict, loose, hierarchical, default, or an interpretation ID"
+
+  - name: reject_ingestion
+    description: "Reject an educational content ingestion with a reason."
+    params:
+      ingestion_id: "string — ingestion document ID"
+      reason: "string — reason for rejection"

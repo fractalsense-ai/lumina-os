@@ -37,10 +37,16 @@ _COMMAND_DISPATCH_TYPES: frozenset[str] = frozenset(
 )
 
 # ── Deterministic fallback command parser ─────────────────────────────────
+# See: docs/7-concepts/nlp-semantic-router.md
 _READ_VERBS = frozenset({"show", "list", "get", "check", "view", "what", "status", "display", "find"})
 _ASSIGN_VERBS = frozenset({"assign", "grant", "give"})
 _REVOKE_VERBS = frozenset({"remove", "revoke", "delete"})
-_INGEST_VERBS = frozenset({"ingest", "upload", "import", "add"})
+_INGEST_VERBS = frozenset({"ingest", "upload", "import"})
+_INVITE_VERBS = frozenset({"invite", "create", "add", "onboard"})
+_MODIFY_VERBS = frozenset({"modify", "update", "change", "edit"})
+_DEACTIVATE_VERBS = frozenset({"deactivate", "disable", "suspend"})
+_USER_NOUNS = frozenset({"user", "users", "student", "students", "teacher", "teachers",
+                         "ta", "assistant", "parent", "guardian"})
 _DOMAIN_MENTION = re.compile(
     r"\b(?:in|to|for|from|of)\s+(?:the\s+)?(\w+)\s+domain\b", re.IGNORECASE,
 )
@@ -61,6 +67,8 @@ def _deterministic_command_fallback(
     nlp_evidence: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
     """Build a command_dispatch dict from NLP anchors when SLM fails."""
+    # See: docs/7-concepts/command-execution-pipeline.md
+    # See: docs/7-concepts/domain-role-hierarchy.md
     if nlp_evidence is None:
         return None
     tokens = input_text.lower().split()
@@ -76,11 +84,38 @@ def _deterministic_command_fallback(
             return {"operation": "list_modules", "params": {}}
         if any(w in tokens for w in ("domain", "domains")):
             return {"operation": "list_domains", "params": {}}
+        if any(w in tokens for w in ("user", "users")):
+            return {"operation": "list_users", "params": {}}
         if any(w in tokens for w in ("role", "roles")):
             return {"operation": "list_domain_rbac_roles", "params": {}}
-        if any(w in tokens for w in ("user", "users")):
-            return {"operation": "list_domain_rbac_roles", "params": {}}
+        if any(w in tokens for w in ("physics",)):
+            _dm = _DOMAIN_MENTION.search(input_text)
+            _p: dict[str, Any] = {}
+            if _dm:
+                _p["domain_id"] = _dm.group(1)
+            return {"operation": "get_domain_physics", "params": _p}
         return {"operation": "list_commands", "params": {}}
+
+    # ── Invite / create user ──────────────────────────────────
+    # See: docs/7-concepts/domain-role-hierarchy.md
+    # See: docs/7-concepts/domain-adapter-pattern.md
+    if first_verb in _INVITE_VERBS or any(v in tokens for v in _INVITE_VERBS):
+        if any(w in tokens for w in _USER_NOUNS):
+            _dm = _DOMAIN_MENTION.search(input_text)
+            _p: dict[str, Any] = {}
+            if _dm:
+                _p["domain_id"] = _dm.group(1)
+            return {"operation": "invite_user", "params": _p}
+
+    # ── Modify user role ──────────────────────────────────────
+    if first_verb in _MODIFY_VERBS or any(v in tokens for v in _MODIFY_VERBS):
+        if any(w in tokens for w in ("role", "roles")) or any(w in tokens for w in _USER_NOUNS):
+            return {"operation": "assign_domain_role", "params": {}}
+
+    # ── Deactivate user ───────────────────────────────────────
+    if first_verb in _DEACTIVATE_VERBS or any(v in tokens for v in _DEACTIVATE_VERBS):
+        if any(w in tokens for w in _USER_NOUNS):
+            return {"operation": "deactivate_user", "params": {}}
 
     if first_verb in _ASSIGN_VERBS:
         return {"operation": "assign_domain_role", "params": {}}

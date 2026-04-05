@@ -13,6 +13,9 @@
 #
 # Schema contract: list of objects with keys {name, description, params}.
 # params values are human-readable type strings consumed by the SLM.
+#
+# See: docs/7-concepts/command-execution-pipeline.md
+# See: docs/7-concepts/domain-role-hierarchy.md
 # ─────────────────────────────────────────────────────────────
 
 # version: 1.0.0
@@ -124,7 +127,7 @@ operations:
       domain_id: "string — domain identifier (optional)"
 
   - name: invite_user
-    description: "Create and invite a NEW user to the platform. Use this when someone asks to add, create, or invite a new user."
+    description: "Create and invite a NEW user to the platform. Domain authorities may invite users with 'user' or 'guest' role within their governed modules. Use this when someone asks to add, create, or invite a new user."
     params:
       username: "string — the new user's display name"
       role: "string — system role: root, domain_authority, it_support, qa, auditor, user, guest"
@@ -148,7 +151,7 @@ operations:
       domain_id: "string — domain identifier (optional, lists all if omitted)"
 
   - name: list_users
-    description: "List registered users, optionally filtered by role. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role."
+    description: "List registered users, optionally filtered by role. Domain authorities see only users within their governed modules. Use this to discover valid user IDs before targeting them in update_user_role, deactivate_user, assign_domain_role, or revoke_domain_role."
     params:
       role: "string — filter by system role (optional)"
 

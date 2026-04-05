@@ -279,3 +279,4 @@ The NLP layer influences the **quality of the LLM's input**. It does not influen
 - [`domain-packs/education/controllers/nlp_pre_interpreter.py`](../../domain-packs/education/controllers/nlp_pre_interpreter.py) — education domain pre-interpreter (reference implementation)
 - [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema and PPA orchestrator specification
 - [`standards/domain-registry-schema-v1.json`](../../standards/domain-registry-schema-v1.json) — schema for `cfg/domain-registry.yaml` including `keywords` field definition
+- [`domain-packs/education/controllers/governance_adapters.py`](../../domain-packs/education/controllers/governance_adapters.py) — `_deterministic_command_fallback()` — domain-specific verb/noun routing for admin commands (invite, modify, deactivate)

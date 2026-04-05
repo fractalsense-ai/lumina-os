@@ -731,8 +731,14 @@ def process_message(
 
     # When a query_result structured_content is present, the UI renders the
     # data directly — skip LLM summarisation to avoid redundant narration.
+    # See: docs/7-concepts/command-execution-pipeline.md
+    # See: docs/7-concepts/domain-adapter-pattern.md
     if structured_content and isinstance(structured_content, dict) and structured_content.get("type") == "query_result":
         _op_name = structured_content.get("operation", "command")
+        # For list_commands, build a grouped command list card.
+        if _op_name == "list_commands":
+            from lumina.api.structured_content import build_command_list_card
+            structured_content = build_command_list_card(structured_content.get("result") or {})
         llm_response = f"Executed {_op_name} successfully."
     elif deterministic_response:
         llm_response = render_contract_response(
