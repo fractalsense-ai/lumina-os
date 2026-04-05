@@ -101,6 +101,7 @@ class DomainContext:
         "current_problem",
         "turn_count",
         "domain_id",
+        "module_key",
         "problem_presented_at",
         "subject_profile_path",
     )
@@ -114,12 +115,14 @@ class DomainContext:
         domain_id: str,
         problem_presented_at: float,
         subject_profile_path: str = "",
+        module_key: str = "",
     ) -> None:
         self.orchestrator = orchestrator
         self.task_spec = task_spec
         self.current_problem = current_problem
         self.turn_count = turn_count
         self.domain_id = domain_id
+        self.module_key = module_key
         self.problem_presented_at = problem_presented_at
         self.subject_profile_path = subject_profile_path
 
@@ -130,6 +133,7 @@ class DomainContext:
             "current_problem": self.current_problem,
             "turn_count": self.turn_count,
             "domain_id": self.domain_id,
+            "module_key": self.module_key,
             "problem_presented_at": self.problem_presented_at,
         }
 
@@ -137,6 +141,8 @@ class DomainContext:
         self.task_spec = d["task_spec"]
         self.current_problem = d["current_problem"]
         self.turn_count = d["turn_count"]
+        if "module_key" in d:
+            self.module_key = d["module_key"]
         if "problem_presented_at" in d:
             self.problem_presented_at = d["problem_presented_at"]
 
@@ -285,6 +291,7 @@ def _build_domain_context(
         domain_id=resolved_domain_id,
         problem_presented_at=time.time(),
         subject_profile_path=str(subject_profile_path),
+        module_key=_resolved_module_key or "",
     )
 
 
@@ -298,6 +305,7 @@ def _persist_session_container(session_id: str, container: SessionContainer) -> 
             "turn_count": ctx.turn_count,
             "standing_order_attempts": ctx.orchestrator.get_standing_order_attempts(),
             "domain_id": did,
+            "module_key": ctx.module_key,
         }
     _cfg.PERSISTENCE.save_session_state(
         session_id,

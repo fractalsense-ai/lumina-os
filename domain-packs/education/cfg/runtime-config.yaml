@@ -33,6 +33,7 @@ runtime:
     domain/edu/algebra-level-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
     domain/edu/domain-authority/v1:
+      local_only: true
       domain_physics_path: domain-packs/education/modules/domain-authority/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
       turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
@@ -65,6 +66,7 @@ runtime:
           type: enum
           values: [routine, elevated, critical]
     domain/edu/teacher/v1:
+      local_only: true
       domain_physics_path: domain-packs/education/modules/teacher/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
       turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
@@ -97,6 +99,7 @@ runtime:
           type: enum
           values: [routine, elevated, critical]
     domain/edu/teaching-assistant/v1:
+      local_only: true
       domain_physics_path: domain-packs/education/modules/teaching-assistant/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
       turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md
@@ -129,6 +132,7 @@ runtime:
           type: enum
           values: [routine, elevated, critical]
     domain/edu/guardian/v1:
+      local_only: true
       domain_physics_path: domain-packs/education/modules/guardian/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/governance-persona-v1.md
       turn_interpretation_prompt_path: domain-packs/education/prompts/governance-turn-interpretation-spec-v1.md

@@ -179,7 +179,8 @@ def process_message(
     # replace the domain-wide (learning) prompts so governance roles are
     # never addressed with algebra/curriculum context.
     _module_map = runtime.get("module_map") or {}
-    _active_mod = _module_map.get(resolved_domain_id) or {}
+    _module_key = session.get("module_key") or resolved_domain_id
+    _active_mod = _module_map.get(_module_key) or {}
     if _active_mod.get("system_prompt"):
         system_prompt = _active_mod["system_prompt"]
     if _active_mod.get("turn_interpretation_prompt") or _active_mod.get("turn_interpreter_fn"):
@@ -226,8 +227,11 @@ def process_message(
                 }
 
     # ── Glossary interception (neutral turn — no mastery/affect change) ──
-    domain_physics = runtime.get("domain") or {}
-    glossary = domain_physics.get("glossary") or []
+    # Prefer the session's module-specific domain physics (orch.domain) which
+    # carries the per-module glossary.  Fall back to the domain-wide runtime
+    # physics only when the orchestrator's domain has no glossary.
+    domain_physics = getattr(orch, "domain", None) or runtime.get("domain") or {}
+    glossary = domain_physics.get("glossary") or (runtime.get("domain") or {}).get("glossary") or []
     glossary_match = detect_glossary_query(input_text, glossary, domain_id=resolved_domain_id)
     if glossary_match is not None:
         prompt_contract = {
@@ -286,7 +290,7 @@ def process_message(
         turn_data = turn_data_override
     elif deterministic_response:
         turn_data = dict(runtime.get("turn_input_defaults") or {})
-    elif runtime.get("local_only"):
+    elif runtime.get("local_only") or _active_mod.get("local_only"):
         if slm_available():
             _li_interpreter = _active_mod.get("turn_interpreter_fn") or runtime["turn_interpreter_fn"]
             _li_sig = inspect.signature(_li_interpreter)
