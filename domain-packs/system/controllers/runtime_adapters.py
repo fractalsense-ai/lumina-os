@@ -63,6 +63,16 @@ _ESCALATION_LISTING_RE = re.compile(
     r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:escalation|escalations)\b",
     re.IGNORECASE,
 )
+_STUDENT_ASSIGNMENT_RE = re.compile(
+    r"\b(?:assign|add|remove|unassign)\b.*\b(?:student|students)\b"
+    r"|\b(?:student|students)\b.*\b(?:assign|add|remove|to|from)\b.*\b(?:teacher|me|myself)\b",
+    re.IGNORECASE,
+)
+_MODULE_ASSIGNMENT_RE = re.compile(
+    r"\b(?:assign|add|give|remove|revoke)\b.*\b(?:module|modules)\b.*\b(?:to|from|for)\b"
+    r"|\b(?:module|modules)\b.*\b(?:assign|remove|give|revoke)\b",
+    re.IGNORECASE,
+)
 
 
 def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None:
@@ -77,7 +87,9 @@ def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None
     if (_COMMAND_DISCOVERY_RE.search(input_text)
             or _USER_LISTING_RE.search(input_text)
             or _MODULE_LISTING_RE.search(input_text)
-            or _ESCALATION_LISTING_RE.search(input_text)):
+            or _ESCALATION_LISTING_RE.search(input_text)
+            or _STUDENT_ASSIGNMENT_RE.search(input_text)
+            or _MODULE_ASSIGNMENT_RE.search(input_text)):
         evidence["query_type"] = "admin_command"
         log.info(
             "Promoted query_type general→admin_command for input %r",
@@ -143,6 +155,38 @@ def _deterministic_command_fallback(
                 "target": target_user,
                 "params": params,
             }
+
+        # assign_student: "assign student <x> to teacher <y>"
+        if verb in _ASSIGN_VERBS and "student" in input_text.lower():
+            p: dict[str, Any] = {}
+            if target_user:
+                p["student_id"] = target_user
+            return {"operation": "assign_student", "target": target_user or "", "params": p}
+
+        # remove_student: "remove student <x> from teacher <y>"
+        if verb in _REVOKE_VERBS and "student" in input_text.lower():
+            p = {}
+            if target_user:
+                p["student_id"] = target_user
+            return {"operation": "remove_student", "target": target_user or "", "params": p}
+
+        # assign_module: "assign module <x> to user <y>"
+        if verb in _ASSIGN_VERBS and "module" in input_text.lower():
+            p = {}
+            if target_user:
+                p["user_id"] = target_user
+            if mentioned_domain:
+                p["module_id"] = mentioned_domain
+            return {"operation": "assign_module", "target": target_user or "", "params": p}
+
+        # remove_module: "remove module <x> from user <y>"
+        if verb in _REVOKE_VERBS and "module" in input_text.lower():
+            p = {}
+            if target_user:
+                p["user_id"] = target_user
+            if mentioned_domain:
+                p["module_id"] = mentioned_domain
+            return {"operation": "remove_module", "target": target_user or "", "params": p}
 
         # assign_domain_role: "assign/grant <user> to <domain>"
         if verb in _ASSIGN_VERBS and target_user and target_role:

@@ -95,6 +95,30 @@ operations:
       user_id: "string — target user identifier"
       module_id: "string — education module identifier to revoke access for"
 
+  - name: assign_student
+    description: "Assign a student to a teacher's roster. Teachers can assign students to themselves; domain authorities can assign to any teacher. Sets the student's escalation route so incidents are directed to the assigned teacher."
+    params:
+      student_id: "string — the student's user ID"
+      teacher_id: "string — the teacher's user ID (optional, defaults to the caller when a teacher invokes this)"
+
+  - name: remove_student
+    description: "Remove a student from a teacher's roster. Teachers can remove students from themselves only; domain authorities can remove from any teacher. Clears the student's escalation route for that teacher."
+    params:
+      student_id: "string — the student's user ID"
+      teacher_id: "string — the teacher's user ID (optional, defaults to the caller when a teacher invokes this)"
+
+  - name: assign_module
+    description: "Assign a curriculum module to a user (e.g. enrol a student in algebra-level-1). Domain authorities and teachers with the assign_modules_to_students capability can assign modules directly."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — education module identifier (e.g. domain/edu/algebra-level-1/v1)"
+
+  - name: remove_module
+    description: "Remove a curriculum module from a user's access list. Domain authorities and teachers with the assign_modules_to_students capability can remove modules directly."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — education module identifier to remove"
+
   - name: request_module_assignment
     description: "Request enrolment in an education module. Creates a HITL escalation for the module's teacher or domain authority to approve."
     params:

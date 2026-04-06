@@ -139,6 +139,20 @@ class PersistenceAdapter(ABC):
         """Merge domain_roles mapping into user record. Returns updated record (no password_hash) or None."""
 
     @abstractmethod
+    def update_user_governed_modules(
+        self,
+        user_id: str,
+        *,
+        add: list[str] | None = None,
+        remove: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        """Atomically add/remove module IDs from a user's governed_modules list.
+
+        Returns the updated user record (no password_hash) or None if user not found.
+        Duplicate additions are ignored (idempotent).
+        """
+
+    @abstractmethod
     def query_log_records(
         self,
         session_id: str | None = None,
@@ -336,6 +350,26 @@ class NullPersistenceAdapter(PersistenceAdapter):
         existing = dict(self._users[user_id].get("domain_roles") or {})
         existing.update(domain_roles)
         self._users[user_id]["domain_roles"] = existing
+        return {k: v for k, v in self._users[user_id].items() if k != "password_hash"}
+
+    def update_user_governed_modules(
+        self,
+        user_id: str,
+        *,
+        add: list[str] | None = None,
+        remove: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        self.__init_users()
+        if user_id not in self._users:
+            return None
+        modules = list(self._users[user_id].get("governed_modules") or [])
+        for m in (add or []):
+            if m not in modules:
+                modules.append(m)
+        for m in (remove or []):
+            if m in modules:
+                modules.remove(m)
+        self._users[user_id]["governed_modules"] = modules
         return {k: v for k, v in self._users[user_id].items() if k != "password_hash"}
 
     def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:

@@ -1136,7 +1136,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: e9647e20f49947eb01e5ba3369385ad2bd8497def252c95fa2b8207925fd71d4
+    sha256: 4aa259318857fc3bf5d562c9d1b8dbd8431a68af5dc4484f7d64db412d450b5f
 
   - path: domain-packs/system/cfg/base-entity-profile.yaml
     type: config
@@ -1178,7 +1178,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: eed3d2d884144f408a0a0a8c403236aad9eeb309175b8b75d3c1c3a177323550
+    sha256: 3c3aac48f6bb7e5f9f51c4e910f02e3a28cf37f2da297b7789300b60279f2a86
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config

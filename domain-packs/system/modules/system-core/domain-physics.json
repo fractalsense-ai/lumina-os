@@ -387,7 +387,11 @@
           "get_domain_module_manifest",
           "list_users",
           "get_domain_physics",
-          "list_daemon_tasks"
+          "list_daemon_tasks",
+          "assign_student",
+          "remove_student",
+          "assign_module",
+          "remove_module"
         ],
         "per_domain_overrides_enabled": true
       }
@@ -417,7 +421,11 @@
         "list_users": "domain_authority",
         "get_domain_physics": "domain_authority",
         "list_daemon_tasks": "domain_authority",
-        "request_module_assignment": "user"
+        "request_module_assignment": "user",
+        "assign_student": "user",
+        "remove_student": "user",
+        "assign_module": "user",
+        "remove_module": "user"
       }
     }
   }

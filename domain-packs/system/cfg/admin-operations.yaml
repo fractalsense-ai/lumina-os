@@ -178,6 +178,30 @@ operations:
     params:
       domain_id: "string — target domain identifier"
 
+  - name: assign_student
+    description: "Assign a student to a teacher's roster. Teachers can assign students to themselves; domain authorities can assign to any teacher. Sets the student's escalation route."
+    params:
+      student_id: "string — the student's user ID"
+      teacher_id: "string — the teacher's user ID (optional, defaults to the caller when a teacher invokes this)"
+
+  - name: remove_student
+    description: "Remove a student from a teacher's roster. Teachers can remove from themselves only; domain authorities can remove from any teacher."
+    params:
+      student_id: "string — the student's user ID"
+      teacher_id: "string — the teacher's user ID (optional, defaults to the caller when a teacher invokes this)"
+
+  - name: assign_module
+    description: "Assign a domain module to a user directly. Domain authorities and teachers with the assign_modules_to_students capability can assign modules."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — domain module identifier"
+
+  - name: remove_module
+    description: "Remove a domain module from a user's access list. Domain authorities and teachers with the assign_modules_to_students capability can remove modules."
+    params:
+      user_id: "string — target user identifier"
+      module_id: "string — domain module identifier to remove"
+
   - name: request_module_assignment
     description: "Request assignment to a specific domain module. Creates a HITL escalation for the module's domain authority or assigned teacher to approve. Used when a user needs access to a module they are not currently assigned to."
     params:

@@ -566,6 +566,45 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
     ) -> dict[str, Any] | None:
         return asyncio.run(self._update_user_domain_roles_async(user_id, domain_roles))
 
+    def update_user_governed_modules(
+        self,
+        user_id: str,
+        *,
+        add: list[str] | None = None,
+        remove: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        return asyncio.run(self._update_user_governed_modules_async(user_id, add=add, remove=remove))
+
+    async def _update_user_governed_modules_async(
+        self,
+        user_id: str,
+        *,
+        add: list[str] | None = None,
+        remove: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                select(self._User.governed_modules_json).where(self._User.user_id == user_id)
+            )
+            row = result.first()
+            if row is None:
+                return None
+            current = list(json.loads(row.governed_modules_json or "[]"))
+            if add:
+                for m in add:
+                    if m not in current:
+                        current.append(m)
+            if remove:
+                current = [m for m in current if m not in remove]
+            await conn.execute(
+                update(self._User)
+                .where(self._User.user_id == user_id)
+                .values(governed_modules_json=json.dumps(current, ensure_ascii=False))
+            )
+        return await self._get_user_async(user_id)
+
     def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
         return asyncio.run(self._set_user_invite_token_async(user_id, token, expires_at))
 

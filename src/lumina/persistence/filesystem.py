@@ -383,6 +383,27 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         self._save_users(users)
         return {k: v for k, v in users[user_id].items() if k != "password_hash"}
 
+    def update_user_governed_modules(
+        self,
+        user_id: str,
+        *,
+        add: list[str] | None = None,
+        remove: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        users = self._load_users()
+        if user_id not in users:
+            return None
+        current = list(users[user_id].get("governed_modules") or [])
+        if add:
+            for m in add:
+                if m not in current:
+                    current.append(m)
+        if remove:
+            current = [m for m in current if m not in remove]
+        users[user_id]["governed_modules"] = current
+        self._save_users(users)
+        return {k: v for k, v in users[user_id].items() if k != "password_hash"}
+
     def set_user_invite_token(self, user_id: str, token: str, expires_at: float) -> bool:
         users = self._load_users()
         if user_id not in users:

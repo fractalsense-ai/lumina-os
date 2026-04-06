@@ -74,6 +74,16 @@ _ESCALATION_LISTING_RE = re.compile(
     r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:escalation|escalations)\b",
     re.IGNORECASE,
 )
+_STUDENT_ASSIGNMENT_RE = re.compile(
+    r"\b(?:assign|add|remove|unassign)\b.*\b(?:student|students)\b"
+    r"|\b(?:student|students)\b.*\b(?:assign|add|remove|to|from)\b.*\b(?:teacher|me|myself)\b",
+    re.IGNORECASE,
+)
+_MODULE_ASSIGNMENT_RE = re.compile(
+    r"\b(?:assign|add|give|remove|revoke)\b.*\b(?:module|modules)\b.*\b(?:to|from|for)\b"
+    r"|\b(?:module|modules)\b.*\b(?:assign|remove|give|revoke)\b",
+    re.IGNORECASE,
+)
 
 
 def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None:
@@ -88,7 +98,9 @@ def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None
     if (_COMMAND_DISCOVERY_RE.search(input_text)
             or _USER_LISTING_RE.search(input_text)
             or _MODULE_LISTING_RE.search(input_text)
-            or _ESCALATION_LISTING_RE.search(input_text)):
+            or _ESCALATION_LISTING_RE.search(input_text)
+            or _STUDENT_ASSIGNMENT_RE.search(input_text)
+            or _MODULE_ASSIGNMENT_RE.search(input_text)):
         evidence["query_type"] = "admin_command"
         evidence["off_task_ratio"] = 0.0
         log.info(
@@ -162,9 +174,49 @@ def _deterministic_command_fallback(
         if any(w in tokens for w in _USER_NOUNS):
             return {"operation": "deactivate_user", "params": {}}
 
-    if first_verb in _ASSIGN_VERBS:
+    # ── Student ↔ teacher assignment ──────────────────────────
+    if first_verb in _ASSIGN_VERBS or first_verb in ("add",):
+        if any(w in tokens for w in ("student", "students")):
+            _teacher = None
+            for i, t in enumerate(tokens):
+                if t in ("to",) and i + 1 < len(tokens):
+                    _teacher = tokens[i + 1]
+            p: dict[str, Any] = {}
+            # Try to get student_id from tokens after verb
+            for i, t in enumerate(tokens):
+                if t in ("student",) and i + 1 < len(tokens) and tokens[i + 1] not in ("to", "from"):
+                    p["student_id"] = tokens[i + 1]
+            if _teacher and _teacher not in ("me", "myself"):
+                p["teacher_id"] = _teacher
+            return {"operation": "assign_student", "params": p}
+        if any(w in tokens for w in ("module", "modules")):
+            p = {}
+            for i, t in enumerate(tokens):
+                if t in ("module",) and i + 1 < len(tokens) and tokens[i + 1] not in ("to", "from", "for"):
+                    p["module_id"] = tokens[i + 1]
+            for i, t in enumerate(tokens):
+                if t in ("to", "for") and i + 1 < len(tokens):
+                    p["user_id"] = tokens[i + 1]
+            return {"operation": "assign_module", "params": p}
         return {"operation": "assign_domain_role", "params": {}}
+
     if first_verb in _REVOKE_VERBS:
+        if any(w in tokens for w in ("student", "students")):
+            p = {}
+            for i, t in enumerate(tokens):
+                if t in ("student",) and i + 1 < len(tokens) and tokens[i + 1] not in ("to", "from"):
+                    p["student_id"] = tokens[i + 1]
+                if t in ("from",) and i + 1 < len(tokens):
+                    p["teacher_id"] = tokens[i + 1]
+            return {"operation": "remove_student", "params": p}
+        if any(w in tokens for w in ("module", "modules")):
+            p = {}
+            for i, t in enumerate(tokens):
+                if t in ("module",) and i + 1 < len(tokens) and tokens[i + 1] not in ("to", "from", "for"):
+                    p["module_id"] = tokens[i + 1]
+                if t in ("from",) and i + 1 < len(tokens):
+                    p["user_id"] = tokens[i + 1]
+            return {"operation": "remove_module", "params": p}
         return {"operation": "revoke_domain_role", "params": {}}
 
     # ── Ingestion operations ──────────────────────────────────
