@@ -132,15 +132,17 @@ class TestStudentModulePromotion:
         _edu_maybe_promote(ev, "remove module math-101 from student1")
         assert ev["query_type"] == "admin_command"
 
-    def test_system_assign_student_promotes(self) -> None:
+    def test_system_assign_student_no_promote(self) -> None:
+        """System adapter must NOT promote education-specific patterns."""
         ev = {"query_type": "general"}
         _sys_maybe_promote(ev, "assign student alice to teacher bob")
-        assert ev["query_type"] == "admin_command"
+        assert ev["query_type"] == "general"
 
-    def test_system_remove_module_promotes(self) -> None:
+    def test_system_remove_module_no_promote(self) -> None:
+        """System adapter must NOT promote education-specific patterns."""
         ev = {"query_type": "general"}
         _sys_maybe_promote(ev, "remove module bio-101 from student1")
-        assert ev["query_type"] == "admin_command"
+        assert ev["query_type"] == "general"
 
     def test_no_promotion_greeting(self) -> None:
         ev = {"query_type": "general"}

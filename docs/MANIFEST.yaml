@@ -1136,7 +1136,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: 4aa259318857fc3bf5d562c9d1b8dbd8431a68af5dc4484f7d64db412d450b5f
+    sha256: e9647e20f49947eb01e5ba3369385ad2bd8497def252c95fa2b8207925fd71d4
 
   - path: domain-packs/system/cfg/base-entity-profile.yaml
     type: config
