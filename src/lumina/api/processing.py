@@ -55,7 +55,8 @@ def _build_clarification_response(
     card explaining what went wrong and how to fix it.
     """
     operation = cmd_dispatch.get("operation", "")
-    params = cmd_dispatch.get("params") or {}
+    _raw_params = cmd_dispatch.get("params") or {}
+    params = _raw_params if isinstance(_raw_params, dict) else {}
 
     hints: list[str] = []
 

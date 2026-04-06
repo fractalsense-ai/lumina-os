@@ -757,7 +757,12 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
     import re
 
     cmd = {k: v for k, v in parsed_command.items()}  # shallow copy
-    params: dict[str, Any] = dict(cmd.get("params") or {})
+    _raw_params = cmd.get("params")
+    if isinstance(_raw_params, list):
+        # SLM sometimes returns params as a list of strings; coerce to dict
+        params: dict[str, Any] = {str(p): True for p in _raw_params}
+    else:
+        params = dict(_raw_params or {})
     target = cmd.get("target", "")
     operation = cmd.get("operation", "")
 
