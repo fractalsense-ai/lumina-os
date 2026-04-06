@@ -40,6 +40,50 @@ _DOMAIN_MENTION = re.compile(
     r"\b(?:in|to|for|from|of)\s+(?:the\s+)?(\w+)\s+domain\b", re.IGNORECASE,
 )
 
+# ── Deterministic query-type promotion ────────────────────────────────
+# When the SLM classifies a message as "general" but the input clearly
+# matches a known command-discovery or admin-query pattern, promote
+# query_type so the structured command dispatch block runs.
+# See: docs/7-concepts/command-execution-pipeline.md
+_COMMAND_DISCOVERY_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:command|commands|operation|operations)\b"
+    r"|\bcommands?\s+(?:available|do\s+i\s+have|can\s+i|are\s+there)\b"
+    r"|\b(?:help|available\s+commands?)\b",
+    re.IGNORECASE,
+)
+_USER_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|who)\b.*\b(?:user|users|student|students|teacher|teachers)\b",
+    re.IGNORECASE,
+)
+_MODULE_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view)\b.*\b(?:module|modules|domain|domains)\b",
+    re.IGNORECASE,
+)
+_ESCALATION_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:escalation|escalations)\b",
+    re.IGNORECASE,
+)
+
+
+def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None:
+    """Promote ``query_type`` from ``general`` to ``admin_command`` when
+    the input deterministically matches a command-discovery pattern.
+
+    Modifies *evidence* in place.  Only promotes ``general`` → ``admin_command``
+    to avoid overriding already-correct SLM classifications.
+    """
+    if evidence.get("query_type") != "general":
+        return
+    if (_COMMAND_DISCOVERY_RE.search(input_text)
+            or _USER_LISTING_RE.search(input_text)
+            or _MODULE_LISTING_RE.search(input_text)
+            or _ESCALATION_LISTING_RE.search(input_text)):
+        evidence["query_type"] = "admin_command"
+        log.info(
+            "Promoted query_type general→admin_command for input %r",
+            input_text[:80],
+        )
+
 
 def _deterministic_command_fallback(
     input_text: str,
@@ -269,6 +313,9 @@ def interpret_turn_input(
     for key, default_val in defaults.items():
         if key not in evidence or evidence[key] is None:
             evidence[key] = default_val
+
+    # ── Deterministic query-type promotion ────────────────────
+    _maybe_promote_query_type(evidence, input_text)
 
     # Attempt structured command dispatch for query types that warrant it.
     # Prefer call_slm alias when provided so the caller can pass the same fn

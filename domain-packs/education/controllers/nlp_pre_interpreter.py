@@ -193,6 +193,53 @@ def extract_off_task_ratio(input_text: str) -> dict[str, Any]:
     return {"off_task_ratio": max(0.0, min(1.0, round(ratio, 3)))}
 
 
+# ── Governance command-discovery extractor ───────────────────
+
+_GOV_COMMAND_DISCOVERY_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:command|commands|operation|operations)\b"
+    r"|\bcommands?\s+(?:available|do\s+i\s+have|can\s+i|are\s+there)\b"
+    r"|\b(?:available\s+commands?)\b",
+    re.IGNORECASE,
+)
+_GOV_USER_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|who)\b.*\b(?:user|users|student|students|teacher|teachers)\b",
+    re.IGNORECASE,
+)
+_GOV_MODULE_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view)\b.*\b(?:module|modules)\b",
+    re.IGNORECASE,
+)
+_GOV_ESCALATION_LISTING_RE = re.compile(
+    r"\b(?:what|which|show|list|get|display|view|check)\b.*\b(?:escalation|escalations)\b",
+    re.IGNORECASE,
+)
+
+_GOV_PATTERNS: list[tuple[re.Pattern[str], str, str]] = [
+    (_GOV_COMMAND_DISCOVERY_RE, "admin_command", "list_commands"),
+    (_GOV_USER_LISTING_RE, "admin_command", "list_users"),
+    (_GOV_MODULE_LISTING_RE, "admin_command", "list_modules"),
+    (_GOV_ESCALATION_LISTING_RE, "admin_command", "list_escalations"),
+]
+
+
+def extract_governance_signals(input_text: str) -> dict[str, Any]:
+    """Detect governance command-discovery patterns in operator messages.
+
+    Returns a dict with ``query_type``, ``suggested_operation``, and
+    ``off_task_ratio`` when a pattern matches, or empty values otherwise.
+    """
+    for pattern, qtype, operation in _GOV_PATTERNS:
+        if pattern.search(input_text):
+            return {
+                "query_type": qtype,
+                "suggested_operation": operation,
+                "off_task_ratio": 0.0,
+            }
+    return {
+        "query_type": None,
+        "suggested_operation": None,
+    }
+
 # ── Main entry point ────────────────────────────────────────
 
 def nlp_preprocess(input_text: str, task_context: dict[str, Any]) -> dict[str, Any]:
@@ -260,4 +307,22 @@ def nlp_preprocess(input_text: str, task_context: dict[str, Any]) -> dict[str, A
     })
 
     evidence["_nlp_anchors"] = anchors
+
+    # ── Governance signals (additive — run for all roles) ─────
+    # Governance extractors emit anchors for command-discovery patterns.
+    # For learning roles these are harmless no-ops (the SLM prompt is
+    # different); for governance roles they provide deterministic grounding
+    # that prevents SLM misclassification as "general".
+    gov_result = extract_governance_signals(input_text)
+    if gov_result.get("query_type") is not None:
+        evidence["query_type"] = gov_result["query_type"]
+        evidence["suggested_operation"] = gov_result["suggested_operation"]
+        evidence["off_task_ratio"] = gov_result.get("off_task_ratio", 0.0)
+        anchors.append({
+            "field": "query_type",
+            "value": gov_result["query_type"],
+            "confidence": 0.95,
+            "detail": f"governance pattern → {gov_result['suggested_operation']}",
+        })
+
     return evidence

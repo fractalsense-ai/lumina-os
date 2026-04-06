@@ -190,6 +190,30 @@ For the physics file's role within the three-stage proposal pipeline (Proposal �
 Validation → HITL), and how standing orders interact with the execution gate, see
 [`command-execution-pipeline(7)`](command-execution-pipeline.md).
 
+### The SOP / TM / Glossary Mental Model
+
+The three knowledge layers of a domain pack map to a military / institutional mental model
+that clarifies who declares *what* the rules are, who declares *how* to execute them, and
+who keeps the shared vocabulary aligned:
+
+| Layer | Analogy | Location | Purpose |
+|---|---|---|---|
+| **Physics files** | **Standing Operating Procedures (SOPs)** | `modules/<module>/domain-physics.yaml` | Declare *what must be true* — invariants, standing orders, escalation triggers. The domain's law. |
+| **Domain library** | **Technical Manuals (TMs)** | `domain-lib/reference/*.md` + `controllers/*.py` | Declare *how to do what is being asked* — interpretation schemas, field extraction rules, command disambiguation specs, step-by-step execution guidance. The tools and procedures. |
+| **Glossary** | **Cross-reference index** | `glossary` section in domain-physics | Define shared vocabulary so that every component — physics, TMs, NLP pre-interpreter, SLM prompts — uses the same term for the same concept. |
+
+SOPs tell the orchestrator what constraints exist. TMs tell the runtime adapter and SLM how
+to interpret inputs, classify turns, and execute operations within those constraints.
+The glossary ensures the vocabulary used in SOPs and TMs is unambiguous.
+
+This separation is deliberate: physics files should never contain execution logic or
+step-by-step procedures, and domain-lib specs should never declare invariants or escalation
+triggers. When authoring a domain pack, the test is simple:
+
+- If it says *"this must be true"* → physics (SOP)
+- If it says *"here is how to do X"* → domain-lib (TM)
+- If it says *"term Y means Z"* → glossary (cross-reference)
+
 ---
 
 ## E. The Self-Containment Contract
