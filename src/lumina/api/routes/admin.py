@@ -1697,7 +1697,7 @@ async def _execute_admin_operation(
         for u in users:
             safe_users.append({
                 k: v for k, v in u.items()
-                if k not in ("password_hash", "invite_token", "invite_expires_at")
+                if k not in ("password_hash", "invite_token", "invite_expires_at", "invite_token_expires_at")
             })
         result = {"operation": operation, "users": safe_users, "count": len(safe_users)}
 
