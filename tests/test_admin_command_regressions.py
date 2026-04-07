@@ -20,6 +20,9 @@ from fastapi.testclient import TestClient
 from lumina.auth import auth
 from lumina.persistence.adapter import NullPersistenceAdapter
 
+from lumina.core.domain_registry import DomainRegistry
+from lumina.core.runtime_loader import load_runtime_context
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -42,6 +45,14 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
+    # Reset DOMAIN_REGISTRY to a clean single-domain instance so that
+    # prior test modules that triggered config.py with a multi-domain
+    # registry don't pollute the "_default" domain expected here.
+    mod.DOMAIN_REGISTRY = DomainRegistry(
+        repo_root=_REPO_ROOT,
+        single_config_path="domain-packs/education/cfg/runtime-config.yaml",
+        load_runtime_context_fn=load_runtime_context,
+    )
     mod.PERSISTENCE = NullPersistenceAdapter()
     mod.BOOTSTRAP_MODE = True
     mod._session_containers.clear()
