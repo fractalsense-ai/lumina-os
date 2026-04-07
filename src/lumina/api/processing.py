@@ -95,6 +95,54 @@ def _build_clarification_response(
     }
 
 
+def _compute_transcript_seal(
+    session_id: str,
+    session: dict[str, Any],
+    resolved_domain_id: str,
+    user: dict[str, Any] | None,
+    holodeck: bool,
+) -> tuple[str | None, dict[str, Any] | None, list[dict[str, Any]] | None]:
+    """Compute the rolling transcript seal for client-side persistence.
+
+    Returns ``(seal, seal_metadata, transcript_snapshot)`` or
+    ``(None, None, None)`` when sealing is not applicable.
+    """
+    if holodeck or user is None:
+        return None, None, None
+    container = _session_containers.get(session_id)
+    if container is None or not hasattr(container, "ring_buffer"):
+        return None, None, None
+    try:
+        from lumina.auth.auth import sign_transcript
+
+        _user_id = user.get("sub", "")
+        if not _user_id:
+            return None, None, None
+        _turns = container.ring_buffer.snapshot()
+        _transcript = [
+            {
+                "turn": t.turn_number,
+                "user": t.user_message,
+                "assistant": t.llm_response,
+                "ts": t.timestamp,
+                "domain_id": t.domain_id,
+            }
+            for t in _turns
+        ]
+        _seal_meta: dict[str, Any] = {
+            "domain_id": resolved_domain_id,
+            "turn_count": session.get("turn_count", 0),
+            "last_activity_utc": time.time(),
+        }
+        _seal = sign_transcript(
+            _user_id, {"transcript": _transcript, "metadata": _seal_meta}
+        )
+        return _seal, _seal_meta, _transcript
+    except Exception:
+        log.warning("Could not compute transcript seal for %s", session_id, exc_info=True)
+        return None, None, None
+
+
 def process_message(
     session_id: str,
     input_text: str,
@@ -368,7 +416,10 @@ def process_message(
                 turn_number=0,
                 domain_id=resolved_domain_id,
             )
-        return {
+        _t0_seal, _t0_seal_meta, _t0_transcript = _compute_transcript_seal(
+            session_id, session, resolved_domain_id, user, holodeck,
+        )
+        _t0_result: dict[str, Any] = {
             "response": _t0_response,
             "action": "task_presentation",
             "prompt_type": "task_presentation",
@@ -376,6 +427,11 @@ def process_message(
             "tool_results": {},
             "domain_id": resolved_domain_id,
         }
+        if _t0_seal is not None:
+            _t0_result["transcript_seal"] = _t0_seal
+            _t0_result["transcript_seal_metadata"] = _t0_seal_meta
+            _t0_result["transcript_snapshot"] = _t0_transcript
+        return _t0_result
 
     # ── Turn-1 grace period for free-form modules ─────────────
     # Modules with empty artifact_sequence (e.g. Student Commons) have no
@@ -410,7 +466,10 @@ def process_message(
                 turn_number=0,
                 domain_id=resolved_domain_id,
             )
-        return {
+        _g_seal, _g_seal_meta, _g_transcript = _compute_transcript_seal(
+            session_id, session, resolved_domain_id, user, holodeck,
+        )
+        _g_result: dict[str, Any] = {
             "response": _greeting,
             "action": "greeting",
             "prompt_type": "greeting",
@@ -418,6 +477,11 @@ def process_message(
             "tool_results": {},
             "domain_id": resolved_domain_id,
         }
+        if _g_seal is not None:
+            _g_result["transcript_seal"] = _g_seal
+            _g_result["transcript_seal_metadata"] = _g_seal_meta
+            _g_result["transcript_snapshot"] = _g_transcript
+        return _g_result
 
     # ── Extract world-sim state for ALL code paths ────────────
     world_sim_theme = getattr(orch.state, "world_sim_theme", {}) or {}
@@ -855,6 +919,19 @@ def process_message(
         if _new_problem_presented:
             llm_payload["next_problem"] = current_problem
     llm_payload["student_message"] = input_text
+
+    # ── Inject recent conversation history from ring buffer ──
+    # Gives the LLM context about prior turns so it can maintain coherent
+    # multi-turn dialogue, especially in free-form modules like Student Commons.
+    _history_container = _session_containers.get(session_id)
+    if _history_container is not None and hasattr(_history_container, "ring_buffer"):
+        _recent = _history_container.ring_buffer.snapshot()
+        if _recent:
+            llm_payload["conversation_history"] = [
+                {"turn": t.turn_number, "student": t.user_message, "assistant": t.llm_response}
+                for t in _recent
+            ]
+
     if tool_results:
         llm_payload["tool_results"] = tool_results
     if turn_data.get("_system_telemetry"):
@@ -927,34 +1004,9 @@ def process_message(
         )
 
     # ── Compute rolling transcript seal for client persistence ──
-    _rolling_seal: str | None = None
-    if not holodeck and _container is not None and user:
-        try:
-            from lumina.auth.auth import sign_transcript
-
-            _user_id = user.get("sub", "")
-            if _user_id:
-                _turns = _container.ring_buffer.snapshot()
-                _transcript = [
-                    {
-                        "turn": t.turn_number,
-                        "user": t.user_message,
-                        "assistant": t.llm_response,
-                        "ts": t.timestamp,
-                        "domain_id": t.domain_id,
-                    }
-                    for t in _turns
-                ]
-                _seal_meta = {
-                    "domain_id": resolved_domain_id,
-                    "turn_count": session.get("turn_count", 0),
-                    "last_activity_utc": time.time(),
-                }
-                _rolling_seal = sign_transcript(
-                    _user_id, {"transcript": _transcript, "metadata": _seal_meta}
-                )
-        except Exception:
-            log.warning("Could not compute transcript seal for %s", session_id, exc_info=True)
+    _rolling_seal, _seal_meta, _transcript = _compute_transcript_seal(
+        session_id, session, resolved_domain_id, user, holodeck,
+    )
 
     # ── Reset problem_presented_at after response is ready ───
     # Timestamp is anchored to when the outgoing response is fully built so

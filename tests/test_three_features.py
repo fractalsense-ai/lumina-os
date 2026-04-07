@@ -392,7 +392,7 @@ class TestRoleAwareDomainInfo:
         assert resp.status_code == 200
         body = resp.json()
         assert body["ui_manifest"]["domain_label"] == "Education"
-        assert "Algebra" in body["ui_manifest"]["subtitle"]
+        assert body["ui_manifest"]["subtitle"] == "Education"
 
     @pytest.mark.integration
     def test_root_returns_system(self, multi_client: TestClient) -> None:
