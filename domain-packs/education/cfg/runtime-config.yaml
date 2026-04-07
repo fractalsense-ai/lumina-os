@@ -6,7 +6,7 @@ runtime:
   turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/turn-interpretation-spec-v1.md
 
   domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
-  subject_profile_path: domain-packs/education/modules/pre-algebra/student-profile-template.yaml
+  subject_profile_path: domain-packs/education/profiles/student.yaml
 
   # ── Hierarchical profile templates (Base → Domain → Role) ──
   base_profile_path: domain-packs/system/cfg/base-entity-profile.yaml
@@ -24,6 +24,11 @@ runtime:
   module_map:
     domain/edu/general-education/v1:
       domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
+      domain_system_prompt_path: domain-packs/education/prompts/student-commons-persona-v1.md
+      turn_input_defaults:
+        off_task_ratio: 0.0
+        correctness: "n/a"
+        response_latency_sec: 5.0
     domain/edu/pre-algebra/v1:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
     domain/edu/algebra-intro/v1:

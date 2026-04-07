@@ -5,8 +5,8 @@
 # student, parent).  Merged on top of the base entity profile.
 # ============================================================
 
-# version: 1.0.0
-# last_updated: 2026-04-04
+# version: 1.1.0
+# last_updated: 2026-04-05
 consent:
   magic_circle_accepted: false
   consent_timestamp_utc: null
@@ -17,3 +17,6 @@ session_history:
   total_sessions: 0
   last_session_utc: null
   total_turns: 0
+
+# ── Teacher-editable notes (append-only, timestamped) ───────
+teacher_notes: []

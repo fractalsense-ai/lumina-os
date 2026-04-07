@@ -297,6 +297,48 @@ def process_message(
     task_context = dict(task_spec)
     task_context["current_problem"] = current_problem
 
+    # ── Turn-0 problem presentation for learning modules ──────
+    # When a student enters a learning module for the first time, present
+    # the generated equation before evaluating their input.  This prevents
+    # the turn-1 penalty where "what is this?" triggers off_task when no
+    # equation has been shown yet.
+    _turn_count = session.get("turn_count", 0)
+    _has_equation = isinstance(current_problem, dict) and bool(current_problem.get("equation"))
+    if _turn_count == 0 and _has_equation and not holodeck and not deterministic_response:
+        _t0_contract = {
+            "prompt_type": "task_presentation",
+            "domain_pack_id": str(domain_physics.get("id", "")),
+            "domain_pack_version": str(domain_physics.get("version", "")),
+            "task_id": str(task_spec.get("task_id", "")),
+            "current_problem": current_problem,
+            "student_message": input_text,
+        }
+        _t0_payload = json.dumps(_t0_contract, indent=2, ensure_ascii=False)
+        if slm_available():
+            from lumina.core.slm import call_slm as _t0_call_slm
+            _t0_response = _t0_call_slm(system=system_prompt, user=_t0_payload)
+        else:
+            _t0_response = call_llm(system=system_prompt, user=_t0_payload)
+        _t0_response = strip_latex_delimiters(_t0_response)
+        session["turn_count"] += 1
+        session["problem_presented_at"] = time.time()
+        _container = _session_containers.get(session_id)
+        if _container is not None and hasattr(_container, "ring_buffer"):
+            _container.ring_buffer.push(
+                user_message=input_text,
+                llm_response=_t0_response,
+                turn_number=0,
+                domain_id=resolved_domain_id,
+            )
+        return {
+            "response": _t0_response,
+            "action": "task_presentation",
+            "prompt_type": "task_presentation",
+            "escalated": False,
+            "tool_results": {},
+            "domain_id": resolved_domain_id,
+        }
+
     # ── Extract world-sim state for ALL code paths ────────────
     world_sim_theme = getattr(orch.state, "world_sim_theme", {}) or {}
     mud_world_state = getattr(orch.state, "mud_world_state", {}) or {}
@@ -867,6 +909,12 @@ def process_message(
         "tool_results": tool_results,
         "domain_id": resolved_domain_id,
     }
+    # Override action when the session was auto-frozen during this turn
+    # (e.g. escalation triggered) so the frontend locks the input immediately.
+    if escalated:
+        _freeze_container = _session_containers.get(session_id)
+        if _freeze_container is not None and _freeze_container.frozen:
+            result["action"] = "session_frozen"
     if _rolling_seal is not None:
         result["transcript_seal"] = _rolling_seal
         result["transcript_seal_metadata"] = _seal_meta

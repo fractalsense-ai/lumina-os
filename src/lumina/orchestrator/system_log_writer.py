@@ -251,6 +251,33 @@ class SystemLogWriter:
             record["metadata"]["system_physics_hash"] = self._system_physics_hash
         self._append_log_record(record)
 
+        # ── Auto-freeze session on escalation ─────────────────
+        # Learning modules freeze immediately so the student cannot continue
+        # unsupervised.  Modules may opt out (e.g. student-commons) by setting
+        # ``auto_freeze_on_escalation: false`` in their domain physics.
+        _auto_freeze = True
+        if domain_physics:
+            _auto_freeze = domain_physics.get("auto_freeze_on_escalation", True)
+        if _auto_freeze:
+            try:
+                from lumina.api.session import _session_containers
+                from lumina.core.session_unlock import generate_unlock_pin
+
+                _container = _session_containers.get(self.session_id)
+                if _container is not None and not _container.frozen:
+                    _pin = generate_unlock_pin(self.session_id, record["record_id"])
+                    _container.frozen = True
+                    import logging as _freeze_log
+                    _freeze_log.getLogger("lumina.escalation").info(
+                        "[%s] Session auto-frozen on escalation %s (PIN generated)",
+                        self.session_id, record["record_id"],
+                    )
+            except Exception:
+                import logging as _freeze_log
+                _freeze_log.getLogger("lumina.escalation").warning(
+                    "Auto-freeze failed for session %s", self.session_id, exc_info=True,
+                )
+
         # ── Black-box capture on escalation trigger ───────────
         try:
             from lumina.session.blackbox_triggers import trigger_registry

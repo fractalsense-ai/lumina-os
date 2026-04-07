@@ -418,6 +418,30 @@ artifacts:
     last_updated: 2026-03-15
     sha256: 0ab2daa4b03170a336b1f0193740765d162100f941a44e1baaa1bb3924812cc3
 
+  - path: docs/7-concepts/escalation-auto-freeze.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-05
+    sha256: 2b523072f2b9f7c701350a4bcc1da914ad469212dedf0c7d52161b2ef18a4cde
+
+  - path: docs/7-concepts/student-commons.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-05
+    sha256: f7ae4b106b267ed1fd5f8342e59221924dc5e1075a5de786ebb10f5c2a90c26f
+
+  - path: docs/7-concepts/learning-profile.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-05
+    sha256: dadaa81dedb61f25372f19c114649d09b8ab715403bf1b4dedbe7ce592f98861
+
   - path: docs/7-concepts/telemetry-masking.md
     type: doc
     section: 7
@@ -1164,21 +1188,21 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 863f75071e6ba90e77b589b4608dd5d4c3b1b4299f590bc2eb089856b13e381c
+    sha256: 8e59b197197d2972e7878070bf4d94e1b9dafb059f579b032049078562ed3cc3
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 7c93bcd230f1ec4e6514fafdac867e887fee163d039b4e2a48f46552e89ca637
+    sha256: 5336cf744396c68a236c11c76b8c3c31d826860616046a14468114af98828b41
 
   - path: domain-packs/education/cfg/admin-operations.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: 3c3aac48f6bb7e5f9f51c4e910f02e3a28cf37f2da297b7789300b60279f2a86
+    sha256: fb5f1c79a94e4daf7adea9354f90c15857ff0992b3689057d3dbc3b67e2ca9be
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config
@@ -1348,7 +1372,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: e925b880b5f09ce40a606645a94f89bf311fa4e6bfef88e7ac1e3f3026147062
+    sha256: 84cd55f9a74255c2e84dfe74bd49cf4d39ed3553f9d64d8013ce46a11cdda25a
 
   - path: domain-packs/education/profiles/parent.yaml
     type: config

@@ -413,6 +413,15 @@ def interpret_turn_input(
         if key not in evidence or evidence[key] is None:
             evidence[key] = default_val
 
+    # ── No-problem grace: skip penalty when no equation is assigned ──
+    _has_equation = (
+        isinstance(current_problem, dict)
+        and bool(current_problem.get("equation"))
+    )
+    if not _has_equation:
+        evidence["off_task_ratio"] = 0.0
+        evidence["correctness"] = "n/a"
+
     # ── Override LLM fields with deterministic parser output ──
     if parser_result is not None and parser_result.get("ok"):
         if parser_result.get("step_count") is not None:

@@ -134,14 +134,33 @@ def test_system_log_validate_role_gating(client: TestClient) -> None:
 
 
 @pytest.mark.integration
-def test_chat_glossary_lookup_returns_definition(client: TestClient) -> None:
-    resp = client.post(
-        "/api/chat",
-        json={
-            "message": "what is a coefficient?",
-            "deterministic_response": True,
-        },
-    )
+def test_chat_glossary_lookup_returns_definition(client: TestClient, api_module) -> None:
+    # Authenticated student whose profile routes to pre-algebra (has glossary).
+    token = _register_and_login(client, "glossary_student", "user")
+
+    # Patch load_subject_profile so the session picks up pre-algebra routing.
+    _original_load = api_module.PERSISTENCE.load_subject_profile
+
+    def _load_with_domain(path: str) -> dict:
+        data = _original_load(path)
+        data["domain_id"] = "domain/edu/pre-algebra/v1"
+        return data
+
+    api_module.PERSISTENCE.load_subject_profile = _load_with_domain
+    # Bypass magic-circle consent gate for this test.
+    api_module.PERSISTENCE.get_user_consent = lambda _uid: {"accepted": True}
+    try:
+        resp = client.post(
+            "/api/chat",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "message": "what is a coefficient?",
+                "deterministic_response": True,
+            },
+        )
+    finally:
+        api_module.PERSISTENCE.load_subject_profile = _original_load
+
     assert resp.status_code == 200
     body = resp.json()
     assert body["prompt_type"] == "definition_lookup"

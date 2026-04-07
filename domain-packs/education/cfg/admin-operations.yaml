@@ -72,6 +72,11 @@ operations:
     params:
       event_id: "string — System Log record ID or escalation ID to explain"
 
+  - name: view_my_profile
+    description: "Show the calling user's own profile summary — display name, preferences, interests, and assigned modules. Sensitive fields (mastery scores, internal IDs) are redacted. Available to all roles."
+    params:
+      domain_id: "string — defaults to 'education'"
+
   # ── User management (DA-scoped) ─────────────────────────
   - name: invite_user
     description: "Invite a new student, teacher, or teaching assistant to the education domain. Domain authorities may invite users with 'user' or 'guest' role within their governed modules."
@@ -125,6 +130,13 @@ operations:
       domain_id: "string — defaults to 'education'"
       module_id: "string — module to request enrolment in"
       reason: "string — brief reason for the enrolment request (optional)"
+
+  - name: update_student_preferences
+    description: "Update a student's learning preferences (explanation style, interests, simulator preference). Teachers and domain authorities only. Adds an entry to teacher_notes for audit trail."
+    params:
+      student_id: "string — the student's user ID"
+      updates: "object — key/value pairs to merge into preferences (e.g. preferred_explanation_style, simulator_preference, interests)"
+      note: "string — reason for the change (appended to teacher_notes)"
 
   # ── Escalation / governance ──────────────────────────────
   - name: resolve_escalation

@@ -1,17 +1,43 @@
 {
   "id": "domain/edu/general-education/v1",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "domain_authority": {
     "name": "Education Domain Lead",
     "role": "Domain Authority",
     "pseudonymous_id": "da_education_lead_001"
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
-  "description": "General Education — default staging module for users who have not yet been assigned to a specific curriculum module. Users in this module can browse domain information, request module assignments, and interact with general domain resources. No subject-specific invariants or standing orders apply.",
+  "description": "Student Commons — a safe journaling and expression space for students who have not yet been assigned to a specific curriculum module. Students may journal, reflect on learning goals, explore interests, request module assignments, and view their profile. No academic grading, ZPD monitoring, or fluency tracking applies. Only hard-safety invariants (self-harm, violence, abuse, illegal content) trigger escalation.",
   "department": "General",
   "lumina_core_version": "1.0.0",
-  "invariants": [],
-  "standing_orders": [],
+  "auto_freeze_on_escalation": false,
+  "invariants": [
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate: any message containing indicators of self-harm, violence, abuse, or illegal activity must be immediately escalated to a teacher. This is the only invariant in Student Commons.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "safety_intervene",
+      "description": "Immediately escalate to teacher or domain authority when hard-safety content is detected. Do not attempt to counsel the student — route to a qualified adult.",
+      "action": "escalate",
+      "target": "teacher",
+      "sla_minutes": 5,
+      "auto_freeze": true
+    },
+    {
+      "id": "journal_prompt_offer",
+      "description": "Hybrid journaling mode: allow free expression passively first. After 3 turns without a clear goal, gently offer a reflection prompt (e.g. 'What subject are you most curious about right now?'). Never force or grade.",
+      "action": "prompt_offer",
+      "style": "hybrid",
+      "passive_turns_before_prompt": 3,
+      "categories": ["interests", "learning_goals", "feelings_about_school", "curiosities"]
+    }
+  ],
   "artifact_sequence": [],
   "domain_step_params": {
     "window_turns": 10,
@@ -27,6 +53,15 @@
         "parent": "user",
         "observer": "guest"
       }
+    },
+    "journaling": {
+      "enabled": true,
+      "style": "hybrid",
+      "reflection_categories": ["interests", "learning_goals", "feelings_about_school", "curiosities"]
+    },
+    "student_commands": {
+      "enabled": true,
+      "allowed": ["request_module_assignment", "view_available_modules", "view_my_profile"]
     }
   }
 }

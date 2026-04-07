@@ -334,7 +334,7 @@ class TestTaskCompletePayloadSeparation:
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "t1", "nominal_difficulty": 0.5, "skills_required": []},
             "current_problem": dict(self._OLD_PROBLEM),
-            "turn_count": 0,
+            "turn_count": 1,
             "domain_id": "education",
             "problem_presented_at": 1_000_000.0,
         }

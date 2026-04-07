@@ -650,7 +650,7 @@ function ChatInterface({
       setMessages((prev) => [...prev, assistantMessage])
 
       // ── Session freeze / unlock tracking ───────────────
-      if (apiResponse.action === 'session_frozen') {
+      if (apiResponse.escalated || apiResponse.action === 'session_frozen') {
         setSessionFrozen(true)
       } else if (apiResponse.action === 'session_unlocked') {
         setSessionFrozen(false)

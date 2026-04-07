@@ -521,13 +521,16 @@ def test_resource_monitor_daemon_doc_no_night_cycle() -> None:
 
 @pytest.mark.unit
 def test_default_module_exists_education() -> None:
-    """Education domain has a general-education default module."""
+    """Education domain has a general-education default module (Student Commons)."""
     dp = _REPO_ROOT / "domain-packs/education/modules/general-education/domain-physics.json"
     assert dp.exists()
     data = json.loads(dp.read_text(encoding="utf-8"))
     assert data["id"] == "domain/edu/general-education/v1"
-    assert data["invariants"] == []
-    assert data["standing_orders"] == []
+    # Student Commons has a single hard-safety invariant
+    assert len(data["invariants"]) == 1
+    assert data["invariants"][0]["id"] == "content_safety_hard"
+    # And safety + journaling standing orders
+    assert len(data["standing_orders"]) == 2
 
 
 @pytest.mark.unit
