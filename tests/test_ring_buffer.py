@@ -106,7 +106,7 @@ def test_hydrate_populates_buffer() -> None:
     assert len(rb) == 2
     snap = rb.snapshot()
     assert snap[0].user_message == "a"
-    assert snap[1].turn_number == 2
+    assert snap[1].turn_number == 1
 
 
 @pytest.mark.unit
@@ -121,23 +121,25 @@ def test_hydrate_clears_existing_data() -> None:
 
 
 @pytest.mark.unit
-def test_hydrate_rejects_non_monotonic_turns() -> None:
+def test_hydrate_normalises_non_monotonic_turns() -> None:
     rb = ConversationRingBuffer(maxlen=10)
-    with pytest.raises(ValueError, match="Non-monotonic"):
-        rb.hydrate([
-            {"turn_number": 3, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
-            {"turn_number": 2, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
-        ])
+    rb.hydrate([
+        {"turn_number": 3, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
+        {"turn_number": 2, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
+    ])
+    snap = rb.snapshot()
+    assert [t.turn_number for t in snap] == [0, 1]
 
 
 @pytest.mark.unit
-def test_hydrate_rejects_duplicate_turn_numbers() -> None:
+def test_hydrate_normalises_duplicate_turn_numbers() -> None:
     rb = ConversationRingBuffer(maxlen=10)
-    with pytest.raises(ValueError, match="Non-monotonic"):
-        rb.hydrate([
-            {"turn_number": 1, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
-            {"turn_number": 1, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
-        ])
+    rb.hydrate([
+        {"turn_number": 1, "user_message": "a", "llm_response": "b", "timestamp": 1.0, "domain_id": "d"},
+        {"turn_number": 1, "user_message": "c", "llm_response": "d", "timestamp": 2.0, "domain_id": "d"},
+    ])
+    snap = rb.snapshot()
+    assert [t.turn_number for t in snap] == [0, 1]
 
 
 @pytest.mark.unit
@@ -158,5 +160,5 @@ def test_hydrate_respects_maxlen() -> None:
     ])
     assert len(rb) == 3
     snap = rb.snapshot()
-    assert snap[0].turn_number == 3
-    assert snap[-1].turn_number == 5
+    assert snap[0].turn_number == 2
+    assert snap[-1].turn_number == 4
