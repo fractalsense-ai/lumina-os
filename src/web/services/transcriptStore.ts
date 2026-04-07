@@ -28,6 +28,7 @@ export interface StoredSession {
   seal: string
   metadata: TranscriptMetadata
   updatedAt: number
+  label?: string
 }
 
 export interface SessionSummary {
@@ -35,6 +36,7 @@ export interface SessionSummary {
   turnCount: number
   updatedAt: number
   domainId: string
+  label?: string
 }
 
 // ── Abstract interface ───────────────────────────────────────
@@ -110,6 +112,7 @@ export class IndexedDBTranscriptStore implements TranscriptStore {
             turnCount: s.messages.length,
             updatedAt: s.updatedAt,
             domainId: s.metadata.domain_id,
+            label: s.label,
           })),
         )
       }
@@ -157,6 +160,7 @@ export class LocalStorageTranscriptStore implements TranscriptStore {
           turnCount: s.messages.length,
           updatedAt: s.updatedAt,
           domainId: s.metadata.domain_id,
+          label: s.label,
         })
       } catch {
         // corrupt entry — skip

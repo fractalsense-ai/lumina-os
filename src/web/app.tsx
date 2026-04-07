@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Component, type ReactNode } from 'react'
-import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple, Warning } from '@phosphor-icons/react'
+import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple, Warning, ChatCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,12 +12,14 @@ import { ClarificationCard, type ClarificationData } from '@/components/Clarific
 import { useEventStream } from '@/hooks/useEventStream'
 import { SetupPasswordPage } from '@/components/SetupPasswordPage'
 import { RoleSidebar } from '@/components/sidebar/RoleSidebar'
+import { SessionPanel } from '@/components/sidebar/SessionPanel'
 import {
   createTranscriptStore,
   type TranscriptStore,
   type TranscriptTurn,
   type TranscriptMetadata,
   type StoredSession,
+  type SessionSummary,
 } from '@/services/transcriptStore'
 
 interface Message {
@@ -41,6 +43,7 @@ type ApiChatResponse = {
   structured_content?: ActionCardData | QueryResultData | ClarificationData
   transcript_seal?: string
   transcript_seal_metadata?: TranscriptMetadata
+  transcript_snapshot?: TranscriptTurn[]
 }
 
 interface UiManifest {
@@ -425,6 +428,8 @@ function AppHeader({
   hasSidebar,
   sidebarOpen,
   onToggleSidebar,
+  sessionPanelOpen,
+  onToggleSessionPanel,
 }: {
   manifest: UiManifest
   auth: AuthState
@@ -437,24 +442,39 @@ function AppHeader({
   hasSidebar?: boolean
   sidebarOpen?: boolean
   onToggleSidebar?: () => void
+  sessionPanelOpen?: boolean
+  onToggleSessionPanel?: () => void
 }) {
   return (
     <header className="border-b border-border bg-card px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
-              {manifest.title}
-            </h1>
-            {manifest.domain_label && (
-              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                {manifest.domain_label}
-              </span>
-            )}
+        <div className="flex items-center gap-3">
+          {onToggleSessionPanel && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSessionPanel}
+              title={sessionPanelOpen ? 'Hide conversations' : 'Show conversations'}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <ChatCircle size={18} weight={sessionPanelOpen ? 'fill' : 'regular'} />
+            </Button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-foreground">
+                {manifest.title}
+              </h1>
+              {manifest.domain_label && (
+                <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  {manifest.domain_label}
+                </span>
+              )}
+            </div>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              {manifest.subtitle}
+            </p>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            {manifest.subtitle}
-          </p>
         </div>
         <div className="flex items-center gap-3">
           {hasSidebar && (
@@ -539,8 +559,10 @@ function ChatInterface({
   const [isLoading, setIsLoading] = useState(false)
   const [sessionFrozen, setSessionFrozen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  // Stable session_id tied to the authenticated user
-  const [sessionId] = useState<string>(`user_${auth.userId}`)
+  // Multi-session state
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(true)
+  const [sessionRefreshKey, setSessionRefreshKey] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // ── Client-side transcript persistence ───────────────────
@@ -549,8 +571,103 @@ function ChatInterface({
   const sealMetadataRef = useRef<TranscriptMetadata | null>(null)
   const transcriptRef = useRef<TranscriptTurn[]>([])
   const turnCounterRef = useRef<number>(0)
+  const sessionLabelRef = useRef<string>('')
 
-  // Attempt to resume a locally-stored session on mount
+  // ── Session management helpers ───────────────────────────
+  const resetChatState = () => {
+    setMessages([])
+    setInputValue('')
+    setSessionFrozen(false)
+    sealRef.current = ''
+    sealMetadataRef.current = null
+    transcriptRef.current = []
+    turnCounterRef.current = 0
+    sessionLabelRef.current = ''
+  }
+
+  const saveCurrentSession = async () => {
+    const meta = sealMetadataRef.current
+    if (sessionId && sealRef.current && transcriptRef.current.length > 0 && meta) {
+      await transcriptStoreRef.current.saveSession({
+        sessionId,
+        messages: transcriptRef.current,
+        seal: sealRef.current,
+        metadata: meta,
+        updatedAt: Date.now(),
+        label: sessionLabelRef.current || undefined,
+      }).catch(() => {})
+    }
+  }
+
+  const createNewSession = async () => {
+    await saveCurrentSession()
+    resetChatState()
+    const newId = `${auth.userId}_${Date.now()}`
+    setSessionId(newId)
+    // Prune oldest sessions beyond cap
+    const MAX_SESSIONS = 50
+    const all = await transcriptStoreRef.current.listSessions()
+    if (all.length >= MAX_SESSIONS) {
+      all.sort((a, b) => a.updatedAt - b.updatedAt)
+      const toDelete = all.slice(0, all.length - MAX_SESSIONS + 1)
+      for (const s of toDelete) {
+        await transcriptStoreRef.current.deleteSession(s.sessionId)
+      }
+    }
+    setSessionRefreshKey((k) => k + 1)
+  }
+
+  const switchSession = async (targetId: string) => {
+    if (targetId === sessionId) return
+    await saveCurrentSession()
+    resetChatState()
+    setSessionId(targetId)
+  }
+
+  const deleteSession = async (targetId: string) => {
+    await transcriptStoreRef.current.deleteSession(targetId)
+    if (targetId === sessionId) {
+      resetChatState()
+      // Pick next session or create new
+      const remaining = await transcriptStoreRef.current.listSessions()
+      if (remaining.length > 0) {
+        remaining.sort((a, b) => b.updatedAt - a.updatedAt)
+        setSessionId(remaining[0].sessionId)
+      } else {
+        const newId = `${auth.userId}_${Date.now()}`
+        setSessionId(newId)
+      }
+    }
+    setSessionRefreshKey((k) => k + 1)
+  }
+
+  // On mount: pick most recent session or create a new one.
+  // Also handles migration from old single-session format.
+  useEffect(() => {
+    if (!auth.token) return
+    const store = transcriptStoreRef.current
+    ;(async () => {
+      const sessions = await store.listSessions()
+      if (sessions.length > 0) {
+        sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+        setSessionId(sessions[0].sessionId)
+      } else {
+        // Migrate old single-session key if present
+        const oldSession = await store.loadSession(`user_${auth.userId}`)
+        if (oldSession && oldSession.messages.length > 0) {
+          const migratedId = `${auth.userId}_migrated`
+          await store.saveSession({ ...oldSession, sessionId: migratedId })
+          await store.deleteSession(`user_${auth.userId}`)
+          setSessionId(migratedId)
+        } else {
+          setSessionId(`${auth.userId}_${Date.now()}`)
+        }
+      }
+      setSessionRefreshKey((k) => k + 1)
+    })()
+  }, [auth.token, auth.userId])
+
+  // Attempt to resume a locally-stored session when sessionId changes
   useEffect(() => {
     if (!sessionId || !auth.token) return
     const store = transcriptStoreRef.current
@@ -583,9 +700,11 @@ function ChatInterface({
           sealMetadataRef.current = stored.metadata
           transcriptRef.current = stored.messages
           turnCounterRef.current = stored.messages.length
+          sessionLabelRef.current = stored.label ?? ''
         } else {
           // Server rejected the seal — wipe stale local data
           await store.deleteSession(sessionId)
+          setSessionRefreshKey((k) => k + 1)
         }
       } catch {
         // Network error or store error — start fresh
@@ -597,13 +716,14 @@ function ChatInterface({
   useEffect(() => {
     const handler = () => {
       const meta = sealMetadataRef.current
-      if (sealRef.current && transcriptRef.current.length > 0 && meta) {
+      if (sessionId && sealRef.current && transcriptRef.current.length > 0 && meta) {
         transcriptStoreRef.current.saveSession({
           sessionId,
           messages: transcriptRef.current,
           seal: sealRef.current,
           metadata: meta,
           updatedAt: Date.now(),
+          label: sessionLabelRef.current || undefined,
         }).catch(() => {})
       }
     }
@@ -661,6 +781,12 @@ function ChatInterface({
         sealRef.current = apiResponse.transcript_seal
         sealMetadataRef.current = apiResponse.transcript_seal_metadata
         turnCounterRef.current += 1
+        // Auto-extract label from first user message
+        if (!sessionLabelRef.current && trimmedInput) {
+          sessionLabelRef.current = trimmedInput.length > 40
+            ? trimmedInput.slice(0, 40) + '…'
+            : trimmedInput
+        }
         // Use the server-authoritative transcript snapshot when available
         // to eliminate timestamp drift between client and server that
         // causes HMAC seal verification to fail on session resume.
@@ -677,13 +803,18 @@ function ChatInterface({
           }
           transcriptRef.current = [...transcriptRef.current, turn]
         }
-        transcriptStoreRef.current.saveSession({
-          sessionId,
-          messages: transcriptRef.current,
-          seal: sealRef.current,
-          metadata: apiResponse.transcript_seal_metadata!,
-          updatedAt: Date.now(),
-        }).catch(() => {})
+        if (sessionId) {
+          transcriptStoreRef.current.saveSession({
+            sessionId,
+            messages: transcriptRef.current,
+            seal: sealRef.current,
+            metadata: apiResponse.transcript_seal_metadata!,
+            updatedAt: Date.now(),
+            label: sessionLabelRef.current || undefined,
+          }).then(() => {
+            setSessionRefreshKey((k) => k + 1)
+          }).catch(() => {})
+        }
       } else {
         console.warn('[lumina] transcript_seal missing from API response — transcript not persisted this turn')
       }
@@ -711,7 +842,7 @@ function ChatInterface({
   // so we must explicitly save here to survive the re-login cycle.
   const handleLogoutWithSave = async () => {
     const meta = sealMetadataRef.current
-    if (sealRef.current && transcriptRef.current.length > 0 && meta) {
+    if (sessionId && sealRef.current && transcriptRef.current.length > 0 && meta) {
       try {
         await transcriptStoreRef.current.saveSession({
           sessionId,
@@ -719,6 +850,7 @@ function ChatInterface({
           seal: sealRef.current,
           metadata: meta,
           updatedAt: Date.now(),
+          label: sessionLabelRef.current || undefined,
         })
       } catch { /* best-effort — proceed to logout */ }
     }
@@ -739,9 +871,23 @@ function ChatInterface({
         hasSidebar={(roleLayout?.sidebar_panels?.length ?? 0) > 0}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        sessionPanelOpen={sessionPanelOpen}
+        onToggleSessionPanel={() => setSessionPanelOpen((v) => !v)}
       />
 
       <div className="flex-1 flex overflow-hidden">
+        {/* Session history panel */}
+        {sessionPanelOpen && (
+          <SessionPanel
+            store={transcriptStoreRef.current}
+            activeSessionId={sessionId}
+            onSelect={switchSession}
+            onNew={createNewSession}
+            onDelete={deleteSession}
+            refreshKey={sessionRefreshKey}
+          />
+        )}
+
         {/* Chat column */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 px-6">
