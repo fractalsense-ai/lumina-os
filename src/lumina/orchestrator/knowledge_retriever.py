@@ -28,6 +28,7 @@ def retrieve_grounding(
     task_spec: dict[str, Any],
     evidence: dict[str, Any],
     domain_id: str,
+    module_key: str | None = None,
 ) -> list[dict[str, Any]]:
     """Gather grounding references for a single turn.
 
@@ -36,6 +37,11 @@ def retrieve_grounding(
          each up in the glossary routing table.
       2. **Concept-graph expansion** — for every matched glossary node, pull
          1-hop related concepts to enrich the reference set.
+
+    When *module_key* is provided, only references whose ``artifact_id``
+    contains the module domain path (e.g. ``general-education``) or that
+    belong to system-level entries are included.  This prevents algebra-specific
+    RAG context from bleeding into Student Commons and vice-versa.
 
     Returns a (possibly empty) list of reference dicts suitable for the
     ``references`` field in the prompt contract.
@@ -46,6 +52,15 @@ def retrieve_grounding(
 
     refs: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+
+    # Derive a short module slug for filtering (e.g. "general-education" from
+    # "domain/edu/general-education/v1").
+    _module_slug: str | None = None
+    if module_key:
+        _parts = module_key.replace("\\", "/").split("/")
+        # Use the second-to-last non-version segment as the slug
+        _non_version = [p for p in _parts if p and not p.startswith("v") or len(p) > 3]
+        _module_slug = _non_version[-1] if _non_version else module_key
 
     # ── 1. Glossary hits from task_spec terms ────────────────
     terms: list[str] = []
@@ -58,6 +73,9 @@ def retrieve_grounding(
     for term, matched_domain in matched_domains.items():
         node_id = f"glossary:{matched_domain}:{term.lower().strip()}"
         if node_id not in seen_ids:
+            # Module scoping: skip references from other modules
+            if _module_slug and _module_slug not in node_id and matched_domain != domain_id:
+                continue
             seen_ids.add(node_id)
             refs.append({
                 "artifact_id": node_id,
@@ -74,6 +92,9 @@ def retrieve_grounding(
             continue
         for node in related:
             if node.node_id not in seen_ids:
+                # Module scoping: skip cross-module expansions
+                if _module_slug and _module_slug not in node.node_id:
+                    continue
                 seen_ids.add(node.node_id)
                 refs.append({
                     "artifact_id": node.node_id,

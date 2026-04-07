@@ -113,6 +113,40 @@ def process_message(
 
     session = get_or_create_session(session_id, domain_id=domain_id, user=user)
 
+    # ── User-level freeze gate: block ALL sessions for this user ────────
+    # A session freeze only covers one session_id.  The user-level freeze
+    # prevents the student from simply creating a new conversation.
+    _user_id = (user or {}).get("sub", "")
+    if _user_id:
+        from lumina.core.session_unlock import is_user_frozen
+        if is_user_frozen(_user_id):
+            # Still allow PIN entry to unfreeze
+            import re as _re_uf
+            _pin_uf = input_text.strip()
+            _unlocked_uf = False
+            if _re_uf.fullmatch(r"\d{6}", _pin_uf):
+                # Try validating against any session's PIN for this user
+                from lumina.core.session_unlock import validate_unlock_pin, unfreeze_user, _FROZEN_USERS
+                _frozen_entry = _FROZEN_USERS.get(_user_id)
+                _frozen_sid = _frozen_entry.get("session_id", "") if _frozen_entry else ""
+                if _frozen_sid and validate_unlock_pin(_frozen_sid, _pin_uf):
+                    unfreeze_user(_user_id)
+                    # Also unfreeze the original session container
+                    _orig_container = _session_containers.get(_frozen_sid)
+                    if _orig_container is not None:
+                        _orig_container.frozen = False
+                    log.info("[%s] User %s unlocked via PIN (cross-session)", session_id, _user_id)
+                    _unlocked_uf = True
+            if not _unlocked_uf:
+                return {
+                    "response": "Your account is temporarily locked pending teacher review. Please enter your unlock PIN.",
+                    "action": "user_frozen",
+                    "prompt_type": "user_frozen",
+                    "escalated": True,
+                    "tool_results": {},
+                    "domain_id": domain_id or session.get("domain_id", ""),
+                }
+
     # ── Frozen-session gate: block input until teacher issues unlock PIN ──
     container = _session_containers.get(session_id)
     if container is not None and container.frozen:
@@ -121,6 +155,10 @@ def process_message(
         _pin_candidate = input_text.strip()
         if _re.fullmatch(r"\d{6}", _pin_candidate) and validate_unlock_pin(session_id, _pin_candidate):
             container.frozen = False
+            # Also lift user-level freeze
+            if _user_id:
+                from lumina.core.session_unlock import unfreeze_user
+                unfreeze_user(_user_id)
             log.info("[%s] Session unlocked via PIN in chat turn", session_id)
             return {
                 "response": "Session unlocked. You may continue.",
@@ -334,6 +372,48 @@ def process_message(
             "response": _t0_response,
             "action": "task_presentation",
             "prompt_type": "task_presentation",
+            "escalated": False,
+            "tool_results": {},
+            "domain_id": resolved_domain_id,
+        }
+
+    # ── Turn-1 grace period for free-form modules ─────────────
+    # Modules with empty artifact_sequence (e.g. Student Commons) have no
+    # equation to present.  On the very first turn, skip the SLM physics
+    # pipeline entirely — it would hallucinate invariant violations on
+    # innocuous greetings.  Instead, return a warm greeting so the student
+    # can begin journaling.
+    _artifact_seq = domain_physics.get("artifact_sequence") or []
+    if _turn_count == 0 and not _has_equation and not _artifact_seq and not holodeck and not deterministic_response:
+        _greeting = (
+            "Welcome to Student Commons! This is your safe space to journal, "
+            "reflect, and explore your learning goals. What's on your mind today?"
+        )
+        if slm_available():
+            from lumina.core.slm import call_slm as _g_call_slm
+            _g_contract = {
+                "prompt_type": "greeting",
+                "student_message": input_text,
+                "instructions": "Warmly greet the student and invite them to share what is on their mind. Keep it brief and encouraging.",
+            }
+            try:
+                _greeting = _g_call_slm(system=system_prompt, user=json.dumps(_g_contract, ensure_ascii=False))
+                _greeting = strip_latex_delimiters(_greeting)
+            except Exception:
+                pass  # Fall back to static greeting
+        session["turn_count"] += 1
+        _container = _session_containers.get(session_id)
+        if _container is not None and hasattr(_container, "ring_buffer"):
+            _container.ring_buffer.push(
+                user_message=input_text,
+                llm_response=_greeting,
+                turn_number=0,
+                domain_id=resolved_domain_id,
+            )
+        return {
+            "response": _greeting,
+            "action": "greeting",
+            "prompt_type": "greeting",
             "escalated": False,
             "tool_results": {},
             "domain_id": resolved_domain_id,

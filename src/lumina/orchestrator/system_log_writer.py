@@ -261,12 +261,19 @@ class SystemLogWriter:
         if _auto_freeze:
             try:
                 from lumina.api.session import _session_containers
-                from lumina.core.session_unlock import generate_unlock_pin
+                from lumina.core.session_unlock import freeze_user, generate_unlock_pin
 
                 _container = _session_containers.get(self.session_id)
                 if _container is not None and not _container.frozen:
                     _pin = generate_unlock_pin(self.session_id, record["record_id"])
                     _container.frozen = True
+                    # Also freeze the user across all sessions so creating a
+                    # new conversation cannot bypass the lock.
+                    _freeze_uid = ""
+                    if hasattr(_container, "user") and _container.user:
+                        _freeze_uid = _container.user.get("sub", "")
+                    if _freeze_uid:
+                        freeze_user(_freeze_uid, escalation_id=record["record_id"], session_id=self.session_id)
                     import logging as _freeze_log
                     _freeze_log.getLogger("lumina.escalation").info(
                         "[%s] Session auto-frozen on escalation %s (PIN generated)",

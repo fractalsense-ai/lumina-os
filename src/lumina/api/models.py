@@ -30,6 +30,8 @@ class ChatResponse(BaseModel):
     domain_id: str | None = None
     structured_content: dict[str, Any] | None = None
     transcript_seal: str | None = None
+    transcript_seal_metadata: dict[str, Any] | None = None
+    transcript_snapshot: list[dict[str, Any]] | None = None
 
 
 # ── Holodeck Sandbox ─────────────────────────────────────────

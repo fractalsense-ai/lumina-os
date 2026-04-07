@@ -388,7 +388,7 @@ class PPAOrchestrator:
 
         # 4. Retrieve grounding references from the KnowledgeIndex
         domain_id = self.domain.get("id", "")
-        references = retrieve_grounding(task_spec, evidence, domain_id)
+        references = retrieve_grounding(task_spec, evidence, domain_id, module_key=domain_id)
 
         # 5. The Clerk drafts the contract
         prompt_contract = self._drafter.build(

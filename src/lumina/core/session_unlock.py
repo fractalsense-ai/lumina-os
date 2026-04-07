@@ -67,3 +67,43 @@ def has_pending_pin(session_id: str) -> bool:
     """Return True if a valid, unexpired PIN exists for *session_id*."""
     _purge_expired()
     return session_id in _UNLOCK_PINS
+
+
+# ── User-level freeze ────────────────────────────────────────
+# A session-level freeze only blocks a single session_id — creating a new
+# conversation bypasses it.  The user-level freeze blocks ALL sessions for
+# that user until an unlock PIN is successfully entered.
+_USER_FREEZE_TTL_SECONDS: int = int(os.environ.get("LUMINA_USER_FREEZE_TTL_SECONDS", "3600"))
+
+# user_id → {frozen_at, expires_at, escalation_id, session_id}
+_FROZEN_USERS: dict[str, dict[str, Any]] = {}
+
+
+def _purge_expired_user_freezes() -> None:
+    """Remove user-freeze entries whose TTL has elapsed."""
+    now = time.time()
+    expired = [uid for uid, entry in _FROZEN_USERS.items() if now > entry["expires_at"]]
+    for uid in expired:
+        del _FROZEN_USERS[uid]
+
+
+def freeze_user(user_id: str, escalation_id: str = "", session_id: str = "") -> None:
+    """Freeze *user_id* across all sessions until a PIN unlock or TTL expiry."""
+    _purge_expired_user_freezes()
+    _FROZEN_USERS[user_id] = {
+        "frozen_at": time.time(),
+        "expires_at": time.time() + _USER_FREEZE_TTL_SECONDS,
+        "escalation_id": escalation_id,
+        "session_id": session_id,
+    }
+
+
+def is_user_frozen(user_id: str) -> bool:
+    """Return True if *user_id* is currently frozen."""
+    _purge_expired_user_freezes()
+    return user_id in _FROZEN_USERS
+
+
+def unfreeze_user(user_id: str) -> None:
+    """Remove the user-level freeze for *user_id*."""
+    _FROZEN_USERS.pop(user_id, None)

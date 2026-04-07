@@ -357,6 +357,13 @@ async def resolve_escalation(
         container = _session_containers.get(session_id)
         if container is not None:
             container.frozen = True
+            # Also freeze the user across all sessions
+            _freeze_uid = ""
+            if hasattr(container, "user") and container.user:
+                _freeze_uid = container.user.get("sub", "")
+            if _freeze_uid:
+                from lumina.core.session_unlock import freeze_user
+                freeze_user(_freeze_uid, escalation_id=escalation_id, session_id=session_id)
         log.info("[%s] Session frozen; unlock PIN issued for escalation %s", session_id, escalation_id)
 
     # ── Intervention notes ── append to student profile if present ────────

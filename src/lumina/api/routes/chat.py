@@ -235,4 +235,7 @@ async def chat(
         tool_results=result.get("tool_results") or None,
         domain_id=result.get("domain_id"),
         structured_content=result.get("structured_content"),
+        transcript_seal=result.get("transcript_seal"),
+        transcript_seal_metadata=result.get("transcript_seal_metadata"),
+        transcript_snapshot=result.get("transcript_snapshot"),
     )

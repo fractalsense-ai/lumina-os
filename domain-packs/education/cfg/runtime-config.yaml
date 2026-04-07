@@ -29,14 +29,24 @@ runtime:
         off_task_ratio: 0.0
         correctness: "n/a"
         response_latency_sec: 5.0
+      ui_overrides:
+        subtitle: "Student Commons"
     domain/edu/pre-algebra/v1:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
+      ui_overrides:
+        subtitle: "Pre-Algebra"
     domain/edu/algebra-intro/v1:
       domain_physics_path: domain-packs/education/modules/algebra-intro/domain-physics.json
+      ui_overrides:
+        subtitle: "Algebra — Introduction"
     domain/edu/algebra-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-1/domain-physics.json
+      ui_overrides:
+        subtitle: "Algebra Level 1 — Foundations"
     domain/edu/algebra-level-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
+      ui_overrides:
+        subtitle: "Algebra Level 1 — Foundations"
     domain/edu/domain-authority/v1:
       local_only: true
       domain_physics_path: domain-packs/education/modules/domain-authority/domain-physics.json
@@ -396,7 +406,7 @@ runtime:
 
 ui_manifest:
   title: "Project Lumina"
-  subtitle: "Algebra Level 1 — Foundations"
+  subtitle: "Education"
   domain_label: "Education"
   consent_heading: "Project Lumina"
   consent_text: "I am not grading you for a report card. I do not keep transcripts of what you say. If we get stuck, we ask for human help."
