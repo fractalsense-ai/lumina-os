@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Component, type ReactNode } from 'react'
-import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple } from '@phosphor-icons/react'
+import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -337,7 +337,7 @@ class MessageErrorBoundary extends Component<
   }
 }
 
-function ChatMessage({ message, token }: { message: Message; token?: string }) {
+function ChatMessage({ message, token, userRole }: { message: Message; token?: string; userRole?: string }) {
   const isUser = message.role === 'user'
   
   return (
@@ -365,7 +365,7 @@ function ChatMessage({ message, token }: { message: Message; token?: string }) {
       </motion.div>
       {message.structured_content?.type === 'action_card' && token && (
         <div className="ml-11 max-w-[75%] md:max-w-[65%]">
-          <ActionCard card={message.structured_content as ActionCardData} token={token} />
+          <ActionCard card={message.structured_content as ActionCardData} token={token} userRole={userRole} />
         </div>
       )}
       {message.structured_content?.type === 'query_result' && (
@@ -537,6 +537,7 @@ function ChatInterface({
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [sessionFrozen, setSessionFrozen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Stable session_id tied to the authenticated user
   const [sessionId] = useState<string>(`user_${auth.userId}`)
@@ -648,6 +649,13 @@ function ChatInterface({
       }
       setMessages((prev) => [...prev, assistantMessage])
 
+      // ── Session freeze / unlock tracking ───────────────
+      if (apiResponse.action === 'session_frozen') {
+        setSessionFrozen(true)
+      } else if (apiResponse.action === 'session_unlocked') {
+        setSessionFrozen(false)
+      }
+
       // ── Persist transcript locally with rolling seal ───
       if (apiResponse.transcript_seal && apiResponse.transcript_seal_metadata) {
         sealRef.current = apiResponse.transcript_seal
@@ -741,7 +749,7 @@ function ChatInterface({
               {messages.map((message) => (
                 <div key={message.id} className="flex flex-col gap-1">
                   <MessageErrorBoundary>
-                    <ChatMessage message={message} token={auth.token} />
+                    <ChatMessage message={message} token={auth.token} userRole={auth.role} />
                   </MessageErrorBoundary>
                   {message.role === 'assistant' && message.meta && (
                     <div className="text-xs text-muted-foreground px-11">
@@ -759,15 +767,31 @@ function ChatInterface({
           </ScrollArea>
 
           <div className="border-t border-border bg-card px-6 py-4">
+            {sessionFrozen && (
+              <div className="max-w-3xl mx-auto mb-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                <Warning size={16} weight="bold" />
+                <span>Session locked — enter the 6-digit PIN from your teacher to continue.</span>
+              </div>
+            )}
             <div className="max-w-3xl mx-auto flex gap-3 items-end">
               <Input
                 id="chat-input"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  if (sessionFrozen) {
+                    // Only allow digits, max 6 characters
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setInputValue(val)
+                  } else {
+                    setInputValue(e.target.value)
+                  }
+                }}
                 onKeyDown={handleKeyPress}
-                placeholder={manifest.input_placeholder ?? manifest.placeholder_text}
+                placeholder={sessionFrozen ? '6-digit PIN' : (manifest.input_placeholder ?? manifest.placeholder_text)}
                 disabled={isLoading}
                 className="flex-1 text-base"
+                inputMode={sessionFrozen ? 'numeric' : undefined}
+                pattern={sessionFrozen ? '\\d{6}' : undefined}
               />
               <Button
                 onClick={handleSend}
@@ -857,6 +881,7 @@ function App() {
 
   const handleAuth = (newAuth: AuthState) => {
     setAuth(newAuth)
+    setConsentGiven(false)
   }
 
   const handleLogout = () => {

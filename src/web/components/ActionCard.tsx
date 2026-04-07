@@ -33,6 +33,7 @@ export interface ActionCardData {
 interface ActionCardProps {
   card: ActionCardData
   token: string
+  userRole?: string
   onResolved?: (cardId: string, actionId: string) => void
 }
 
@@ -55,7 +56,7 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   modify: <PencilSimple size={16} weight="bold" />,
 }
 
-export function ActionCard({ card, token, onResolved }: ActionCardProps) {
+export function ActionCard({ card, token, userRole, onResolved }: ActionCardProps) {
   const [resolving, setResolving] = useState<string | null>(null)
   const [resolved, setResolved] = useState(false)
   const [resolveResult, setResolveResult] = useState<Record<string, unknown> | null>(null)
@@ -73,6 +74,11 @@ export function ActionCard({ card, token, onResolved }: ActionCardProps) {
       2,
     )
   })
+
+  // Only governance roles can resolve action cards (approve/reject/defer).
+  // Students and other non-governance roles see the card as read-only.
+  const GOVERNANCE_ROLES = ['root', 'domain_authority', 'it_support', 'qa', 'auditor', 'teacher']
+  const canResolve = !userRole || GOVERNANCE_ROLES.includes(userRole)
 
   const handleAction = async (action: ActionCardAction) => {
     if (action.id === 'modify' && card.card_type === 'command_proposal' && !modifyMode) {
@@ -221,21 +227,23 @@ export function ActionCard({ card, token, onResolved }: ActionCardProps) {
           </div>
         )}
 
-        <div className="flex gap-2 flex-wrap">
-          {card.actions.map((action) => (
-            <Button
-              key={action.id}
-              size="sm"
-              variant={STYLE_MAP[action.style] as any}
-              onClick={() => handleAction(action)}
-              disabled={resolving !== null}
-              className="gap-1"
-            >
-              {ACTION_ICONS[action.id]}
-              {action.label}
-            </Button>
-          ))}
-        </div>
+        {canResolve && (
+          <div className="flex gap-2 flex-wrap">
+            {card.actions.map((action) => (
+              <Button
+                key={action.id}
+                size="sm"
+                variant={STYLE_MAP[action.style] as any}
+                onClick={() => handleAction(action)}
+                disabled={resolving !== null}
+                className="gap-1"
+              >
+                {ACTION_ICONS[action.id]}
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </Card>
     </motion.div>
   )

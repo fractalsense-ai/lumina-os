@@ -364,13 +364,19 @@ def _detect_drift(
     minor_threshold = float(params.get("minor_drift_threshold", 0.3))
     major_threshold = float(params.get("major_drift_threshold", 0.5))
     persistence = int(params.get("persistence_required", 3))
+    min_turns_before_escalation = int(params.get("min_turns_before_escalation", 2))
+
+    # Frustration alone cannot trigger a major escalation until the student
+    # has had at least min_turns_before_escalation attempts.  This prevents
+    # a single emotive statement on turn 1 from immediately locking the session.
+    escalation_eligible_frustration = frustration and window.attempts >= min_turns_before_escalation
 
     is_major = (
         window.outside_pct >= major_threshold
         or window.consecutive_outside >= persistence
-        or frustration
+        or escalation_eligible_frustration
     )
-    is_minor = window.outside_pct >= minor_threshold
+    is_minor = window.outside_pct >= minor_threshold or (frustration and not escalation_eligible_frustration)
 
     if is_major:
         return {

@@ -213,7 +213,7 @@ class SystemLogWriter:
         """Append an EscalationRecord to the System Logs."""
         # Resolve target_role and sla_minutes from domain physics
         # escalation_triggers when available, instead of hardcoding.
-        target_role = "domain_authority"
+        target_role = "teacher"
         sla_minutes = 30
         if domain_physics:
             for et in domain_physics.get("escalation_triggers") or []:

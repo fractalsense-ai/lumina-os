@@ -166,6 +166,12 @@
       "sla_minutes": 30
     },
     {
+      "id": "domain_lib_escalation_event",
+      "condition": "The domain-lib ZPD monitor determined that frustration or major drift warrants teacher intervention.\n",
+      "target_role": "teacher",
+      "sla_minutes": 30
+    },
+    {
       "id": "novel_pattern_review",
       "condition": "The standard_method_preferred invariant fired and the student could not explain their non-standard reasoning after one justification request.\n",
       "target_role": "teacher",

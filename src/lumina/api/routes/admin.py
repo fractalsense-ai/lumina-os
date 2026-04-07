@@ -176,7 +176,14 @@ async def list_escalations(
 
     records = await run_in_threadpool(
         _cfg.PERSISTENCE.query_escalations,
-        status=status, domain_id=domain_id, limit=limit, offset=offset,
+        status=status,
+        # DA and teachers with escalation capability post-filter by
+        # governed_modules / allowed_modules.  Passing the caller's own
+        # domain_id (e.g. domain/edu/domain-authority/v1) would pre-filter
+        # out student-module escalations before the post-filter runs.
+        domain_id=domain_id if not (is_domain_authority or has_esc_capability) else None,
+        limit=limit,
+        offset=offset,
     )
 
     if is_domain_authority:
@@ -983,6 +990,16 @@ def _stage_command(
 
     # Normalise SLM output before schema validation.
     parsed_command = _normalize_slm_command(parsed_command, original_instruction)
+
+    # ── Early duplicate-username check for invite_user ────────
+    # Catch the conflict at staging time so the SLM/chat layer can relay
+    # the error immediately instead of deferring to resolve-time.
+    if operation == "invite_user":
+        _inv_username = str((parsed_command.get("params") or {}).get("username", "")).strip()
+        if _inv_username:
+            _existing = _cfg.PERSISTENCE.get_user_by_username(_inv_username)
+            if _existing is not None:
+                raise ValueError(f"Username '{_inv_username}' is already taken")
 
     cmd_approved, cmd_violations = validate_command(
         operation, parsed_command.get("params", {}), parsed_command.get("target", ""),
