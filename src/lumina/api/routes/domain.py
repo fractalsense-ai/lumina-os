@@ -309,8 +309,14 @@ async def session_resume(
     ]
     container.ring_buffer.hydrate(records)
 
+    # Restore turn_count so the processing pipeline knows this isn't turn 0
+    _resumed_turn_count = len(req.transcript)
+    ctx = container.active_context
+    if ctx is not None:
+        ctx.turn_count = _resumed_turn_count
+
     return {
         "status": "resumed",
         "session_id": session_id,
-        "turn_count": len(req.transcript),
+        "turn_count": _resumed_turn_count,
     }

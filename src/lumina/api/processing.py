@@ -143,6 +143,20 @@ def _compute_transcript_seal(
         return None, None, None
 
 
+def _sync_session_back(session_id: str, session: dict[str, Any]) -> None:
+    """Sync mutations from the local session dict back to the DomainContext.
+
+    Early-return paths (greeting, turn-0 presentation, glossary) skip the
+    main end-of-pipeline sync.  Call this before returning so that
+    turn_count and other fields are persisted.
+    """
+    container = _session_containers.get(session_id)
+    if container is not None:
+        container.active_context.sync_from_dict(session)
+        container.last_activity = time.time()
+        _persist_session_container(session_id, container)
+
+
 def process_message(
     session_id: str,
     input_text: str,
@@ -371,6 +385,7 @@ def process_message(
 
         llm_response = strip_latex_delimiters(llm_response)
         session["turn_count"] += 1
+        _sync_session_back(session_id, session)
         return {
             "response": llm_response,
             "action": "definition_lookup",
@@ -431,6 +446,7 @@ def process_message(
             _t0_result["transcript_seal"] = _t0_seal
             _t0_result["transcript_seal_metadata"] = _t0_seal_meta
             _t0_result["transcript_snapshot"] = _t0_transcript
+        _sync_session_back(session_id, session)
         return _t0_result
 
     # ── Turn-1 grace period for free-form modules ─────────────
@@ -481,6 +497,7 @@ def process_message(
             _g_result["transcript_seal"] = _g_seal
             _g_result["transcript_seal_metadata"] = _g_seal_meta
             _g_result["transcript_snapshot"] = _g_transcript
+        _sync_session_back(session_id, session)
         return _g_result
 
     # ── Extract world-sim state for ALL code paths ────────────
