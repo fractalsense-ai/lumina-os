@@ -539,3 +539,23 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
         records = self.query_log_records(record_type="CommitmentRecord")
         return [r for r in records if r.get("subject_id") == subject_id]
+
+    # ── User-level consent persistence ────────────────────────
+
+    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        users = self._load_users()
+        if user_id not in users:
+            return False
+        users[user_id]["consent_accepted"] = accepted
+        users[user_id]["consent_timestamp"] = timestamp
+        self._save_users(users)
+        return True
+
+    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
+        users = self._load_users()
+        u = users.get(user_id)
+        if u is None:
+            return None
+        if "consent_accepted" not in u:
+            return None
+        return {"accepted": u["consent_accepted"], "timestamp": u.get("consent_timestamp")}

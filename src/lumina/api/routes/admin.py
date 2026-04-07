@@ -707,6 +707,33 @@ def _get_domain_role_aliases() -> dict[str, str]:
     return aliases
 
 
+def _get_domain_role_level(domain_id: str, role_id: str) -> int | None:
+    """Return the ``hierarchy_level`` for *role_id* in any module of *domain_id*.
+
+    Scans domain-physics.json files for the domain's modules and returns the
+    first matching ``hierarchy_level``, or ``None`` if not found.
+    """
+    try:
+        resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    except Exception:
+        return None
+    for mod in _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved):
+        dp_path = mod.get("domain_physics_path", "")
+        if not dp_path:
+            continue
+        try:
+            dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
+            dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
+            for role in dp_data.get("domain_roles", {}).get("roles", []):
+                if isinstance(role, dict) and role.get("role_id") == role_id:
+                    lvl = role.get("hierarchy_level")
+                    if lvl is not None:
+                        return int(lvl)
+        except Exception:
+            continue
+    return None
+
+
 # Legacy aliases for backwards compatibility (used in tests and elsewhere).
 _KNOWN_OPERATIONS = _FALLBACK_KNOWN_OPERATIONS
 _HITL_EXEMPT_OPS = _FALLBACK_HITL_EXEMPT
@@ -1692,12 +1719,69 @@ async def _execute_admin_operation(
                 if domain_role_filter in (u.get("domain_roles") or {}).values()
             ]
 
+        # ── Hierarchy-based visibility filter ─────────────────────
+        # Non-root/non-DA callers only see users whose domain-role
+        # level satisfies the visibility matrix:
+        #   Students/Guardians (level 3): see teachers (1) + TAs (2) only
+        #   TAs (level 2): see teachers (1) + students (3) + guardians (3)
+        #   Teachers (level 1): see everyone (DA + teachers + TAs + students)
+        #   DA (level 0) / root / it_support: unchanged (all)
+        _caller_role = user_data.get("role", "")
+        _FULL_VISIBILITY_ROLES = frozenset({"root", "it_support", "domain_authority"})
+        _strip_user_id = False
+        if _caller_role not in _FULL_VISIBILITY_ROLES and domain_id_filter:
+            # Determine caller's domain role and hierarchy level
+            caller_domain_roles = user_data.get("domain_roles") or {}
+            caller_level: int | None = None
+            for _mod_id, _dr in caller_domain_roles.items():
+                _lvl = _get_domain_role_level(domain_id_filter, _dr)
+                if _lvl is not None:
+                    caller_level = _lvl if caller_level is None else min(caller_level, _lvl)
+            if caller_level is not None:
+                # Build set of levels the caller is allowed to see
+                if caller_level >= 3:
+                    # Students / Guardians: see teachers (1) + TAs (2)
+                    _visible_levels = {1, 2}
+                    _strip_user_id = True
+                elif caller_level == 2:
+                    # TAs: see teachers (1) + students/guardians (3)
+                    _visible_levels = {1, 3}
+                elif caller_level == 1:
+                    # Teachers: see everyone in domain
+                    _visible_levels = {0, 1, 2, 3}
+                else:
+                    _visible_levels = None  # level 0 = DA, full view
+
+                if _visible_levels is not None:
+                    hierarchy_filtered: list[dict[str, Any]] = []
+                    for u in users:
+                        # Skip caller's own record
+                        if u.get("user_id") == user_data.get("sub"):
+                            continue
+                        u_domain_roles = u.get("domain_roles") or {}
+                        u_level: int | None = None
+                        for _um, _ur in u_domain_roles.items():
+                            _ul = _get_domain_role_level(domain_id_filter, _ur)
+                            if _ul is not None:
+                                u_level = _ul if u_level is None else min(u_level, _ul)
+                        # Also check system role mapping for users without domain roles
+                        if u_level is None:
+                            u_sys_role = u.get("role", "")
+                            if u_sys_role == "domain_authority":
+                                u_level = 0
+                        if u_level is not None and u_level in _visible_levels:
+                            hierarchy_filtered.append(u)
+                    users = hierarchy_filtered
+
         # Strip sensitive fields
+        _strip_keys = {"password_hash", "invite_token", "invite_expires_at", "invite_token_expires_at"}
+        if _strip_user_id:
+            _strip_keys.add("user_id")
         safe_users = []
         for u in users:
             safe_users.append({
                 k: v for k, v in u.items()
-                if k not in ("password_hash", "invite_token", "invite_expires_at", "invite_token_expires_at")
+                if k not in _strip_keys
             })
         result = {"operation": operation, "users": safe_users, "count": len(safe_users)}
 

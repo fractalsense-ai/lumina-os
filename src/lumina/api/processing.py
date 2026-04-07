@@ -218,14 +218,28 @@ def process_message(
         if consent_check is not None:
             container = _session_containers.get(session_id)
             if container is not None and not container.consent_accepted:
-                return {
-                    "response": "Please accept the magic-circle consent agreement before continuing.",
-                    "action": "consent_required",
-                    "prompt_type": "consent_required",
-                    "escalated": False,
-                    "tool_results": None,
-                    "domain_id": domain_id or session.get("domain_id", ""),
-                }
+                # Check persisted consent before blocking — the user may have
+                # accepted consent before this session was created.
+                _persisted_ok = False
+                try:
+                    _user_id = (user or {}).get("sub", "")
+                    if _user_id:
+                        _consent_rec = _cfg.PERSISTENCE.get_user_consent(_user_id)
+                        if _consent_rec and _consent_rec.get("accepted"):
+                            container.consent_accepted = True
+                            container.consent_timestamp = _consent_rec.get("timestamp")
+                            _persisted_ok = True
+                except Exception:
+                    pass
+                if not _persisted_ok:
+                    return {
+                        "response": "Please accept the magic-circle consent agreement before continuing.",
+                        "action": "consent_required",
+                        "prompt_type": "consent_required",
+                        "escalated": False,
+                        "tool_results": None,
+                        "domain_id": domain_id or session.get("domain_id", ""),
+                    }
 
     # ── Glossary interception (neutral turn — no mastery/affect change) ──
     # Prefer the session's module-specific domain physics (orch.domain) which
@@ -560,6 +574,11 @@ def process_message(
                     import asyncio
 
                     _normalized = _normalize_slm_command(cmd_dispatch, input_text)
+                    # Auto-inject session domain_id so list_users etc. scope
+                    # to the caller's domain without requiring explicit input.
+                    _norm_params = _normalized.get("params")
+                    if isinstance(_norm_params, dict) and not _norm_params.get("domain_id"):
+                        _norm_params["domain_id"] = resolved_domain_id
                     _user_data = user or {"sub": _actor_id, "role": _actor_role}
                     # _execute_admin_operation is async; we are in a sync function.
                     _coro = _execute_admin_operation(

@@ -769,3 +769,50 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
         records = self.query_log_records(record_type="CommitmentRecord", limit=10000)
         return [r for r in records if r.get("subject_id") == subject_id]
+
+    # ── User-level consent persistence ────────────────────────
+
+    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        return asyncio.run(self._set_user_consent_async(user_id, accepted, timestamp))
+
+    async def _set_user_consent_async(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        from sqlalchemy import select, update
+
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                select(self._User.user_id).where(self._User.user_id == user_id)
+            )
+            if result.first() is None:
+                return False
+            # Store consent in domain_roles_json under a reserved key
+            result2 = await conn.execute(
+                select(self._User.domain_roles_json).where(self._User.user_id == user_id)
+            )
+            row = result2.first()
+            data = json.loads(row.domain_roles_json or "{}") if row else {}
+            data["_consent"] = {"accepted": accepted, "timestamp": timestamp}
+            await conn.execute(
+                update(self._User)
+                .where(self._User.user_id == user_id)
+                .values(domain_roles_json=json.dumps(data, ensure_ascii=False))
+            )
+        return True
+
+    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
+        return asyncio.run(self._get_user_consent_async(user_id))
+
+    async def _get_user_consent_async(self, user_id: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                select(self._User.domain_roles_json).where(self._User.user_id == user_id)
+            )
+            row = result.first()
+        if row is None:
+            return None
+        data = json.loads(row.domain_roles_json or "{}")
+        consent = data.get("_consent")
+        if not isinstance(consent, dict):
+            return None
+        return {"accepted": consent.get("accepted", False), "timestamp": consent.get("timestamp")}

@@ -182,6 +182,16 @@ class PersistenceAdapter(ABC):
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
         """Query CommitmentRecords for a given subject_id."""
 
+    # ── User-level consent persistence ────────────────────────
+
+    @abstractmethod
+    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        """Persist consent acceptance for a user. Returns True on success."""
+
+    @abstractmethod
+    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
+        """Return ``{accepted: bool, timestamp: float}`` or None if no record."""
+
 
 class NullPersistenceAdapter(PersistenceAdapter):
     """No-op adapter mainly used for tests; keeps session state in-memory only."""
@@ -422,3 +432,20 @@ class NullPersistenceAdapter(PersistenceAdapter):
 
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
         return []
+
+    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        self.__init_users()
+        if user_id not in self._users:
+            return False
+        self._users[user_id]["consent_accepted"] = accepted
+        self._users[user_id]["consent_timestamp"] = timestamp
+        return True
+
+    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
+        self.__init_users()
+        u = self._users.get(user_id)
+        if u is None:
+            return None
+        if "consent_accepted" not in u:
+            return None
+        return {"accepted": u["consent_accepted"], "timestamp": u.get("consent_timestamp")}
