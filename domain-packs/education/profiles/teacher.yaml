@@ -15,6 +15,7 @@ modules: {}
 
 educator_state:
   assigned_students: []
+  assigned_ta_ids: []
   assigned_rooms: []
   escalation_preferences:
     receive_escalations: true

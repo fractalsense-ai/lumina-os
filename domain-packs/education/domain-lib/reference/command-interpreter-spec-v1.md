@@ -40,9 +40,28 @@ operation first, then use the returned values in subsequent commands.
 - invite_user = CREATE a **new** user account (add, create, invite, onboard, enrol a new person).
   Examples: "create student Matt", "add a new teacher", "invite someone to algebra", "onboard a new TA".
   NEVER use update_user_role to create a new user.
+  NEVER use invite_user when both users already exist — use assign_student or
+  request_teacher_assignment instead.
 - update_user_role = CHANGE an **existing** user's system role (promote, demote, change role).
   Examples: "promote user42 to domain_authority", "change Matt's system role".
   Only use when the user *already exists* and the intent is to change their system role.
+- assign_student = ASSIGN an **existing** student to an **existing** teacher's roster.
+  Sets the student's escalation route so incidents go to the assigned teacher.
+  Teachers can only assign to themselves; domain authorities can assign to any teacher.
+  Examples: "assign TestStudent1 to TestTeacher1", "put Alice in Mr. Smith's class",
+  "add Bob to Teacher Jane's roster", "assign student Alice to teacher Bob".
+  Params: `student_id` (required), `teacher_id` (optional, defaults to caller for teachers).
+- remove_student = REMOVE a student from a teacher's roster.
+  Examples: "remove Alice from Mr. Smith's class", "take Bob off the roster".
+- request_teacher_assignment = STUDENT self-assigns to a teacher (join a classroom / roll call).
+  Only usable by students — the student_id is always the caller.
+  Examples: "I want to join Mr. Smith's class", "assign me to TestTeacher1",
+  "join TestTeacher1", "I'm in Teacher Jane's class".
+  Params: `teacher_id` (required).
+- request_ta_assignment = TEACHING ASSISTANT self-assigns to a supervising teacher.
+  Only usable by TAs — the TA copies the teacher's student roster.
+  Examples: "I want to assist Mr. Smith", "assign me to TestTeacher1 as TA".
+  Params: `teacher_id` (required).
 - assign_domain_role = GRANT a user an education role for a specific module.
   Examples: "make Alice a teacher in algebra-level-1", "assign student role to Bob in pre-algebra".
 - revoke_domain_role = REVOKE a user's education role from a module.

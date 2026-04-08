@@ -131,6 +131,16 @@ operations:
       module_id: "string — module to request enrolment in"
       reason: "string — brief reason for the enrolment request (optional)"
 
+  - name: request_teacher_assignment
+    description: "Join a teacher's classroom (student self-assignment / roll call). The student appears on the teacher's roster immediately. Only usable by students — student_id is always the caller."
+    params:
+      teacher_id: "string — the teacher's user ID or display name"
+
+  - name: request_ta_assignment
+    description: "Assign yourself as a teaching assistant to a supervising teacher. Copies the teacher's current student roster to your TA profile. Only usable by teaching assistants."
+    params:
+      teacher_id: "string — the supervising teacher's user ID or display name"
+
   - name: update_user_preferences
     description: "Update a user's preferences. Self-service for any user; elevated system roles can update on behalf. Adds an audit note when updating another user."
     params:

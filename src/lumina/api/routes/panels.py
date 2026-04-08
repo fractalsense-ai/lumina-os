@@ -272,6 +272,32 @@ async def _resolve_empty_queue(
     }
 
 
+async def _resolve_staff_directory(
+    user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
+) -> dict[str, Any]:
+    """Teachers + TAs visible to the domain authority."""
+    if user_data.get("role") not in ("root", "domain_authority", "it_support"):
+        raise HTTPException(status_code=403, detail="Insufficient system role")
+    all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
+    staff: list[dict[str, Any]] = []
+    for u in all_users:
+        uid = u.get("sub") or u.get("user_id", "")
+        d_roles = u.get("domain_roles") or {}
+        for _mid, _rid in d_roles.items():
+            if _rid in ("teacher", "teaching_assistant"):
+                staff.append({
+                    "user_id": uid,
+                    "display_name": u.get("display_name", uid),
+                    "domain_role": _rid,
+                    "module_id": _mid,
+                })
+                break  # one entry per user
+    return {
+        "panel": pcfg.get("id", "staff_directory"),
+        "staff": staff,
+    }
+
+
 # ─────────────────────────────────────────────────────────────
 # Resolver registry — maps data_source names to functions
 # ─────────────────────────────────────────────────────────────
@@ -288,6 +314,7 @@ _DATA_RESOLVERS: dict[str, _Resolver] = {
     "module_directory": _resolve_module_directory,
     "notification_settings": _resolve_notification_settings,
     "empty_queue": _resolve_empty_queue,
+    "staff_directory": _resolve_staff_directory,
 }
 
 

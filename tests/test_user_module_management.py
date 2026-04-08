@@ -60,7 +60,7 @@ def _mock_cfg() -> MagicMock:
     cfg.DOMAIN_REGISTRY.list_modules_for_domain.return_value = [
         {"module_id": "edu-core", "domain_id": "education"},
     ]
-    cfg.DOMAIN_REGISTRY.list_domains.return_value = [{"domain_id": "education"}]
+    cfg.DOMAIN_REGISTRY.list_domains.return_value = [{"domain_id": "education", "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml"}]
     return cfg
 
 

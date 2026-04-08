@@ -24,6 +24,7 @@ layers:
     - controllers/problem_generator.py      # shim → domain-lib/problem_generator.py
     - controllers/fluency_monitor.py        # shim → domain-lib/fluency_monitor.py
     - controllers/zpd_monitor_v0_2.py       # shim → domain-lib/zpd_monitor_v0_2.py
+    - controllers/education_operations.py   # domain admin operation handlers
     - modules/*/tool-adapters/*.yaml
   domain_lib:
     - domain-lib/zpd_monitor_v0_2.py

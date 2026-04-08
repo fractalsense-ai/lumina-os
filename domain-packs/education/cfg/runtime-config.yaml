@@ -472,6 +472,10 @@ ui_manifest:
           label: "Domain Overview"
           component: DataPanel
           data_source: domain_overview
+        - id: staff_directory
+          label: "Staff Directory"
+          component: DataPanel
+          data_source: staff_directory
         - id: user_directory
           label: "User Directory"
           component: DataPanel
@@ -564,6 +568,48 @@ ui_manifest:
       capabilities:
         - view_child_progress
         - manage_notifications
+
+# ── Domain Operation Handlers ─────────────────────────────────────────
+# Operations registered here are dispatched by the admin command pipeline
+# before the system elif chain.  Each entry maps an operation name to a
+# handler callable, plus HITL and min-role metadata.
+# See docs/7-concepts/command-execution-pipeline.md
+operation_handlers:
+  request_module_assignment:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: false
+    min_role: user
+  assign_student:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  remove_student:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  request_teacher_assignment:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  request_ta_assignment:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_module:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  remove_module:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
 
 adapters:
   state_builder:

@@ -144,6 +144,7 @@ class DomainRegistry:
                 "domain_id": domain_id,
                 "label": entry.get("label", domain_id),
                 "description": entry.get("description", ""),
+                "runtime_config_path": entry.get("runtime_config_path", ""),
                 "is_default": domain_id == self._default_domain,
             })
         return result

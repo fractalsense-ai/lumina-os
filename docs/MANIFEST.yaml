@@ -1202,7 +1202,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 4877cb2945e6924a66f5b7148117b4dae6de787af46e0172584ce44c6027f9a8
+    sha256: 74da7ec770a4ba4a84801268f45a7fe1be39da959d440a5572dcef7e61f06812
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config
@@ -1216,7 +1216,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: 6708a347c50c70de47b4a16a92680e393caf97d200dc6049c9eb3b1a7f6a5011
+    sha256: 1dd4176939bdf2161833f037647ae063eb8e72ff9c4a1cf7d2cab884c5bed8dd
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config
@@ -1372,7 +1372,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 5c14b945a969a8a4288cb3c263fce6ffa180d0576d18335a99fe8b23be854535
+    sha256: 875997e3eeab01f7cdfcb96e331bdee2e99e7068689010b1a8e36d801326e62e
 
   - path: domain-packs/education/profiles/teaching_assistant.yaml
     type: config
@@ -1459,7 +1459,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: b7a645723815eeeb1732d6c54d693f8a1d17080dfd62ef68066e7cc2d98b1d43
+    sha256: 38d3303e5d503564fe37700185f012b0aee7769dc9edc8d7c2811226f07ee260
 
   - path: domain-packs/agriculture/pack.yaml
     type: config

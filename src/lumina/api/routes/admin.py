@@ -17,6 +17,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
+from lumina.api.config import _resolve_user_profile_path
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
 from lumina.api.session import _session_containers
 from lumina.core.session_unlock import generate_unlock_pin, validate_unlock_pin
@@ -51,6 +52,7 @@ from lumina.core.yaml_loader import load_yaml
 from lumina.middleware.command_schema_registry import get_schema as _get_cmd_schema, validate_command
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
 from lumina.system_log.commit_guard import requires_log_commit
+from lumina.api.admin_context import AdminOperationContext
 
 log = logging.getLogger("lumina-api")
 
@@ -561,7 +563,6 @@ _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "list_domains", "list_modules", "list_commands",
     "list_domain_rbac_roles", "get_domain_module_manifest",
     "list_users", "get_domain_physics", "list_daemon_tasks",
-    "request_module_assignment",
     "view_my_profile", "update_user_preferences",
 })
 
@@ -571,7 +572,6 @@ _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
     "list_commands", "review_ingestion", "review_proposals",
     "list_domain_rbac_roles", "get_domain_module_manifest",
     "list_users", "get_domain_physics", "list_daemon_tasks",
-    "assign_student", "remove_student", "assign_module", "remove_module",
     "view_my_profile", "update_user_preferences",
 })
 
@@ -596,11 +596,6 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "list_users": "domain_authority",
     "get_domain_physics": "domain_authority",
     "list_daemon_tasks": "domain_authority",
-    "request_module_assignment": "user",
-    "assign_student": "user",
-    "remove_student": "user",
-    "assign_module": "user",
-    "remove_module": "user",
     "view_my_profile": "user",
     "update_user_preferences": "user",
 }
@@ -671,19 +666,31 @@ def _load_governance_config() -> dict[str, Any]:
 
 
 def _get_known_operations() -> frozenset[str]:
-    return _load_governance_config()["known_operations"]
+    base = _load_governance_config()["known_operations"]
+    domain_ops = _get_domain_handler_ops()
+    return base | domain_ops if domain_ops else base
 
 
 def _get_hitl_exempt_ops() -> frozenset[str]:
-    return _load_governance_config()["hitl_exempt"]
+    base = _load_governance_config()["hitl_exempt"]
+    domain_handlers = _load_domain_operation_handlers()
+    domain_exempt = frozenset(
+        op for op, cfg in domain_handlers.items() if cfg.get("hitl_exempt")
+    )
+    return base | domain_exempt if domain_exempt else base
+
+
+def _get_min_role_policy() -> dict[str, str]:
+    base = dict(_load_governance_config()["min_role_policy"])
+    domain_handlers = _load_domain_operation_handlers()
+    for op, cfg in domain_handlers.items():
+        if op not in base:
+            base[op] = cfg.get("min_role", "user")
+    return base
 
 
 def _get_role_hierarchy() -> dict[str, int]:
     return _load_governance_config()["role_hierarchy"]
-
-
-def _get_min_role_policy() -> dict[str, str]:
-    return _load_governance_config()["min_role_policy"]
 
 
 def _get_domain_role_aliases() -> dict[str, str]:
@@ -755,6 +762,102 @@ def _get_domain_role_level(domain_id: str, role_id: str) -> int | None:
 # Legacy aliases for backwards compatibility (used in tests and elsewhere).
 _KNOWN_OPERATIONS = _FALLBACK_KNOWN_OPERATIONS
 _HITL_EXEMPT_OPS = _FALLBACK_HITL_EXEMPT
+
+
+# ─────────────────────────────────────────────────────────────
+# Domain Operation Handler Registry
+# ─────────────────────────────────────────────────────────────
+# Domain packs can declare operation_handlers in their runtime-config.yaml.
+# Each entry maps an operation name to a handler module/callable plus
+# metadata (hitl_exempt, min_role).  These are loaded once and cached.
+#
+# See docs/7-concepts/domain-adapter-pattern.md
+
+_domain_handler_cache: dict[str, Any] | None = None
+_domain_handler_cache_registry_id: int | None = None
+
+
+def _load_domain_operation_handlers() -> dict[str, dict[str, Any]]:
+    """Scan all domains for ``operation_handlers`` in runtime-config.yaml.
+
+    Returns ``{operation_name: {"callable": fn, "hitl_exempt": bool, "min_role": str}}``.
+    """
+    global _domain_handler_cache, _domain_handler_cache_registry_id
+    reg = _cfg.DOMAIN_REGISTRY
+    reg_id = id(reg) if reg is not None else None
+    if _domain_handler_cache is not None and _domain_handler_cache_registry_id == reg_id:
+        return _domain_handler_cache
+
+    from lumina.core.runtime_loader import _load_callable
+
+    handlers: dict[str, dict[str, Any]] = {}
+    repo_root = Path(os.environ.get(
+        "LUMINA_REPO_ROOT", Path(__file__).resolve().parents[4],
+    ))
+
+    if _cfg.DOMAIN_REGISTRY is None:
+        # Don't cache the empty result — DOMAIN_REGISTRY may be set later
+        return handlers
+
+    for dom in _cfg.DOMAIN_REGISTRY.list_domains():
+        dom_id = dom.get("domain_id", "")
+        if not dom_id:
+            continue
+        cfg_path = dom.get("runtime_config_path", "")
+        if not cfg_path:
+            continue
+        try:
+            cfg_data = load_yaml(Path(repo_root / cfg_path))
+        except Exception:
+            continue
+        op_handlers = cfg_data.get("operation_handlers")
+        if not isinstance(op_handlers, dict):
+            continue
+        for op_name, op_cfg in op_handlers.items():
+            if not isinstance(op_cfg, dict):
+                continue
+            mod_path = op_cfg.get("module_path", "")
+            callable_name = op_cfg.get("callable", "")
+            if not mod_path or not callable_name:
+                continue
+            try:
+                fn = _load_callable(repo_root, mod_path, callable_name)
+                handlers[op_name] = {
+                    "callable": fn,
+                    "hitl_exempt": bool(op_cfg.get("hitl_exempt", False)),
+                    "min_role": str(op_cfg.get("min_role", "user")),
+                    "domain_id": dom_id,
+                }
+            except Exception as exc:
+                log.warning("Failed to load operation handler %s from %s: %s", op_name, mod_path, exc)
+
+    _domain_handler_cache = handlers
+    _domain_handler_cache_registry_id = reg_id
+    return handlers
+
+
+def _get_domain_handler_ops() -> frozenset[str]:
+    """Return the set of operation names handled by domain packs."""
+    return frozenset(_load_domain_operation_handlers().keys())
+
+
+def _build_admin_context() -> AdminOperationContext:
+    """Construct the shared context object for operation handlers."""
+    return AdminOperationContext(
+        persistence=_cfg.PERSISTENCE,
+        domain_registry=_cfg.DOMAIN_REGISTRY,
+        can_govern_domain=can_govern_domain,
+        build_commitment_record=build_commitment_record,
+        map_role_to_actor_role=map_role_to_actor_role,
+        build_trace_event=build_trace_event,
+        build_domain_role_assignment=build_domain_role_assignment,
+        build_domain_role_revocation=build_domain_role_revocation,
+        canonical_sha256=admin_canonical_sha256,
+        resolve_user_profile_path=_resolve_user_profile_path,
+        has_domain_capability=_has_domain_capability,
+        has_escalation_capability=_has_escalation_capability,
+    )
+
 
 # Staged commands awaiting human resolution (keyed by staged_id).
 _STAGED_COMMANDS: dict[str, dict[str, Any]] = {}
@@ -1105,6 +1208,49 @@ def _stage_command(
     return entry
 
 
+# ─────────────────────────────────────────────────────────────
+# Trace emission helper (shared by system + domain handlers)
+# ─────────────────────────────────────────────────────────────
+
+_READ_ONLY_OPS = frozenset({
+    "list_domains", "list_modules", "list_commands", "list_ingestions",
+    "list_escalations", "module_status", "daemon_status",
+    "explain_reasoning", "review_proposals",
+    "list_domain_rbac_roles", "get_domain_module_manifest",
+    "list_users", "get_domain_physics", "list_daemon_tasks",
+    "view_my_profile",
+})
+
+
+def _emit_trace_if_mutating(
+    operation: str,
+    params: dict[str, Any],
+    user_data: dict[str, Any],
+    result: dict[str, Any],
+) -> None:
+    """Write a TraceEvent for non-read-only admin operations."""
+    if operation in _READ_ONLY_OPS:
+        return
+    try:
+        trace = build_trace_event(
+            session_id="admin",
+            actor_id=user_data["sub"],
+            event_type="admin_command_executed",
+            decision=f"{operation}: {json.dumps(result.get('record_id', result.get('operation', operation)), default=str)[:200]}",
+            evidence_summary={
+                "operation": operation,
+                "actor_role": user_data["role"],
+                "params": {k: str(v)[:100] for k, v in (params or {}).items()},
+            },
+        )
+        _cfg.PERSISTENCE.append_log_record(
+            "admin", trace,
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+        )
+    except Exception:
+        log.debug("Could not write admin command TraceEvent for %s", operation)
+
+
 async def _execute_admin_operation(
     user_data: dict[str, Any],
     parsed: dict[str, Any],
@@ -1113,6 +1259,25 @@ async def _execute_admin_operation(
     operation = parsed["operation"]
     params = parsed.get("params") or {}
     result: dict[str, Any]
+
+    # ── Domain-pack handler dispatch ──────────────────────────
+    # Domain packs register operation_handlers in runtime-config.yaml.
+    # If a domain handler claims this operation, delegate and skip the
+    # system elif chain entirely.
+    domain_handlers = _load_domain_operation_handlers()
+    handler_entry = domain_handlers.get(operation)
+    if handler_entry is not None:
+        ctx = _build_admin_context()
+        # Inject parsed.target into params so handlers can use it as fallback
+        handler_params = dict(params)
+        _target = parsed.get("target", "")
+        if _target:
+            handler_params.setdefault("_target", _target)
+        result = await handler_entry["callable"](operation, handler_params, user_data, ctx)
+        if result is not None:
+            # Domain handler claimed the operation — emit trace and return
+            _emit_trace_if_mutating(operation, params, user_data, result)
+            return result
 
     if operation == "update_domain_physics":
         domain_id = str(params.get("domain_id", parsed.get("target", "")))
@@ -1883,319 +2048,6 @@ async def _execute_admin_operation(
             "daemon_enabled": status.get("enabled", False),
         }
 
-    elif operation == "request_module_assignment":
-        # Creates an escalation record for a domain authority / teacher to approve.
-        domain_id = str(params.get("domain_id", ""))
-        module_id = str(params.get("module_id", ""))
-        reason = str(params.get("reason", "")) or "User requested module assignment"
-
-        if not domain_id:
-            raise HTTPException(status_code=422, detail="domain_id is required")
-        if not module_id:
-            raise HTTPException(status_code=422, detail="module_id is required")
-
-        # Resolve and validate domain + module
-        try:
-            resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
-
-        _mods = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved_domain)
-        _valid_mod_ids = {m["module_id"] for m in _mods}
-        if module_id not in _valid_mod_ids:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unknown module_id: {module_id}. Valid modules: {sorted(_valid_mod_ids)}",
-            )
-
-        # Build an escalation record for the DA / teacher to resolve
-        import uuid as _uuid_mod
-        escalation_id = str(_uuid_mod.uuid4())
-        escalation_record = {
-            "record_type": "EscalationRecord",
-            "escalation_id": escalation_id,
-            "session_id": user_data.get("session_id", "admin"),
-            "actor_id": user_data["sub"],
-            "domain_id": resolved_domain,
-            "module_id": module_id,
-            "escalation_type": "module_assignment_request",
-            "summary": f"User {user_data.get('username', user_data['sub'])} requests assignment to {module_id}",
-            "reason": reason,
-            "status": "open",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-        try:
-            _cfg.PERSISTENCE.append_log_record(
-                "admin", escalation_record,
-                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-            )
-        except Exception:
-            log.debug("Could not write module_assignment_request escalation")
-
-        result = {
-            "operation": operation,
-            "escalation_id": escalation_id,
-            "domain_id": resolved_domain,
-            "module_id": module_id,
-            "status": "pending_approval",
-            "message": f"Module assignment request submitted. A domain authority for '{resolved_domain}' will review this request.",
-        }
-
-    # ── Student ↔ teacher assignment ──────────────────────────
-    elif operation == "assign_student":
-        student_id = str(params.get("student_id", "")).strip()
-        teacher_id = str(params.get("teacher_id", "")).strip()
-        if not student_id:
-            raise HTTPException(status_code=422, detail="student_id required")
-
-        caller_role = user_data["role"]
-        # Teachers can only assign to themselves
-        if caller_role == "user":
-            _has_cap = False
-            for _mid, _rid in (user_data.get("domain_roles") or {}).items():
-                if _rid in ("teacher",) and _has_domain_capability(user_data, _mid, "receive_escalations"):
-                    _has_cap = True
-                    break
-            if not _has_cap:
-                raise HTTPException(status_code=403, detail="Requires teacher domain role with receive_escalations capability")
-            teacher_id = user_data["sub"]  # force self
-        elif caller_role in ("root", "domain_authority"):
-            if not teacher_id:
-                raise HTTPException(status_code=422, detail="teacher_id required for domain authorities")
-        else:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-        # Validate both users exist
-        student = await run_in_threadpool(_cfg.PERSISTENCE.get_user, student_id)
-        if student is None:
-            raise HTTPException(status_code=404, detail=f"Student not found: {student_id}")
-        teacher = await run_in_threadpool(_cfg.PERSISTENCE.get_user, teacher_id)
-        if teacher is None:
-            raise HTTPException(status_code=404, detail=f"Teacher not found: {teacher_id}")
-
-        # DA scope check — must govern a module the teacher is assigned to
-        if caller_role == "domain_authority":
-            _teacher_modules = list((teacher.get("domain_roles") or {}).keys())
-            if not any(can_govern_domain(user_data, m, registry=_cfg.DOMAIN_REGISTRY) for m in _teacher_modules):
-                raise HTTPException(status_code=403, detail="Not authorised — teacher is outside your governed modules")
-
-        # Update student profile: set assigned_teacher_id
-        _profile_dir = Path("data/profiles")
-        _student_profile_path = str(_profile_dir / f"{student_id}.yaml")
-        try:
-            _sprofile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _student_profile_path)
-        except Exception:
-            _sprofile = {}
-        _sprofile["assigned_teacher_id"] = teacher_id
-        await run_in_threadpool(_cfg.PERSISTENCE.save_subject_profile, _student_profile_path, _sprofile)
-
-        # Update teacher profile: add to assigned_students
-        _teacher_profile_path = str(_profile_dir / f"{teacher_id}.yaml")
-        try:
-            _tprofile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _teacher_profile_path)
-        except Exception:
-            _tprofile = {}
-        _edu_state = _tprofile.setdefault("educator_state", {})
-        _assigned = list(_edu_state.get("assigned_students") or [])
-        if student_id not in _assigned:
-            _assigned.append(student_id)
-        _edu_state["assigned_students"] = _assigned
-        await run_in_threadpool(_cfg.PERSISTENCE.save_subject_profile, _teacher_profile_path, _tprofile)
-
-        # Audit trail
-        record = build_commitment_record(
-            actor_id=user_data["sub"],
-            actor_role=map_role_to_actor_role(caller_role),
-            commitment_type="student_assignment",
-            subject_id=student_id,
-            summary=f"Assigned student {student_id} to teacher {teacher_id}",
-            metadata={"teacher_id": teacher_id, "assigned_by": user_data["sub"]},
-            references=[student_id, teacher_id],
-        )
-        _cfg.PERSISTENCE.append_log_record(
-            "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-        )
-        result = {
-            "operation": operation,
-            "student_id": student_id,
-            "teacher_id": teacher_id,
-            "status": "assigned",
-            "record_id": record["record_id"],
-        }
-
-    elif operation == "remove_student":
-        student_id = str(params.get("student_id", "")).strip()
-        teacher_id = str(params.get("teacher_id", "")).strip()
-        if not student_id:
-            raise HTTPException(status_code=422, detail="student_id required")
-
-        caller_role = user_data["role"]
-        if caller_role == "user":
-            _has_cap = False
-            for _mid, _rid in (user_data.get("domain_roles") or {}).items():
-                if _rid in ("teacher",) and _has_domain_capability(user_data, _mid, "receive_escalations"):
-                    _has_cap = True
-                    break
-            if not _has_cap:
-                raise HTTPException(status_code=403, detail="Requires teacher domain role with receive_escalations capability")
-            teacher_id = user_data["sub"]
-        elif caller_role in ("root", "domain_authority"):
-            if not teacher_id:
-                raise HTTPException(status_code=422, detail="teacher_id required for domain authorities")
-        else:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-        student = await run_in_threadpool(_cfg.PERSISTENCE.get_user, student_id)
-        if student is None:
-            raise HTTPException(status_code=404, detail=f"Student not found: {student_id}")
-
-        # Update student profile: clear assigned_teacher_id
-        _profile_dir = Path("data/profiles")
-        _student_profile_path = str(_profile_dir / f"{student_id}.yaml")
-        try:
-            _sprofile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _student_profile_path)
-        except Exception:
-            _sprofile = {}
-        _sprofile.pop("assigned_teacher_id", None)
-        await run_in_threadpool(_cfg.PERSISTENCE.save_subject_profile, _student_profile_path, _sprofile)
-
-        # Update teacher profile: remove from assigned_students
-        _teacher_profile_path = str(_profile_dir / f"{teacher_id}.yaml")
-        try:
-            _tprofile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _teacher_profile_path)
-        except Exception:
-            _tprofile = {}
-        _edu_state = _tprofile.get("educator_state") or {}
-        _assigned = list(_edu_state.get("assigned_students") or [])
-        if student_id in _assigned:
-            _assigned.remove(student_id)
-            _edu_state["assigned_students"] = _assigned
-            _tprofile["educator_state"] = _edu_state
-            await run_in_threadpool(_cfg.PERSISTENCE.save_subject_profile, _teacher_profile_path, _tprofile)
-
-        record = build_commitment_record(
-            actor_id=user_data["sub"],
-            actor_role=map_role_to_actor_role(caller_role),
-            commitment_type="student_removal",
-            subject_id=student_id,
-            summary=f"Removed student {student_id} from teacher {teacher_id}",
-            metadata={"teacher_id": teacher_id, "removed_by": user_data["sub"]},
-            references=[student_id, teacher_id],
-        )
-        _cfg.PERSISTENCE.append_log_record(
-            "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-        )
-        result = {
-            "operation": operation,
-            "student_id": student_id,
-            "teacher_id": teacher_id,
-            "status": "removed",
-            "record_id": record["record_id"],
-        }
-
-    # ── Module assignment / removal ───────────────────────────
-    elif operation == "assign_module":
-        target_user_id = str(params.get("user_id", parsed.get("target", ""))).strip()
-        module_id = str(params.get("module_id", "")).strip()
-        if not target_user_id or not module_id:
-            raise HTTPException(status_code=422, detail="user_id and module_id required")
-
-        caller_role = user_data["role"]
-        if caller_role in ("root", "domain_authority"):
-            if caller_role == "domain_authority" and not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
-                raise HTTPException(status_code=403, detail="Not authorised for this domain/module")
-        elif caller_role == "user":
-            # Teacher with assign_modules_to_students capability
-            _can_assign = False
-            for _mid, _rid in (user_data.get("domain_roles") or {}).items():
-                if _has_domain_capability(user_data, _mid, "assign_modules_to_students"):
-                    _can_assign = True
-                    break
-            if not _can_assign:
-                raise HTTPException(status_code=403, detail="Requires assign_modules_to_students capability")
-        else:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-        target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, target_user_id)
-        if target is None:
-            raise HTTPException(status_code=404, detail=f"User not found: {target_user_id}")
-
-        updated = await run_in_threadpool(
-            _cfg.PERSISTENCE.update_user_governed_modules, target_user_id, add=[module_id],
-        )
-        record = build_commitment_record(
-            actor_id=user_data["sub"],
-            actor_role=map_role_to_actor_role(caller_role),
-            commitment_type="module_assignment",
-            subject_id=target_user_id,
-            summary=f"Assigned module {module_id} to user {target_user_id}",
-            metadata={"module_id": module_id, "assigned_by": user_data["sub"]},
-            references=[target_user_id, module_id],
-        )
-        _cfg.PERSISTENCE.append_log_record(
-            "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-        )
-        result = {
-            "operation": operation,
-            "user_id": target_user_id,
-            "module_id": module_id,
-            "status": "assigned",
-            "record_id": record["record_id"],
-        }
-
-    elif operation == "remove_module":
-        target_user_id = str(params.get("user_id", parsed.get("target", ""))).strip()
-        module_id = str(params.get("module_id", "")).strip()
-        if not target_user_id or not module_id:
-            raise HTTPException(status_code=422, detail="user_id and module_id required")
-
-        caller_role = user_data["role"]
-        if caller_role in ("root", "domain_authority"):
-            if caller_role == "domain_authority" and not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
-                raise HTTPException(status_code=403, detail="Not authorised for this domain/module")
-        elif caller_role == "user":
-            _can_assign = False
-            for _mid, _rid in (user_data.get("domain_roles") or {}).items():
-                if _has_domain_capability(user_data, _mid, "assign_modules_to_students"):
-                    _can_assign = True
-                    break
-            if not _can_assign:
-                raise HTTPException(status_code=403, detail="Requires assign_modules_to_students capability")
-        else:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-        target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, target_user_id)
-        if target is None:
-            raise HTTPException(status_code=404, detail=f"User not found: {target_user_id}")
-
-        updated = await run_in_threadpool(
-            _cfg.PERSISTENCE.update_user_governed_modules, target_user_id, remove=[module_id],
-        )
-        record = build_commitment_record(
-            actor_id=user_data["sub"],
-            actor_role=map_role_to_actor_role(caller_role),
-            commitment_type="module_removal",
-            subject_id=target_user_id,
-            summary=f"Removed module {module_id} from user {target_user_id}",
-            metadata={"module_id": module_id, "removed_by": user_data["sub"]},
-            references=[target_user_id, module_id],
-        )
-        _cfg.PERSISTENCE.append_log_record(
-            "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-        )
-        result = {
-            "operation": operation,
-            "user_id": target_user_id,
-            "module_id": module_id,
-            "status": "removed",
-            "record_id": record["record_id"],
-        }
-
     elif operation == "view_my_profile":
         caller_id = user_data["sub"]
         domain_key = str(params.get("domain_id", "")).strip()
@@ -2299,35 +2151,7 @@ async def _execute_admin_operation(
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
 
-    # ── Emit TraceEvent for mutating operations (causal trace ledger) ──
-    _READ_ONLY_OPS = frozenset({
-        "list_domains", "list_modules", "list_commands", "list_ingestions",
-        "list_escalations", "module_status", "daemon_status",
-        "explain_reasoning", "review_proposals",
-        "list_domain_rbac_roles", "get_domain_module_manifest",
-        "list_users", "get_domain_physics", "list_daemon_tasks",
-        "view_my_profile",
-    })
-    if operation not in _READ_ONLY_OPS:
-        try:
-            trace = build_trace_event(
-                session_id="admin",
-                actor_id=user_data["sub"],
-                event_type="admin_command_executed",
-                decision=f"{operation}: {json.dumps(result.get('record_id', result.get('operation', operation)), default=str)[:200]}",
-                evidence_summary={
-                    "operation": operation,
-                    "actor_role": user_data["role"],
-                    "params": {k: str(v)[:100] for k, v in (params or {}).items()},
-                },
-            )
-            _cfg.PERSISTENCE.append_log_record(
-                "admin", trace,
-                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
-            )
-        except Exception:
-            log.debug("Could not write admin command TraceEvent for %s", operation)
-
+    _emit_trace_if_mutating(operation, params, user_data, result)
     return result
 
 
