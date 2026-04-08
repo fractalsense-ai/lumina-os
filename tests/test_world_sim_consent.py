@@ -240,9 +240,17 @@ class TestMUDDeterministic:
     """Feature G: Deterministic responses include MUD narrative when world-sim is active."""
 
     @pytest.mark.integration
-    def test_deterministic_with_mud_has_narrative(self, client: TestClient) -> None:
+    def test_deterministic_with_mud_has_narrative(self, client: TestClient, api_module) -> None:
         """When MUD state is present on the orchestrator, deterministic mode
         should produce narrative-flavored output (guide_npc, zone, etc.)."""
+        # Route to algebra module (MUD features need LearningState dataclass)
+        _orig_load_profile = api_module.PERSISTENCE.load_subject_profile
+        def _load_with_algebra(path: str) -> dict:
+            data = _orig_load_profile(path)
+            data["domain_id"] = "domain/edu/algebra-level-1/v1"
+            return data
+        api_module.PERSISTENCE.load_subject_profile = _load_with_algebra
+
         token = _make_token("qa")  # bypass consent; qa→student→learning adapters
         # Valid turn data that satisfies domain invariants.
         # Evidence field names must match the check expressions in
