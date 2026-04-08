@@ -221,6 +221,21 @@ def build_initial_learning_state(
     return ls
 
 
+def freeform_domain_step(
+    state: Any,
+    task_spec: dict[str, Any],
+    evidence: dict[str, Any],
+    params: dict[str, Any],
+) -> tuple[Any, dict[str, Any]]:
+    """Domain-lib step for free-form modules (e.g. Student Commons).
+
+    Skips ZPD monitoring, fluency tracking, and academic grading entirely.
+    Returns a neutral ``continue`` action so the orchestrator proceeds to
+    normal prompt generation without triggering escalation or intervention.
+    """
+    return state, {"tier": "ok", "action": None, "should_escalate": False}
+
+
 def domain_step(
     state: Any,
     task_spec: dict[str, Any],

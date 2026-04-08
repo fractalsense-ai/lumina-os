@@ -29,6 +29,10 @@ runtime:
         off_task_ratio: 0.0
         correctness: "n/a"
         response_latency_sec: 5.0
+      adapters:
+        domain_step:
+          module_path: domain-packs/education/controllers/runtime_adapters.py
+          callable: freeform_domain_step
       ui_overrides:
         subtitle: "Student Commons"
     domain/edu/pre-algebra/v1:

@@ -10,7 +10,7 @@
   "description": "Student Commons — a safe journaling and expression space for students who have not yet been assigned to a specific curriculum module. Students may journal, reflect on learning goals, explore interests, request module assignments, and view their profile. No academic grading, ZPD monitoring, or fluency tracking applies. Only hard-safety invariants (self-harm, violence, abuse, illegal content) trigger escalation.",
   "department": "General",
   "lumina_core_version": "1.0.0",
-  "auto_freeze_on_escalation": false,
+  "auto_freeze_on_escalation": true,
   "invariants": [
     {
       "id": "content_safety_hard",
