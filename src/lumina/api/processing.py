@@ -449,56 +449,19 @@ def process_message(
         _sync_session_back(session_id, session)
         return _t0_result
 
-    # ── Turn-1 grace period for free-form modules ─────────────
-    # Modules with empty artifact_sequence (e.g. Student Commons) have no
-    # equation to present.  On the very first turn, skip the SLM physics
-    # pipeline entirely — it would hallucinate invariant violations on
-    # innocuous greetings.  Instead, return a warm greeting so the student
-    # can begin journaling.
-    _artifact_seq = domain_physics.get("artifact_sequence") or []
-    if _turn_count == 0 and not _has_equation and not _artifact_seq and not holodeck and not deterministic_response:
-        _greeting = (
-            "Welcome to Student Commons! This is your safe space to journal, "
-            "reflect, and explore your learning goals. What's on your mind today?"
-        )
-        if slm_available():
-            from lumina.core.slm import call_slm as _g_call_slm
-            _g_contract = {
-                "prompt_type": "greeting",
-                "student_message": input_text,
-                "instructions": "Warmly greet the student and invite them to share what is on their mind. Keep it brief and encouraging.",
-            }
-            try:
-                _greeting = _g_call_slm(system=system_prompt, user=json.dumps(_g_contract, ensure_ascii=False))
-                _greeting = strip_latex_delimiters(_greeting)
-            except Exception:
-                pass  # Fall back to static greeting
-        session["turn_count"] += 1
-        _container = _session_containers.get(session_id)
-        if _container is not None and hasattr(_container, "ring_buffer"):
-            _container.ring_buffer.push(
-                user_message=input_text,
-                llm_response=_greeting,
-                turn_number=0,
-                domain_id=resolved_domain_id,
-            )
-        _g_seal, _g_seal_meta, _g_transcript = _compute_transcript_seal(
-            session_id, session, resolved_domain_id, user, holodeck,
-        )
-        _g_result: dict[str, Any] = {
-            "response": _greeting,
-            "action": "greeting",
-            "prompt_type": "greeting",
-            "escalated": False,
-            "tool_results": {},
-            "domain_id": resolved_domain_id,
-        }
-        if _g_seal is not None:
-            _g_result["transcript_seal"] = _g_seal
-            _g_result["transcript_seal_metadata"] = _g_seal_meta
-            _g_result["transcript_snapshot"] = _g_transcript
-        _sync_session_back(session_id, session)
-        return _g_result
+    # ── Greeting eligibility (resolved AFTER turn interpretation) ──
+    # Modules that declare greeting.enabled in their physics file get a
+    # warm greeting on turn 0 — but ONLY after the turn interpreter has
+    # run so that commands can still be processed on the first message.
+    _greeting_cfg = domain_physics.get("greeting") or {}
+    _greeting_eligible = (
+        _turn_count == 0
+        and not _has_equation
+        and not holodeck
+        and not deterministic_response
+        and isinstance(_greeting_cfg, dict)
+        and _greeting_cfg.get("enabled") is True
+    )
 
     # ── Extract world-sim state for ALL code paths ────────────
     world_sim_theme = getattr(orch.state, "world_sim_theme", {}) or {}
@@ -531,6 +494,54 @@ def process_message(
     else:
         turn_data = interpret_turn_input(input_text, task_context, runtime, world_sim_theme=world_sim_theme, mud_world_state=mud_world_state)
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
+
+    # ── Deferred greeting for free-form modules ───────────────
+    # Now that the turn interpreter has run, we can check whether a
+    # command was dispatched.  If the module is greeting-eligible AND no
+    # command was detected, produce the greeting and return early.
+    if _greeting_eligible and not isinstance(turn_data.get("command_dispatch"), dict):
+        _greeting = _greeting_cfg.get(
+            "fallback_message",
+            "Welcome! What's on your mind today?",
+        )
+        if slm_available():
+            from lumina.core.slm import call_slm as _g_call_slm
+            _g_contract = {
+                "prompt_type": "greeting",
+                "student_message": input_text,
+                "instructions": "Warmly greet the student and invite them to share what is on their mind. Keep it brief and encouraging.",
+            }
+            try:
+                _greeting = _g_call_slm(system=system_prompt, user=json.dumps(_g_contract, ensure_ascii=False))
+                _greeting = strip_latex_delimiters(_greeting)
+            except Exception:
+                pass  # Fall back to static greeting from physics
+        session["turn_count"] += 1
+        _container = _session_containers.get(session_id)
+        if _container is not None and hasattr(_container, "ring_buffer"):
+            _container.ring_buffer.push(
+                user_message=input_text,
+                llm_response=_greeting,
+                turn_number=0,
+                domain_id=resolved_domain_id,
+            )
+        _g_seal, _g_seal_meta, _g_transcript = _compute_transcript_seal(
+            session_id, session, resolved_domain_id, user, holodeck,
+        )
+        _g_result: dict[str, Any] = {
+            "response": _greeting,
+            "action": "greeting",
+            "prompt_type": "greeting",
+            "escalated": False,
+            "tool_results": {},
+            "domain_id": resolved_domain_id,
+        }
+        if _g_seal is not None:
+            _g_result["transcript_seal"] = _g_seal
+            _g_result["transcript_seal_metadata"] = _g_seal_meta
+            _g_result["transcript_snapshot"] = _g_transcript
+        _sync_session_back(session_id, session)
+        return _g_result
 
     # ── SLM physics interpretation (context compression) ─────
     # All domains (including local-only) benefit from physics context

@@ -144,6 +144,13 @@ async def domain_info(
         _user_dr = user.get("domain_roles") or {}
         _eff_role = _user_dr.get(resolved)
         if not _eff_role:
+            # Fallback: scan for module-ID keys belonging to this domain
+            _mm = runtime.get("module_map") or {}
+            for _mk in _mm:
+                if _mk in _user_dr:
+                    _eff_role = _user_dr[_mk]
+                    break
+        if not _eff_role:
             _eff_role = _SYSTEM_ROLE_TO_DOMAIN_ROLE.get(user.get("role", ""))
         _r2m = runtime.get("role_to_default_module") or {}
         _mm = runtime.get("module_map") or {}

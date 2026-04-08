@@ -195,6 +195,12 @@ def _build_domain_context(
         # Extract domain role from JWT claim (e.g. {"domain/edu/algebra-level-1/v1": "teacher"})
         _user_domain_roles = user.get("domain_roles") or {}
         _domain_role = _user_domain_roles.get(resolved_domain_id)
+        if not _domain_role:
+            # Fallback: scan for module-ID keys belonging to this domain
+            for _mk in (runtime.get("module_map") or {}):
+                if _mk in _user_domain_roles:
+                    _domain_role = _user_domain_roles[_mk]
+                    break
         subject_profile_path = Path(
             _ensure_user_profile(
                 user_id=str(user["sub"]),

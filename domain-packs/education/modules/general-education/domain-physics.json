@@ -11,6 +11,11 @@
   "department": "General",
   "lumina_core_version": "1.0.0",
   "auto_freeze_on_escalation": true,
+  "greeting": {
+    "enabled": true,
+    "style": "slm_generated",
+    "fallback_message": "Welcome to Student Commons! This is your safe space to journal, reflect, and explore your learning goals. What's on your mind today?"
+  },
   "invariants": [
     {
       "id": "content_safety_hard",

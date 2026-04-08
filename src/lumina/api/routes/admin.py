@@ -1517,6 +1517,14 @@ async def _execute_admin_operation(
         _intended_dr = params.get("intended_domain_role", "")
         if _intended_dr and governed_modules:
             _dr_map = {mod: _intended_dr for mod in governed_modules}
+            # Also store with the resolved domain key so lookups by
+            # domain key (e.g. "education") find the role directly.
+            _dh = params.get("domain_id", "")
+            if _dh and _cfg.DOMAIN_REGISTRY is not None:
+                try:
+                    _dr_map[_cfg.DOMAIN_REGISTRY.resolve_domain_id(_dh)] = _intended_dr
+                except Exception:
+                    pass
             try:
                 await run_in_threadpool(
                     _cfg.PERSISTENCE.update_user_domain_roles, new_user_id, _dr_map,
