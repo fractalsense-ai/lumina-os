@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lumina://standards/admin-command-schemas/update-user-preferences.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-08",
+  "type": "object",
+  "description": "Update a user's preferences. Self-service for any authenticated user; elevated system roles (domain_authority, it_support, root) can update on behalf of another user. Domain packs declare which preference keys are meaningful.",
+  "properties": {
+    "operation": {
+      "const": "update_user_preferences"
+    },
+    "target": {
+      "type": "string",
+      "description": "Target user-id. If omitted, defaults to the calling user."
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "target_user_id": {
+          "type": "string",
+          "description": "User-id of the user whose preferences are being updated. If omitted, defaults to the caller."
+        },
+        "updates": {
+          "type": "object",
+          "description": "Key-value map of preference fields to set. Valid keys are domain-specific.",
+          "additionalProperties": true
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional supervisor note explaining why preferences were changed (recorded in supervisor_notes)."
+        }
+      },
+      "required": ["updates"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation", "params"]
+}

@@ -34,7 +34,7 @@
         "view_student_progress",
         "manage_escalations",
         "assign_module",
-        "update_student_preferences"
+        "update_user_preferences"
       ]
     },
     "teaching_assistant": {

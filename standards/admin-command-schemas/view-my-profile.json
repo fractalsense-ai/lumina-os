@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lumina://standards/admin-command-schemas/view-my-profile.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-08",
+  "type": "object",
+  "description": "View the calling user's own profile summary. Returns display name, preferences, assigned modules, and module-level state summaries. Sensitive fields are redacted. Available to all roles (self-only).",
+  "properties": {
+    "operation": {
+      "const": "view_my_profile"
+    },
+    "target": {
+      "type": "string",
+      "description": "Ignored — always returns the caller's own profile."
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "description": "Domain key to scope the profile view (default: education)."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["operation"]
+}

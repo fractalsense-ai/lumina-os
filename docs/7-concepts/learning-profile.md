@@ -42,6 +42,6 @@ The education domain uses a **3-layer hierarchical profile** system:
 
 ## Teacher Commands
 
-- **`update_student_preferences`** — update learning preferences and add a teacher note
+- **`update_user_preferences`** — update user preferences (self-service or supervisor on behalf)
 - **`assign_student`** / **`remove_student`** — manage teacher roster
 - **`assign_module`** / **`remove_module`** — manage module enrolment

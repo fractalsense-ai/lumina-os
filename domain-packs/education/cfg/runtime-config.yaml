@@ -458,13 +458,16 @@ ui_manifest:
       sidebar_panels:
         - id: domain_overview
           label: "Domain Overview"
-          component: DomainOverview
-        - id: teacher_roster
-          label: "Teacher Roster"
-          component: TeacherRoster
-        - id: module_management
+          component: DataPanel
+          data_source: domain_overview
+        - id: user_directory
+          label: "User Directory"
+          component: DataPanel
+          data_source: user_directory
+        - id: module_directory
           label: "Module Management"
-          component: ModuleManagement
+          component: DataPanel
+          data_source: module_directory
         - id: escalation_queue
           label: "Escalation Queue"
           component: EscalationQueue
@@ -480,18 +483,23 @@ ui_manifest:
     teacher:
       inherits: student
       sidebar_panels:
-        - id: classroom_overview
+        - id: managed_users
           label: "My Classroom"
-          component: ClassroomOverview
-        - id: student_roster
-          label: "Student Roster"
-          component: StudentRoster
+          component: DataPanel
+          data_source: managed_users
+          source_path: educator_state.assigned_students
+        - id: managed_user_progress
+          label: "Student Progress"
+          component: DataPanel
+          data_source: managed_user_progress
+          source_path: educator_state.assigned_students
         - id: escalation_queue
           label: "Escalations"
           component: EscalationQueue
-        - id: module_assignments
+        - id: governed_modules
           label: "Module Assignments"
-          component: ModuleAssignments
+          component: DataPanel
+          data_source: governed_modules
       capabilities:
         - assign_modules_to_students
         - view_student_progress
@@ -499,25 +507,51 @@ ui_manifest:
     teaching_assistant:
       inherits: student
       sidebar_panels:
-        - id: student_roster
-          label: "Student Roster"
-          component: StudentRoster
-        - id: hint_queue
+        - id: managed_users
+          label: "Assigned Students"
+          component: DataPanel
+          data_source: managed_users
+          source_path: assistant_state.assigned_students
+        - id: request_queue
           label: "Hint Queue"
-          component: HintQueue
+          component: DataPanel
+          data_source: empty_queue
       capabilities:
         - view_student_progress
         - issue_hints
     student:
-      sidebar_panels: []
-      capabilities: []
+      sidebar_panels:
+        - id: self_profile
+          label: "My Profile"
+          component: DataPanel
+          data_source: self_profile
+        - id: self_modules
+          label: "My Modules"
+          component: DataPanel
+          data_source: self_modules
+        - id: self_preferences
+          label: "Preferences"
+          component: DataPanel
+          data_source: self_preferences
+      capabilities:
+        - view_my_profile
+        - view_available_modules
+        - update_my_preferences
     parent:
       sidebar_panels:
-        - id: child_progress
+        - id: managed_user_progress
           label: "My Child's Progress"
-          component: ChildProgress
+          component: DataPanel
+          data_source: managed_user_progress
+          source_path: guardian_state.assigned_children
+        - id: notification_settings
+          label: "Notification Settings"
+          component: DataPanel
+          data_source: notification_settings
+          source_path: guardian_state.notification_preferences
       capabilities:
         - view_child_progress
+        - manage_notifications
 
 adapters:
   state_builder:

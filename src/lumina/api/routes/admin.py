@@ -562,6 +562,7 @@ _FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
     "list_domain_rbac_roles", "get_domain_module_manifest",
     "list_users", "get_domain_physics", "list_daemon_tasks",
     "request_module_assignment",
+    "view_my_profile", "update_user_preferences",
 })
 
 _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
@@ -571,6 +572,7 @@ _FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
     "list_domain_rbac_roles", "get_domain_module_manifest",
     "list_users", "get_domain_physics", "list_daemon_tasks",
     "assign_student", "remove_student", "assign_module", "remove_module",
+    "view_my_profile", "update_user_preferences",
 })
 
 _FALLBACK_ROLE_HIERARCHY: dict[str, int] = {
@@ -599,6 +601,8 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "remove_student": "user",
     "assign_module": "user",
     "remove_module": "user",
+    "view_my_profile": "user",
+    "update_user_preferences": "user",
 }
 
 _FALLBACK_DOMAIN_ROLE_ALIASES: dict[str, str] = {
@@ -2192,6 +2196,106 @@ async def _execute_admin_operation(
             "record_id": record["record_id"],
         }
 
+    elif operation == "view_my_profile":
+        caller_id = user_data["sub"]
+        domain_key = str(params.get("domain_id", "")).strip()
+        if not domain_key:
+            domain_key = _cfg.DOMAIN_REGISTRY.resolve_default_for_user(user_data)
+        _profile_path = str(Path("data/profiles") / f"{caller_id}.yaml")
+        try:
+            _profile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _profile_path)
+        except Exception:
+            _profile = {}
+        # Also try the hierarchical path
+        if not _profile or not isinstance(_profile, dict):
+            _hier_path = str(_cfg._resolve_user_profile_path(caller_id, domain_key))
+            try:
+                _profile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _hier_path)
+            except Exception:
+                _profile = {}
+        if not isinstance(_profile, dict):
+            _profile = {}
+        # Build redacted summary — generic, no domain-specific keys
+        _prefs = _profile.get("preferences") or {}
+        _modules_state = _profile.get("modules") if isinstance(_profile.get("modules"), dict) else {}
+        result = {
+            "operation": operation,
+            "user_id": caller_id,
+            "display_name": _profile.get("display_name") or _profile.get("name") or caller_id,
+            "role": user_data.get("role", ""),
+            "preferences": dict(_prefs),
+            "assigned_modules": list(_modules_state.keys()),
+            "module_summaries": {
+                mk: {"turn_count": int((mv if isinstance(mv, dict) else {}).get("turn_count", 0))}
+                for mk, mv in _modules_state.items()
+            },
+        }
+
+    elif operation == "update_user_preferences":
+        target_user_id = str(params.get("target_user_id", "") or params.get("student_id", "")).strip()
+        updates = params.get("updates") or {}
+        note = str(params.get("note", "")).strip()
+        caller_role = user_data["role"]
+        caller_id = user_data["sub"]
+
+        # Self-update is always allowed; cross-user requires elevated system role
+        if not target_user_id or target_user_id == caller_id:
+            target_user_id = caller_id
+        else:
+            _ELEVATED_ROLES = ("root", "domain_authority", "it_support")
+            if caller_role not in _ELEVATED_ROLES:
+                raise HTTPException(status_code=403, detail="Elevated system role required to update another user's preferences")
+
+        if not isinstance(updates, dict) or not updates:
+            raise HTTPException(status_code=422, detail="updates parameter must be a non-empty object")
+
+        # Load profile
+        _profile_path = str(Path("data/profiles") / f"{target_user_id}.yaml")
+        try:
+            _profile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, _profile_path)
+        except Exception:
+            _profile = {}
+        if not isinstance(_profile, dict):
+            _profile = {}
+
+        _prefs = _profile.setdefault("preferences", {})
+        for k, v in updates.items():
+            _prefs[k] = v
+
+        # Audit trail — supervisor note when updating another user
+        if note and target_user_id != caller_id:
+            _snotes = list(_profile.get("supervisor_notes") or [])
+            _snotes.append({
+                "author_id": caller_id,
+                "note": note,
+                "recorded_utc": datetime.now(timezone.utc).isoformat(),
+                "context": "preference_update",
+            })
+            _profile["supervisor_notes"] = _snotes
+
+        await run_in_threadpool(_cfg.PERSISTENCE.save_subject_profile, _profile_path, _profile)
+
+        record = build_commitment_record(
+            actor_id=caller_id,
+            actor_role=map_role_to_actor_role(caller_role),
+            commitment_type="preference_update",
+            subject_id=target_user_id,
+            summary=f"Updated preferences for {target_user_id}: {', '.join(updates.keys())}",
+            metadata={"updates": updates, "note": note},
+            references=[target_user_id],
+        )
+        _cfg.PERSISTENCE.append_log_record(
+            "admin", record,
+            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+        )
+        result = {
+            "operation": operation,
+            "user_id": target_user_id,
+            "updated_fields": list(updates.keys()),
+            "status": "updated",
+            "record_id": record["record_id"],
+        }
+
     else:
         raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
 
@@ -2202,6 +2306,7 @@ async def _execute_admin_operation(
         "explain_reasoning", "review_proposals",
         "list_domain_rbac_roles", "get_domain_module_manifest",
         "list_users", "get_domain_physics", "list_daemon_tasks",
+        "view_my_profile",
     })
     if operation not in _READ_ONLY_OPS:
         try:

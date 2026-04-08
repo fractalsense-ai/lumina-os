@@ -440,7 +440,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: dadaa81dedb61f25372f19c114649d09b8ab715403bf1b4dedbe7ce592f98861
+    sha256: bb375281c38a86603a6cd724ea7aadd60d708ff7d69f029dbfcfb3ebcf18bc57
 
   - path: docs/7-concepts/telemetry-masking.md
     type: doc
@@ -1188,7 +1188,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: abcfdd4ec51f47c483e11f79698cfeeb396e344028d85061d625d1083d7a6086
+    sha256: 7df30ec62a3f26900c57a4038281eb9720cc3abba5e0137fb48ec6017fef7884
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config
@@ -1202,7 +1202,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: fb5f1c79a94e4daf7adea9354f90c15857ff0992b3689057d3dbc3b67e2ca9be
+    sha256: 6708a347c50c70de47b4a16a92680e393caf97d200dc6049c9eb3b1a7f6a5011
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config

@@ -140,6 +140,7 @@ from lumina.api.routes.events import router as events_router  # noqa: E402
 from lumina.api.routes.system import router as system_router  # noqa: E402
 from lumina.api.routes.consent import router as consent_router  # noqa: E402
 from lumina.api.routes.holodeck import router as holodeck_router  # noqa: E402
+from lumina.api.routes.panels import router as panels_router  # noqa: E402
 
 # ─────────────────────────────────────────────────────────────
 # FastAPI Application
@@ -201,6 +202,7 @@ app.include_router(admin_router)
 app.include_router(events_router)
 app.include_router(consent_router)
 app.include_router(holodeck_router)
+app.include_router(panels_router)
 
 
 # ─────────────────────────────────────────────────────────────
