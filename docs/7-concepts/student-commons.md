@@ -19,6 +19,12 @@ with no academic grading, ZPD monitoring, or fluency tracking.
 - **Hybrid journaling** — passive first, gentle prompts after 3 idle turns
 - **Student commands** — request modules, view profile, list modules
 - **No auto-freeze** — except on safety escalations
+- **Freeform interpreter** — uses `freeform_interpret_turn_input` (SLM-classified
+  intent types: journaling, question, command, greeting, tool_request, reflection,
+  off_topic) instead of the learning algebra interpreter
+- **Tools on demand** — calculator, algebra parser, and other domain tools remain
+  available through `apply_tool_call_policy()` but are NOT called proactively;
+  they activate only when the conversation requests them
 
 ## Routing
 

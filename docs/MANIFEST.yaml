@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-04-07
+last_updated: 2026-04-08
 
 artifacts:
 
@@ -432,7 +432,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: f7ae4b106b267ed1fd5f8342e59221924dc5e1075a5de786ebb10f5c2a90c26f
+    sha256: b4c22ebd062757ce3ee734b648886c288c64133cdbec6c2c1e1ed7b3268b3eda
 
   - path: docs/7-concepts/learning-profile.md
     type: doc
@@ -480,7 +480,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-21
-    sha256: 3cfff4209730aea499d1c8a4d4645ca89c6101fbbb35de08ae54747e6c81bbfc
+    sha256: a109f936627268c47635bacd7abec9bcef2e4c96e67b99ae604329e04c5331e9
 
   - path: docs/7-concepts/hmvc-heritage.md
     type: doc
@@ -1188,7 +1188,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 67cd47aebad6bcd72f47b03efadc802f4e9054d8a3c74285d6a290497babca03
+    sha256: fe448e1971f1955032bd1165309bb4ce2d1a1102e156b5a1820a3c69b49d5121
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config

@@ -64,6 +64,40 @@ tool adapters verify; the domain library estimates; the runtime adapter synthesi
 pre-interpreter gates. Confusing these responsibilities is the most common mistake when
 authoring a new domain pack.
 
+### Interpreter pairing by module type
+
+A single domain pack may contain modules of different *types*: learning modules (algebra,
+pre-algebra), free-form modules (Student Commons), governance modules (domain-authority,
+teacher, TA, guardian). Each type requires a paired **turn interpreter** and **domain
+step** that match its pedagogical mode.
+
+| Module type | Turn interpreter | Domain step | Tool usage mode |
+|---|---|---|---|
+| **Learning** | `interpret_turn_input` — builds algebra context hints, calls `algebra_parser` proactively 7×, produces `correctness`, `step_count`, `equivalence_preserved` | `domain_step` — ZPD monitor + fluency tracker | **Evaluation** (proactive): tools fire on every turn to verify student work |
+| **Free-form** | `freeform_interpret_turn_input` — SLM classification of intent, deterministic student-command detection, no proactive tool calls | `freeform_domain_step` — neutral passthrough, no monitoring | **Assistance** (on-demand): tools available through `apply_tool_call_policy()` when conversation needs them |
+| **Governance** | `interpret_turn_input` (governance) — SLM classification of operator intent, structured command dispatch via `slm_parse_admin_command` | *(governance modules use the admin pipeline, not domain_step)* | **Command dispatch**: SLM parses operator commands into structured operation dicts |
+
+**Rule:** When a module overrides `domain_step`, it MUST also override `turn_interpreter`.
+The domain-level default adapters (registered in `cfg/runtime-config.yaml` §adapters) are
+designed for the domain's primary learning modules. Non-learning modules that inherit the
+learning turn interpreter will produce meaningless evidence (algebra scores applied to
+journal entries, proactive parser calls with no equation context).
+
+Module-level overrides are declared in the `module_map` entry:
+
+```yaml
+module_map:
+  domain/edu/general-education/v1:
+    adapters:
+      domain_step:
+        module_path: domain-packs/education/controllers/runtime_adapters.py
+        callable: freeform_domain_step
+      turn_interpreter:
+        module_path: domain-packs/education/controllers/runtime_adapters.py
+        callable: freeform_interpret_turn_input
+    turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
+```
+
 ---
 
 ## C. The Information Gate — Why NLP Runs First

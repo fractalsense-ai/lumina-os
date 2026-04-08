@@ -25,14 +25,21 @@ runtime:
     domain/edu/general-education/v1:
       domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/student-commons-persona-v1.md
+      turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
       turn_input_defaults:
+        intent_type: "journaling"
         off_task_ratio: 0.0
+        frustration_marker_count: 0
         correctness: "n/a"
         response_latency_sec: 5.0
+        problem_solved: false
       adapters:
         domain_step:
           module_path: domain-packs/education/controllers/runtime_adapters.py
           callable: freeform_domain_step
+        turn_interpreter:
+          module_path: domain-packs/education/controllers/runtime_adapters.py
+          callable: freeform_interpret_turn_input
       ui_overrides:
         subtitle: "Student Commons"
     domain/edu/pre-algebra/v1:
