@@ -68,5 +68,13 @@
       "enabled": true,
       "allowed": ["request_module_assignment", "view_available_modules", "view_my_profile"]
     }
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "journaling_entry_count": {"type": "integer", "default": 0},
+      "last_reflection_utc": {"type": "string", "default": null}
+    }
   }
 }

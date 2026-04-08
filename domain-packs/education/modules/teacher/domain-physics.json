@@ -176,5 +176,12 @@
         "description": "Teacher classroom management landing — student monitoring, escalation handling, module assignments."
       }
     }
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0}
+    }
   }
 }

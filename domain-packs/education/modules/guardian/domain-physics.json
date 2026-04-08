@@ -132,5 +132,12 @@
         "description": "Guardian landing — child progress viewing and notification receipt."
       }
     }
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0}
+    }
   }
 }

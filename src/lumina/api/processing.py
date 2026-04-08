@@ -696,6 +696,7 @@ def process_message(
         # ── Auto-save per-user profile after each turn ────────
         if container.user is not None and orch.state is not None:
             profile_path = container.active_context.subject_profile_path
+            _module_key = container.active_context.module_key
             if profile_path:
                 try:
                     import dataclasses
@@ -708,12 +709,23 @@ def process_message(
                                 "consecutive_correct": orch.state.fluency.consecutive_correct,
                             }
                         profile_data["learning_state"] = _ls_dict
+                        # Module-keyed state (two-tier model)
+                        if _module_key:
+                            if not isinstance(profile_data.get("modules"), dict):
+                                profile_data["modules"] = {}
+                            profile_data["modules"][_module_key] = _ls_dict
                     else:
                         _sd = orch.state if isinstance(orch.state, dict) else {}
+                        _state_snapshot = dict(_sd)
                         profile_data["session_state"] = {
                             "turn_count": int(_sd.get("turn_count", 0)),
                             "operator_id": str(_sd.get("operator_id", "")),
                         }
+                        # Module-keyed state (two-tier model)
+                        if _module_key:
+                            if not isinstance(profile_data.get("modules"), dict):
+                                profile_data["modules"] = {}
+                            profile_data["modules"][_module_key] = _state_snapshot
                     _cfg.PERSISTENCE.save_subject_profile(profile_path, profile_data)
                 except Exception:
                     log.warning("Profile auto-save failed for session %s", session_id)

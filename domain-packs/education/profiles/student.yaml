@@ -20,6 +20,9 @@ assigned_guardian_ids: []
 # ── Per-module mastery (populated as student enters modules) ─
 module_mastery: {}
 
+# Module-keyed state (shape declared by each module's module_state_schema)
+modules: {}
+
 learning_state:
   affect:
     salience: 0.5

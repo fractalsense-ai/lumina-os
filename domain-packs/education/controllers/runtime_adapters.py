@@ -147,6 +147,29 @@ def generate_mud_world(
     return {}
 
 
+def freeform_build_initial_state(
+    profile: dict[str, Any],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Build session state for a free-form module (e.g. Student Commons).
+
+    No learning curves, affect tracking, ZPD, fluency, or mastery — just
+    minimal state for journaling / reflection tracking.  Shape matches
+    ``module_state_schema.custom_fields`` in general-education physics.
+    """
+    # Module-keyed state takes priority over flat learning_state
+    _module_state = (profile.get("modules") or {}).get(
+        profile.get("domain_id", ""), {}
+    )
+    return {
+        "turn_count": 0,
+        "journaling_entry_count": int(
+            _module_state.get("journaling_entry_count", 0)
+        ),
+        "last_reflection_utc": _module_state.get("last_reflection_utc"),
+    }
+
+
 def build_initial_learning_state(
     profile: dict[str, Any],
     world_sim_cfg: dict[str, Any] | None = None,

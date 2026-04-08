@@ -1188,7 +1188,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 88781c22d143a2dd0d8a68e6fd9e3324c279cbcbfa36344d3d38e9a63cf7d8dc
+    sha256: abcfdd4ec51f47c483e11f79698cfeeb396e344028d85061d625d1083d7a6086
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config
@@ -1351,35 +1351,35 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 4d010a813ff98a642da6578e0f76ee4cfc0b1a93c92afbca4d4db4b546791bda
+    sha256: bf337e3b3eb0e3e2e9bb54abf53e806478b31d19b3d9cfd26665394aa5068ef5
 
   - path: domain-packs/education/profiles/teacher.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 825726204564d305f41adc6ab00698c33320a92a1a656a763e5a9a0ff05278e3
+    sha256: 5c14b945a969a8a4288cb3c263fce6ffa180d0576d18335a99fe8b23be854535
 
   - path: domain-packs/education/profiles/teaching_assistant.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: c165ee7af1cf3c7379a068ba014136fdfa97ebdba12b4ceb76c5df6c282d8db5
+    sha256: 3a012a7e4f0fbdc42f513558cb69a21b51907a521907e36aad1429b3651bef89
 
   - path: domain-packs/education/profiles/student.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 84cd55f9a74255c2e84dfe74bd49cf4d39ed3553f9d64d8013ce46a11cdda25a
+    sha256: 34e427a80fd13eb1c0f6b6e842c3ff75971c15c986a0580c66880be3921adc7a
 
   - path: domain-packs/education/profiles/parent.yaml
     type: config
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 6f32785d744391a0cc4b6d7c678d5cd7be0b33151afa11bab6c94769e855fd4e
+    sha256: 26a6725c3d098ea7a7dbab9d842a5480c2cf78aa394dc155a35ccc2a3fad27d6
 
   - path: domain-packs/system/modules/system-core/operator-profile.yaml
     type: config

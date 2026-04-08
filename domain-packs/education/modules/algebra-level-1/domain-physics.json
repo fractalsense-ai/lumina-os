@@ -504,5 +504,10 @@
       "description": "Turn interpretation output schema — defines the JSON structure the SLM must emit when classifying student intent.",
       "shared_with_modules": ["algebra-level-1"]
     }
-  ]
+  ],
+  "module_state_schema": {
+    "mastery_dimensions": ["equivalence_preserved", "no_illegal_operations", "solution_verifies", "show_work_minimum"],
+    "tracked_subsystems": ["affect", "mastery", "challenge_band", "recent_window", "fluency", "challenge", "uncertainty"],
+    "custom_fields": {}
+  }
 }

@@ -1,0 +1,116 @@
+{
+  "id": "domain/edu/v1",
+  "version": "1.0.0",
+  "domain_authority": {
+    "name": "Education Domain",
+    "description": "Domain-level physics for the education domain pack. Declares actor shapes, domain-wide invariants, and cross-module state governance."
+  },
+  "meta_authority_id": "root",
+
+  "actor_schemas": {
+    "student": {
+      "domain_state": [
+        "preferences",
+        "assigned_modules",
+        "assigned_ta_ids",
+        "assigned_guardian_ids"
+      ],
+      "capabilities": [
+        "view_my_profile",
+        "view_available_modules",
+        "request_module_assignment",
+        "update_my_preferences"
+      ]
+    },
+    "teacher": {
+      "domain_state": [
+        "preferences",
+        "assigned_students",
+        "assigned_rooms",
+        "escalation_preferences",
+        "active_standing_order_overrides"
+      ],
+      "capabilities": [
+        "view_student_progress",
+        "manage_escalations",
+        "assign_module",
+        "update_student_preferences"
+      ]
+    },
+    "teaching_assistant": {
+      "domain_state": [
+        "preferences",
+        "assigned_students",
+        "supervising_teacher_id"
+      ],
+      "capabilities": [
+        "view_student_progress",
+        "provide_hints"
+      ]
+    },
+    "parent": {
+      "domain_state": [
+        "preferences",
+        "assigned_children",
+        "notification_preferences"
+      ],
+      "capabilities": [
+        "view_child_progress",
+        "update_notification_preferences"
+      ]
+    },
+    "domain_authority": {
+      "domain_state": [
+        "preferences",
+        "management_state"
+      ],
+      "capabilities": [
+        "manage_teachers",
+        "manage_modules",
+        "view_all_progress",
+        "modify_standing_orders",
+        "trigger_logic_scrape",
+        "test_as_role"
+      ]
+    }
+  },
+
+  "user_commands": {
+    "student": ["view_my_profile", "view_available_modules", "request_module_assignment"],
+    "teacher": ["view_student_progress", "manage_escalations", "assign_module"],
+    "teaching_assistant": ["view_student_progress"],
+    "parent": ["view_child_progress"],
+    "domain_authority": ["manage_teachers", "manage_modules", "view_all_progress", "modify_standing_orders"]
+  },
+
+  "domain_invariants": [
+    {
+      "id": "content_safety",
+      "description": "All interactions must remain age-appropriate and educationally relevant.",
+      "severity": "critical"
+    },
+    {
+      "id": "role_boundary",
+      "description": "Actors may only access data and operations within their declared capabilities.",
+      "severity": "critical"
+    },
+    {
+      "id": "no_chat_persistence",
+      "description": "Chat transcripts are never stored server-side. Profile is the only persistent actor state.",
+      "severity": "critical"
+    }
+  ],
+
+  "domain_standing_orders": [
+    {
+      "id": "escalate_on_safety_concern",
+      "description": "If any actor signal suggests harm, self-harm, or abuse, escalate immediately to domain authority.",
+      "auto_execute": true
+    },
+    {
+      "id": "consent_required",
+      "description": "All student-role actors must accept the magic-circle consent boundary before interaction.",
+      "auto_execute": true
+    }
+  ]
+}

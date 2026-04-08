@@ -6,6 +6,7 @@ runtime:
   turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/turn-interpretation-spec-v1.md
 
   domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
+  domain_level_physics_path: domain-packs/education/domain-physics.json
   subject_profile_path: domain-packs/education/profiles/student.yaml
 
   # ── Hierarchical profile templates (Base → Domain → Role) ──
@@ -34,6 +35,9 @@ runtime:
         response_latency_sec: 5.0
         problem_solved: false
       adapters:
+        state_builder:
+          module_path: domain-packs/education/controllers/runtime_adapters.py
+          callable: freeform_build_initial_state
         domain_step:
           module_path: domain-packs/education/controllers/runtime_adapters.py
           callable: freeform_domain_step

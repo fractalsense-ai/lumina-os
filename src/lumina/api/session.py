@@ -258,6 +258,17 @@ def _build_domain_context(
         _sb_kwargs["tiers"] = _tiers
         _sb_kwargs["tier_progression"] = [str(t.get("tier_id", "")) for t in _tiers]
         _sb_kwargs["nominal_difficulty"] = float(_ps_task.get("nominal_difficulty", 0.5))
+
+    # ── Module-keyed state hydration (two-tier model) ─────────
+    # If the profile has module-specific state under modules[module_key],
+    # surface it as learning_state so the state builder reads from the
+    # module-specific snapshot instead of the flat default.
+    _prof_modules = profile.get("modules")
+    _mk_state = (_prof_modules if isinstance(_prof_modules, dict) else {}).get(_resolved_module_key or "")
+    if isinstance(_mk_state, dict) and _mk_state:
+        profile = dict(profile)  # shallow copy — don't mutate cached profile
+        profile["learning_state"] = _mk_state
+
     initial_state = state_builder(profile, **_sb_kwargs)
 
     orch = PPAOrchestrator(

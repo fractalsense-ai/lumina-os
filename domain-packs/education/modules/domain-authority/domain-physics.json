@@ -191,5 +191,12 @@
     "max_file_size_mb": 10,
     "accepted_formats": ["pdf", "docx", "markdown", "csv", "json", "yaml"],
     "max_interpretations": 3
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0}
+    }
   }
 }

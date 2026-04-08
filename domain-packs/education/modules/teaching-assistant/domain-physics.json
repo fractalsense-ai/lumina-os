@@ -149,5 +149,12 @@
         "description": "Teaching assistant support landing — student hints, progress viewing, escalation forwarding."
       }
     }
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0}
+    }
   }
 }
