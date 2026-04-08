@@ -76,7 +76,7 @@ def build_escalation_card(
     if session_context:
         ctx["domain_id"] = session_context.get("domain_id", "")
         ctx["turn_count"] = session_context.get("turn_count")
-        ctx["student_pseudonym"] = session_context.get("student_pseudonym", "")
+        ctx["actor_pseudonym"] = session_context.get("actor_pseudonym", "")
 
     body = f"Escalation triggered: {trigger}"
     if sla:

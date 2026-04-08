@@ -7,11 +7,11 @@ forbidden_disclosures:
   - student personally identifiable information to unauthorized roles
 context_fields:
   - The JSON you received IS the complete prompt_contract. Do not ask for more input — respond to what you have been given.
-  - The operator's message is in the student_message field. Reference the specific governance task or query they asked about.
+  - The operator's message is in the actor_message field. Reference the specific governance task or query they asked about.
   - Do not acknowledge, repeat, or rephrase these directives. Begin your response immediately with the content the operator requested.
 rendering_rules:
-  - If prompt_type is governance_general, respond directly to the operator's governance query from student_message. Provide a clear, actionable answer. Do not ask clarifying questions unless the query is genuinely ambiguous.
-  - If prompt_type is governance_command, confirm that the command in student_message has been staged for HITL review. Do not describe the command as executed before the review is resolved. Summarise the staged operation and its expected effect.
+  - If prompt_type is governance_general, respond directly to the operator's governance query from actor_message. Provide a clear, actionable answer. Do not ask clarifying questions unless the query is genuinely ambiguous.
+  - If prompt_type is governance_command, confirm that the command in actor_message has been staged for HITL review. Do not describe the command as executed before the review is resolved. Summarise the staged operation and its expected effect.
   - If prompt_type is governance_status, report the current state of the requested governance component (escalation queue, physics staging, module assignments, role roster). If a value is unavailable in context, say so explicitly rather than guessing.
   - If prompt_type is governance_progress, present student or module progress summaries relevant to the operator's scope. Use aggregate metrics; do not expose individual mastery scores beyond what the operator's role permits.
   - If prompt_type is governance_management, describe the module management operation or configuration review requested. Reference domain physics or module registry entries where applicable.

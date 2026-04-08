@@ -218,6 +218,47 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             nlp_cfg["callable"],
         )
 
+    # Optional post-turn processor adapter (education domain uses this for
+    # fluency-gated advancement, problem_solved override, etc.)
+    post_turn_processor_fn: Callable[..., Any] | None = None
+    _ptp_cfg = adapters_cfg.get("post_turn_processor")
+    if _ptp_cfg is not None:
+        post_turn_processor_fn = _load_callable(
+            repo_root, _ptp_cfg["module_path"], _ptp_cfg["callable"],
+        )
+
+    # Optional post-turn timer hook (resets domain-specific timestamps).
+    post_turn_timer_fn: Callable[..., Any] | None = None
+    _ptt_cfg = adapters_cfg.get("post_turn_timer")
+    if _ptt_cfg is not None:
+        post_turn_timer_fn = _load_callable(
+            repo_root, _ptt_cfg["module_path"], _ptt_cfg["callable"],
+        )
+
+    # Optional profile serializer (education domain extracts fluency/learning_state).
+    profile_serializer_fn: Callable[..., Any] | None = None
+    _ps_cfg = adapters_cfg.get("profile_serializer")
+    if _ps_cfg is not None:
+        profile_serializer_fn = _load_callable(
+            repo_root, _ps_cfg["module_path"], _ps_cfg["callable"],
+        )
+
+    # Optional turn-0 presenter check (education domain presents equations).
+    turn_0_presenter_fn: Callable[..., Any] | None = None
+    _t0_cfg = adapters_cfg.get("turn_0_presenter")
+    if _t0_cfg is not None:
+        turn_0_presenter_fn = _load_callable(
+            repo_root, _t0_cfg["module_path"], _t0_cfg["callable"],
+        )
+
+    # Optional escalation-context hook (supplies actor identity for cards).
+    escalation_context_fn: Callable[..., Any] | None = None
+    _ec_cfg = adapters_cfg.get("escalation_context")
+    if _ec_cfg is not None:
+        escalation_context_fn = _load_callable(
+            repo_root, _ec_cfg["module_path"], _ec_cfg["callable"],
+        )
+
     tool_fns: dict[str, Callable[..., Any]] = {}
     tools_cfg = adapters_cfg.get("tools") or {}
     for tool_id, tool_cfg in tools_cfg.items():
@@ -281,6 +322,11 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "domain_step_fn": domain_step_fn,
         "turn_interpreter_fn": turn_interpreter_fn,
         "nlp_pre_interpreter_fn": nlp_pre_interpreter_fn,
+        "post_turn_processor_fn": post_turn_processor_fn,
+        "post_turn_timer_fn": post_turn_timer_fn,
+        "profile_serializer_fn": profile_serializer_fn,
+        "turn_0_presenter_fn": turn_0_presenter_fn,
+        "escalation_context_fn": escalation_context_fn,
         "tool_fns": tool_fns,
         "world_sim": _world_sim_cfg,
         "local_only": bool(runtime_cfg.get("local_only", False)),
@@ -340,6 +386,39 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                             )
                         except Exception as _e:
                             log.warning("Failed to load module adapter %s.%s: %s", _mod_id, _ak, _e)
+                # Per-module NLP pre-interpreter override
+                _mod_nlp_cfg = _mod_adapters.get("nlp_pre_interpreter")
+                if isinstance(_mod_nlp_cfg, dict) and _mod_nlp_cfg.get("module_path") and _mod_nlp_cfg.get("callable"):
+                    try:
+                        _mod_cfg["nlp_pre_interpreter_fn"] = _load_callable(
+                            repo_root, _mod_nlp_cfg["module_path"], _mod_nlp_cfg["callable"],
+                        )
+                    except Exception as _e:
+                        log.warning("Failed to load module NLP adapter %s: %s", _mod_id, _e)
+                # Per-module optional hook overrides (post_turn_processor, etc.)
+                for _hk in ("post_turn_processor", "post_turn_timer", "profile_serializer", "turn_0_presenter", "escalation_context"):
+                    _hcfg = _mod_adapters.get(_hk)
+                    if isinstance(_hcfg, dict) and _hcfg.get("module_path") and _hcfg.get("callable"):
+                        try:
+                            _mod_cfg[f"{_hk}_fn"] = _load_callable(
+                                repo_root, _hcfg["module_path"], _hcfg["callable"],
+                            )
+                        except Exception as _e:
+                            log.warning("Failed to load module hook %s.%s: %s", _mod_id, _hk, _e)
+                # Per-module tool overrides (merged with domain-wide tools)
+                _mod_tools_cfg = _mod_adapters.get("tools")
+                if isinstance(_mod_tools_cfg, dict) and _mod_tools_cfg:
+                    _mod_tool_fns: dict[str, Callable[..., Any]] = {}
+                    for _tid, _tcfg in _mod_tools_cfg.items():
+                        if isinstance(_tcfg, dict) and _tcfg.get("module_path") and _tcfg.get("callable"):
+                            try:
+                                _mod_tool_fns[str(_tid)] = _load_callable(
+                                    repo_root, _tcfg["module_path"], _tcfg["callable"],
+                                )
+                            except Exception as _e:
+                                log.warning("Failed to load module tool %s.%s: %s", _mod_id, _tid, _e)
+                    if _mod_tool_fns:
+                        _mod_cfg["tool_fns"] = _mod_tool_fns
             # Pre-compile per-module system prompt and turn interpretation prompt
             # so governance modules get a governance-specific persona instead of
             # inheriting the domain-wide (learning) persona.

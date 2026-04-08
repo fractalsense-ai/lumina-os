@@ -36,8 +36,18 @@ if str(_EDU_CONTROLLERS) not in sys.path:
 
 def _load_runtime_adapters():
     spec = importlib.util.spec_from_file_location(
-        "edu_runtime_adapters_timing_test",
-        str(_EDU_CONTROLLERS / "runtime_adapters.py"),
+        "edu_learning_adapters_timing_test",
+        str(_EDU_CONTROLLERS / "learning_adapters.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+def _load_post_turn_module():
+    spec = importlib.util.spec_from_file_location(
+        "edu_post_turn_timing_test",
+        str(_EDU_CONTROLLERS / "education_post_turn.py"),
     )
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
@@ -45,6 +55,9 @@ def _load_runtime_adapters():
 
 
 _adapters = _load_runtime_adapters()
+_post_turn_mod = _load_post_turn_module()
+_reset_timer = _post_turn_mod.education_reset_timer
+_education_post_turn = _post_turn_mod.education_post_turn
 domain_step = _adapters.domain_step
 FluencyState = _adapters.FluencyState
 LearningState = _adapters.LearningState
@@ -133,6 +146,7 @@ class TestProcessingTimingCapture:
             "action_prompt_type_map": {},
             "deterministic_templates": {},
             "local_only": False,
+            "post_turn_timer_fn": _reset_timer,
         }
 
     def test_response_latency_sec_sampled_before_slm(self):
@@ -233,8 +247,10 @@ class TestProcessingTimingCapture:
             patch.object(proc, "apply_tool_call_policy", return_value=None),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
+            patch.object(_post_turn_mod, "time") as mock_hook_time,
         ):
             mock_time.time.side_effect = list(call_sequence)
+            mock_hook_time.time.side_effect = [T_AFTER_LLM]
             proc.process_message("sess-2", "let's go")
 
         # presented_at must be T_AFTER_LLM (after the response was built)
@@ -364,6 +380,8 @@ class TestTaskCompletePayloadSeparation:
             "action_prompt_type_map": {},
             "deterministic_templates": {},
             "local_only": False,
+            "post_turn_processor_fn": _education_post_turn,
+            "post_turn_timer_fn": _reset_timer,
         }
 
     def _make_runtime_no_generator(self) -> dict[str, Any]:

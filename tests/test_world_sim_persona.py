@@ -32,10 +32,21 @@ def _load_runtime_adapters():
     return mod
 
 
+def _load_learning_adapters():
+    spec = importlib.util.spec_from_file_location(
+        "edu_learning_adapters_persona_test",
+        str(REPO_ROOT / "domain-packs/education/controllers/learning_adapters.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
 _adapters = _load_runtime_adapters()
+_learning = _load_learning_adapters()
 select_world_sim_theme = _adapters.select_world_sim_theme
-interpret_turn_input = _adapters.interpret_turn_input
-build_initial_learning_state = _adapters.build_initial_learning_state
+interpret_turn_input = _learning.interpret_turn_input
+build_initial_learning_state = _learning.build_initial_learning_state
 
 # ---------------------------------------------------------------------------
 # Shared fixtures / helpers

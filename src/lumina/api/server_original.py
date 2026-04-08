@@ -1192,7 +1192,7 @@ def process_message(
 
     llm_payload = dict(prompt_contract)
     llm_payload["current_problem"] = current_problem
-    llm_payload["student_message"] = input_text
+    llm_payload["actor_message"] = input_text
     if tool_results:
         llm_payload["tool_results"] = tool_results
 

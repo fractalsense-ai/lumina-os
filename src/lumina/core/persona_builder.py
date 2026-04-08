@@ -216,7 +216,7 @@ _ROLE_DIRECTIVES: dict[PersonaContext, str] = {
         "It will contain:\n"
         "- prompt_type: What you must do. The DOMAIN CONFIGURATION rendering_rules "
         "define exactly how to handle each prompt_type.\n"
-        "- student_message: The message or query from the user.\n"
+        "- actor_message: The message or query from the user.\n"
         "- Other fields are domain-specific context — use them as directed by the "
         "DOMAIN CONFIGURATION block below.\n\n"
 

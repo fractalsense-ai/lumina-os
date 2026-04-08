@@ -36,13 +36,13 @@ runtime:
         problem_solved: false
       adapters:
         state_builder:
-          module_path: domain-packs/education/controllers/runtime_adapters.py
+          module_path: domain-packs/education/controllers/freeform_adapters.py
           callable: freeform_build_initial_state
         domain_step:
-          module_path: domain-packs/education/controllers/runtime_adapters.py
+          module_path: domain-packs/education/controllers/freeform_adapters.py
           callable: freeform_domain_step
         turn_interpreter:
-          module_path: domain-packs/education/controllers/runtime_adapters.py
+          module_path: domain-packs/education/controllers/freeform_adapters.py
           callable: freeform_interpret_turn_input
       ui_overrides:
         subtitle: "Student Commons"
@@ -79,6 +79,9 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+        nlp_pre_interpreter:
+          module_path: domain-packs/education/controllers/governance_nlp.py
+          callable: governance_nlp_preprocess
       turn_input_defaults:
         query_type: general
         target_component: null
@@ -112,6 +115,9 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+        nlp_pre_interpreter:
+          module_path: domain-packs/education/controllers/governance_nlp.py
+          callable: governance_nlp_preprocess
       turn_input_defaults:
         query_type: general
         target_component: null
@@ -145,6 +151,9 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+        nlp_pre_interpreter:
+          module_path: domain-packs/education/controllers/governance_nlp.py
+          callable: governance_nlp_preprocess
       turn_input_defaults:
         query_type: general
         target_component: null
@@ -178,6 +187,9 @@ runtime:
         turn_interpreter:
           module_path: domain-packs/education/controllers/governance_adapters.py
           callable: interpret_turn_input
+        nlp_pre_interpreter:
+          module_path: domain-packs/education/controllers/governance_nlp.py
+          callable: governance_nlp_preprocess
       turn_input_defaults:
         query_type: general
         target_component: null
@@ -555,17 +567,32 @@ ui_manifest:
 
 adapters:
   state_builder:
-    module_path: domain-packs/education/controllers/runtime_adapters.py
+    module_path: domain-packs/education/controllers/learning_adapters.py
     callable: build_initial_learning_state
   domain_step:
-    module_path: domain-packs/education/controllers/runtime_adapters.py
+    module_path: domain-packs/education/controllers/learning_adapters.py
     callable: domain_step
   turn_interpreter:
-    module_path: domain-packs/education/controllers/runtime_adapters.py
+    module_path: domain-packs/education/controllers/learning_adapters.py
     callable: interpret_turn_input
   nlp_pre_interpreter:
     module_path: domain-packs/education/controllers/nlp_pre_interpreter.py
     callable: nlp_preprocess
+  post_turn_processor:
+    module_path: domain-packs/education/controllers/education_post_turn.py
+    callable: education_post_turn
+  post_turn_timer:
+    module_path: domain-packs/education/controllers/education_post_turn.py
+    callable: education_reset_timer
+  profile_serializer:
+    module_path: domain-packs/education/controllers/education_profile_serializer.py
+    callable: education_serialize_profile
+  turn_0_presenter:
+    module_path: domain-packs/education/controllers/education_turn0.py
+    callable: education_turn0_check
+  escalation_context:
+    module_path: domain-packs/education/controllers/education_escalation_context.py
+    callable: education_escalation_context
   tools:
     calculator:
       module_path: domain-packs/education/controllers/tool_adapters.py
@@ -574,8 +601,14 @@ adapters:
       module_path: domain-packs/education/controllers/tool_adapters.py
       callable: substitution_checker_tool
     algebra_parser:
-      module_path: domain-packs/education/controllers/tool_adapters.py
+      module_path: domain-packs/education/controllers/algebra_tools.py
       callable: algebra_parser_tool
     generate_problem:
       module_path: domain-packs/education/controllers/problem_generator.py
       callable: generate_problem
+    extract_physics_patch:
+      module_path: domain-packs/education/controllers/governance_adapters.py
+      callable: extract_physics_patch
+    detect_novel_synthesis:
+      module_path: domain-packs/education/controllers/governance_adapters.py
+      callable: detect_novel_synthesis

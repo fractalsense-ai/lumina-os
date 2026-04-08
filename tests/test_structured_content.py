@@ -61,12 +61,12 @@ def test_escalation_card_includes_session_context() -> None:
     ctx = {
         "domain_id": "education/pre-algebra",
         "turn_count": 12,
-        "student_pseudonym": "Student A",
+        "actor_pseudonym": "Student A",
     }
     card = build_escalation_card(record, session_context=ctx)
     assert card["context"]["domain_id"] == "education/pre-algebra"
     assert card["context"]["turn_count"] == 12
-    assert card["context"]["student_pseudonym"] == "Student A"
+    assert card["context"]["actor_pseudonym"] == "Student A"
 
 
 @pytest.mark.unit
