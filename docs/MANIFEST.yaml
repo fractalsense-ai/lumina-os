@@ -994,6 +994,20 @@ artifacts:
     last_updated: 2026-03-20
     sha256: 1b270e6c0d310deceb7c8231668f31d0c529b30bb4c8f95ed330f618bc8dbf1f
 
+  - path: standards/admin-command-schemas/view-my-profile.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-08
+    sha256: f8405cf73c29ccdd851f8ddf59f4fd5ce4558ec55d699a4b93bb43e92fc5619f
+
+  - path: standards/admin-command-schemas/update-user-preferences.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-08
+    sha256: 742939acc312e3925838551cd693e470755a8a2615cdac08c4d94ceabbb854e3
+
   - path: standards/admin-command-schemas/resolve-escalation.json
     type: schema
     doc_version: 1.0.0
