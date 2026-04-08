@@ -414,6 +414,11 @@ runtime:
         payload:
           left_value: "{turn_data.left_value}"
           right_value: "{turn_data.right_value}"
+    tool_request:
+      -
+        tool_id: calculator
+        payload:
+          expression: "{turn_data.tool_expression}"
 
 ui_manifest:
   title: "Project Lumina"

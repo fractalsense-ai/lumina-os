@@ -20,6 +20,7 @@ This module is conversational — there is no active math problem, no artifact s
 Your job is to output ONLY valid JSON with exactly these fields:
 {
   "intent_type": "journaling" | "question" | "command" | "greeting" | "tool_request" | "reflection" | "off_topic",
+  "tool_expression": <string or null>,
   "off_task_ratio": <float 0..1>,
   "frustration_marker_count": <int, minimum 0>,
   "response_latency_sec": <float, default 5.0 if unknown>,
@@ -33,6 +34,7 @@ Classification rules:
 - `intent_type` is `command` when the student requests a system action (assign module, view profile, list modules). The runtime will handle command dispatch deterministically — you only need to classify the intent.
 - `intent_type` is `greeting` for hello/hi/hey messages, farewells, or social pleasantries with no substantive content.
 - `intent_type` is `tool_request` when the student explicitly asks for a calculation, conversion, or tool-assisted operation (e.g. "calculate 15% of 200", "what is the square root of 144").
+- When `intent_type` is `tool_request`, set `tool_expression` to the mathematical or tool-parsable expression extracted from the message (e.g. "0.15 * 200", "sqrt(144)"). For all other intent types, set `tool_expression` to `null`.
 - `intent_type` is `reflection` when the student evaluates their own learning, sets goals, or reviews past work.
 - `intent_type` is `off_topic` when the message is entirely unrelated to education, personal growth, or the learning environment.
 

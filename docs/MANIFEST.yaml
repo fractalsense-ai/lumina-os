@@ -1188,7 +1188,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: fe448e1971f1955032bd1165309bb4ce2d1a1102e156b5a1820a3c69b49d5121
+    sha256: 88781c22d143a2dd0d8a68e6fd9e3324c279cbcbfa36344d3d38e9a63cf7d8dc
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config

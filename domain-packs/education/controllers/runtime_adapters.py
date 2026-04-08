@@ -230,14 +230,22 @@ def freeform_domain_step(
     """Domain-lib step for free-form modules (e.g. Student Commons).
 
     Skips ZPD monitoring, fluency tracking, and academic grading entirely.
-    Returns a neutral ``continue`` action so the orchestrator proceeds to
-    normal prompt generation without triggering escalation or intervention.
+    Maps the turn interpreter's ``intent_type`` to a ``resolved_action`` so
+    that user commands route through command dispatch and tool requests
+    route through ``apply_tool_call_policy()``.
     """
-    return state, {"tier": "ok", "action": None, "should_escalate": False}
+    intent = evidence.get("intent_type")
+    if intent == "command":
+        action = "user_command"
+    elif intent == "tool_request":
+        action = "tool_request"
+    else:
+        action = None
+    return state, {"tier": "ok", "action": action, "should_escalate": False}
 
 
-# ── Student-command detection (deterministic) ──────────────────
-_STUDENT_COMMAND_PATTERNS: dict[str, re.Pattern[str]] = {
+# ── User-command detection (deterministic) ─────────────────────
+_USER_COMMAND_PATTERNS: dict[str, re.Pattern[str]] = {
     "request_module_assignment": re.compile(
         r"\b(assign|enroll|start|begin|join|take|register)\b.*\b(module|course|class|subject)\b"
         r"|\b(module|course|class|subject)\b.*\b(assign|enroll|start|begin|join|take|register)\b",
@@ -256,11 +264,11 @@ _STUDENT_COMMAND_PATTERNS: dict[str, re.Pattern[str]] = {
 }
 
 
-def _detect_student_command(
+def _detect_user_command(
     input_text: str,
 ) -> dict[str, Any] | None:
-    """Return a command_dispatch dict if the input matches a student command."""
-    for cmd_name, pattern in _STUDENT_COMMAND_PATTERNS.items():
+    """Return a command_dispatch dict if the input matches a user command."""
+    for cmd_name, pattern in _USER_COMMAND_PATTERNS.items():
         if pattern.search(input_text):
             return {"operation": cmd_name}
     return None
@@ -343,13 +351,16 @@ def freeform_interpret_turn_input(
         if key not in evidence or evidence[key] is None:
             evidence[key] = default_val
 
-    # ── Deterministic student-command detection ───────────────
-    cmd = _detect_student_command(input_text)
+    # ── Deterministic user-command detection ─────────────────
+    cmd = _detect_user_command(input_text)
     if cmd is not None:
         evidence["intent_type"] = "command"
         evidence["command_dispatch"] = cmd
     else:
         evidence.setdefault("command_dispatch", None)
+
+    # ── Preserve tool_expression for policy routing ─────────
+    evidence.setdefault("tool_expression", None)
 
     return evidence
 

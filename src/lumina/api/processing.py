@@ -770,7 +770,7 @@ def process_message(
     # (system_command for system domain, governance_command for education governance).
     if (
         structured_content is None
-        and resolved_action in ("system_command", "governance_command")
+        and resolved_action in ("system_command", "governance_command", "user_command")
         and isinstance(turn_data.get("command_dispatch"), dict)
     ):
         cmd_dispatch = turn_data["command_dispatch"]

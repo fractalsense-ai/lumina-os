@@ -64,7 +64,7 @@
       "style": "hybrid",
       "reflection_categories": ["interests", "learning_goals", "feelings_about_school", "curiosities"]
     },
-    "student_commands": {
+    "user_commands": {
       "enabled": true,
       "allowed": ["request_module_assignment", "view_available_modules", "view_my_profile"]
     }
