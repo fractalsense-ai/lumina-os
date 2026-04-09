@@ -38,7 +38,7 @@ artifacts:
     doc_version: 1.3.0
     status: active
     last_updated: 2026-03-31
-    sha256: a30c9302fb05ce1d6415fa534222281eba001eb639f828a8b56e7e903f952a6d
+    sha256: 75a8274cce2831acd4d55b5be87057ec84dd5e4d3573e67c97277d83f84a105c
 
   - path: docs/1-commands/integrity-check.md
     type: doc
@@ -121,7 +121,7 @@ artifacts:
     doc_version: 1.4.0
     status: active
     last_updated: 2026-06-15
-    sha256: 212474447f5498dc74416eab246a355e265ee948131d3419672d3c0026473ade
+    sha256: c0f783978596f5143b6eb24ddb7f865bad90b131ec61597b756dbee061e47358
 
 
   # ── Section 3: Functions ──────────────────────────────────────────────────
@@ -248,7 +248,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-18
-    sha256: 31bc2c063f649f90918547df946279578d84daf5952f814eb95481ec8510c1ea
+    sha256: 08dbb512851f8efbee8718361d53d0ac697d69320a66cdd27253b075eb9e6131
 
   - path: docs/7-concepts/cross-domain-synthesis.md
     type: doc
@@ -440,7 +440,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: bb375281c38a86603a6cd724ea7aadd60d708ff7d69f029dbfcfb3ebcf18bc57
+    sha256: 101c9734bbabd2d9bde691b0addbec96d919f7a85e7d10799c83635b4118edd6
 
   - path: docs/7-concepts/telemetry-masking.md
     type: doc
@@ -480,7 +480,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-21
-    sha256: a109f936627268c47635bacd7abec9bcef2e4c96e67b99ae604329e04c5331e9
+    sha256: 19ff30ea2222ace91cecec8e36c8711afcde8547d001ce7803f5112e04ec2640
 
   - path: docs/7-concepts/hmvc-heritage.md
     type: doc
@@ -488,7 +488,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-23
-    sha256: 6cfa2fed28c3e22a77b15e10f19f135a32e650767b6bca611c90c5d9342c7d70
+    sha256: f070f23a9bd488162d90ca47f6fab9fd49ecc977ecee3193ce6bfeeac9a61d66
 
   - path: docs/7-concepts/ledger-tier-separation.md
     type: doc
@@ -512,7 +512,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-27
-    sha256: ffa3360047d2dd07784c6d7608b5e00f14295cc5678e7d32a480d5e69a6e73d0
+    sha256: 34fbdf48e8c2c6a9194244bba697b69b1c6066eb7429557a20371fe62fabe7d6
 
   - path: docs/7-concepts/execution-route-compilation.md
     type: doc
@@ -1160,7 +1160,7 @@ artifacts:
   - path: domain-packs/education/docs/3-functions/problem-generator.md
     sha256: abe5a4b3a29d3d87c19ea5f2463c1fb0685c690ae15607679e45899773835f01
   - path: domain-packs/education/docs/7-concepts/README.md
-    sha256: 28c0b49bd4d4d262955ceb6234a388b072ad69d63aaa69a16e7a7eefffeac534
+    sha256: 3c29d17ffd32fbdc2b696abb21aaf05f1a85d694ed34aad341c1013afc4e1e61
   - path: domain-packs/education/docs/README.md
     sha256: 5db651f901e02d74353ae33e0d36d2015eeccbe9578b25e39edf9ac5940e601f
   - path: domain-packs/system/docs/1-commands/README.md

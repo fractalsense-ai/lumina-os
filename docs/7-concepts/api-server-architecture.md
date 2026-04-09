@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-20
+version: 1.1.0
+last_updated: 2026-06-15
 ---
 
 # API Server Architecture
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-18  
+**Last updated:** 2026-06-15  
 
 ---
 
@@ -115,6 +115,77 @@ The decomposition has no runtime overhead — `server.py` assembles routers at s
 | Full test suite cold-import time | ~4.1 s | ~1.6 s |
 | Average fixture setup time | ~320 ms | ~85 ms |
 | Lines in `server.py` | 3,658 | ~200 |
+
+---
+
+## G. Dynamic Domain Route Mounting
+
+Domain packs may declare their own HTTP endpoints without touching `src/lumina/`. This
+keeps domain-specific routes inside the domain pack — consistent with the HMVC
+self-containment contract (see [`hmvc-heritage(7)`](hmvc-heritage.md)).
+
+### Declaration
+
+Each route is declared in the domain's `cfg/runtime-config.yaml` under
+`adapters.api_routes`:
+
+```yaml
+adapters:
+  api_routes:
+    post_vocabulary_metric:
+      path: /api/user/{user_id}/vocabulary-metric
+      method: POST
+      module_path: domain-packs/education/controllers/api_handlers.py
+      callable: post_vocabulary_metric
+      roles: []
+      request_body:
+        vocabulary_complexity_score: {type: float, ge: 0.0, le: 1.0, required: true}
+    dashboard_vocabulary_growth:
+      path: /api/dashboard/education/vocabulary-growth
+      method: GET
+      module_path: domain-packs/education/controllers/api_handlers.py
+      callable: dashboard_vocabulary_growth
+      roles: [root, domain_authority, teacher]
+```
+
+### Loading pipeline
+
+1. **`runtime_loader.py`** — During domain load, the loader iterates
+   `adapters_cfg.get("api_routes")`, resolves each `module_path` + `callable` via
+   `_load_callable()`, and appends the resulting dict (path, method, handler function,
+   roles, request_body schema) to `api_route_defs` in the runtime context.
+
+2. **`server.py` → `_mount_domain_api_routes()`** — At startup (after all domains are
+   registered), this function iterates every domain's `api_route_defs` and calls
+   `app.add_api_route()` for each entry. The core server wraps every handler with JWT
+   authentication and RBAC role enforcement so that domain handlers remain free of any
+   `lumina.api.*` imports.
+
+### Handler contract
+
+Domain handlers receive keyword-injected dependencies and return plain dicts:
+
+```python
+async def post_vocabulary_metric(
+    *,
+    user_id: str,
+    body: dict[str, Any],
+    user_data: dict[str, Any],
+    persistence: Any,
+    resolve_profile_path: Any,
+    **_kw: Any,
+) -> dict[str, Any]:
+    ...
+```
+
+To signal an HTTP error, return `{"__status": 403, "detail": "..."}` — the server wrapper
+converts this to an `HTTPException` automatically.
+
+### Key invariant
+
+Domain-declared routes go through the same auth/role middleware as core routes.  A domain
+pack cannot bypass `require_auth` or `require_role` — the wrapper enforces the `roles`
+list declared in `runtime-config.yaml`.
 
 ---
 

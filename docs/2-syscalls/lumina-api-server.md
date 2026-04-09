@@ -1,11 +1,11 @@
 ---
-version: 1.4.0
+version: 1.5.0
 last_updated: 2026-06-15
 ---
 
 # lumina-api-server(2)
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Status:** Active  
 **Last updated:** 2026-06-15  
 
@@ -58,6 +58,18 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `routes/dashboard.py` | Governance dashboard data endpoints |
 | `routes/nightcycle.py` | *(removed)* — batch tasks now managed via daemon and admin commands |
 | `structured_content.py` | Action-card builders for ChatResponse structured content |
+
+### Domain-declared routes
+
+In addition to the core route modules listed above, domain packs may declare their own
+API endpoints via `adapters.api_routes` in `cfg/runtime-config.yaml`. These routes are
+loaded by `runtime_loader.py` and dynamically mounted by `_mount_domain_api_routes()` at
+startup. Each domain handler is wrapped with the same JWT + RBAC middleware as core routes.
+
+Domain-declared routes never appear in `src/lumina/api/routes/` — they live inside the
+domain pack's `controllers/api_handlers.py`. See
+[`api-server-architecture(7)`](../7-concepts/api-server-architecture.md) §G for the full
+loading pipeline and handler contract.
 
 ## ENVIRONMENT
 

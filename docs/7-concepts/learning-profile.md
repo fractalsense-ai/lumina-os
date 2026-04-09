@@ -1,6 +1,6 @@
 ---
-version: 1.0.0
-last_updated: 2026-04-05
+version: 1.1.0
+last_updated: 2026-06-15
 ---
 
 # Learning Profile
@@ -34,6 +34,7 @@ The education domain uses a **3-layer hierarchical profile** system:
 - `challenge_band` — min/max challenge range
 - `recent_window` — sliding window stats
 - `fluency` — tier progression tracking
+- `vocabulary_tracking` — vocabulary growth measurement (see below)
 
 ### Domain Extension Fields
 - `consent` — magic-circle acceptance state
@@ -45,3 +46,30 @@ The education domain uses a **3-layer hierarchical profile** system:
 - **`update_user_preferences`** — update user preferences (self-service or supervisor on behalf)
 - **`assign_student`** / **`remove_student`** — manage teacher roster
 - **`assign_module`** / **`remove_module`** — manage module enrolment
+
+## Vocabulary Tracking (v0.1.0)
+
+The `vocabulary_tracking` block within `learning_state` tracks vocabulary complexity growth
+across sessions. Scores are computed client-side by `vocabularyAnalyzer.ts` and posted via
+the domain-declared `POST /api/user/{user_id}/vocabulary-metric` route.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `baseline_complexity` | `float \| None` | Locked baseline (average of first N sessions) |
+| `current_complexity` | `float \| None` | Most recent composite score (0..1) |
+| `growth_delta` | `float` | Growth above baseline (always ≥ 0) |
+| `domain_vocabulary` | `dict` | Per-module term acquisition: `{module_id: {terms_acquired, complexity_delta}}` |
+| `measurement_window_turns` | `int` | Client-side analysis window size |
+| `baseline_sessions_remaining` | `int` | Sessions until baseline locks |
+| `baseline_samples` | `list[float]` | Collected baseline scores |
+| `last_measured_utc` | `str \| None` | ISO 8601 timestamp of last measurement |
+| `session_history` | `list[dict]` | Rolling `{complexity, delta, measured_utc}` entries (max 50) |
+
+The baseline locks after `baseline_lock_sessions` (default 3) measurements, providing a
+stable reference point. Growth delta is always non-negative — no punishment for temporary
+regression.
+
+For the full monitor specification, see
+[`vocabulary-growth-monitor(3)`](../../domain-packs/education/docs/3-functions/vocabulary-growth-monitor.md).
+For the dashboard panel, see the `vocabulary_growth` entry in the education domain's
+`ui_manifest.panels` in `cfg/runtime-config.yaml`.

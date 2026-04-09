@@ -41,6 +41,7 @@ We welcome new reference implementations for different industries. To submit a n
 3. **Schemas:** JSON schemas defining the compressed state and subject profile.
 4. **Tool Adapters:** Python functions that deterministically verify the LLM's proposals.
 5. **Pre-integration Scenarios:** A standalone script or set of JSON payloads proving your domain rules work under stress.
+6. **API route contracts (if applicable):** When your domain declares HTTP endpoints via `adapters.api_routes` in `runtime-config.yaml`, include the handler module (`controllers/api_handlers.py`), the YAML route declarations, and tests proving auth/role enforcement. Handlers must receive injected dependencies only — **no direct imports from `lumina.api.*`**.  See [`docs/7-concepts/api-server-architecture.md`](docs/7-concepts/api-server-architecture.md) §G.
 
 ### Modifying the Core Engine or System Log
 

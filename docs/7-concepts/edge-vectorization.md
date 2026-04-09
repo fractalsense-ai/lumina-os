@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-27
+version: 1.1.0
+last_updated: 2026-06-15
 ---
 
 # Edge Vectorization — Per-Domain Vector Stores
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-27  
+**Last updated:** 2026-06-15  
 
 ---
 
@@ -23,6 +23,38 @@ This created three problems:
 
 Edge Vectorization solves these by isolating each domain's vectors into its own
 subdirectory and `.npz` file, managed by a registry that creates stores on demand.
+
+### Embedding model
+
+All vector embeddings use the **MiniLM** family of sentence-transformer models,
+producing 384-dimensional vectors. Two providers are supported:
+
+| Provider | Model name | Install | Env value |
+|----------|-----------|---------|-----------|
+| **Ollama** (default) | `all-minilm` | `ollama pull all-minilm` | `LUMINA_EMBEDDING_PROVIDER=ollama` |
+| **HuggingFace** (fallback) | `all-MiniLM-L6-v2` | `pip install -e ".[retrieval]"` | `LUMINA_EMBEDDING_PROVIDER=huggingface` |
+
+The Ollama provider is preferred for development because it shares the same Ollama instance
+used for the SLM. The HuggingFace provider loads models locally via `sentence-transformers`
+and requires no external service.
+
+**Environment variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LUMINA_EMBEDDING_PROVIDER` | `ollama` | `ollama` or `huggingface` |
+| `LUMINA_EMBEDDING_MODEL` | provider-dependent | Overrides the model name (`all-minilm` for Ollama, `all-MiniLM-L6-v2` for HuggingFace) |
+| `LUMINA_EMBEDDING_ENDPOINT` | `http://localhost:11434` | Ollama base URL (ignored for HuggingFace) |
+
+When neither provider is available (Ollama not running and `sentence-transformers` not
+installed), the embedding layer degrades gracefully — vector stores remain empty and
+vector-based routing (Pass 1.5) is silently skipped.
+
+**CORS note:** The Ollama provider issues HTTP requests from the backend server process
+(`src/lumina/retrieval/embedder.py`), not from the browser. Front-end clients never call
+the embedding endpoint directly. If you configure Ollama with a custom CORS policy, ensure
+`http://localhost:5173` (the Vite dev server) is permitted for API calls that proxy through
+the backend.
 
 ---
 

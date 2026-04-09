@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-23
+version: 1.1.0
+last_updated: 2026-06-15
 ---
 
 # HMVC Heritage — Architectural Lineage
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Active
-**Last updated:** 2026-03-23
+**Last updated:** 2026-06-15
 
 ---
 
@@ -44,6 +44,7 @@ routes to it. This is exactly how Lumina works.
 | **View** (presentation layer) | **Prompts + World-Sim Persona** | `prompts/`, `world-sim/` | Domain system override, turn interpretation prompt, narrative framing |
 | **Service layer** (shared domain logic) | **Domain Library** | `domain-lib/` specs + `controllers/` implementations | Passive state estimators (ZPD, fluency, fatigue) — called by controllers, never by the engine |
 | **Module routes / config** | **Runtime Config** | `cfg/runtime-config.yaml` | Adapter bindings, access control, module routing, world-sim config |
+| **Module API endpoints** | **Domain API Route Handlers** | `controllers/api_handlers.py` + `cfg/runtime-config.yaml` §adapters.api_routes | Domain-owned HTTP endpoints dynamically mounted by the core server at startup — the domain declares routes, the framework provides auth/role middleware |
 | **Framework router** | **Domain Registry** | `cfg/domain-registry.yaml` + `src/lumina/core/domain_registry.py` | Maps domain_id → runtime context; role-based defaults; NLP routing |
 | **Framework core** | **Core Engine** | `src/lumina/` | Zero domain-specific names — reads only `problem_solved` and `problem_status` |
 | **Sub-request** (module→module) | **Cross-Domain Synthesis** | Opt-in, dual-key DA approval | See [`cross-domain-synthesis(7)`](cross-domain-synthesis.md) |
@@ -74,8 +75,8 @@ at the architecture level:
 > **Zero domain-specific names may appear in `src/lumina/`.** All domain logic, domain field
 > names, domain computations, and domain vocabulary live exclusively inside the domain pack.
 
-For the six-component anatomy of a domain pack (physics, tool adapters, runtime adapter,
-NLP pre-interpreter, domain library, world-sim), see
+For the eight-component anatomy of a domain pack (physics, tool adapters, runtime adapter,
+NLP pre-interpreter, domain library, group libraries, API route handlers, world-sim), see
 [`domain-pack-anatomy(7)`](domain-pack-anatomy.md).
 
 ---

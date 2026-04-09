@@ -1,13 +1,13 @@
 ---
-version: 1.2.0
-last_updated: 2026-03-30
+version: 1.3.0
+last_updated: 2026-06-15
 ---
 
 # Domain Pack Anatomy
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Status:** Active  
-**Last updated:** 2026-03-30  
+**Last updated:** 2026-06-15  
 
 ---
 
@@ -44,10 +44,10 @@ entirely inside the pack. This is the **self-containment contract** (see §E).
 
 ---
 
-## B. The Seven Components
+## B. The Eight Components
 
-Every domain pack is composed of up to seven components. Not all are required for a minimal
-pack, but all seven are present in a fully-realised production pack.
+Every domain pack is composed of up to eight components. Not all are required for a minimal
+pack, but all eight are present in a fully-realised production pack.
 
 | Component | Location | Who calls it | Mandatory | What it owns |
 |---|---|---|---|---|
@@ -57,6 +57,7 @@ pack, but all seven are present in a fully-realised production pack.
 | **NLP pre-interpreter** | `controllers/nlp_pre_interpreter.py` | Core engine before LLM prompt assembly | Yes (all text-input domains) | Deterministic extraction of domain-meaningful signals from raw input; produces `_nlp_anchors` |
 | **Domain library** | `domain-lib/reference/*.md` specs + `controllers/*.py` implementations | Runtime adapter only — never the engine directly | Where applicable | Passive reference specs (interpretation schemas, estimator definitions) and state estimators tracking entity state across turns (ZPD monitor, fluency tracker, fatigue model) |
 | **Group Libraries / Group Tools** | `domain-lib/*.py` (libraries) + `controllers/group_tool_adapters.py` (tools) | Runtime adapter (libraries) or policy system (tools) — declared in physics files | Where applicable | Shared pure-function libraries and shared active verifiers used by multiple modules within the domain |
+| **API route handlers** | `controllers/api_handlers.py` + `cfg/runtime-config.yaml` §adapters.api_routes | Core server at startup (dynamically mounted) | No | Domain-owned HTTP endpoints — telemetry submission, dashboard data, domain-specific queries. The core server wraps each handler with auth + role enforcement; the domain handler stays framework-free |
 | **World-sim (optional)** | `world-sim/*.md` + `world-sim/templates.yaml` | Runtime adapter, once at session start | No | Narrative framing layer — cosmetic only; domain physics and invariants are unchanged inside any world-sim theme |
 
 These components are not interchangeable and must not be substituted for one another. The
@@ -359,7 +360,8 @@ domain-packs/{domain}/
 ├── controllers/                      # PACK-LEVEL — Python implementations shared across modules
 │   ├── nlp_pre_interpreter.py        # Phase A information gate  (exported: nlp_preprocess)
 │   ├── runtime_adapters.py           # Phase A + B synthesis     (exported: interpret_turn_input)
-│   └── tool_adapters.py              # Direct tool callables for read-only retrieval
+│   ├── tool_adapters.py              # Direct tool callables for read-only retrieval
+│   └── api_handlers.py              # Domain-owned API route handlers (optional; see §B)
 │
 ├── docs/                             # PACK-LEVEL — domain-scoped man pages (mirrors root docs/)
 │   ├── README.md                     #   Section index for this domain's documentation
@@ -409,8 +411,10 @@ distinction is enforced by convention: `prompts/` contains no interpretation log
 `domain-lib/reference/` contains no voice or identity directives.
 
 `cfg/runtime-config.yaml` is the pack's manifest to the engine: it registers adapters,
-declares access control, maps entity domain IDs to module physics paths, and enables
-world-sim features. The engine reads this file at session initialisation and wires up the
+declares access control, maps entity domain IDs to module physics paths, enables
+world-sim features, and optionally declares `adapters.api_routes` — domain-owned HTTP
+endpoints that the core server mounts at startup with auth/role wrappers (see §B, "API
+route handlers"). The engine reads this file at session initialisation and wires up the
 pack's components — no engine code changes are required to add a new domain pack.
 
 For authoring a new domain pack from scratch (8-step authoring process), see

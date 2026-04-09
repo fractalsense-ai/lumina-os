@@ -47,7 +47,8 @@ domain-packs/
 │   │   ├── runtime_adapters.py      ← interpret_turn_input: Phase A + B + domain-lib calls
 │   │   ├── problem_generator.py     ← generates next task spec (sets min_steps etc.)
 │   │   ├── fluency_monitor.py       ← domain-lib: fluency state estimator
-│   │   └── zpd_monitor_v0_2.py      ← domain-lib: ZPD state estimator
+│   │   ├── zpd_monitor_v0_2.py      ← domain-lib: ZPD state estimator
+│   │   └── api_handlers.py         ← domain-owned API route handlers (see §adapters.api_routes)
 │   ├── prompts/                ← persona directives ONLY
 │   │   └── domain-persona-v1.md     ← domain voice and identity
 │   ├── world-sim/              ← optional: persona layer (theme, consent, mastery surface)
@@ -169,6 +170,29 @@ Create `controllers/runtime_adapters.py` with an `interpret_turn_input` function
 - **Phase B** — at the end of the function, engine contract fields (`problem_solved`, `problem_status`) are computed from domain-owned evidence
 
 See [`docs/7-concepts/domain-adapter-pattern.md`](../docs/7-concepts/domain-adapter-pattern.md) for the step-by-step template, engine contract field catalogue, and worked examples for both single-step and multi-step task domains.
+
+### 9. (Optional) Declare domain API routes
+
+If your domain needs HTTP endpoints beyond the core routes (telemetry submission, dashboard
+data, domain-specific queries), declare them in `cfg/runtime-config.yaml` under
+`adapters.api_routes` and implement handlers in `controllers/api_handlers.py`:
+
+```yaml
+adapters:
+  api_routes:
+    my_custom_endpoint:
+      path: /api/dashboard/{domain}/my-metric
+      method: GET
+      module_path: domain-packs/{domain}/controllers/api_handlers.py
+      callable: dashboard_my_metric
+      roles: [root, domain_authority]
+```
+
+Handlers receive injected dependencies (`persistence`, `user_data`, `body`) and return
+plain dicts. Return `{"__status": 403, "detail": "..."}` for error responses. The core
+server wraps every handler with JWT + RBAC middleware automatically.
+
+See [`docs/7-concepts/api-server-architecture.md`](../docs/7-concepts/api-server-architecture.md) §G for the full handler contract.
 
 ---
 

@@ -1,13 +1,13 @@
 ---
-version: 1.3.0
-last_updated: 2026-03-31
+version: 1.4.0
+last_updated: 2026-06-15
 ---
 
 # installation-and-packaging(1)
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Status:** Active
-**Last updated:** 2026-03-31
+**Last updated:** 2026-06-15
 
 ---
 
@@ -110,7 +110,7 @@ uv pip install -e ".[nlp,providers,sqlite,math,retrieval,passwords]"
 | `providers` | `openai`, `anthropic` | Live LLM mode |
 | `sqlite` | `sqlalchemy[asyncio]`, `aiosqlite` | SQLite persistence backend |
 | `math` | `sympy>=1.12` | Education domain algebra tool adapters (symbolic verification, equation parsing) |
-| `retrieval` | `sentence-transformers>=3.0.0`, `numpy>=1.26.0` | MiniLM semantic embeddings for RAG grounding and domain-pack doc retrieval |
+| `retrieval` | `sentence-transformers>=3.0.0`, `numpy>=1.26.0` | MiniLM semantic embeddings for RAG grounding and domain-pack doc retrieval (HuggingFace provider). Not needed when using the default Ollama embedding provider — see Embedding setup below |
 | `passwords` | `bcrypt>=4.0.0`, `argon2-cffi>=23.1.0` | Production-grade password hashing (Argon2id/bcrypt); falls back to SHA-256 without these |
 | `dev` | `pytest`, `pytest-cov`, `jsonschema`, plus `sqlite` and `passwords` extras | Running the test suite |
 
@@ -338,6 +338,52 @@ To verify weight-routed dispatch more directly: send any message that triggers a
 ### Fallback behaviour
 
 If Ollama is not running or `gemma3:4b` is not pulled, **the server continues to operate normally**. Glossary responses fall back to the `"{term}: {definition}"` deterministic template, physics context compression is skipped, and admin command translation returns HTTP 503. No error is surfaced to the end user. The `[lumina.core.slm]` logger emits a `WARNING` level entry for each skipped SLM call.
+
+## Embedding setup (MiniLM)
+
+The retrieval subsystem uses **MiniLM** (384-dimensional sentence embeddings) for semantic
+search across domain documentation and NLP vector routing. Two embedding providers are
+supported:
+
+### Ollama provider (default — recommended)
+
+If you already run Ollama for the SLM or primary LLM, the embedding layer works
+automatically — just pull the model:
+
+```bash
+ollama pull all-minilm
+```
+
+No additional Python packages are required. The embedder calls the same Ollama HTTP
+endpoint used by the SLM (`LUMINA_EMBEDDING_ENDPOINT`, default `http://localhost:11434`).
+
+### HuggingFace provider (offline / air-gapped)
+
+Install the `retrieval` extra to enable the HuggingFace `sentence-transformers` backend:
+
+```bash
+pip install -e ".[retrieval]"
+```
+
+Set the provider:
+
+```bash
+export LUMINA_EMBEDDING_PROVIDER=huggingface
+```
+
+The model (`all-MiniLM-L6-v2`) downloads on first use and runs in-process — no external
+service needed.
+
+### Embedding environment variable reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LUMINA_EMBEDDING_PROVIDER` | `ollama` | `ollama` or `huggingface` |
+| `LUMINA_EMBEDDING_MODEL` | provider-dependent | Override default model name |
+| `LUMINA_EMBEDDING_ENDPOINT` | `http://localhost:11434` | Ollama base URL (ignored for HuggingFace) |
+
+For the per-domain vector store architecture and NLP vector routing pipeline, see
+[`edge-vectorization(7)`](../7-concepts/edge-vectorization.md).
 
 ## CLI entrypoints
 
