@@ -133,7 +133,8 @@ async def switch_active_module(
     _profile = await load_profile(ctx, user_id)
 
     # Collect modules the student has state in
-    existing_modules = set((_profile.get("modules") or {}).keys())
+    _mods = _profile.get("modules")
+    existing_modules = set((_mods if isinstance(_mods, dict) else {}).keys())
 
     # Also check governed_modules from user record
     user_rec = await ctx.run_in_threadpool(ctx.persistence.get_user, user_id)

@@ -31,7 +31,8 @@ def freeform_build_initial_state(
     ``module_state_schema.custom_fields`` in general-education physics.
     """
     # Module-keyed state takes priority over flat learning_state
-    _module_state = (profile.get("modules") or {}).get(
+    _modules = profile.get("modules")
+    _module_state = (_modules if isinstance(_modules, dict) else {}).get(
         profile.get("domain_id", ""), {}
     )
     return {

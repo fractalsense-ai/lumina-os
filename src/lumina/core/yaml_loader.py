@@ -62,6 +62,18 @@ def _parse_yaml_scalar(s: str) -> Any:
         if not inner:
             return []
         return [_parse_yaml_scalar(p.strip()) for p in inner.split(",") if p.strip()]
+    # Inline mapping  {key: val, ...}
+    if s.startswith("{") and s.endswith("}"):
+        inner = s[1:-1].strip()
+        if not inner:
+            return {}
+        result_map: dict[str, Any] = {}
+        for pair in inner.split(","):
+            pair = pair.strip()
+            if ":" in pair:
+                k, v = pair.split(":", 1)
+                result_map[k.strip()] = _parse_yaml_scalar(v.strip())
+        return result_map
     try:
         return int(s)
     except ValueError:

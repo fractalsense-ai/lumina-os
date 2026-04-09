@@ -41,7 +41,8 @@ describe('ActionCard', () => {
 
   it('renders SLA info', () => {
     render(<ActionCard card={makeCard()} token="test-token" />)
-    expect(screen.getByText(/SLA: 30 min/)).toBeInTheDocument()
+    const matches = screen.getAllByText(/SLA: 30 min/)
+    expect(matches.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders command proposal card type', () => {

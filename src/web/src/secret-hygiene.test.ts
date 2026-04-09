@@ -6,10 +6,12 @@ import { describe, expect, it } from 'vitest'
 function collectSourceFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const files: string[] = []
+  const SKIP_DIRS = new Set(['node_modules', 'dist', '.vite'])
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue
       files.push(...collectSourceFiles(fullPath))
       continue
     }
