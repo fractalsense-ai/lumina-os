@@ -11,6 +11,8 @@ import { getCommandsForRole, type SlashCommandDef } from '@/services/slashComman
 interface SlashCommandPaletteProps {
   inputValue: string
   effectiveRole: string
+  platformRole?: string
+  domainKey?: string
   onSelect: (command: string) => void
   visible: boolean
 }
@@ -18,6 +20,8 @@ interface SlashCommandPaletteProps {
 export function SlashCommandPalette({
   inputValue,
   effectiveRole,
+  platformRole,
+  domainKey,
   onSelect,
   visible,
 }: SlashCommandPaletteProps) {
@@ -29,7 +33,7 @@ export function SlashCommandPalette({
     ? inputValue.slice(1).split(/\s/)[0]?.toLowerCase() ?? ''
     : ''
 
-  const allCommands = getCommandsForRole(effectiveRole)
+  const allCommands = getCommandsForRole(effectiveRole, platformRole, domainKey)
   const filtered = prefix
     ? allCommands.filter(
         (cmd) =>

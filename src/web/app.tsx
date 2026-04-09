@@ -802,7 +802,7 @@ function ChatInterface({
         // /help is client-side only
         if (slashCmd.operation === null) {
           const effectiveRole = roleLayout?.effective_role ?? 'student'
-          const helpText = generateHelpText(effectiveRole)
+          const helpText = generateHelpText(effectiveRole, auth.role, domainKey)
           const helpMessage: Message = {
             role: 'assistant',
             content: helpText,
@@ -1022,6 +1022,8 @@ function ChatInterface({
               <SlashCommandPalette
                 inputValue={inputValue}
                 effectiveRole={roleLayout?.effective_role ?? 'student'}
+                platformRole={auth.role}
+                domainKey={domainKey}
                 onSelect={(text) => setInputValue(text)}
                 visible={showSlashPalette}
               />

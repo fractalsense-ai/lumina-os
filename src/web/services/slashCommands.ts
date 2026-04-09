@@ -18,6 +18,8 @@ export interface SlashCommandDef {
   defaultParams?: Record<string, string>
   /** Domain roles that may see/execute this command. Empty = all roles. */
   allowedRoles: string[]
+  /** Restrict this command to a specific domain key (e.g. 'education'). */
+  domainScope?: string
   /** Aliases that also trigger this command. */
   aliases?: string[]
   /** If true, the last arg captures all remaining tokens joined with spaces. */
@@ -44,6 +46,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: [],
     defaultParams: { domain_role: 'teacher', domain_id: 'education' },
     allowedRoles: ['student', 'guardian', 'teaching_assistant', 'teacher', 'domain_authority'],
+    domainScope: 'education',
     aliases: ['list_teachers'],
   },
   {
@@ -52,6 +55,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Request assignment to a teacher',
     args: ['teacher_id'],
     allowedRoles: ['student'],
+    domainScope: 'education',
   },
   {
     name: 'switch',
@@ -59,6 +63,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Switch your active education module',
     args: ['module_id'],
     allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
+    domainScope: 'education',
   },
   {
     name: 'profile',
@@ -70,10 +75,12 @@ const COMMANDS: SlashCommandDef[] = [
   {
     name: 'modules',
     operation: 'list_modules',
-    description: 'List available education modules',
+    description: 'List available modules',
     args: [],
     defaultParams: { domain_id: 'education' },
     allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
+    domainScope: 'education',
+    aliases: ['list_modules'],
   },
   {
     name: 'preferences',
@@ -106,6 +113,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: [],
     defaultParams: { domain_role: 'student', domain_id: 'education' },
     allowedRoles: ['teaching_assistant', 'teacher', 'domain_authority'],
+    domainScope: 'education',
   },
   {
     name: 'assign',
@@ -113,6 +121,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Assign a student to your roster',
     args: ['student_id'],
     allowedRoles: ['teacher', 'domain_authority'],
+    domainScope: 'education',
   },
 
   // ── Governance (DA / root) ─────────────────────────────
@@ -122,6 +131,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'List all users',
     args: [],
     allowedRoles: ['domain_authority'],
+    aliases: ['list_users'],
   },
   {
     name: 'invite',
@@ -129,6 +139,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Invite a new user (username role)',
     args: ['username', 'role'],
     allowedRoles: ['domain_authority'],
+    aliases: ['invite_user'],
   },
   {
     name: 'domains',
@@ -136,6 +147,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'List all domains',
     args: [],
     allowedRoles: ['domain_authority'],
+    aliases: ['list_domains'],
   },
   {
     name: 'escalations',
@@ -143,6 +155,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'List pending escalations',
     args: [],
     allowedRoles: ['teacher', 'domain_authority'],
+    aliases: ['list_escalations'],
   },
 
   // ── Read-only / HITL-exempt operations ─────────────────
@@ -240,6 +253,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id', 'key', 'value'],
     allowedRoles: ['domain_authority'],
     joinTrailingArgs: true,
+    aliases: ['update_domain_physics'],
   },
   {
     name: 'commit_physics',
@@ -319,12 +333,32 @@ for (const cmd of COMMANDS) {
 }
 
 /**
+ * Map non-education domain roles to their equivalent slash-command role.
+ * This lets system-domain roles (system_admin, system_operator) see the
+ * correct governance or operational commands.
+ */
+const ROLE_EQUIVALENCE: Record<string, string> = {
+  system_admin: 'domain_authority',
+  system_operator: 'teacher',
+}
+
+/**
  * Get commands visible to a given effective domain role.
  * Empty allowedRoles means visible to everyone.
+ *
+ * @param effectiveRole  The domain-specific role (e.g. 'student', 'system_admin')
+ * @param platformRole   Optional platform-level role from auth (e.g. 'root')
+ * @param domainKey      Optional current domain key (e.g. 'education', 'system')
  */
-export function getCommandsForRole(effectiveRole: string): SlashCommandDef[] {
+export function getCommandsForRole(effectiveRole: string, platformRole?: string, domainKey?: string): SlashCommandDef[] {
+  // Platform root sees every command
+  if (platformRole === 'root') return COMMANDS
+
+  const normalizedRole = ROLE_EQUIVALENCE[effectiveRole] ?? effectiveRole
   return COMMANDS.filter(
-    (cmd) => cmd.allowedRoles.length === 0 || cmd.allowedRoles.includes(effectiveRole),
+    (cmd) =>
+      (cmd.allowedRoles.length === 0 || cmd.allowedRoles.includes(normalizedRole)) &&
+      (!cmd.domainScope || cmd.domainScope === domainKey),
   )
 }
 
@@ -383,8 +417,8 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
 /**
  * Generate the /help response text for a given role.
  */
-export function generateHelpText(effectiveRole: string): string {
-  const available = getCommandsForRole(effectiveRole)
+export function generateHelpText(effectiveRole: string, platformRole?: string, domainKey?: string): string {
+  const available = getCommandsForRole(effectiveRole, platformRole, domainKey)
   const lines = ['**Available Commands**', '']
   for (const cmd of available) {
     const argHint = cmd.args.length > 0 ? ' ' + cmd.args.map((a) => `<${a}>`).join(' ') : ''

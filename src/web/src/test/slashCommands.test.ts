@@ -242,6 +242,13 @@ describe('parseSlashCommand — alias coverage', () => {
     ['/resolve_escalation esc-1 approved ok', 'resolve_escalation'],
     ['/reject_ingestion ing-1 bad', 'reject_ingestion'],
     ['/trigger_daemon_task education sweep', 'trigger_daemon_task'],
+    // New operation-name aliases
+    ['/list_domains', 'list_domains'],
+    ['/list_escalations', 'list_escalations'],
+    ['/list_users', 'list_users'],
+    ['/invite_user alice teacher', 'invite_user'],
+    ['/list_modules', 'list_modules'],
+    ['/update_domain_physics education label Test', 'update_domain_physics'],
   ]
 
   for (const [input, expectedOp] of aliasTests) {
@@ -289,21 +296,142 @@ describe('getCommandsForRole', () => {
     expect(names).toContain('explain')
     expect(names).toContain('module_status')
   })
+
+  it('platformRole root sees ALL commands regardless of effectiveRole', () => {
+    const cmds = getCommandsForRole('system_admin', 'root')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('update_role')
+    expect(names).toContain('deactivate')
+    expect(names).toContain('assign_role')
+    expect(names).toContain('domains')
+    expect(names).toContain('teachers')
+    expect(names).toContain('help')
+  })
+
+  it('system_admin maps to domain_authority via ROLE_EQUIVALENCE', () => {
+    const cmds = getCommandsForRole('system_admin')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('domains')
+    expect(names).toContain('assign_role')
+    expect(names).toContain('ingestions')
+    // system_admin should NOT see root-only commands without platformRole
+    expect(names).not.toContain('update_role')
+    // Without a domainKey, education-scoped commands are excluded
+    expect(names).not.toContain('teachers')
+    expect(names).not.toContain('students')
+    expect(names).not.toContain('join')
+    expect(names).not.toContain('modules')
+  })
+
+  it('system_operator maps to teacher via ROLE_EQUIVALENCE', () => {
+    const cmds = getCommandsForRole('system_operator')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('escalations')
+    expect(names).not.toContain('domains')
+    // Without a domainKey, education-scoped commands are excluded
+    expect(names).not.toContain('teachers')
+    expect(names).not.toContain('switch')
+  })
+})
+
+// ── getCommandsForRole — domain scoping ─────────────────
+
+describe('getCommandsForRole — domain scoping', () => {
+  it('domain_authority on education sees education-scoped commands', () => {
+    const cmds = getCommandsForRole('domain_authority', undefined, 'education')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('teachers')
+    expect(names).toContain('students')
+    expect(names).toContain('modules')
+    expect(names).toContain('assign')
+    expect(names).toContain('switch')
+    // /join is student-only, so domain_authority still doesn't see it
+    expect(names).not.toContain('join')
+  })
+
+  it('system_admin on system domain does NOT see education-scoped commands', () => {
+    const cmds = getCommandsForRole('system_admin', undefined, 'system')
+    const names = cmds.map((c) => c.name)
+    expect(names).not.toContain('teachers')
+    expect(names).not.toContain('students')
+    expect(names).not.toContain('modules')
+    expect(names).not.toContain('assign')
+    expect(names).not.toContain('join')
+    expect(names).not.toContain('switch')
+    // But still sees non-scoped DA commands
+    expect(names).toContain('domains')
+    expect(names).toContain('assign_role')
+    expect(names).toContain('ingestions')
+  })
+
+  it('system_operator on system domain does NOT see education-scoped commands', () => {
+    const cmds = getCommandsForRole('system_operator', undefined, 'system')
+    const names = cmds.map((c) => c.name)
+    expect(names).not.toContain('teachers')
+    expect(names).not.toContain('switch')
+    expect(names).toContain('escalations')
+  })
+
+  it('student on education sees education-scoped student commands', () => {
+    const cmds = getCommandsForRole('student', undefined, 'education')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('teachers')
+    expect(names).toContain('join')
+    expect(names).toContain('modules')
+    expect(names).toContain('switch')
+  })
+
+  it('platformRole root always sees ALL commands regardless of domainKey', () => {
+    const cmds = getCommandsForRole('system_admin', 'root', 'system')
+    const names = cmds.map((c) => c.name)
+    expect(names).toContain('teachers')
+    expect(names).toContain('students')
+    expect(names).toContain('modules')
+    expect(names).toContain('update_role')
+    expect(names).toContain('domains')
+  })
+
+  it('commands without domainScope are visible on any domain', () => {
+    const eduCmds = getCommandsForRole('domain_authority', undefined, 'education')
+    const sysCmds = getCommandsForRole('system_admin', undefined, 'system')
+    const eduNames = eduCmds.map((c) => c.name)
+    const sysNames = sysCmds.map((c) => c.name)
+    // Non-scoped commands appear in both
+    expect(eduNames).toContain('domains')
+    expect(sysNames).toContain('domains')
+    expect(eduNames).toContain('help')
+    expect(sysNames).toContain('help')
+  })
 })
 
 // ── generateHelpText ────────────────────────────────────
 
 describe('generateHelpText', () => {
   it('includes arg hints for parameterised commands', () => {
-    const text = generateHelpText('domain_authority')
+    const text = generateHelpText('domain_authority', undefined, 'education')
     expect(text).toContain('`/resolve <escalation_id> <resolution> <rationale>`')
     expect(text).toContain('`/reject <ingestion_id> <reason>`')
     expect(text).toContain('`/assign_role <user_id> <module_id> <domain_role>`')
   })
 
   it('shows aliases', () => {
-    const text = generateHelpText('domain_authority')
+    const text = generateHelpText('domain_authority', undefined, 'education')
     expect(text).toContain('also: /resolve_escalation')
     expect(text).toContain('also: /reject_ingestion')
+  })
+
+  it('shows all commands for platformRole root', () => {
+    const text = generateHelpText('system_admin', 'root')
+    expect(text).toContain('/update_role')
+    expect(text).toContain('/domains')
+    expect(text).toContain('/assign_role')
+  })
+
+  it('excludes education-scoped commands on system domain for non-root', () => {
+    const text = generateHelpText('system_admin', undefined, 'system')
+    expect(text).not.toContain('/teachers')
+    expect(text).not.toContain('/students')
+    expect(text).not.toContain('/modules')
+    expect(text).toContain('/domains')
   })
 })
