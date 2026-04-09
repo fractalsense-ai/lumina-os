@@ -356,7 +356,7 @@ class TestNlpGlossaryRouting:
 class TestKnowledgeGraphRebuildTask:
     @pytest.mark.unit
     def test_single_domain_rebuild(self, tmp_path: Path):
-        from lumina.nightcycle.tasks import knowledge_graph_rebuild
+        from lumina.daemon.tasks import knowledge_graph_rebuild
 
         physics = {
             "glossary": [{"term": "photosynthesis", "aliases": [], "related_terms": []}],
@@ -373,7 +373,7 @@ class TestKnowledgeGraphRebuildTask:
 
     @pytest.mark.unit
     def test_multi_domain_rebuild(self, tmp_path: Path):
-        from lumina.nightcycle.tasks import knowledge_graph_rebuild
+        from lumina.daemon.tasks import knowledge_graph_rebuild
 
         all_contexts = {
             "education": _make_domain_context(glossary=[

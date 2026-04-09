@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import pytest
-from lumina.nightcycle.report import NightCycleReport, Proposal, TaskResult
-from lumina.nightcycle.scheduler import NightCycleScheduler
-from lumina.nightcycle.tasks import (
+from lumina.daemon.report import NightCycleReport, Proposal, TaskResult
+from lumina.daemon.scheduler import NightCycleScheduler
+from lumina.daemon.tasks import (
     get_task,
     glossary_expansion,
     glossary_pruning,
@@ -192,12 +192,15 @@ class TestDomainPhysicsConstraintRefresh:
 
 
 class TestNightCycleScheduler:
+    _LIGHTWEIGHT_TASKS = ["glossary_pruning", "glossary_expansion"]
+
     def _make_scheduler(self, **kwargs):
         domains = [
             {"domain_id": "edu", "physics": {"modules": [], "glossary": []}},
         ]
         return NightCycleScheduler(
-            config={"enabled": True, "schedule": "0 2 * * *", "max_duration_minutes": 5},
+            config={"enabled": True, "schedule": "0 2 * * *", "max_duration_minutes": 5,
+                    "tasks": self._LIGHTWEIGHT_TASKS},
             domain_loader=lambda: domains,
             **kwargs,
         )
@@ -211,7 +214,7 @@ class TestNightCycleScheduler:
 
     def test_manual_trigger(self):
         sched = self._make_scheduler()
-        report = sched.trigger_manual(actor_id="user1")
+        report = sched.trigger_manual(actor_id="user1", domain_ids=["edu"])
         assert report.status in ("completed", "failed")
         assert report.triggered_by == "user1"
         # Should have results for each domain × task
@@ -219,7 +222,7 @@ class TestNightCycleScheduler:
 
     def test_status_after_run(self):
         sched = self._make_scheduler()
-        sched.trigger_manual(actor_id="user1")
+        sched.trigger_manual(actor_id="user1", domain_ids=["edu"])
         status = sched.get_status()
         assert status["run_count"] == 1
         assert status["last_run"] is not None
@@ -227,7 +230,7 @@ class TestNightCycleScheduler:
 
     def test_get_report(self):
         sched = self._make_scheduler()
-        report = sched.trigger_manual(actor_id="user1")
+        report = sched.trigger_manual(actor_id="user1", domain_ids=["edu"])
         fetched = sched.get_report(report.run_id)
         assert fetched is not None
         assert fetched["run_id"] == report.run_id
@@ -245,7 +248,7 @@ class TestNightCycleScheduler:
             config={"enabled": True, "tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
-        sched.trigger_manual(actor_id="user1")
+        sched.trigger_manual(actor_id="user1", domain_ids=["edu"])
         proposals = sched.get_pending_proposals()
         assert len(proposals) > 0
         assert all(p["status"] == "pending" for p in proposals)
@@ -259,7 +262,7 @@ class TestNightCycleScheduler:
             config={"enabled": True, "tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
-        sched.trigger_manual(actor_id="user1")
+        sched.trigger_manual(actor_id="user1", domain_ids=["edu", "agri"])
         edu_props = sched.get_pending_proposals(domain_id="edu")
         agri_props = sched.get_pending_proposals(domain_id="agri")
         assert all(p["domain_id"] == "edu" for p in edu_props)
@@ -271,7 +274,7 @@ class TestNightCycleScheduler:
             config={"tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
-        sched.trigger_manual(actor_id="user1")
+        sched.trigger_manual(actor_id="user1", domain_ids=["d"])
         proposals = sched.get_pending_proposals()
         assert len(proposals) > 0
         pid = proposals[0]["proposal_id"]
@@ -361,7 +364,7 @@ class TestNightCycleScheduler:
             domain_loader=lambda: domains,
             call_slm_fn=mock_slm,
         )
-        report = sched.trigger_manual(actor_id="user1")
+        report = sched.trigger_manual(actor_id="user1", domain_ids=["agri"])
         assert report.status == "completed"
         # SLM was called once for the one standing order
         assert len(slm_calls) == 1

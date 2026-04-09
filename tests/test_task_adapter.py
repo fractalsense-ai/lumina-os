@@ -7,7 +7,7 @@ import pytest
 
 from lumina.daemon.preemption import PreemptionToken, TaskPreempted
 from lumina.daemon.task_adapter import run_task_preemptible
-from lumina.nightcycle.report import TaskResult
+from lumina.daemon.report import TaskResult
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

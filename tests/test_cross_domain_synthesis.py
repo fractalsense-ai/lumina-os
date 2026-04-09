@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from lumina.nightcycle.cross_domain import (
+from lumina.daemon.cross_domain import (
     compare_glossaries,
     compare_invariant_structures,
     filter_mutual_pairs,
@@ -15,8 +15,8 @@ from lumina.nightcycle.cross_domain import (
     get_opt_in_config,
     is_mutual_peer,
 )
-from lumina.nightcycle.report import Proposal
-from lumina.nightcycle.tasks import (
+from lumina.daemon.report import Proposal
+from lumina.daemon.tasks import (
     cross_domain_synthesis_task,
     get_cross_domain_task,
     list_cross_domain_tasks,

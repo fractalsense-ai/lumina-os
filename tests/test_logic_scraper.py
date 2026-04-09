@@ -368,7 +368,7 @@ class TestLogicScrapeResultSerialisation:
         assert isinstance(d["proposals"], list)
 
     def test_to_dict_with_proposals(self):
-        from lumina.nightcycle.report import Proposal
+        from lumina.daemon.report import Proposal
         result = LogicScrapeResult(
             prompt="test",
             proposals=[Proposal(task="logic_scraping", summary="item 1")],

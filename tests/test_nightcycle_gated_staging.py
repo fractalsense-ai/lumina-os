@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 
 import pytest
-from lumina.nightcycle.report import Proposal, TaskResult
-from lumina.nightcycle.tasks import gated_staging, get_task, list_tasks
+from lumina.daemon.report import Proposal, TaskResult
+from lumina.daemon.tasks import gated_staging, get_task, list_tasks
 
 
 # ── Fixtures ──────────────────────────────────────────────────

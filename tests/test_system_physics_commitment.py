@@ -120,9 +120,9 @@ def test_filesystem_system_ctl_chain_valid(tmp_path):
 
     # Read the ledger back and verify via validate_log_chain (scope="all")
     result = adapter.validate_log_chain()
-    # The "system" sentinel will be included in the all-scope results
+    # The system ledger label is a relative path like "system/system.jsonl"
     system_result = next(
-        (r for r in result.get("results", []) if r.get("session_id") == "system"),
+        (r for r in result.get("results", []) if "system" in r.get("session_id", "")),
         None,
     )
     assert system_result is not None, "System Log missing from validate_log_chain results"

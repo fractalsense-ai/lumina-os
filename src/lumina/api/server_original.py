@@ -2608,7 +2608,7 @@ _NIGHT_SCHEDULER: Any = None
 def _get_night_scheduler() -> Any:
     global _NIGHT_SCHEDULER
     if _NIGHT_SCHEDULER is None:
-        from lumina.nightcycle.scheduler import NightCycleScheduler
+        from lumina.daemon.scheduler import NightCycleScheduler
 
         nc_cfg: dict[str, Any] = {}
         try:

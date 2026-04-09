@@ -370,19 +370,19 @@ class TestHousekeeper:
 
 class TestHousekeeperNightCycleTask:
     def test_registered(self):
-        from lumina.nightcycle.tasks import get_cross_domain_task
+        from lumina.daemon.tasks import get_cross_domain_task
         task = get_cross_domain_task("housekeeper_full_reindex")
         assert task is not None
 
     def test_listed(self):
-        from lumina.nightcycle.tasks import list_cross_domain_tasks
+        from lumina.daemon.tasks import list_cross_domain_tasks
         names = list_cross_domain_tasks()
         assert "housekeeper_full_reindex" in names
 
     @patch("lumina.retrieval.housekeeper.rebuild_all_domain_indexes")
     @patch("lumina.retrieval.housekeeper.make_registry")
     def test_runs_full_reindex(self, mock_make_reg, mock_rebuild):
-        from lumina.nightcycle.tasks import get_cross_domain_task
+        from lumina.daemon.tasks import get_cross_domain_task
 
         mock_registry = MagicMock()
         mock_make_reg.return_value = mock_registry
@@ -401,7 +401,7 @@ class TestHousekeeperNightCycleTask:
 
     @patch("lumina.retrieval.housekeeper.make_registry")
     def test_handles_failure_gracefully(self, mock_make_reg):
-        from lumina.nightcycle.tasks import get_cross_domain_task
+        from lumina.daemon.tasks import get_cross_domain_task
 
         mock_make_reg.side_effect = RuntimeError("model not found")
 
