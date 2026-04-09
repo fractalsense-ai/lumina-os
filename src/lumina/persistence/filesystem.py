@@ -143,11 +143,37 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
 
     def list_log_session_ids(self) -> list[str]:
         ids: list[str] = []
+        # Legacy flat files
         for p in sorted(self.log_dir.glob("session-*.jsonl")):
             name = p.name
             if name.startswith("session-") and name.endswith(".jsonl"):
                 ids.append(name[len("session-") : -len(".jsonl")])
+        # System tier
+        sys_dir = self.log_dir / "system"
+        if sys_dir.is_dir():
+            for p in sorted(sys_dir.glob("session-*.jsonl")):
+                name = p.name
+                if name.startswith("session-") and name.endswith(".jsonl"):
+                    sid = name[len("session-") : -len(".jsonl")]
+                    if sid not in ids:
+                        ids.append(sid)
         return ids
+
+    def _iter_all_ledger_paths(self) -> list[Path]:
+        """Collect all .jsonl ledger files across legacy, system, and domain tiers."""
+        paths: list[Path] = []
+        # Legacy flat files
+        paths.extend(sorted(self.log_dir.glob("session-*.jsonl")))
+        # System tier
+        sys_dir = self.log_dir / "system"
+        if sys_dir.is_dir():
+            paths.extend(sorted(sys_dir.glob("*.jsonl")))
+        # Domain tier + module tier
+        domains_dir = self.log_dir / "domains"
+        if domains_dir.is_dir():
+            paths.extend(sorted(domains_dir.glob("*/domain.jsonl")))
+            paths.extend(sorted(domains_dir.glob("*/modules/*.jsonl")))
+        return paths
 
     def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
         if session_id is not None:
@@ -161,18 +187,23 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
 
         results: list[dict[str, Any]] = []
         all_intact = True
-        for sid in self.list_log_session_ids():
-            records = self._load_ledger_records(Path(self.get_log_ledger_path(sid)))
+
+        # Verify every ledger file across all tiers
+        seen_paths: set[str] = set()
+        for ledger_path in self._iter_all_ledger_paths():
+            path_str = str(ledger_path)
+            if path_str in seen_paths:
+                continue
+            seen_paths.add(path_str)
+            records = self._load_ledger_records(ledger_path)
             result = self._verify_records(records)
             all_intact = all_intact and bool(result.get("intact"))
-            results.append({"session_id": sid, **result})
-
-        # Also verify the system-physics System Log chain
-        sys_path = Path(self.get_system_log_ledger_path())
-        sys_records = self._load_ledger_records(sys_path)
-        sys_result = self._verify_records(sys_records)
-        all_intact = all_intact and bool(sys_result.get("intact"))
-        results.append({"session_id": "system", **sys_result})
+            # Derive a label from the path relative to log_dir
+            try:
+                label = str(ledger_path.relative_to(self.log_dir))
+            except ValueError:
+                label = ledger_path.name
+            results.append({"session_id": label, **result})
 
         return {
             "scope": "all",
@@ -187,8 +218,8 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         subject_version: str | None,
         subject_hash: str,
     ) -> bool:
-        for sid in self.list_log_session_ids():
-            records = self._load_ledger_records(Path(self.get_log_ledger_path(sid)))
+        for ledger_path in self._iter_all_ledger_paths():
+            records = self._load_ledger_records(ledger_path)
             for record in records:
                 if record.get("record_type") != "CommitmentRecord":
                     continue
@@ -449,23 +480,28 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         offset: int = 0,
     ) -> list[dict[str, Any]]:
         all_records: list[dict[str, Any]] = []
+
         if session_id:
+            # Targeted: load specific session ledgers across legacy + system tier
             sids = [session_id]
+            for sid in sids:
+                if domain_id:
+                    path = Path(self.get_log_ledger_path(sid, domain_id=domain_id))
+                else:
+                    path = Path(self.get_log_ledger_path(sid))
+                records = self._load_ledger_records(path)
+                if not domain_id:
+                    for p in sorted(self.log_dir.glob(f"session-{sid}-*.jsonl")):
+                        if p.name != path.name:
+                            records.extend(self._load_ledger_records(p))
+                all_records.extend(records)
+                # Also check system tier for this session
+                sys_path = Path(self.get_system_ledger_path(sid))
+                all_records.extend(self._load_ledger_records(sys_path))
         else:
-            sids = self.list_log_session_ids()
-        for sid in sids:
-            # Try domain-specific ledgers if domain_id filter is set
-            if domain_id:
-                path = Path(self.get_log_ledger_path(sid, domain_id=domain_id))
-            else:
-                path = Path(self.get_log_ledger_path(sid))
-            records = self._load_ledger_records(path)
-            # Also load domain-specific ledgers when no domain_id filter
-            if not domain_id:
-                for p in sorted(self.log_dir.glob(f"session-{sid}-*.jsonl")):
-                    if p.name != path.name:
-                        records.extend(self._load_ledger_records(p))
-            all_records.extend(records)
+            # Full scan across all tier ledger files
+            for ledger_path in self._iter_all_ledger_paths():
+                all_records.extend(self._load_ledger_records(ledger_path))
 
         # Apply filters
         filtered = all_records
@@ -483,18 +519,10 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         summaries: list[dict[str, Any]] = []
         seen_sessions: dict[str, dict[str, Any]] = {}
 
-        for p in sorted(self.log_dir.glob("session-*.jsonl")):
-            name = p.name
-            if not name.startswith("session-") or not name.endswith(".jsonl"):
-                continue
-            # Extract session_id from filename
-            stem = name[len("session-"):-len(".jsonl")]
-            # Handle domain-scoped ledger names: session-{sid}-{domain}.jsonl
-            parts = stem.rsplit("-", 1)
-            # If it's a UUID-style sid, we need smarter parsing
+        for p in self._iter_all_ledger_paths():
             records = self._load_ledger_records(p)
             for rec in records:
-                sid = rec.get("session_id", stem)
+                sid = rec.get("session_id", p.stem)
                 if sid not in seen_sessions:
                     seen_sessions[sid] = {
                         "session_id": sid,

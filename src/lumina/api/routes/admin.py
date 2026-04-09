@@ -1289,7 +1289,14 @@ async def _execute_admin_operation(
     domain_handlers = _load_domain_operation_handlers()
     handler_entry = domain_handlers.get(operation)
     if handler_entry is not None:
+        handler_domain_id = handler_entry.get("domain_id", "")
         ctx = _build_admin_context()
+        if handler_domain_id:
+            from lumina.persistence.scoped import ScopedPersistenceAdapter
+            ctx.persistence = ScopedPersistenceAdapter(
+                _cfg.PERSISTENCE, domain_id=handler_domain_id,
+            )
+            ctx.domain_id = handler_domain_id
         # Inject parsed.target into params so handlers can use it as fallback
         handler_params = dict(params)
         _target = parsed.get("target", "")
