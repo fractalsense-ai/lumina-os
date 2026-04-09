@@ -88,16 +88,19 @@ def _auth_header(token: str) -> dict:
 
 
 @pytest.mark.integration
-def test_regular_user_denied(client: TestClient, api_module) -> None:
-    """Non-admin roles (user, qa, auditor) should get 403."""
+def test_regular_user_reaches_pipeline(client: TestClient, api_module) -> None:
+    """All authenticated users pass the endpoint gate — security is enforced
+    by per-operation min_role checks, not the endpoint.  With no SLM the
+    natural-language path returns 503; direct dispatch checks min_role."""
     _register_root(client)  # first user becomes root
     token = _register_user(client, "viewer", "user")
+    # Natural-language instruction hits SLM-unavailable (503) since no SLM
     resp = client.post(
         "/api/admin/command",
         json={"instruction": "update something"},
         headers=_auth_header(token),
     )
-    assert resp.status_code == 403
+    assert resp.status_code in (503, 422)  # SLM unavailable or unparseable
 
 
 @pytest.mark.integration

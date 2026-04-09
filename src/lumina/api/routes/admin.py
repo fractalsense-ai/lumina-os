@@ -1380,25 +1380,39 @@ async def admin_command(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority", "it_support"):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    # Per-operation min_role checks (+ HITL staging) enforce fine-grained
+    # access control.  All authenticated users are allowed through the
+    # endpoint gate so domain-role-level operations (e.g. student slash
+    # commands) can reach their handlers.
 
-    if not _slm_mod.slm_available():
-        raise HTTPException(status_code=503, detail="SLM service unavailable")
+    # ── Direct dispatch: skip SLM when operation + params supplied ──
+    if req.operation:
+        operation = req.operation
+        if operation not in _get_known_operations():
+            raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+        parsed = {
+            "operation": operation,
+            "params": req.params or {},
+        }
+        instruction = req.instruction or f"/{operation}"
+    else:
+        if not _slm_mod.slm_available():
+            raise HTTPException(status_code=503, detail="SLM service unavailable")
 
-    parsed = _slm_mod.slm_parse_admin_command(req.instruction)
-    if parsed is None:
-        raise HTTPException(status_code=422, detail="Could not interpret command")
+        parsed = _slm_mod.slm_parse_admin_command(req.instruction)
+        if parsed is None:
+            raise HTTPException(status_code=422, detail="Could not interpret command")
 
-    operation = parsed.get("operation", "")
-    if operation not in _get_known_operations():
-        raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+        operation = parsed.get("operation", "")
+        if operation not in _get_known_operations():
+            raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
+        instruction = req.instruction
 
     # HITL-exempt operations execute immediately without staging.
     if operation in _get_hitl_exempt_ops():
-        parsed = _normalize_slm_command(parsed, req.instruction)
+        parsed = _normalize_slm_command(parsed, instruction)
         try:
-            exec_result = await _execute_admin_operation(user_data, parsed, req.instruction)
+            exec_result = await _execute_admin_operation(user_data, parsed, instruction)
         except HTTPException:
             raise
         except ValueError as exc:
@@ -1420,7 +1434,7 @@ async def admin_command(
         response: dict[str, Any] = {
             "staged_id": None,
             "staged_command": parsed,
-            "original_instruction": req.instruction,
+            "original_instruction": instruction,
             "result": exec_result,
             "hitl_exempt": True,
         }
@@ -1437,7 +1451,7 @@ async def admin_command(
     try:
         entry = _stage_command(
             parsed_command=parsed,
-            original_instruction=req.instruction,
+            original_instruction=instruction,
             actor_id=user_data["sub"],
             actor_role=user_data["role"],
         )
@@ -1447,7 +1461,7 @@ async def admin_command(
     return {
         "staged_id": entry["staged_id"],
         "staged_command": parsed,
-        "original_instruction": req.instruction,
+        "original_instruction": instruction,
         "expires_at": entry["expires_at"],
         "log_stage_record_id": entry["log_stage_record_id"],
         "structured_content": entry["structured_content"],

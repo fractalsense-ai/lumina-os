@@ -181,7 +181,9 @@ class EscalationResolveRequest(BaseModel):
 
 
 class AdminCommandRequest(BaseModel):
-    instruction: str
+    instruction: str = ""
+    operation: str | None = None
+    params: dict[str, Any] | None = None
 
 
 class CommandResolveRequest(BaseModel):

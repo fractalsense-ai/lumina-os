@@ -610,6 +610,11 @@ operation_handlers:
     callable: handle_operation
     hitl_exempt: true
     min_role: user
+  switch_active_module:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
 
 adapters:
   state_builder:

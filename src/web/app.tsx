@@ -13,6 +13,7 @@ import { useEventStream } from '@/hooks/useEventStream'
 import { SetupPasswordPage } from '@/components/SetupPasswordPage'
 import { RoleSidebar } from '@/components/sidebar/RoleSidebar'
 import { SessionPanel } from '@/components/sidebar/SessionPanel'
+import { SlashCommandPalette } from '@/components/SlashCommandPalette'
 import {
   createTranscriptStore,
   type TranscriptStore,
@@ -21,6 +22,7 @@ import {
   type StoredSession,
   type SessionSummary,
 } from '@/services/transcriptStore'
+import { parseSlashCommand, generateHelpText } from '@/services/slashCommands'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -145,6 +147,41 @@ async function orchestratorApiCall(
   }
 
   return (await res.json()) as ApiChatResponse
+}
+
+type AdminCommandResponse = {
+  staged_id: string | null
+  staged_command: Record<string, unknown>
+  original_instruction: string
+  result?: Record<string, unknown>
+  hitl_exempt?: boolean
+  structured_content?: ActionCardData | QueryResultData | ClarificationData
+  expires_at?: number
+}
+
+async function adminCommandCall(
+  operation: string,
+  params: Record<string, string>,
+  auth: AuthState | null,
+): Promise<AdminCommandResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (auth) {
+    headers['Authorization'] = `Bearer ${auth.token}`
+  }
+  const res = await fetch(`${getApiBase()}/api/admin/command`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ operation, params }),
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(errorText || `Command failed with status ${res.status}`)
+  }
+
+  return (await res.json()) as AdminCommandResponse
 }
 
 function applyThemeOverrides(theme: UiManifest['theme']) {
@@ -754,6 +791,48 @@ function ChatInterface({
     setIsLoading(true)
 
     try {
+      // ── Slash command detection ──────────────────────────
+      const slashCmd = parseSlashCommand(trimmedInput)
+      if (slashCmd) {
+        // /help is client-side only
+        if (slashCmd.operation === null) {
+          const effectiveRole = roleLayout?.effective_role ?? 'student'
+          const helpText = generateHelpText(effectiveRole)
+          const helpMessage: Message = {
+            role: 'assistant',
+            content: helpText,
+            id: `assistant-${Date.now()}`,
+            meta: { action: 'slash_command', promptType: 'help' },
+          }
+          setMessages((prev) => [...prev, helpMessage])
+          setIsLoading(false)
+          return
+        }
+
+        // Direct dispatch to /api/admin/command
+        const cmdResponse = await adminCommandCall(slashCmd.operation, slashCmd.params, auth)
+        const resultData = cmdResponse.result ?? {}
+        const content = cmdResponse.hitl_exempt
+          ? (resultData as Record<string, unknown>).message as string ?? `Command executed: ${slashCmd.operation}`
+          : `Command staged for approval (ID: ${cmdResponse.staged_id})`
+
+        const cmdMessage: Message = {
+          role: 'assistant',
+          content,
+          id: `assistant-${Date.now()}`,
+          meta: { action: 'slash_command', promptType: slashCmd.operation },
+          structured_content: cmdResponse.structured_content ?? (
+            cmdResponse.hitl_exempt && resultData
+              ? { type: 'query_result', operation: slashCmd.operation, data: resultData } as QueryResultData
+              : undefined
+          ),
+        }
+        setMessages((prev) => [...prev, cmdMessage])
+        setIsLoading(false)
+        return
+      }
+
+      // ── Normal chat flow ────────────────────────────────
       const apiResponse = await orchestratorApiCall(trimmedInput, sessionId, auth)
 
       const assistantMessage: Message = {
@@ -830,7 +909,22 @@ function ChatInterface({
     }
   }
 
+  const showSlashPalette = !sessionFrozen && inputValue.startsWith('/') && !inputValue.includes(' ')
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showSlashPalette && (e.key === 'Tab' || e.key === 'Escape')) {
+      // Let the palette handle Tab (autocomplete) and Escape (dismiss)
+      // Palette selection is handled via onSelect callback
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        // The palette's onSelect will fire via the component
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setInputValue('')
+      }
+      return
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -919,7 +1013,13 @@ function ChatInterface({
                 <span>Session locked — enter the 6-digit PIN from your teacher to continue.</span>
               </div>
             )}
-            <div className="max-w-3xl mx-auto flex gap-3 items-end">
+            <div className="max-w-3xl mx-auto flex gap-3 items-end relative">
+              <SlashCommandPalette
+                inputValue={inputValue}
+                effectiveRole={roleLayout?.effective_role ?? 'student'}
+                onSelect={(text) => setInputValue(text)}
+                visible={showSlashPalette}
+              />
               <Input
                 id="chat-input"
                 value={inputValue}
