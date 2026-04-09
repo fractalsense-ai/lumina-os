@@ -312,8 +312,15 @@ async def _start_idle_cleanup() -> None:
             except Exception:
                 log.warning("VectorStore bootstrap failed — RAG grounding may be degraded", exc_info=True)
 
-        _set_vr(_vsr, _DocEmbedder())
+        _emb = _DocEmbedder()
+        _set_vr(_vsr, _emb)
         log.info("VectorStoreRegistry active: %d domain store(s) loaded", len(_vsr._stores))
+        log.info(
+            "Embedding provider: %s  model: %s  endpoint: %s",
+            _emb._provider,
+            _emb._model_name,
+            _emb._endpoint if _emb._provider == "ollama" else "(local)",
+        )
     except Exception:
         log.warning("VectorStoreRegistry: not loaded — retrieval extra may not be installed", exc_info=True)
 

@@ -20,6 +20,7 @@ async def execute(
     *,
     parsed: dict[str, Any] | None = None,
     get_known_operations: Callable[[], set[str]] | None = None,
+    get_domain_scoped_operations: Callable[[str | None], frozenset[str]] | None = None,
     get_hitl_exempt_ops: Callable[[], set[str]] | None = None,
     get_min_role_policy: Callable[[], dict[str, str]] | None = None,
     get_role_hierarchy: Callable[[], dict[str, int]] | None = None,
@@ -37,12 +38,18 @@ async def execute(
     if operation == "list_commands":
         assert get_known_operations and get_hitl_exempt_ops and get_min_role_policy and get_role_hierarchy
         include_details = bool(params.get("include_details", True))
+        domain_id = str(params.get("domain_id", "")) or ctx.domain_id
         _min_role = get_min_role_policy()
         _role_rank = get_role_hierarchy()
         _hitl_exempt = get_hitl_exempt_ops()
         actor_rank = _role_rank.get(user_data["role"], 0)
+        # Use domain-scoped operations when available; fall back to global set
+        if get_domain_scoped_operations is not None:
+            ops_set = get_domain_scoped_operations(domain_id)
+        else:
+            ops_set = get_known_operations()
         commands: list[dict[str, Any]] = []
-        for op_name in sorted(get_known_operations()):
+        for op_name in sorted(ops_set):
             min_role = _min_role.get(op_name, "user")
             if actor_rank < _role_rank.get(min_role, 0):
                 continue

@@ -164,6 +164,13 @@ class TestListCommandsOperation:
             assert "description" in cmd
             assert "hitl_exempt" in cmd
             assert "min_role" in cmd
+        # structured_content must use "result" key matching QueryResultData
+        sc = body.get("structured_content")
+        assert sc is not None, "structured_content missing for list_commands"
+        assert sc["type"] == "query_result"
+        assert "result" in sc, "structured_content must use 'result' key (not 'data')"
+        assert "data" not in sc, "structured_content must not use legacy 'data' key"
+        assert sc["result"] == result
 
     @pytest.mark.integration
     def test_list_commands_names_only(self, client: TestClient, api_module) -> None:
@@ -197,6 +204,82 @@ class TestListCommandsOperation:
             )
         names = [c["name"] for c in resp.json()["result"]["commands"]]
         assert names == sorted(names), "Commands should be alphabetically sorted"
+
+
+# ── Education-only operations that must NOT appear in system domain ──
+_EDUCATION_ONLY_OPS = frozenset({
+    "assign_student",
+    "remove_student",
+    "assign_module",
+    "remove_module",
+    "switch_active_module",
+    "request_teacher_assignment",
+    "request_ta_assignment",
+    "request_module_assignment",
+})
+
+
+class TestListCommandsDomainScoping:
+    """list_commands respects domain_id and excludes cross-domain ops."""
+
+    @pytest.mark.integration
+    def test_system_domain_excludes_education_ops(self, multi_client: TestClient, multi_api_module) -> None:
+        """When domain_id='system', education-specific ops must not appear."""
+        token = _register_root(multi_client)
+        with patch("lumina.core.slm.slm_parse_admin_command") as mock_parse:
+            mock_parse.return_value = {
+                "operation": "list_commands",
+                "params": {"domain_id": "system"},
+            }
+            resp = multi_client.post(
+                "/api/admin/command",
+                json={"instruction": "list commands", "domain_id": "system"},
+                headers=_auth_header(token),
+            )
+        assert resp.status_code == 200
+        names = {c["name"] for c in resp.json()["result"]["commands"]}
+        leaked = names & _EDUCATION_ONLY_OPS
+        assert not leaked, f"Education ops leaked into system domain: {leaked}"
+
+    @pytest.mark.integration
+    def test_education_domain_includes_education_ops(self, multi_client: TestClient, multi_api_module) -> None:
+        """When domain_id='education', education-specific ops should appear."""
+        token = _register_root(multi_client)
+        with patch("lumina.core.slm.slm_parse_admin_command") as mock_parse:
+            mock_parse.return_value = {
+                "operation": "list_commands",
+                "params": {"domain_id": "education"},
+            }
+            resp = multi_client.post(
+                "/api/admin/command",
+                json={"instruction": "list commands", "domain_id": "education"},
+                headers=_auth_header(token),
+            )
+        assert resp.status_code == 200
+        names = {c["name"] for c in resp.json()["result"]["commands"]}
+        # At minimum assign_student and remove_student should be present
+        assert "assign_student" in names, "assign_student missing from education domain"
+        assert "remove_student" in names, "remove_student missing from education domain"
+
+    @pytest.mark.integration
+    def test_domain_id_from_request_body(self, multi_client: TestClient, multi_api_module) -> None:
+        """domain_id in the request body gets injected into params."""
+        token = _register_root(multi_client)
+        with patch("lumina.core.slm.slm_parse_admin_command") as mock_parse:
+            # SLM returns no domain_id in params; the endpoint injects it from req.domain_id
+            mock_parse.return_value = {
+                "operation": "list_commands",
+                "params": {},
+            }
+            resp = multi_client.post(
+                "/api/admin/command",
+                json={"instruction": "list commands", "domain_id": "system"},
+                headers=_auth_header(token),
+            )
+        assert resp.status_code == 200
+        names = {c["name"] for c in resp.json()["result"]["commands"]}
+        leaked = names & _EDUCATION_ONLY_OPS
+        assert not leaked, f"Education ops leaked when domain_id set via body: {leaked}"
 
 
 # ═══════════════════════════════════════════════════════════════════════

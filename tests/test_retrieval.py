@@ -12,6 +12,8 @@ import pytest
 
 from lumina.retrieval.embedder import (
     EMBEDDING_DIM,
+    PROVIDER_OLLAMA,
+    PROVIDER_SENTENCE_TRANSFORMERS,
     DocChunk,
     DocEmbedder,
     chunk_markdown,
@@ -33,10 +35,13 @@ def _fake_encode(texts, *, convert_to_numpy=True, show_progress_bar=False):
     return rng.randn(len(texts), EMBEDDING_DIM).astype(np.float32)
 
 
-def _make_mock_embedder() -> DocEmbedder:
+def _make_mock_embedder(provider: str = PROVIDER_SENTENCE_TRANSFORMERS) -> DocEmbedder:
     """Return a DocEmbedder with a mocked model that skips real loading."""
     embedder = DocEmbedder.__new__(DocEmbedder)
+    embedder._provider = provider
     embedder._model_name = "mock"
+    embedder._endpoint = "http://localhost:11434"
+    embedder._timeout = 30.0
     mock_model = MagicMock()
     mock_model.encode = _fake_encode
     embedder._model = mock_model
@@ -135,7 +140,7 @@ class TestDocEmbedder:
         assert vecs.shape[1] == EMBEDDING_DIM
 
     def test_lazy_model_loading(self):
-        embedder = DocEmbedder("all-MiniLM-L6-v2")
+        embedder = DocEmbedder("all-MiniLM-L6-v2", provider="sentence-transformers")
         assert embedder._model is None  # not loaded yet
 
     def test_load_model_on_first_use(self):
@@ -150,11 +155,103 @@ class TestDocEmbedder:
         fake_mod.SentenceTransformer = mock_cls
         sys.modules["sentence_transformers"] = fake_mod
         try:
-            embedder = DocEmbedder("all-MiniLM-L6-v2")
+            embedder = DocEmbedder("all-MiniLM-L6-v2", provider="sentence-transformers")
             embedder.embed_texts(["test"])
             mock_cls.assert_called_once_with("all-MiniLM-L6-v2")
         finally:
             del sys.modules["sentence_transformers"]
+
+
+# ══════════════════════════════════════════════════════════════
+#  DocEmbedder — Ollama provider
+# ══════════════════════════════════════════════════════════════
+
+
+def _fake_ollama_response(texts: list[str]) -> dict:
+    """Build a realistic Ollama /api/embed JSON response."""
+    rng = np.random.RandomState(99)
+    embeddings = rng.randn(len(texts), EMBEDDING_DIM).astype(np.float32)
+    return {"embeddings": embeddings.tolist()}
+
+
+class TestDocEmbedderOllama:
+    def test_embed_texts_via_ollama(self):
+        embedder = DocEmbedder("all-minilm", provider="ollama", endpoint="http://localhost:11434")
+        fake_resp = MagicMock()
+        fake_resp.status_code = 200
+        fake_resp.json.return_value = _fake_ollama_response(["hello", "world"])
+        fake_resp.raise_for_status = MagicMock()
+
+        with patch("httpx.post", return_value=fake_resp) as mock_post:
+            vecs = embedder.embed_texts(["hello", "world"])
+
+        mock_post.assert_called_once_with(
+            "http://localhost:11434/api/embed",
+            json={"model": "all-minilm", "input": ["hello", "world"]},
+            timeout=30.0,
+        )
+        assert vecs.shape == (2, EMBEDDING_DIM)
+        assert vecs.dtype == np.float32
+
+    def test_embed_query_via_ollama(self):
+        embedder = DocEmbedder("all-minilm", provider="ollama")
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = _fake_ollama_response(["query text"])
+        fake_resp.raise_for_status = MagicMock()
+
+        with patch("httpx.post", return_value=fake_resp):
+            vec = embedder.embed_query("query text")
+
+        assert vec.shape == (EMBEDDING_DIM,)
+
+    def test_ollama_missing_embeddings_key_raises(self):
+        embedder = DocEmbedder("all-minilm", provider="ollama")
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = {"error": "model not found"}
+        fake_resp.raise_for_status = MagicMock()
+
+        with patch("httpx.post", return_value=fake_resp):
+            with pytest.raises(RuntimeError, match="missing 'embeddings' key"):
+                embedder.embed_texts(["test"])
+
+    def test_ollama_connection_error_propagates(self):
+        import httpx
+        embedder = DocEmbedder("all-minilm", provider="ollama", endpoint="http://localhost:99999")
+
+        with patch("httpx.post", side_effect=httpx.ConnectError("Connection refused")):
+            with pytest.raises(httpx.ConnectError):
+                embedder.embed_texts(["test"])
+
+
+class TestDocEmbedderProviderRouting:
+    def test_default_provider_from_config(self):
+        with patch("lumina.retrieval.embedder._resolve_config",
+                    return_value=("ollama", "all-minilm", "http://localhost:11434", 30.0)):
+            embedder = DocEmbedder()
+        assert embedder._provider == "ollama"
+        assert embedder._model_name == "all-minilm"
+
+    def test_explicit_provider_overrides_config(self):
+        embedder = DocEmbedder("custom-model", provider="sentence-transformers")
+        assert embedder._provider == "sentence-transformers"
+        assert embedder._model_name == "custom-model"
+
+    def test_ollama_provider_does_not_load_st_model(self):
+        embedder = DocEmbedder("all-minilm", provider="ollama")
+        assert embedder._model is None
+        # Calling embed_texts should NOT trigger _load_st_model
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = _fake_ollama_response(["test"])
+        fake_resp.raise_for_status = MagicMock()
+        with patch("httpx.post", return_value=fake_resp):
+            embedder.embed_texts(["test"])
+        assert embedder._model is None  # still None — HF model never loaded
+
+    def test_st_provider_does_not_call_ollama(self):
+        embedder = _make_mock_embedder(provider=PROVIDER_SENTENCE_TRANSFORMERS)
+        with patch("httpx.post") as mock_post:
+            embedder.embed_texts(["test"])
+        mock_post.assert_not_called()
 
 
 # ══════════════════════════════════════════════════════════════

@@ -1,15 +1,18 @@
-"""embedder.py — Document chunking and sentence-transformer embedding.
+"""embedder.py — Document chunking and embedding via Ollama or sentence-transformers.
 
 Chunks Markdown documents by ``## `` headers and produces 384-dimensional
-embeddings using ``all-MiniLM-L6-v2`` (or a compatible model).
+embeddings using ``all-minilm`` (Ollama, default) or ``all-MiniLM-L6-v2``
+(HuggingFace sentence-transformers fallback).
 
-The model is loaded lazily on first call to :meth:`DocEmbedder.embed_chunks`
-so import alone has zero startup cost.
+The embedding provider is selected via ``LUMINA_EMBEDDING_PROVIDER``.
+The model is loaded / connected lazily on first call to
+:meth:`DocEmbedder.embed_texts` so import alone has zero startup cost.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -19,6 +22,8 @@ import numpy as np
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+
+log = logging.getLogger("lumina-embedder")
 
 # ── Chunk dataclass ──────────────────────────────────────────
 
@@ -127,28 +132,85 @@ def chunk_json(data: dict, source_path: str, *, content_type: str = "schema") ->
 DEFAULT_MODEL_NAME = "all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384
 
+# Provider constants
+PROVIDER_OLLAMA = "ollama"
+PROVIDER_SENTENCE_TRANSFORMERS = "sentence-transformers"
+
+
+def _resolve_config():
+    """Read embedding config from lumina.api.config (deferred to avoid circular imports)."""
+    try:
+        from lumina.api.config import (
+            EMBEDDING_PROVIDER,
+            EMBEDDING_MODEL,
+            EMBEDDING_ENDPOINT,
+            EMBEDDING_TIMEOUT,
+        )
+        return EMBEDDING_PROVIDER, EMBEDDING_MODEL, EMBEDDING_ENDPOINT, EMBEDDING_TIMEOUT
+    except ImportError:
+        return PROVIDER_OLLAMA, "all-minilm", "http://localhost:11434", 30.0
+
 
 class DocEmbedder:
-    """Embed :class:`DocChunk` text using a sentence-transformer model.
+    """Embed :class:`DocChunk` text using Ollama or sentence-transformers.
 
-    The model is loaded lazily on first use.  Pass *model_name* to override
-    the default ``all-MiniLM-L6-v2``.
+    The provider is selected via ``LUMINA_EMBEDDING_PROVIDER`` (default
+    ``"ollama"``).  Constructor parameters override config values when
+    supplied (useful for testing).
     """
 
-    def __init__(self, model_name: str = DEFAULT_MODEL_NAME) -> None:
-        self._model_name = model_name
-        self._model = None  # lazy
+    def __init__(
+        self,
+        model_name: str | None = None,
+        *,
+        provider: str | None = None,
+        endpoint: str | None = None,
+        timeout: float | None = None,
+    ) -> None:
+        cfg_provider, cfg_model, cfg_endpoint, cfg_timeout = _resolve_config()
+        self._provider = (provider or cfg_provider).strip().lower()
+        self._model_name = model_name or cfg_model
+        self._endpoint = (endpoint or cfg_endpoint).rstrip("/")
+        self._timeout = timeout if timeout is not None else cfg_timeout
+        # Lazy-loaded HF model (sentence-transformers only)
+        self._model = None
 
-    def _load_model(self):
+    # ── sentence-transformers backend ────────────────────────
+
+    def _load_st_model(self):
         from sentence_transformers import SentenceTransformer
         self._model = SentenceTransformer(self._model_name)
 
-    def embed_texts(self, texts: list[str]) -> NDArray[np.float32]:
-        """Return a ``(N, 384)`` float32 array of embeddings."""
+    def _embed_sentence_transformers(self, texts: list[str]) -> NDArray[np.float32]:
         if self._model is None:
-            self._load_model()
+            self._load_st_model()
         vecs = self._model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
         return np.asarray(vecs, dtype=np.float32)
+
+    # ── Ollama backend ───────────────────────────────────────
+
+    def _embed_ollama(self, texts: list[str]) -> NDArray[np.float32]:
+        import httpx
+
+        url = f"{self._endpoint}/api/embed"
+        payload = {"model": self._model_name, "input": texts}
+        resp = httpx.post(url, json=payload, timeout=self._timeout)
+        resp.raise_for_status()
+        data = resp.json()
+        embeddings = data.get("embeddings")
+        if embeddings is None:
+            raise RuntimeError(
+                f"Ollama /api/embed response missing 'embeddings' key; got keys: {list(data.keys())}"
+            )
+        return np.asarray(embeddings, dtype=np.float32)
+
+    # ── Public API ───────────────────────────────────────────
+
+    def embed_texts(self, texts: list[str]) -> NDArray[np.float32]:
+        """Return a ``(N, 384)`` float32 array of embeddings."""
+        if self._provider == PROVIDER_OLLAMA:
+            return self._embed_ollama(texts)
+        return self._embed_sentence_transformers(texts)
 
     def embed_chunks(self, chunks: list[DocChunk]) -> NDArray[np.float32]:
         """Embed a list of chunks, returning their vector representations."""

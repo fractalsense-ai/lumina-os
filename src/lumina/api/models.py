@@ -184,6 +184,7 @@ class AdminCommandRequest(BaseModel):
     instruction: str = ""
     operation: str | None = None
     params: dict[str, Any] | None = None
+    domain_id: str | None = None
 
 
 class CommandResolveRequest(BaseModel):

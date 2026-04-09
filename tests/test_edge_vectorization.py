@@ -35,7 +35,10 @@ def _fake_encode(texts, *, convert_to_numpy=True, show_progress_bar=False):
 
 def _make_mock_embedder() -> DocEmbedder:
     embedder = DocEmbedder.__new__(DocEmbedder)
+    embedder._provider = "sentence-transformers"
     embedder._model_name = "mock"
+    embedder._endpoint = "http://localhost:11434"
+    embedder._timeout = 30.0
     mock_model = MagicMock()
     mock_model.encode = _fake_encode
     embedder._model = mock_model

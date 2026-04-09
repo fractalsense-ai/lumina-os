@@ -43,6 +43,11 @@ AZURE_OPENAI_DEPLOYMENT = os.environ.get("LUMINA_AZURE_OPENAI_DEPLOYMENT", "")
 AZURE_OPENAI_API_VERSION = os.environ.get("LUMINA_AZURE_OPENAI_API_VERSION", "2024-08-01-preview")
 # ── Mistral AI ────────────────────────────────────────────────────────────────
 MISTRAL_MODEL = os.environ.get("LUMINA_MISTRAL_MODEL", "mistral-large-latest")
+# ── Embedding model (MiniLM via Ollama or HuggingFace sentence-transformers) ─
+EMBEDDING_PROVIDER = os.environ.get("LUMINA_EMBEDDING_PROVIDER", "ollama")
+EMBEDDING_MODEL = os.environ.get("LUMINA_EMBEDDING_MODEL", "all-minilm")
+EMBEDDING_ENDPOINT = os.environ.get("LUMINA_EMBEDDING_ENDPOINT", "http://localhost:11434")
+EMBEDDING_TIMEOUT = float(os.environ.get("LUMINA_EMBEDDING_TIMEOUT", "30"))
 RUNTIME_CONFIG_PATH = os.environ.get("LUMINA_RUNTIME_CONFIG_PATH")
 _explicit_registry = os.environ.get("LUMINA_DOMAIN_REGISTRY_PATH")
 DOMAIN_REGISTRY_PATH: str | None = (

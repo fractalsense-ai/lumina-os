@@ -693,6 +693,25 @@ def _get_known_operations() -> frozenset[str]:
     return base | domain_ops if domain_ops else base
 
 
+def _get_domain_scoped_operations(domain_id: str | None = None) -> frozenset[str]:
+    """Return operations visible in a specific domain context.
+
+    System-level operations (from governance config) are always included.
+    Domain-pack operations are included only when *domain_id* matches the
+    handler's owning domain.  When *domain_id* is None or ``"system"``,
+    only base system operations are returned.
+    """
+    base = _load_governance_config()["known_operations"]
+    if not domain_id or domain_id == "system":
+        return base
+    domain_handlers = _load_domain_operation_handlers()
+    domain_ops = frozenset(
+        op for op, cfg in domain_handlers.items()
+        if cfg.get("domain_id") == domain_id
+    )
+    return base | domain_ops if domain_ops else base
+
+
 def _get_hitl_exempt_ops() -> frozenset[str]:
     base = _load_governance_config()["hitl_exempt"]
     domain_handlers = _load_domain_operation_handlers()
@@ -1314,6 +1333,7 @@ async def _execute_admin_operation(
         "parsed": parsed,
         "original_instruction": original_instruction,
         "get_known_operations": _get_known_operations,
+        "get_domain_scoped_operations": _get_domain_scoped_operations,
         "get_hitl_exempt_ops": _get_hitl_exempt_ops,
         "get_min_role_policy": _get_min_role_policy,
         "get_role_hierarchy": _get_role_hierarchy,
@@ -1410,10 +1430,18 @@ async def admin_command(
         if parsed is None:
             raise HTTPException(status_code=422, detail="Could not interpret command")
 
+    # Inject domain_id from the request into params so query operations
+    # (e.g. list_commands) can scope to the session's active domain.
+    _parsed_params = parsed.get("params")
+    if isinstance(_parsed_params, dict) and not _parsed_params.get("domain_id") and req.domain_id:
+        _parsed_params["domain_id"] = req.domain_id
+
+    # For SLM-parsed commands, extract operation/instruction from parse result.
+    if not req.operation:
         operation = parsed.get("operation", "")
         if operation not in _get_known_operations():
             raise HTTPException(status_code=422, detail=f"Unknown operation: {operation}")
-        instruction = req.instruction
+        instruction = req.instruction or ""
 
     # HITL-exempt operations execute immediately without staging.
     if operation in _get_hitl_exempt_ops():
@@ -1451,7 +1479,7 @@ async def admin_command(
             response["structured_content"] = {
                 "type": "query_result",
                 "operation": operation,
-                "data": exec_result,
+                "result": exec_result,
             }
         return response
 

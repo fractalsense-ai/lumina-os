@@ -163,6 +163,7 @@ async function adminCommandCall(
   operation: string,
   params: Record<string, string>,
   auth: AuthState | null,
+  domainId?: string,
 ): Promise<AdminCommandResponse> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -170,10 +171,14 @@ async function adminCommandCall(
   if (auth) {
     headers['Authorization'] = `Bearer ${auth.token}`
   }
+  const body: Record<string, unknown> = { operation, params }
+  if (domainId) {
+    body.domain_id = domainId
+  }
   const res = await fetch(`${getApiBase()}/api/admin/command`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ operation, params }),
+    body: JSON.stringify(body),
   })
 
   if (!res.ok) {
@@ -810,7 +815,7 @@ function ChatInterface({
         }
 
         // Direct dispatch to /api/admin/command
-        const cmdResponse = await adminCommandCall(slashCmd.operation, slashCmd.params, auth)
+        const cmdResponse = await adminCommandCall(slashCmd.operation, slashCmd.params, auth, domainId)
         const resultData = cmdResponse.result ?? {}
         const content = cmdResponse.hitl_exempt
           ? (resultData as Record<string, unknown>).message as string ?? `Command executed: ${slashCmd.operation}`
@@ -823,7 +828,7 @@ function ChatInterface({
           meta: { action: 'slash_command', promptType: slashCmd.operation },
           structured_content: cmdResponse.structured_content ?? (
             cmdResponse.hitl_exempt && resultData
-              ? { type: 'query_result', operation: slashCmd.operation, data: resultData } as QueryResultData
+              ? { type: 'query_result', operation: slashCmd.operation, result: resultData } as QueryResultData
               : undefined
           ),
         }

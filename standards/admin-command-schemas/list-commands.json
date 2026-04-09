@@ -24,6 +24,10 @@
         "include_details": {
           "type": "boolean",
           "description": "When true (default), include description, HITL status, and required role for each command. When false, return names only."
+        },
+        "domain_id": {
+          "type": "string",
+          "description": "Scope the command list to a specific domain. When omitted or 'system', returns only system-level operations. When set to a domain ID (e.g. 'education'), also includes that domain's operations."
         }
       }
     }

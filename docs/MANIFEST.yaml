@@ -909,7 +909,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-24
-    sha256: 21e658318e99608268e52b30074fa281ffba9928dbff5b5bf2ec97725d17428f
+    sha256: 80ef285ed9b0f0375329a5e80cc81bacf121bc2853e4aadadde30d2156949db1
 
   - path: standards/admin-command-schemas/list-domains.json
     type: schema
