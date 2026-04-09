@@ -66,6 +66,7 @@ def build_commitment_record(
     commitment_type: str,
     subject_id: str,
     summary: str,
+    domain_id: str | None = None,
     subject_version: str | None = None,
     subject_hash: str | None = None,
     close_type: str | None = None,
@@ -86,6 +87,8 @@ def build_commitment_record(
         "subject_id": subject_id,
         "summary": summary,
     }
+    if domain_id is not None:
+        record["domain_id"] = domain_id
     if subject_version is not None:
         record["subject_version"] = subject_version
     if subject_hash is not None:

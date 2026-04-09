@@ -300,7 +300,7 @@ async def clear_stale_escalations(
         }
         _cfg.PERSISTENCE.append_log_record(
             "admin", expired,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
 
     return {"purged": len(stale_ids), "max_age_hours": max_age_hours}
@@ -361,7 +361,7 @@ async def resolve_escalation(
     session_id = target.get("session_id", "admin")
     _cfg.PERSISTENCE.append_log_record(
         session_id, record,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
+        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
     )
 
     # ── Mark original EscalationRecord as resolved ──
@@ -370,7 +370,7 @@ async def resolve_escalation(
     resolved_esc["resolution_commitment_id"] = record["record_id"]
     _cfg.PERSISTENCE.append_log_record(
         session_id, resolved_esc,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_admin"),
+        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
     )
 
     # ── PIN generation ── freeze session so student must unlock with OTP ──
@@ -483,7 +483,7 @@ async def audit_log(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", audit_event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write audit_requested trace event")
@@ -550,7 +550,7 @@ async def manifest_regen(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write manifest_regen trace event")
@@ -1162,7 +1162,7 @@ def _stage_command(
     )
     _cfg.PERSISTENCE.append_log_record(
         "admin", stage_record,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
     )
 
     # Also write an EscalationRecord so the dashboard escalation queue shows
@@ -1195,7 +1195,7 @@ def _stage_command(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", esc_record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.warning("Failed to write EscalationRecord for staged command %s", staged_id)
@@ -1267,7 +1267,7 @@ def _emit_trace_if_mutating(
         )
         _cfg.PERSISTENCE.append_log_record(
             "admin", trace,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write admin command TraceEvent for %s", operation)
@@ -1537,7 +1537,7 @@ async def admin_command_resolve(
             _STAGED_COMMANDS[staged_id]["resolved"] = True
         _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
         return {
             "staged_id": staged_id,
@@ -1609,7 +1609,7 @@ async def admin_command_resolve(
     )
     _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
     )
 
     # ── Mark the corresponding EscalationRecord as resolved ──
@@ -1634,7 +1634,7 @@ async def admin_command_resolve(
                 _resolved_esc["resolution_commitment_id"] = record["record_id"]
                 _cfg.PERSISTENCE.append_log_record(
                     "admin", _resolved_esc,
-                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin"),
+                    ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
                 )
         except Exception:
             log.warning("Failed to mark EscalationRecord resolved for staged command %s", staged_id)

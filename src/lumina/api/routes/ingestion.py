@@ -31,7 +31,7 @@ def _get_ingest_service() -> Any:
         _INGEST_SERVICE = IngestService(
             persistence_append=lambda sid, rec: _cfg.PERSISTENCE.append_log_record(
                 sid, rec,
-                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(sid, domain_id="_admin"),
+                ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(sid),
             ),
             max_file_size_mb=10,
         )

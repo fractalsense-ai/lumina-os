@@ -69,7 +69,6 @@ async def request_module_assignment(
     try:
         ctx.persistence.append_log_record(
             "admin", escalation_record,
-            ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id="_admin"),
         )
     except Exception:
         log.debug("Could not write module_assignment_request escalation")

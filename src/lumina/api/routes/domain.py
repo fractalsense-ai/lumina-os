@@ -68,7 +68,7 @@ async def domain_pack_commit(
 
     _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
+        ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(resolved),
     )
 
     return {
@@ -158,7 +158,7 @@ async def update_domain_physics(
     )
     _cfg.PERSISTENCE.append_log_record(
         "admin", record,
-        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id=resolved),
+        ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(resolved),
     )
 
     return {

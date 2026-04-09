@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/ledger/commitment-record-schema-v1.json",
-  "schema_version": "1.1.0",
-  "last_updated": "2026-03-20",
+  "schema_version": "1.2.0",
+  "last_updated": "2026-04-09",
   "title": "CommitmentRecord Schema",
   "description": "A System Log record representing a deliberate commitment by a Domain Authority, Meta Authority, or the orchestrator acting under explicit authorization.",
   "type": "object",
@@ -78,6 +78,10 @@
     "subject_id": {
       "type": "string",
       "description": "UUID or identifier of the subject (domain pack ID, session ID, student pseudonymous ID, etc.)."
+    },
+    "domain_id": {
+      "type": ["string", "null"],
+      "description": "Domain identifier scoping this commitment to a specific domain tier ledger (e.g. 'education'). Null or absent for system-tier records."
     },
     "subject_version": {
       "type": ["string", "null"],

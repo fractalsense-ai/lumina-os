@@ -27,7 +27,7 @@ class AdminOperationContext:
     """Everything an operation handler needs — no direct imports required."""
 
     # Core services
-    persistence: Any  # lumina.api.config.PERSISTENCE
+    persistence: Any  # lumina.api.config.PERSISTENCE (or ScopedPersistenceAdapter for domain ops)
     domain_registry: Any  # lumina.api.config.DOMAIN_REGISTRY
 
     # Governance helpers (from lumina.system_log.admin_operations)
@@ -45,6 +45,9 @@ class AdminOperationContext:
     # Capability checks
     has_domain_capability: Callable[..., bool]
     has_escalation_capability: Callable[..., bool]
+
+    # Domain scoping — set when dispatching to a domain-pack handler
+    domain_id: str | None = None
 
     # Async helpers
     run_in_threadpool: Callable[..., Awaitable[Any]] = field(default=run_in_threadpool)

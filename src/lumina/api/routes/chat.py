@@ -180,7 +180,7 @@ async def chat(
         _cfg.PERSISTENCE.append_log_record(
             session_id,
             routing_record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
         )
     except Exception:
         log.debug("Could not write routing decision to meta-ledger")

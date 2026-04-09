@@ -109,6 +109,15 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
             return str(self.log_dir / f"session-{session_id}-{domain_id}.jsonl")
         return str(self.log_dir / f"session-{session_id}.jsonl")
 
+    def get_system_ledger_path(self, session_id: str) -> str:
+        return str(self.log_dir / "system" / f"session-{session_id}.jsonl")
+
+    def get_domain_ledger_path(self, domain_id: str) -> str:
+        return str(self.log_dir / "domains" / domain_id / "domain.jsonl")
+
+    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
+        return str(self.log_dir / "domains" / domain_id / "modules" / f"{module_id}.jsonl")
+
     def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
         target_path = Path(ledger_path) if ledger_path else Path(self.get_log_ledger_path(session_id))
         target_path.parent.mkdir(parents=True, exist_ok=True)

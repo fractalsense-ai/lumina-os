@@ -233,7 +233,7 @@ def _build_domain_context(
             _resolved_module_key = _role_mod
 
     domain = _cfg.PERSISTENCE.load_domain_physics(str(domain_physics_path))
-    ledger_path = _cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id=resolved_domain_id)
+    ledger_path = _cfg.PERSISTENCE.get_domain_ledger_path(resolved_domain_id)
     ps = persisted_state or {}
 
     # ── Per-module adapter overrides (governance modules) ─────
@@ -379,7 +379,7 @@ def get_or_create_session(
                     "timestamp": time.time(),
                     "session_id": session_id,
                 },
-                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id="_meta"),
+                ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
             )
 
         return container.active_context.to_session_dict()
@@ -428,7 +428,7 @@ def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: 
             try:
                 _cfg.PERSISTENCE.append_log_record(
                     session_id, record,
-                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path(session_id, domain_id=did),
+                    ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(did),
                 )
             except Exception:
                 log.debug("Could not write session_close record for %s/%s", session_id, did)

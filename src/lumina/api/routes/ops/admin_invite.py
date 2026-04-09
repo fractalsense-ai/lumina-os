@@ -159,7 +159,7 @@ async def execute(
     try:
         ctx.persistence.append_log_record(
             "admin", invite_event,
-            ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=ctx.persistence.get_system_ledger_path("admin"),
         )
     except Exception:
         ctx.log.debug("Could not write user_invited trace event")

@@ -60,7 +60,7 @@ async def execute(
         )
         ctx.persistence.append_log_record(
             "admin", record,
-            ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id=resolved),
+            ledger_path=ctx.persistence.get_domain_ledger_path(resolved),
         )
         return {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 
@@ -90,7 +90,7 @@ async def execute(
         )
         ctx.persistence.append_log_record(
             "admin", record,
-            ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id=resolved),
+            ledger_path=ctx.persistence.get_domain_ledger_path(resolved),
         )
         return {"operation": operation, "subject_hash": subject_hash, "record_id": record["record_id"]}
 

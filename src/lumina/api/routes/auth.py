@@ -94,7 +94,7 @@ async def register(req: RegisterRequest) -> TokenResponse:
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write user_registered trace event")
@@ -244,7 +244,7 @@ async def update_user(
                 try:
                     _cfg.PERSISTENCE.append_log_record(
                         "admin", record,
-                        ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+                        ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(module_id),
                     )
                 except Exception:
                     log.debug("Could not write domain_role_revocation System Log record")
@@ -258,7 +258,7 @@ async def update_user(
             try:
                 _cfg.PERSISTENCE.append_log_record(
                     "admin", record,
-                    ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+                    ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(module_id),
                 )
             except Exception:
                 log.debug("Could not write domain_role_assignment System Log record")
@@ -278,7 +278,7 @@ async def update_user(
         try:
             _cfg.PERSISTENCE.append_log_record(
                 "admin", event,
-                ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+                ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
             )
         except Exception:
             log.debug("Could not write role_change trace event")
@@ -319,7 +319,7 @@ async def delete_user(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write user_deactivated trace event")
@@ -351,7 +351,7 @@ async def revoke_token(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write token_revoked trace event")
@@ -390,7 +390,7 @@ async def password_reset(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write password_reset trace event")
@@ -471,7 +471,7 @@ async def invite_user(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write user_invited trace event")
@@ -526,7 +526,7 @@ async def setup_password(req: SetupPasswordRequest) -> TokenResponse:
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", event,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
         )
     except Exception:
         log.debug("Could not write account_activated trace event")

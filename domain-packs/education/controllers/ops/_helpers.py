@@ -108,7 +108,11 @@ def write_commitment(
     metadata: dict[str, Any],
     references: list[str],
 ) -> dict[str, Any]:
-    """Build a commitment record, append it to the admin log, and return it."""
+    """Build a commitment record, append it to the domain log, and return it.
+
+    When ``ctx.persistence`` is a ``ScopedPersistenceAdapter`` the record
+    is automatically routed to the correct domain-tier ledger.
+    """
     record = ctx.build_commitment_record(
         actor_id=actor_id,
         actor_role=actor_role,
@@ -118,8 +122,5 @@ def write_commitment(
         metadata=metadata,
         references=references,
     )
-    ctx.persistence.append_log_record(
-        "admin", record,
-        ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id="_admin"),
-    )
+    ctx.persistence.append_log_record("admin", record)
     return record

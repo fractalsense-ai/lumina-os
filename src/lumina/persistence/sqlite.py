@@ -146,6 +146,15 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             return f"sqlite://log/session-{session_id}-{domain_id}"
         return f"sqlite://log/session-{session_id}"
 
+    def get_system_ledger_path(self, session_id: str) -> str:
+        return f"sqlite://log/system/session-{session_id}"
+
+    def get_domain_ledger_path(self, domain_id: str) -> str:
+        return f"sqlite://log/domains/{domain_id}/domain"
+
+    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
+        return f"sqlite://log/domains/{domain_id}/modules/{module_id}"
+
     def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
         try:
             loop = asyncio.get_running_loop()

@@ -110,7 +110,7 @@ async def execute(
         )
         ctx.persistence.append_log_record(
             "admin", record,
-            ledger_path=ctx.persistence.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=ctx.persistence.get_system_ledger_path("admin"),
         )
         return {
             "operation": operation,

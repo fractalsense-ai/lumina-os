@@ -157,7 +157,7 @@ async def assign_domain_role(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(module_id),
         )
     except Exception:
         log.debug("Could not write domain_role_assignment System Log record")
@@ -218,7 +218,7 @@ async def revoke_domain_role(
     try:
         _cfg.PERSISTENCE.append_log_record(
             "admin", record,
-            ledger_path=_cfg.PERSISTENCE.get_log_ledger_path("admin", domain_id="_admin"),
+            ledger_path=_cfg.PERSISTENCE.get_domain_ledger_path(module_id),
         )
     except Exception:
         log.debug("Could not write domain_role_revocation System Log record")

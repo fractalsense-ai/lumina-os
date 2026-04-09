@@ -28,6 +28,31 @@ class PersistenceAdapter(ABC):
         When *domain_id* is provided, the path is scoped to that domain
         context (e.g. ``session-{sid}-{domain_id}.jsonl``).  Use
         ``domain_id="_meta"`` for the session meta-ledger.
+
+        .. deprecated:: Use the tier-specific methods instead.
+        """
+
+    # ── 3-tier ledger path builders ──────────────────────────
+
+    @abstractmethod
+    def get_system_ledger_path(self, session_id: str) -> str:
+        """Return the ledger path for a system-tier log (auth, session, routing).
+
+        Layout: ``system/session-{sid}.jsonl``
+        """
+
+    @abstractmethod
+    def get_domain_ledger_path(self, domain_id: str) -> str:
+        """Return the ledger path for a domain-tier log (RBAC, escalations, commits).
+
+        Layout: ``domains/{domain}/domain.jsonl``
+        """
+
+    @abstractmethod
+    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
+        """Return the ledger path for a module-tier log (student ops, assignments).
+
+        Layout: ``domains/{domain}/modules/{module_id}.jsonl``
         """
 
     @abstractmethod
@@ -225,6 +250,15 @@ class NullPersistenceAdapter(PersistenceAdapter):
         if domain_id:
             return f"session-{session_id}-{domain_id}.jsonl"
         return f"session-{session_id}.jsonl"
+
+    def get_system_ledger_path(self, session_id: str) -> str:
+        return f"system/session-{session_id}.jsonl"
+
+    def get_domain_ledger_path(self, domain_id: str) -> str:
+        return f"domains/{domain_id}/domain.jsonl"
+
+    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
+        return f"domains/{domain_id}/modules/{module_id}.jsonl"
 
     def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
         notify_log_commit()
