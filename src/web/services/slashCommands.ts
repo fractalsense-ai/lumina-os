@@ -20,6 +20,8 @@ export interface SlashCommandDef {
   allowedRoles: string[]
   /** Aliases that also trigger this command. */
   aliases?: string[]
+  /** If true, the last arg captures all remaining tokens joined with spaces. */
+  joinTrailingArgs?: boolean
 }
 
 export interface ParsedSlashCommand {
@@ -142,6 +144,169 @@ const COMMANDS: SlashCommandDef[] = [
     args: [],
     allowedRoles: ['teacher', 'domain_authority'],
   },
+
+  // ── Read-only / HITL-exempt operations ─────────────────
+  {
+    name: 'ingestions',
+    operation: 'list_ingestions',
+    description: 'List ingestion records',
+    args: ['domain_id', 'status'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_ingestions'],
+  },
+  {
+    name: 'review_ingestion',
+    operation: 'review_ingestion',
+    description: 'Review an ingestion record',
+    args: ['ingestion_id'],
+    allowedRoles: ['domain_authority'],
+  },
+  {
+    name: 'proposals',
+    operation: 'review_proposals',
+    description: 'List pending night-cycle proposals',
+    args: ['domain_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['review_proposals'],
+  },
+  {
+    name: 'module_status',
+    operation: 'module_status',
+    description: 'Check module runtime status',
+    args: ['domain_id', 'module_id'],
+    allowedRoles: [],
+  },
+  {
+    name: 'daemon_status',
+    operation: 'daemon_status',
+    description: 'Show daemon scheduler status',
+    args: [],
+    allowedRoles: ['domain_authority'],
+  },
+  {
+    name: 'explain',
+    operation: 'explain_reasoning',
+    description: 'Explain reasoning for a log event',
+    args: ['event_id'],
+    allowedRoles: [],
+    aliases: ['explain_reasoning'],
+  },
+  {
+    name: 'roles',
+    operation: 'list_domain_rbac_roles',
+    description: 'List domain RBAC roles',
+    args: ['domain_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_domain_rbac_roles'],
+  },
+  {
+    name: 'manifest',
+    operation: 'get_domain_module_manifest',
+    description: 'Show domain module manifest',
+    args: ['domain_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['get_domain_module_manifest'],
+  },
+  {
+    name: 'physics',
+    operation: 'get_domain_physics',
+    description: 'View domain physics configuration',
+    args: ['domain_id', 'module_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['get_domain_physics'],
+  },
+  {
+    name: 'daemon_tasks',
+    operation: 'list_daemon_tasks',
+    description: 'List available daemon tasks',
+    args: [],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_daemon_tasks'],
+  },
+  {
+    name: 'approve',
+    operation: 'approve_interpretation',
+    description: 'Approve an interpretation for an ingestion',
+    args: ['ingestion_id', 'interpretation_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['approve_interpretation'],
+  },
+
+  // ── Mutating / HITL-required operations ────────────────
+  {
+    name: 'update_physics',
+    operation: 'update_domain_physics',
+    description: 'Update domain physics (domain key value)',
+    args: ['domain_id', 'key', 'value'],
+    allowedRoles: ['domain_authority'],
+    joinTrailingArgs: true,
+  },
+  {
+    name: 'commit_physics',
+    operation: 'commit_domain_physics',
+    description: 'Commit pending domain physics changes',
+    args: ['domain_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['commit_domain_physics'],
+  },
+  {
+    name: 'update_role',
+    operation: 'update_user_role',
+    description: 'Change a user platform role (root only)',
+    args: ['user_id', 'new_role'],
+    allowedRoles: ['root'],
+    aliases: ['update_user_role'],
+  },
+  {
+    name: 'deactivate',
+    operation: 'deactivate_user',
+    description: 'Deactivate a user account (root only)',
+    args: ['user_id'],
+    allowedRoles: ['root'],
+    aliases: ['deactivate_user'],
+  },
+  {
+    name: 'assign_role',
+    operation: 'assign_domain_role',
+    description: 'Assign domain role to user',
+    args: ['user_id', 'module_id', 'domain_role'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['assign_domain_role'],
+  },
+  {
+    name: 'revoke_role',
+    operation: 'revoke_domain_role',
+    description: 'Revoke domain role from user',
+    args: ['user_id', 'module_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['revoke_domain_role'],
+  },
+  {
+    name: 'resolve',
+    operation: 'resolve_escalation',
+    description: 'Resolve an escalation (id resolution rationale)',
+    args: ['escalation_id', 'resolution', 'rationale'],
+    allowedRoles: ['domain_authority'],
+    joinTrailingArgs: true,
+    aliases: ['resolve_escalation'],
+  },
+  {
+    name: 'reject',
+    operation: 'reject_ingestion',
+    description: 'Reject an ingestion record with reason',
+    args: ['ingestion_id', 'reason'],
+    allowedRoles: ['domain_authority'],
+    joinTrailingArgs: true,
+    aliases: ['reject_ingestion'],
+  },
+  {
+    name: 'trigger_daemon',
+    operation: 'trigger_daemon_task',
+    description: 'Trigger daemon task run',
+    args: ['domain_id', 'tasks'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['trigger_daemon_task'],
+  },
 ]
 
 // Build a lookup map including aliases
@@ -181,17 +346,33 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
   // Map positional args to named params
   const params: Record<string, string> = { ...(def.defaultParams ?? {}) }
   for (let i = 0; i < def.args.length; i++) {
-    const value = parts[i + 1]
-    if (value) {
-      params[def.args[i]] = value
+    if (def.joinTrailingArgs && i === def.args.length - 1) {
+      // Last arg captures all remaining tokens
+      const rest = parts.slice(i + 1).join(' ')
+      if (rest) params[def.args[i]] = rest
+    } else {
+      const value = parts[i + 1]
+      if (value) params[def.args[i]] = value
     }
   }
 
-  // For preferences, join remaining args as the value
+  // Special: preferences transforms key+value into JSON updates object
   if (def.name === 'preferences' && parts.length > 2) {
     const key = parts[1] ?? ''
     const value = parts.slice(2).join(' ')
     params['updates'] = JSON.stringify({ [key]: value })
+    delete params['key']
+    delete params['value']
+  }
+
+  // Special: update_physics transforms key+value into updates object
+  if (def.name === 'update_physics' && params['key'] && params['value']) {
+    const key = params['key']
+    const value = params['value']
+    // Try JSON parse for structured values, fall back to string
+    let parsed: unknown = value
+    try { parsed = JSON.parse(value) } catch { /* use string */ }
+    params['updates'] = JSON.stringify({ [key]: parsed })
     delete params['key']
     delete params['value']
   }
