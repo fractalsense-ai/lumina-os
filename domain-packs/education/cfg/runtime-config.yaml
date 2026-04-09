@@ -459,6 +459,11 @@ ui_manifest:
       endpoint: "/api/dashboard/education/step-completion"
       roles: [root, domain_authority]
       type: metric
+    - id: vocabulary_growth
+      label: "Vocabulary Growth"
+      endpoint: "/api/dashboard/education/vocabulary-growth"
+      roles: [root, domain_authority, teacher]
+      type: chart
 
   # ── Role-based UI layouts ──────────────────────────────────
   # Each role gets a layout definition that controls which sidebar panels
@@ -663,3 +668,24 @@ adapters:
     detect_novel_synthesis:
       module_path: domain-packs/education/controllers/governance_adapters.py
       callable: detect_novel_synthesis
+  api_routes:
+    post_vocabulary_metric:
+      path: /api/user/{user_id}/vocabulary-metric
+      method: POST
+      module_path: domain-packs/education/controllers/api_handlers.py
+      callable: post_vocabulary_metric
+      roles: []
+      request_body:
+        vocabulary_complexity_score: {type: float, ge: 0.0, le: 1.0, required: true}
+        lexical_diversity: {type: float, ge: 0.0, le: 1.0}
+        avg_word_length: {type: float, ge: 0.0}
+        embedding_spread: {type: float, ge: 0.0}
+        domain_terms_detected: {type: list}
+        buffer_turns: {type: int, ge: 0}
+        measurement_valid: {type: bool}
+    dashboard_vocabulary_growth:
+      path: /api/dashboard/education/vocabulary-growth
+      method: GET
+      module_path: domain-packs/education/controllers/api_handlers.py
+      callable: dashboard_vocabulary_growth
+      roles: [root, domain_authority, teacher]

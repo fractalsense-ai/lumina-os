@@ -67,14 +67,26 @@
     "user_commands": {
       "enabled": true,
       "allowed": ["request_module_assignment", "view_available_modules", "view_my_profile"]
+    },
+    "vocabulary_monitor": {
+      "enabled": true,
+      "measurement_window_turns": 20,
+      "min_turns_for_measurement": 10,
+      "baseline_lock_sessions": 3,
+      "domain_vocabulary_source": "module_physics",
+      "session_history_max": 50,
+      "domain_term_lists": {}
     }
   },
   "module_state_schema": {
     "mastery_dimensions": [],
-    "tracked_subsystems": [],
+    "tracked_subsystems": ["vocabulary_monitor"],
     "custom_fields": {
       "journaling_entry_count": {"type": "integer", "default": 0},
-      "last_reflection_utc": {"type": "string", "default": null}
+      "last_reflection_utc": {"type": "string", "default": null},
+      "vocabulary_complexity_baseline": {"type": "number", "default": null},
+      "vocabulary_growth_delta": {"type": "number", "default": 0.0},
+      "vocabulary_last_measured_utc": {"type": "string", "default": null}
     }
   }
 }

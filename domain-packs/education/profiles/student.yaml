@@ -55,4 +55,18 @@ learning_state:
     current_tier: tier_1
     consecutive_correct: 0
 
+  # ── Vocabulary Growth Tracking ────────────────────────────
+  # Passive vocabulary complexity monitoring. Only structured metrics
+  # are stored — no chat content is persisted server-side.
+  vocabulary_tracking:
+    baseline_complexity: null          # Set from first N sessions (float, 0..1)
+    current_complexity: null           # Latest session measurement
+    growth_delta: 0.0                  # Cumulative growth from baseline
+    domain_vocabulary: {}              # Per-module vocab expansion, e.g. {"algebra-level-1": {"terms_acquired": 0, "complexity_delta": 0.0}}
+    measurement_window_turns: 20       # Client-side analysis window
+    baseline_sessions_remaining: 3     # Sessions until baseline locks
+    baseline_samples: []               # Complexity scores from initial sessions
+    last_measured_utc: null
+    session_history: []                # Rolling list of {complexity, delta, measured_utc}
+
   updated_utc: null

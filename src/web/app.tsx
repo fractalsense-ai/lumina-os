@@ -23,6 +23,7 @@ import {
   type SessionSummary,
 } from '@/services/transcriptStore'
 import { parseSlashCommand, generateHelpText } from '@/services/slashCommands'
+import { analyzeVocabulary, postVocabularyMetric } from '@/services/vocabularyAnalyzer'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -614,6 +615,7 @@ function ChatInterface({
   const transcriptRef = useRef<TranscriptTurn[]>([])
   const turnCounterRef = useRef<number>(0)
   const sessionLabelRef = useRef<string>('')
+  const vocabAnalyzedRef = useRef(false)
 
   // ── Session management helpers ───────────────────────────
   const resetChatState = () => {
@@ -625,6 +627,7 @@ function ChatInterface({
     transcriptRef.current = []
     turnCounterRef.current = 0
     sessionLabelRef.current = ''
+    vocabAnalyzedRef.current = false
   }
 
   const saveCurrentSession = async () => {
@@ -753,6 +756,24 @@ function ChatInterface({
       }
     })()
   }, [sessionId, auth.token]) // re-run when session/auth changes
+
+  // ── Vocabulary complexity analysis (passive, client-side) ──
+  // Runs when messages reach minimum window, posts only the metric.
+  useEffect(() => {
+    if (vocabAnalyzedRef.current) return
+    if (!auth.token || !auth.userId) return
+    const studentMsgs = messages
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+    if (studentMsgs.length < 10) return
+    vocabAnalyzedRef.current = true
+    ;(async () => {
+      const metric = await analyzeVocabulary(studentMsgs)
+      if (metric) {
+        await postVocabularyMetric(getApiBase(), auth.token, auth.userId, metric)
+      }
+    })()
+  }, [messages, auth.token, auth.userId])
 
   // Best-effort save on tab close / navigation
   useEffect(() => {

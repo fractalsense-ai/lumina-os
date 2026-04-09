@@ -206,6 +206,112 @@ app.include_router(panels_router)
 
 
 # ─────────────────────────────────────────────────────────────
+# Domain-declared API routes — dynamic registration
+# ─────────────────────────────────────────────────────────────
+
+
+def _mount_domain_api_routes() -> int:
+    """Iterate all domains, discover api_route_defs, and mount them on *app*.
+
+    Each domain's ``runtime-config.yaml`` may declare ``adapters.api_routes``
+    entries.  The runtime loader resolves them into ``api_route_defs`` (list of
+    dicts with ``path``, ``method``, ``handler_fn``, ``roles``, etc.).
+
+    The core server wraps each handler with auth + role enforcement so the
+    domain handler stays free of FastAPI / middleware imports.
+
+    Returns the number of routes mounted.
+    """
+    from fastapi import Depends, HTTPException, Request
+    from fastapi.security import HTTPAuthorizationCredentials
+    from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
+
+    mounted = 0
+    for domain_info in DOMAIN_REGISTRY.list_domains():
+        domain_id = domain_info["domain_id"]
+        try:
+            ctx = DOMAIN_REGISTRY.get_runtime_context(domain_id)
+        except Exception:
+            log.warning("domain_api_routes: could not load context for %s", domain_id)
+            continue
+
+        route_defs: list = ctx.get("api_route_defs") or []
+        for rdef in route_defs:
+            _path: str = rdef.get("path", "")
+            _method: str = rdef.get("method", "GET")
+            _handler_fn = rdef.get("handler_fn")
+            _roles: list = rdef.get("roles") or []
+            _body_schema: dict = rdef.get("request_body") or {}
+
+            if not _path or not _handler_fn:
+                continue
+
+            # Capture in closure
+            _fn = _handler_fn
+            _r = list(_roles)
+            _has_body = bool(_body_schema) and _method in ("POST", "PUT", "PATCH")
+
+            if _method == "POST" and "{user_id}" in _path:
+                # POST with path param + body
+                async def _endpoint(
+                    user_id: str,
+                    request: Request,
+                    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+                    *,
+                    _handler=_fn,
+                    _allowed_roles=_r,
+                ) -> dict:
+                    current = await get_current_user(credentials)
+                    user_data = require_auth(current)
+                    if _allowed_roles:
+                        require_role(user_data, *_allowed_roles)
+                    body = await request.json()
+                    result = await _handler(
+                        user_id=user_id,
+                        body=body,
+                        user_data=user_data,
+                        persistence=_config_module.PERSISTENCE,
+                        resolve_profile_path=_resolve_user_profile_path,
+                        profiles_dir=_config_module._PROFILES_DIR,
+                    )
+                    if isinstance(result, dict) and "__status" in result:
+                        raise HTTPException(status_code=result["__status"], detail=result.get("detail", ""))
+                    return result
+
+            elif _method == "GET":
+                async def _endpoint(
+                    request: Request,
+                    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+                    *,
+                    _handler=_fn,
+                    _allowed_roles=_r,
+                ) -> dict:
+                    current = await get_current_user(credentials)
+                    user_data = require_auth(current)
+                    if _allowed_roles:
+                        require_role(user_data, *_allowed_roles)
+                    result = await _handler(
+                        user_data=user_data,
+                        persistence=_config_module.PERSISTENCE,
+                        resolve_profile_path=_resolve_user_profile_path,
+                        profiles_dir=_config_module._PROFILES_DIR,
+                    )
+                    if isinstance(result, dict) and "__status" in result:
+                        raise HTTPException(status_code=result["__status"], detail=result.get("detail", ""))
+                    return result
+
+            else:
+                log.warning("domain_api_routes: unsupported method %s for %s", _method, _path)
+                continue
+
+            app.add_api_route(_path, _endpoint, methods=[_method])
+            mounted += 1
+            log.info("domain_api_routes: mounted %s %s", _method, _path)
+
+    return mounted
+
+
+# ─────────────────────────────────────────────────────────────
 # Session Idle Timeout — Background Task
 # ─────────────────────────────────────────────────────────────
 
@@ -236,6 +342,14 @@ async def _start_idle_cleanup() -> None:
     _reg_invite_persistence(PERSISTENCE)
 
     _assert_system_physics_commitment()
+
+    # ── Mount domain-declared API routes ──────────────────────
+    try:
+        _n_routes = _mount_domain_api_routes()
+        if _n_routes:
+            log.info("Domain API routes: %d route(s) mounted", _n_routes)
+    except Exception:
+        log.warning("Domain API route registration failed", exc_info=True)
 
     # ── Seal diagnostic: surface missing secrets early ────────
     _seal_secret = os.environ.get("LUMINA_TRANSCRIPT_HMAC_SECRET") or os.environ.get("LUMINA_JWT_SECRET")

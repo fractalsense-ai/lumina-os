@@ -296,6 +296,34 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             tool_cfg["callable"],
         )
 
+    # ── Optional domain-owned API routes ─────────────────────────
+    # Each entry declares {path, method, module_path, callable, roles, ...}.
+    # The loaded callable is stored alongside the route metadata so the
+    # server can mount it dynamically at startup.
+    api_route_defs: list[dict[str, Any]] = []
+    api_routes_cfg = adapters_cfg.get("api_routes") or {}
+    for route_id, route_cfg in api_routes_cfg.items():
+        if not isinstance(route_cfg, dict):
+            continue
+        _rmod = route_cfg.get("module_path")
+        _rcall = route_cfg.get("callable")
+        if not _rmod or not _rcall:
+            log.warning("api_routes.%s: missing module_path or callable — skipped", route_id)
+            continue
+        try:
+            _rfn = _load_callable(repo_root, _rmod, _rcall)
+        except Exception as _e:
+            log.warning("api_routes.%s: failed to load callable — %s", route_id, _e)
+            continue
+        api_route_defs.append({
+            "id": str(route_id),
+            "path": route_cfg.get("path", ""),
+            "method": (route_cfg.get("method") or "GET").upper(),
+            "handler_fn": _rfn,
+            "roles": route_cfg.get("roles") or [],
+            "request_body": route_cfg.get("request_body") or {},
+        })
+
     deterministic_templates = runtime_cfg.get("deterministic_templates") or {}
     deterministic_templates_mud = runtime_cfg.get("deterministic_templates_mud") or {}
     tool_call_policies = runtime_cfg.get("tool_call_policies") or {}
@@ -356,6 +384,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "turn_0_presenter_fn": turn_0_presenter_fn,
         "escalation_context_fn": escalation_context_fn,
         "tool_fns": tool_fns,
+        "api_route_defs": api_route_defs,
         "world_sim": _world_sim_cfg,
         "local_only": bool(runtime_cfg.get("local_only", False)),
         "pre_turn_checks": runtime_cfg.get("pre_turn_checks") or [],

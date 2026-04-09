@@ -3,12 +3,44 @@
 Contains the state builder, domain step, and turn interpreter for
 the Student Commons (general-education) module.  No ZPD monitoring,
 fluency tracking, or academic grading — journaling and reflection only.
+
+Vocabulary growth tracking is wired in as a passive subsystem: the
+client-side analyzer posts a complexity score which flows through
+evidence into ``freeform_domain_step`` and is processed by
+``vocabulary_growth_step()``.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
+import sys
+from pathlib import Path
 from typing import Any, Callable
+
+
+# ── Load vocabulary growth monitor from domain-lib ─────────────
+def _load_vocab_monitor() -> Any:
+    """Load the vocabulary growth monitor module via importlib (same
+    pattern as the ZPD monitor shim)."""
+    lib_path = (
+        Path(__file__).resolve().parent.parent
+        / "domain-lib"
+        / "vocabulary_growth_monitor_v0_1.py"
+    )
+    mod_name = "vocabulary_growth_monitor_v0_1"
+    if mod_name in sys.modules:
+        return sys.modules[mod_name]
+    spec = importlib.util.spec_from_file_location(mod_name, str(lib_path))
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    sys.modules[mod_name] = mod
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+_vocab_mod = _load_vocab_monitor()
+vocabulary_growth_step = _vocab_mod.vocabulary_growth_step
+_build_default_vocab_state = _vocab_mod._build_default_vocab_state
 
 
 def _strip_markdown_fences(raw: str) -> str:
@@ -41,6 +73,10 @@ def freeform_build_initial_state(
             _module_state.get("journaling_entry_count", 0)
         ),
         "last_reflection_utc": _module_state.get("last_reflection_utc"),
+        "vocabulary_tracking": _module_state.get(
+            "vocabulary_tracking",
+            _build_default_vocab_state(),
+        ),
     }
 
 
@@ -64,7 +100,35 @@ def freeform_domain_step(
         action = "tool_request"
     else:
         action = None
-    return state, {"tier": "ok", "action": action, "should_escalate": False}
+
+    decision: dict[str, Any] = {
+        "tier": "ok",
+        "action": action,
+        "should_escalate": False,
+    }
+
+    # ── Vocabulary growth tracking (passive subsystem) ────────
+    vocab_score = evidence.get("vocabulary_complexity_score")
+    if vocab_score is not None:
+        vocab_state = state.get("vocabulary_tracking") or _build_default_vocab_state()
+        # Extract vocabulary-relevant evidence subset
+        vocab_evidence = {
+            "vocabulary_complexity_score": vocab_score,
+            "measurement_valid": evidence.get("measurement_valid", True),
+            "buffer_turns": evidence.get("buffer_turns", 0),
+            "domain_terms_detected": evidence.get("domain_terms_detected"),
+            "lexical_diversity": evidence.get("lexical_diversity"),
+            "avg_word_length": evidence.get("avg_word_length"),
+            "embedding_spread": evidence.get("embedding_spread"),
+        }
+        vocab_params = params.get("vocabulary_monitor") if params else None
+        vocab_state, vocab_decision = vocabulary_growth_step(
+            vocab_state, vocab_evidence, vocab_params,
+        )
+        state["vocabulary_tracking"] = vocab_state
+        decision["vocabulary"] = vocab_decision
+
+    return state, decision
 
 
 # ── User-command detection (deterministic) ─────────────────────
