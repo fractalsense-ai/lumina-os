@@ -232,8 +232,8 @@ def test_validate_log_chain_all_sessions(adapter: FilesystemPersistenceAdapter) 
 def test_validate_log_chain_no_sessions(adapter: FilesystemPersistenceAdapter) -> None:
     result = adapter.validate_log_chain()
     assert result["scope"] == "all"
-    # System ledger is always checked
-    assert result["sessions_checked"] >= 1
+    # With no ledger files on disk, nothing to check
+    assert result["sessions_checked"] == 0
 
 
 # ── has_policy_commitment ────────────────────────────────────────────────────

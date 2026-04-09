@@ -14,8 +14,21 @@ from typing import Any, Callable
 
 from lumina.core.yaml_loader import load_yaml
 
+import types
+
 log = logging.getLogger("lumina.runtime-loader")
 
+
+def _ensure_package_chain(dotted_name: str, directory: Path) -> None:
+    """Register synthetic package modules so relative imports can resolve."""
+    parts = dotted_name.split(".")
+    for i in range(1, len(parts) + 1):
+        pkg_key = ".".join(parts[:i])
+        if pkg_key not in sys.modules:
+            pkg_mod = types.ModuleType(pkg_key)
+            pkg_mod.__package__ = pkg_key
+            pkg_mod.__path__ = [str(directory)]
+            sys.modules[pkg_key] = pkg_mod
 
 
 
@@ -32,11 +45,26 @@ def _load_callable(repo_root: Path, module_path: str, callable_name: str) -> Cal
         if cached_fn is not None and callable(cached_fn):
             return cached_fn
 
-    spec = importlib.util.spec_from_file_location(module_key, str(abs_module_path))
+    # Derive a dotted package name from the relative directory path so that
+    # relative imports (``from .ops.foo import bar``) resolve correctly.
+    rel_dir = abs_module_path.parent.relative_to(repo_root)
+    package_key = "runtime_pkg_" + ".".join(rel_dir.parts)
+    _ensure_package_chain(package_key, abs_module_path.parent)
+
+    qualified_name = package_key + "." + abs_module_path.stem
+    spec = importlib.util.spec_from_file_location(
+        qualified_name, str(abs_module_path),
+    )
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    mod.__package__ = package_key
+    # Register under both keys: the cache key and the qualified name.
+    # Some modules (shims) replace sys.modules[__name__] during exec — the
+    # qualified name is what __name__ resolves to, so we need it present.
     sys.modules[module_key] = mod
+    sys.modules[qualified_name] = mod
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
-    mod = sys.modules[module_key]  # re-fetch; shim may have replaced entry
+    # Re-fetch: a shim module may have replaced the entry under either key.
+    mod = sys.modules.get(qualified_name, sys.modules.get(module_key, mod))
 
     fn = getattr(mod, callable_name, None)
     if fn is None or not callable(fn):

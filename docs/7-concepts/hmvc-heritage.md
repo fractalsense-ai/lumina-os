@@ -163,6 +163,30 @@ This manifest is the **declarative View binding** for the frontend:
 The frontend reads `ui_manifest.panels` and merges them into the Dashboard tab bar
 alongside the static governance tabs.  Each domain can define its own telemetry and
 monitoring views (e.g., education: ZPD distribution; system: pack integrity; agriculture:
+
+---
+
+## D. Ledger Tier Separation — HMVC Applied to the System Log
+
+The HMVC principle of module isolation extends to the **System Log**.  Just as
+each domain pack is an independent application (Section C), its ledger records
+live in an isolated directory tier:
+
+| HMVC layer        | Ledger tier                                       |
+|-------------------|---------------------------------------------------|
+| System (kernel)   | ``system/session-{session_id}.jsonl``             |
+| Domain pack       | ``domains/{domain_id}/domain.jsonl``              |
+| Module            | ``domains/{domain_id}/modules/{module_id}.jsonl`` |
+
+A ``ScopedPersistenceAdapter`` enforces this boundary at write time — domain
+packs receive a persistence object that can only write to their own tier.
+Attempts to write system-tier records raise ``PermissionError``.
+
+This mirrors the HMVC contract: a child triad cannot mutate the parent's
+state.  The system log's hash chains remain per-file, so domain disruptions
+never corrupt the system-level audit trail.
+
+See [Ledger Tier Separation](ledger-tier-separation.md) for full details.
 yield variance) without the framework or other domains knowing about them — full HMVC
 View isolation.
 

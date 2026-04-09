@@ -145,12 +145,31 @@ FastAPI shutdown:
 | GET    | `/api/system-log/warnings`    | Query recent WARNING events         |
 | GET    | `/api/system-log/alerts`      | Query recent ERROR/CRITICAL events  |
 
+## H. Ledger Tier Paths
+
+In addition to the severity-based routing described above, persisted records are
+written to a **3-tier directory layout** that mirrors the HMVC hierarchy:
+
+| Tier   | Path pattern                                        |
+|--------|-----------------------------------------------------|
+| System | ``system/session-{session_id}.jsonl``               |
+| Domain | ``domains/{domain_id}/domain.jsonl``                |
+| Module | ``domains/{domain_id}/modules/{module_id}.jsonl``   |
+
+The tier is determined by record type and scope — see
+[Ledger Tier Separation](ledger-tier-separation.md) for the full
+classification rules and migration instructions.
+
+---
+
 ## SEE ALSO
 
 - `standards/system-log-v1.md` — System Log record format and hash-chaining spec
 - `docs/7-concepts/prompt-packet-assembly.md` — PPA pipeline overview
 - `docs/7-concepts/slm-compute-distribution.md` — SLM compute distribution
+- `docs/7-concepts/ledger-tier-separation.md` — 3-tier ledger directory layout
 
 ## HISTORY
 
+- **v1.1.0** (2026-03-20): Added ledger tier path section (H) and reference to tier separation docs.
 - **v1.0.0** (2026-03-20): Initial implementation — Universal Event Payload, log bus, micro-router, dashboard/alert stores.

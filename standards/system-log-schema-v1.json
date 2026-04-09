@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/ledger/system-log-schema-v1.json",
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "last_updated": "2026-03-20",
   "title": "System Log Schema V1",
-  "description": "Top-level schema for a Project Lumina System Log record. Every record written to the ledger must be one of the defined record types.",
+  "description": "Top-level schema for a Project Lumina System Log record. Every record written to the ledger must be one of the defined record types. Records are partitioned into three tiers (system, domain, module) — see docs/7-concepts/ledger-tier-separation.md.",
   "oneOf": [
     { "$ref": "commitment-record-schema-v1.json" },
     { "$ref": "trace-event-schema-v1.json" },

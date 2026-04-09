@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-04-08
+last_updated: 2026-04-09
 
 artifacts:
 
@@ -397,10 +397,10 @@ artifacts:
   - path: docs/7-concepts/system-log-micro-router.md
     type: doc
     section: 7
-    doc_version: 1.0.0
+    doc_version: 1.1.0
     status: active
-    last_updated: 2026-03-22
-    sha256: 2d2292c2f64ee6699590bdbaba80f097b093c8a99cdc1199e673e4497d8553e0
+    last_updated: 2026-03-23
+    sha256: 2523cda90388a1235b21c805a9a2dea13253d58ea2e1aedd87be858fbd2215a6
 
   - path: docs/7-concepts/world-sim-persona-pattern.md
     type: doc
@@ -488,7 +488,15 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-23
-    sha256: 28f488b4429378ab655ed3e2e8738c930d664dd86eec4cb92ea3e9f153d84b4c
+    sha256: 6cfa2fed28c3e22a77b15e10f19f135a32e650767b6bca611c90c5d9342c7d70
+
+  - path: docs/7-concepts/ledger-tier-separation.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-03-23
+    sha256: 5dead097543c7c14260f6e837aa682a91f0acb97182901f2e761310101fe9b2a
 
   - path: docs/7-concepts/group-libraries-and-tools.md
     type: doc
@@ -1065,14 +1073,14 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-02
-    sha256: 75ab47f4caf9d00bc6358cf15730efe1230b1d6a3d549cf9e79e2e3fc91df1d9
+    sha256: 7296801f2658e04cffb05ae61c8d6bae3d7ae1fbf332b3a541aed0a6208c22f2
 
   - path: standards/commitment-record-schema-v1.json
     type: schema
     doc_version: 1.1.0
     status: active
     last_updated: 2026-03-15
-    sha256: ea4b9e461351734343174d7fd24866bf5d83694d408bd805b4a489d99f6ef60b
+    sha256: b8c748207bb3b2252033850f93dfcdf2bd59a871df4c4327bb4615c8a229b12f
 
   - path: standards/escalation-record-schema-v1.json
     type: schema
@@ -1202,7 +1210,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-04
-    sha256: 74da7ec770a4ba4a84801268f45a7fe1be39da959d440a5572dcef7e61f06812
+    sha256: 67c3a813dda1ba9f7e19e68b6935efc513a08bcb5caf52708ac9a8769c1fb9fa
 
   - path: domain-packs/education/cfg/domain-profile-extension.yaml
     type: config
@@ -1216,7 +1224,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-04-05
-    sha256: 1dd4176939bdf2161833f037647ae063eb8e72ff9c4a1cf7d2cab884c5bed8dd
+    sha256: 2d83b553cbd391768f84eb4b9b24a6ebca4158e6460a612c5aa8ac40df45d4cb
 
   - path: domain-packs/agriculture/cfg/runtime-config.yaml
     type: config
