@@ -75,11 +75,9 @@ const COMMANDS: SlashCommandDef[] = [
   {
     name: 'modules',
     operation: 'list_modules',
-    description: 'List available modules',
-    args: [],
-    defaultParams: { domain_id: 'education' },
-    allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
-    domainScope: 'education',
+    description: 'List modules in the active domain (or specify a domain)',
+    args: ['domain_id'],
+    allowedRoles: [],
     aliases: ['list_modules'],
   },
   {

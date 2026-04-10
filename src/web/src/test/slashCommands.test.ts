@@ -295,6 +295,7 @@ describe('getCommandsForRole', () => {
     expect(names).toContain('profile')
     expect(names).toContain('explain')
     expect(names).toContain('module_status')
+    expect(names).toContain('modules')
   })
 
   it('platformRole root sees ALL commands regardless of effectiveRole', () => {
@@ -320,7 +321,8 @@ describe('getCommandsForRole', () => {
     expect(names).not.toContain('teachers')
     expect(names).not.toContain('students')
     expect(names).not.toContain('join')
-    expect(names).not.toContain('modules')
+    // /modules is system-wide (no domainScope), visible to all
+    expect(names).toContain('modules')
   })
 
   it('system_operator maps to teacher via ROLE_EQUIVALENCE', () => {
@@ -354,10 +356,11 @@ describe('getCommandsForRole — domain scoping', () => {
     const names = cmds.map((c) => c.name)
     expect(names).not.toContain('teachers')
     expect(names).not.toContain('students')
-    expect(names).not.toContain('modules')
     expect(names).not.toContain('assign')
     expect(names).not.toContain('join')
     expect(names).not.toContain('switch')
+    // /modules is system-wide (no domainScope), visible in all domains
+    expect(names).toContain('modules')
     // But still sees non-scoped DA commands
     expect(names).toContain('domains')
     expect(names).toContain('assign_role')
@@ -431,7 +434,8 @@ describe('generateHelpText', () => {
     const text = generateHelpText('system_admin', undefined, 'system')
     expect(text).not.toContain('/teachers')
     expect(text).not.toContain('/students')
-    expect(text).not.toContain('/modules')
+    // /modules is system-wide, visible in all domains
+    expect(text).toContain('/modules')
     expect(text).toContain('/domains')
   })
 })
