@@ -60,10 +60,9 @@ const COMMANDS: SlashCommandDef[] = [
   {
     name: 'switch',
     operation: 'switch_active_module',
-    description: 'Switch your active education module',
+    description: 'Switch your active module',
     args: ['module_id'],
-    allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
-    domainScope: 'education',
+    allowedRoles: [],
   },
   {
     name: 'profile',

@@ -332,7 +332,8 @@ describe('getCommandsForRole', () => {
     expect(names).not.toContain('domains')
     // Without a domainKey, education-scoped commands are excluded
     expect(names).not.toContain('teachers')
-    expect(names).not.toContain('switch')
+    // /switch is system-wide (no domainScope), visible to all
+    expect(names).toContain('switch')
   })
 })
 
@@ -358,9 +359,9 @@ describe('getCommandsForRole — domain scoping', () => {
     expect(names).not.toContain('students')
     expect(names).not.toContain('assign')
     expect(names).not.toContain('join')
-    expect(names).not.toContain('switch')
-    // /modules is system-wide (no domainScope), visible in all domains
+    // /modules and /switch are system-wide (no domainScope), visible in all domains
     expect(names).toContain('modules')
+    expect(names).toContain('switch')
     // But still sees non-scoped DA commands
     expect(names).toContain('domains')
     expect(names).toContain('assign_role')
@@ -371,7 +372,8 @@ describe('getCommandsForRole — domain scoping', () => {
     const cmds = getCommandsForRole('system_operator', undefined, 'system')
     const names = cmds.map((c) => c.name)
     expect(names).not.toContain('teachers')
-    expect(names).not.toContain('switch')
+    // /switch is system-wide, visible in all domains
+    expect(names).toContain('switch')
     expect(names).toContain('escalations')
   })
 
