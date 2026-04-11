@@ -50,7 +50,7 @@ async def post_vocabulary_metric(
     user_data = require_auth(current)
 
     # Students can only update their own metric
-    if user_data["user_id"] != user_id and user_data["role"] not in ("root",):
+    if user_data["sub"] != user_id and user_data["role"] not in ("root",):
         raise HTTPException(status_code=403, detail="Cannot update another user's vocabulary metric")
 
     # Find the student's education profile
