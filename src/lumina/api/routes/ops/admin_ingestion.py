@@ -26,8 +26,10 @@ async def execute(
         svc = _get_ingest_service()
         records = svc.list_records(domain_id=domain_id, status=status_filter, limit=20)
         if user_data["role"] == "domain_authority":
-            governed = user_data.get("governed_modules") or []
-            records = [r for r in records if r.get("domain_id") in governed]
+            governed = set(user_data.get("governed_modules") or [])
+            domain_role_keys = set((user_data.get("domain_roles") or {}).keys())
+            da_scope = governed | domain_role_keys
+            records = [r for r in records if r.get("domain_id") in da_scope]
         return {"operation": operation, "count": len(records), "records": records}
 
     if operation == "review_ingestion":

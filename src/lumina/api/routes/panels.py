@@ -232,7 +232,7 @@ async def _resolve_user_directory(
     return {
         "panel": pcfg.get("id", "user_directory"),
         "users": [
-            {"user_id": u.get("user_id", ""), "display_name": u.get("display_name", u.get("user_id", ""))}
+            {"display_name": u.get("display_name") or u.get("username") or u.get("user_id", "")}
             for u in (users or [])
         ],
     }
@@ -299,18 +299,25 @@ async def _resolve_staff_directory(
     governed: set[str] | None = None
     if user_data.get("role") == "domain_authority":
         governed = set(user_data.get("governed_modules") or [])
+        # Also include bare domain_ids so staff keyed by domain name match
+        for d in _cfg.DOMAIN_REGISTRY.list_domains():
+            did = d.get("domain_id", "")
+            try:
+                rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
+                if governed & set(rt.get("module_map") or {}):
+                    governed.add(did)
+            except Exception:
+                pass
     all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
     staff: list[dict[str, Any]] = []
     for u in all_users:
-        uid = u.get("sub") or u.get("user_id", "")
         d_roles = u.get("domain_roles") or {}
         for _mid, _rid in d_roles.items():
             if _rid in ("teacher", "teaching_assistant"):
                 if governed is not None and _mid not in governed:
                     continue
                 staff.append({
-                    "user_id": uid,
-                    "display_name": u.get("display_name", uid),
+                    "display_name": u.get("display_name") or u.get("username") or u.get("user_id", ""),
                     "domain_role": _rid,
                     "module_id": _mid,
                 })

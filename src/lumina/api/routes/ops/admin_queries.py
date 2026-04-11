@@ -178,12 +178,14 @@ async def execute(
         # Domain-scoped filtering: DAs only see users in their governed modules.
         if user_data["role"] == "domain_authority":
             da_modules = set(user_data.get("governed_modules") or [])
-            if da_modules:
+            da_domain_roles = set((user_data.get("domain_roles") or {}).keys())
+            da_scope = da_modules | da_domain_roles
+            if da_scope:
                 scoped: list[dict[str, Any]] = []
                 for u in users:
                     u_modules = set(u.get("governed_modules") or [])
                     u_domain_roles = u.get("domain_roles") or {}
-                    if u_modules & da_modules or set(u_domain_roles) & da_modules:
+                    if u_modules & da_scope or set(u_domain_roles) & da_scope:
                         scoped.append(u)
                 users = scoped
 

@@ -147,3 +147,84 @@ def test_list_modules_unknown_domain_400(client: TestClient, api_module) -> None
             headers=_auth_header(token),
         )
     assert resp.status_code == 400
+
+
+# ── DA list_modules via domain_roles ──────────────────────────────────────────
+
+
+@pytest.mark.integration
+def test_list_modules_da_with_domain_roles(client: TestClient, api_module) -> None:
+    """DA with domain_roles (but empty governed_modules) can list_modules."""
+    from lumina.auth.auth import create_scoped_jwt
+
+    token = create_scoped_jwt(
+        user_id="da-edu-001",
+        role="domain_authority",
+        governed_modules=[],
+        domain_roles={"education": "domain_authority"},
+    )
+    resp = client.post(
+        "/api/admin/command",
+        json={
+            "operation": "list_modules",
+            "params": {"domain_id": "education"},
+        },
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["hitl_exempt"] is True
+    assert body["result"]["domain_id"] == "education"
+    assert isinstance(body["result"]["modules"], list)
+
+
+@pytest.mark.integration
+def test_list_modules_da_with_governed_modules(client: TestClient, api_module) -> None:
+    """DA with governed_modules can list_modules (pre-existing behaviour)."""
+    from lumina.auth.auth import create_scoped_jwt
+    from lumina.api import config as _cfg
+
+    # Get a real module ID from the education domain
+    modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain("education")
+    assert modules, "education domain should have at least one module"
+    first_mod = modules[0]["module_id"]
+
+    token = create_scoped_jwt(
+        user_id="da-edu-002",
+        role="domain_authority",
+        governed_modules=[first_mod],
+    )
+    resp = client.post(
+        "/api/admin/command",
+        json={
+            "operation": "list_modules",
+            "params": {"domain_id": "education"},
+        },
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["hitl_exempt"] is True
+    assert body["result"]["domain_id"] == "education"
+
+
+@pytest.mark.integration
+def test_list_modules_da_wrong_domain_403(client: TestClient, api_module) -> None:
+    """DA for education cannot list_modules for agriculture."""
+    from lumina.auth.auth import create_scoped_jwt
+
+    token = create_scoped_jwt(
+        user_id="da-edu-003",
+        role="domain_authority",
+        governed_modules=[],
+        domain_roles={"education": "domain_authority"},
+    )
+    resp = client.post(
+        "/api/admin/command",
+        json={
+            "operation": "list_modules",
+            "params": {"domain_id": "agriculture"},
+        },
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 403

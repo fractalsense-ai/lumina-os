@@ -117,12 +117,16 @@ def can_govern_domain(
 ) -> bool:
     """Check if a domain_authority user governs a specific domain or module.
 
-    Performs a direct membership check first.  When *registry* is supplied
-    and the direct check fails, resolves *domain_id* to its module list
-    and checks whether the user governs at least one of those modules.
+    Performs a direct membership check first against both ``governed_modules``
+    and ``domain_roles`` keys.  When *registry* is supplied and the direct
+    check fails, resolves *domain_id* to its module list and checks whether
+    any governed module or domain-role key matches.
+
     This handles the common case where ``governed_modules`` contains full
     module IDs (e.g. ``domain/edu/algebra-level-1/v1``) while the caller
-    passes a domain name (e.g. ``education``).
+    passes a domain name (e.g. ``education``), as well as DAs whose domain
+    affiliation is established via ``domain_roles`` rather than
+    ``governed_modules`` (e.g. invited without explicit module list).
     """
     role = user.get("role", "")
     if role == "root":
@@ -130,7 +134,10 @@ def can_govern_domain(
     if role != "domain_authority":
         return False
     governed = user.get("governed_modules") or []
+    domain_roles = user.get("domain_roles") or {}
     if domain_id in governed:
+        return True
+    if domain_id in domain_roles:
         return True
     # Registry-assisted domain-level check
     if registry is not None:
@@ -139,6 +146,8 @@ def can_govern_domain(
             modules = registry.list_modules_for_domain(resolved)
             module_ids = {m["module_id"] for m in modules}
             if module_ids & set(governed):
+                return True
+            if module_ids & set(domain_roles.keys()):
                 return True
         except Exception:
             pass

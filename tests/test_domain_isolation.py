@@ -109,6 +109,42 @@ def test_can_govern_domain_without_registry_module_id_fails() -> None:
     assert can_govern_domain(user, "education") is False
 
 
+@pytest.mark.unit
+def test_can_govern_domain_via_domain_roles_direct() -> None:
+    """DA with domain_roles key matching domain_id passes without registry."""
+    user = {
+        "role": "domain_authority",
+        "governed_modules": [],
+        "domain_roles": {"education": "domain_authority"},
+    }
+    assert can_govern_domain(user, "education") is True
+    assert can_govern_domain(user, "agriculture") is False
+
+
+@pytest.mark.unit
+def test_can_govern_domain_via_domain_roles_with_registry() -> None:
+    """DA with module-level domain_roles keys passes via registry lookup."""
+    user = {
+        "role": "domain_authority",
+        "governed_modules": [],
+        "domain_roles": {"domain/edu/algebra-level-1/v1": "teacher"},
+    }
+    reg = _mock_registry("education", ["domain/edu/algebra-level-1/v1"])
+    assert can_govern_domain(user, "education", registry=reg) is True
+
+
+@pytest.mark.unit
+def test_can_govern_domain_empty_governed_and_roles() -> None:
+    """DA with neither governed_modules nor domain_roles is rejected."""
+    user = {
+        "role": "domain_authority",
+        "governed_modules": [],
+        "domain_roles": {},
+    }
+    reg = _mock_registry("education", ["domain/edu/algebra-level-1/v1"])
+    assert can_govern_domain(user, "education", registry=reg) is False
+
+
 # ── list_users domain filtering ──────────────────────────────────────────────
 
 
