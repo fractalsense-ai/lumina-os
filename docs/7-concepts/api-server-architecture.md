@@ -60,7 +60,6 @@ src/lumina/api/
     ├── events.py        ← → services/system_log/events_routes.py
     ├── consent.py       ← POST /api/consent/accept
     ├── holodeck.py      ← POST /api/holodeck/simulate
-    ├── nightcycle.py    ← night cycle trigger, status, report, proposals, resolve
     ├── panels.py        ← GET/PATCH /api/panels/{panel_id}
     ├── vocabulary.py    ← vocabulary metric submission and growth dashboard
     └── ops/             ← admin command operation handlers (8 modules)

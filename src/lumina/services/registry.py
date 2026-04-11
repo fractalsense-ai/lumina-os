@@ -58,7 +58,6 @@ CORE_ROUTES: list[str] = [
     "chat",
     "consent",
     "holodeck",
-    "nightcycle",
     "panels",
     "system",
     "vocabulary",

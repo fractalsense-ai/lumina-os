@@ -93,12 +93,12 @@ def test_load_yaml_flat_scalars(tmp_path: pathlib.Path) -> None:
 def test_load_yaml_nested_mapping(tmp_path: pathlib.Path) -> None:
     f = tmp_path / "nested.yaml"
     f.write_text(
-        "night_cycle:\n  enabled: true\n  interval_hours: 8\n",
+        "daemon:\n  enabled: true\n  interval_hours: 8\n",
         encoding="utf-8",
     )
     result = load_yaml(f)
-    assert result["night_cycle"]["enabled"] is True
-    assert result["night_cycle"]["interval_hours"] == 8
+    assert result["daemon"]["enabled"] is True
+    assert result["daemon"]["interval_hours"] == 8
 
 
 @pytest.mark.unit
@@ -219,25 +219,25 @@ def test_load_yaml_block_mapping_list_get_templates(tmp_path: pathlib.Path) -> N
 
 
 # ─────────────────────────────────────────────────────────────
-# load_yaml: night-cycle config pattern (server.py use-case)
+# load_yaml: daemon config pattern (server.py use-case)
 # ─────────────────────────────────────────────────────────────
 
 
 @pytest.mark.unit
-def test_load_yaml_night_cycle_config(tmp_path: pathlib.Path) -> None:
-    """load_yaml correctly reads a night_cycle section from a runtime config."""
+def test_load_yaml_daemon_config(tmp_path: pathlib.Path) -> None:
+    """load_yaml correctly reads a daemon section from a runtime config."""
     cfg = tmp_path / "system-runtime-config.yaml"
     cfg.write_text(
-        "night_cycle:\n"
+        "daemon:\n"
         "  enabled: true\n"
         "  hour: 2\n"
         "  timezone: UTC\n",
         encoding="utf-8",
     )
     result = load_yaml(cfg)
-    nc = result.get("night_cycle", {})
-    assert nc["enabled"] is True
-    assert nc["hour"] == 2
+    dc = result.get("daemon", {})
+    assert dc["enabled"] is True
+    assert dc["hour"] == 2
 
 
 # ─────────────────────────────────────────────────────────────

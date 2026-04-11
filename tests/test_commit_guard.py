@@ -5,7 +5,7 @@ Verifies:
   2. audit_scanner.py — AST-based verification that all state-mutating endpoints
      are decorated with @requires_log_commit
   3. Persistence adapter integration — notify_log_commit() called on log writes
-  4. Nightcycle proposal resolve now writes a System Log record
+  4. Daemon resolve_proposal is dispatched through admin_command (commit-guarded)
 """
 
 from __future__ import annotations
@@ -345,7 +345,6 @@ _EXPECTED_DECORATED = {
         "admin_command", "admin_command_resolve",
     ],
     "chat.py": ["chat"],
-    "nightcycle.py": ["nightcycle_resolve_proposal"],
 }
 
 # Map route filenames that have been extracted into service packages to their
@@ -406,7 +405,7 @@ class TestDecoratorPresenceInSource:
 
 _ROUTE_FILES_WITH_GUARD = [
     "auth.py", "staging.py", "ingestion.py", "domain.py",
-    "domain_roles.py", "admin.py", "chat.py", "nightcycle.py",
+    "domain_roles.py", "admin.py", "chat.py",
 ]
 
 
@@ -420,25 +419,22 @@ class TestRouteImports:
 
 
 # ═════════════════════════════════════════════════════════════
-# 7. Nightcycle proposal resolve now writes a log record
+# 7. Daemon resolve_proposal is dispatched through admin_command
 # ═════════════════════════════════════════════════════════════
 
 
-class TestNightcycleResolveLogsRecord:
-    """Verify the nightcycle proposal resolve endpoint writes a commitment record."""
+class TestDaemonResolveViaAdminCommand:
+    """Verify resolve_proposal is handled by admin_daemon, dispatched through admin_command."""
 
-    def test_nightcycle_route_writes_log_record(self):
-        """Source of nightcycle.py should call append_log_record after resolve_proposal."""
-        source = (ROUTES_DIR / "nightcycle.py").read_text(encoding="utf-8")
-        # The function should contain both resolve_proposal and append_log_record
+    def test_admin_daemon_handles_resolve_proposal(self):
+        """admin_daemon.py should handle the resolve_proposal operation."""
+        source = (ROUTES_DIR / "ops" / "admin_daemon.py").read_text(encoding="utf-8")
         assert "resolve_proposal" in source
-        assert "append_log_record" in source
-        assert "nightcycle_proposal_resolution" in source
 
-    def test_nightcycle_route_builds_commitment_record(self):
-        """Source should call build_commitment_record with nightcycle_proposal_resolution."""
-        source = (ROUTES_DIR / "nightcycle.py").read_text(encoding="utf-8")
-        assert "build_commitment_record" in source
+    def test_admin_command_has_commit_guard(self):
+        """admin.py admin_command endpoint should have @requires_log_commit."""
+        source = (ROUTES_DIR / "admin.py").read_text(encoding="utf-8")
+        assert "requires_log_commit" in source
 
 
 # ═════════════════════════════════════════════════════════════

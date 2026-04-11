@@ -104,7 +104,7 @@ _register(Template(
 
 _register(Template(
     template_id="context-hint",
-    description="Context hint generated during night cycle",
+    description="Context hint generated during daemon batch",
     required_fields=("hint_id", "domain_id", "content"),
     default_structure={
         "source_task": "context_crawler",

@@ -1,4 +1,4 @@
-"""Tests for the gated_staging night-cycle task."""
+"""Tests for the gated_staging daemon batch task."""
 
 from __future__ import annotations
 

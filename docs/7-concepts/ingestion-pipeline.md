@@ -87,9 +87,9 @@ All ingestion operations are accessible through natural language commands interp
 - `"Approve interpretation abc-123 index 0"` → `approve_interpretation`
 - `"Reject ingestion abc-123"` → `reject_ingestion`
 
-## Night Cycle Relationship
+## Daemon Batch Relationship
 
-After heavy ingestion days, the night cycle runs `glossary_expansion` to scan committed ingestions for new terms not yet in the domain glossary, and `rejection_corpus_alignment` to ensure rejection-corpus entries remain consistent with newly ingested content.
+After heavy ingestion days, the daemon batch scheduler runs `glossary_expansion` to scan committed ingestions for new terms not yet in the domain glossary, and `rejection_corpus_alignment` to ensure rejection-corpus entries remain consistent with newly ingested content.
 
 ## System Log Integration
 

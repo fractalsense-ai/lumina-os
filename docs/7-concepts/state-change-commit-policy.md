@@ -117,7 +117,7 @@ cause this test to fail.
 | `admin` | `admin_command` | CommitmentRecord |
 | `admin` | `admin_command_resolve` | CommitmentRecord |
 | `chat` | `chat` | TraceEvent |
-| `nightcycle` | `nightcycle_resolve_proposal` | CommitmentRecord |
+| `admin` | `daemon_resolve_proposal` | CommitmentRecord |
 
 ## Adding a New State-Mutating Endpoint
 

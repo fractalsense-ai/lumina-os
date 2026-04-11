@@ -1,10 +1,10 @@
-"""Tests for the night cycle subsystem."""
+"""Tests for the daemon batch subsystem."""
 
 from __future__ import annotations
 
 import pytest
-from lumina.daemon.report import NightCycleReport, Proposal, TaskResult
-from lumina.daemon.scheduler import NightCycleScheduler
+from lumina.daemon.report import DaemonReport, Proposal, TaskResult
+from lumina.daemon.scheduler import DaemonScheduler
 from lumina.daemon.tasks import (
     get_task,
     glossary_expansion,
@@ -59,16 +59,16 @@ class TestTaskResult:
         assert len(d["proposals"]) == 1
 
 
-class TestNightCycleReport:
+class TestDaemonReport:
     def test_finish_success(self):
-        report = NightCycleReport()
+        report = DaemonReport()
         report.task_results.append(TaskResult(task="t", success=True))
         report.finish()
         assert report.status == "completed"
         assert report.finished_at is not None
 
     def test_finish_failure(self):
-        report = NightCycleReport()
+        report = DaemonReport()
         report.task_results.append(TaskResult(task="t1", success=True))
         report.task_results.append(TaskResult(task="t2", success=False, error="boom"))
         report.finish()
@@ -77,7 +77,7 @@ class TestNightCycleReport:
     def test_total_proposals(self):
         p1 = Proposal(task="t", domain_id="d", summary="a")
         p2 = Proposal(task="t", domain_id="d", summary="b")
-        report = NightCycleReport()
+        report = DaemonReport()
         report.task_results.append(TaskResult(task="t", proposals=[p1, p2]))
         report.finish()
         assert report.total_proposals == 2
@@ -191,14 +191,14 @@ class TestDomainPhysicsConstraintRefresh:
 # ── Scheduler tests ──────────────────────────────────────────
 
 
-class TestNightCycleScheduler:
+class TestDaemonScheduler:
     _LIGHTWEIGHT_TASKS = ["glossary_pruning", "glossary_expansion"]
 
     def _make_scheduler(self, **kwargs):
         domains = [
             {"domain_id": "edu", "physics": {"modules": [], "glossary": []}},
         ]
-        return NightCycleScheduler(
+        return DaemonScheduler(
             config={"enabled": True, "schedule": "0 2 * * *", "max_duration_minutes": 5,
                     "tasks": self._LIGHTWEIGHT_TASKS},
             domain_loader=lambda: domains,
@@ -244,7 +244,7 @@ class TestNightCycleScheduler:
         domains = [
             {"domain_id": "edu", "physics": {"glossary": [{"term": "orphan"}]}},
         ]
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"enabled": True, "tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
@@ -258,7 +258,7 @@ class TestNightCycleScheduler:
             {"domain_id": "edu", "physics": {"glossary": [{"term": "x"}]}},
             {"domain_id": "agri", "physics": {"glossary": [{"term": "y"}]}},
         ]
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"enabled": True, "tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
@@ -270,7 +270,7 @@ class TestNightCycleScheduler:
 
     def test_resolve_proposal(self):
         domains = [{"domain_id": "d", "physics": {"glossary": [{"term": "x"}]}}]
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"tasks": ["glossary_pruning"]},
             domain_loader=lambda: domains,
         )
@@ -295,7 +295,7 @@ class TestNightCycleScheduler:
         import time
         # Use only lightweight tasks and explicit domain_ids to skip
         # cross-domain tasks (like housekeeper_full_reindex which loads MiniLM)
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"enabled": True, "tasks": ["glossary_pruning", "glossary_expansion"]},
             domain_loader=lambda: [
                 {"domain_id": "edu", "physics": {"modules": [], "glossary": []}},
@@ -314,13 +314,13 @@ class TestNightCycleScheduler:
         assert report["status"] in ("completed", "failed")
 
     def test_configured_tasks(self):
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"tasks": ["glossary_pruning", "knowledge_graph_rebuild"]},
         )
         assert sched.configured_tasks == ["glossary_pruning", "knowledge_graph_rebuild"]
 
     def test_schedule_property(self):
-        sched = NightCycleScheduler(config={"schedule": "0 3 * * 1"})
+        sched = DaemonScheduler(config={"schedule": "0 3 * * 1"})
         assert sched.schedule == "0 3 * * 1"
 
     def test_domain_id_filter(self):
@@ -328,7 +328,7 @@ class TestNightCycleScheduler:
             {"domain_id": "edu", "physics": {}},
             {"domain_id": "agri", "physics": {}},
         ]
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"tasks": ["knowledge_graph_rebuild"]},
             domain_loader=lambda: domains,
         )
@@ -359,7 +359,7 @@ class TestNightCycleScheduler:
                 }],
             },
         }]
-        sched = NightCycleScheduler(
+        sched = DaemonScheduler(
             config={"tasks": ["slm_hint_generation"]},
             domain_loader=lambda: domains,
             call_slm_fn=mock_slm,
@@ -379,7 +379,7 @@ class TestNightCycleScheduler:
 
 
 class TestSlmHintGeneration:
-    """Unit tests for the slm_hint_generation night-cycle task."""
+    """Unit tests for the slm_hint_generation daemon task."""
 
     _PHYSICS = {
         "standing_orders": [

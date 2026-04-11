@@ -221,7 +221,7 @@ def test_command_interpreter_spec_mentions_dynamic_discovery() -> None:
     assert "get_domain_module_manifest" in content
 
 
-# ── No remaining night_cycle references in governance files ───
+# ── No remaining nightcycle references in governance files ───
 
 
 _GOVERNANCE_FILES = [
@@ -234,7 +234,7 @@ _GOVERNANCE_FILES = [
 
 @pytest.mark.unit
 @pytest.mark.parametrize("rel_path", _GOVERNANCE_FILES)
-def test_no_trigger_night_cycle_in_governance(rel_path: str) -> None:
+def test_no_nightcycle_ops_in_governance(rel_path: str) -> None:
     fpath = _REPO_ROOT / rel_path
     if not fpath.exists():
         pytest.skip(f"{rel_path} not found")
@@ -498,12 +498,12 @@ def test_admin_command_schema_exists(schema_name: str) -> None:
     assert "schema_version" in data
 
 
-# ── resource-monitor-daemon.md has no night-cycle references ───
+# ── resource-monitor-daemon.md has no nightcycle references ───
 
 
 @pytest.mark.unit
-def test_resource_monitor_daemon_doc_no_night_cycle() -> None:
-    """resource-monitor-daemon.md should not reference night cycle."""
+def test_resource_monitor_daemon_doc_no_nightcycle() -> None:
+    """resource-monitor-daemon.md should not reference nightcycle."""
     doc_path = _REPO_ROOT / "docs" / "7-concepts" / "resource-monitor-daemon.md"
     if not doc_path.exists():
         pytest.skip("Doc not found")

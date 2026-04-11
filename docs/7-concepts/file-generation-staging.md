@@ -58,7 +58,7 @@ Immutable registry mapping `template_id` → `Template` descriptors.
 | `evidence-schema` | Evidence schema JSON | `domain-packs/{domain_short}/cfg/evidence-schema.json` |
 | `tool-adapter` | Tool adapter YAML | `domain-packs/{domain_short}/modules/{module}/tool-adapters/{adapter_name}-adapter-v{major}.yaml` |
 | `student-profile` | Student/entity profile | `domain-packs/{domain_short}/profiles/{profile_id}.yaml` |
-| `context-hint` | Night cycle context hint | `domain-packs/{domain_short}/context-hints/{hint_id}.json` |
+| `context-hint` | Daemon batch context hint | `domain-packs/{domain_short}/context-hints/{hint_id}.json` |
 
 Each template defines:
 - **required_fields** — Fields that must appear in the payload.

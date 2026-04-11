@@ -1,5 +1,5 @@
 """
-tasks.py — Daemon task implementations (migrated from nightcycle).
+tasks.py -- Daemon task implementations.
 
 Each task function accepts a domain context dict and returns a TaskResult.
 Tasks are designed to be domain-scoped — they operate on one domain at a time.
@@ -222,9 +222,9 @@ def knowledge_graph_rebuild(
 ) -> TaskResult:
     """Build the global knowledge index from all domain physics.
 
-    This is the per-domain entry point called by the night-cycle scheduler.
+    This is the per-domain entry point called by the daemon batch scheduler.
     It feeds the domain_physics into the singleton KnowledgeIndex.  When
-    called for multiple domains during a full night-cycle run, the scheduler
+    called for multiple domains during a full daemon batch run, the scheduler
     accumulates all domain contexts and the final call triggers a full
     rebuild + persist.
 
@@ -324,14 +324,14 @@ def slm_hint_generation(
     """Pre-generate SLM context hints for each standing order + invariant pair.
 
     For each standing order in domain physics, the SLM is prompted (using the
-    NIGHT_CYCLE persona) to produce a concise domain-language summary of what
+    DAEMON_BATCH persona) to produce a concise domain-language summary of what
     is happening when that standing order fires.  The resulting hint is stored
     as a Proposal of type ``slm_hint`` for Domain Authority review.  This avoids
     per-session cold synthesis — the SLM works from static physics during the
-    night cycle and the approved hints are available inline at run-time.
+    daemon batch and the approved hints are available inline at run-time.
 
     If no ``call_slm_fn`` is provided the task skips hint generation gracefully
-    and records a warning rather than blocking the night cycle.
+    and records a warning rather than blocking the daemon batch.
     """
     import json as _json
 
@@ -358,7 +358,7 @@ def slm_hint_generation(
         inv.get("id", ""): inv
         for inv in (domain_physics.get("invariants") or [])
     }
-    system_prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+    system_prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
 
     for so in standing_orders:
         so_id = so.get("id", "unknown")
@@ -542,7 +542,7 @@ def cross_domain_synthesis_task(
 
 
 # ── Logic scrape review task ─────────────────────────────────
-# Surfaces pending logic scrape proposals during night cycle.
+# Surfaces pending logic scrape proposals during daemon batch.
 # The scrape itself is triggered on-demand via the admin API.
 
 
@@ -617,7 +617,7 @@ def context_crawler(
 ) -> TaskResult:
     """Crawl domain modules and stage context hints for DA approval.
 
-    For each module the SLM is prompted (using the NIGHT_CYCLE persona) to
+    For each module the SLM is prompted (using the DAEMON_BATCH persona) to
     extract concise, reusable context hints — e.g. glossary summaries,
     frequently-triggered invariants, common failure patterns.  Each hint is
     staged via ``StagingService.stage_file()`` with ``template_id="context-hint"``
@@ -658,7 +658,7 @@ def context_crawler(
 
     from lumina.core.persona_builder import PersonaContext, build_system_prompt
 
-    system_prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+    system_prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
 
     for mod in modules:
         module_id = mod.get("module_id", "unknown")
@@ -796,7 +796,7 @@ def gated_staging(
     if call_slm_fn is not None and modules:
         from lumina.core.persona_builder import PersonaContext, build_system_prompt
 
-        system_prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+        system_prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
 
         module_names = [m.get("name", m.get("module_id", "?")) for m in modules]
         existing = [e.get("term", "") for e in glossary]

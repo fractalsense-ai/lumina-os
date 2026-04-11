@@ -77,7 +77,7 @@ class PersonaContext(str, Enum):
     response must differ meaningfully from prior responses.  Structured
     analysis only — no user-facing conversational output."""
 
-    NIGHT_CYCLE = "night_cycle"
+    DAEMON_BATCH = "daemon_batch"
     """Batch domain knowledge analysis.  Produces structured task results
     only.  No user-facing output."""
 
@@ -299,12 +299,12 @@ _ROLE_DIRECTIVES: dict[PersonaContext, str] = {
         "content only."
     ),
 
-    PersonaContext.NIGHT_CYCLE: (
-        "# OPERATIONAL CONTEXT: NIGHT CYCLE\n"
+    PersonaContext.DAEMON_BATCH: (
+        "# OPERATIONAL CONTEXT: DAEMON BATCH\n"
         "In this operational context you are performing batch domain knowledge "
-        "analysis as part of the night cycle processing pipeline. "
+        "analysis as part of the daemon batch processing pipeline. "
         "There is no user present. "
-        "Produce structured task results only — no user-facing output, no "
+        "Produce structured task results only -- no user-facing output, no "
         "conversational framing, no explanations directed at a human reader.\n\n"
         "All output must be parseable as structured data or plain analysis results. "
         "Do not include chain-of-thought commentary or markdown prose beyond what "

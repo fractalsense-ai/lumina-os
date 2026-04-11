@@ -166,7 +166,7 @@ independently and stored with its content SHA-256 hash for dedup.
 
 | Mode | Trigger | Behaviour |
 |---|---|---|
-| **Full reindex** | Night-cycle `housekeeper_full_reindex` task, or manual call | Clears the store and re-embeds all documents |
+| **Full reindex** | Daemon `housekeeper_full_reindex` task, or manual call | Clears the store and re-embeds all documents |
 | **Incremental** | ResourceMonitorDaemon idle dispatch | Skips chunks whose content hash is already in the store |
 
 ### Scope enforcement

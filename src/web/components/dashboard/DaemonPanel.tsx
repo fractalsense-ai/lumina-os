@@ -9,7 +9,7 @@ interface AuthState {
   role: string
 }
 
-interface NightCycleStatus {
+interface DaemonStatus {
   enabled: boolean
   schedule: string
   is_running: boolean
@@ -25,7 +25,7 @@ interface NightCycleStatus {
   run_count: number
 }
 
-interface NightCycleProposal {
+interface DaemonProposal {
   proposal_id: string
   task: string
   domain_id: string
@@ -39,25 +39,39 @@ function getApiBase(): string {
   return (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
 }
 
-export function NightCyclePanel({ auth }: { auth: AuthState }) {
-  const [status, setStatus] = useState<NightCycleStatus | null>(null)
-  const [proposals, setProposals] = useState<NightCycleProposal[]>([])
+async function adminCommand(
+  base: string,
+  headers: Record<string, string>,
+  operation: string,
+  parameters?: Record<string, unknown>,
+): Promise<Response> {
+  return fetch(`${base}/api/admin/command`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operation, parameters: parameters ?? {} }),
+  })
+}
+
+export function DaemonPanel({ auth }: { auth: AuthState }) {
+  const [status, setStatus] = useState<DaemonStatus | null>(null)
+  const [proposals, setProposals] = useState<DaemonProposal[]>([])
   const [triggering, setTriggering] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const headers = { Authorization: `Bearer ${auth.token}` }
+  const base = getApiBase()
 
   const refresh = useCallback(async () => {
     setError(null)
     try {
       const [statusRes, propRes] = await Promise.all([
-        fetch(`${getApiBase()}/api/nightcycle/status`, { headers }),
-        fetch(`${getApiBase()}/api/nightcycle/proposals`, { headers }),
+        adminCommand(base, headers, 'daemon_status'),
+        adminCommand(base, headers, 'review_proposals'),
       ])
       if (statusRes.ok) setStatus(await statusRes.json())
       if (propRes.ok) setProposals(await propRes.json())
     } catch {
-      setError('Failed to load night cycle data.')
+      setError('Failed to load daemon data.')
     }
   }, [auth.token])
 
@@ -66,15 +80,11 @@ export function NightCyclePanel({ auth }: { auth: AuthState }) {
   const triggerRun = async () => {
     setTriggering(true)
     try {
-      const res = await fetch(`${getApiBase()}/api/nightcycle/trigger`, {
-        method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
+      const res = await adminCommand(base, headers, 'trigger_daemon_task')
       if (!res.ok) throw new Error('Trigger failed')
       await refresh()
     } catch {
-      setError('Failed to trigger night cycle.')
+      setError('Failed to trigger daemon task.')
     } finally {
       setTriggering(false)
     }
@@ -82,10 +92,9 @@ export function NightCyclePanel({ auth }: { auth: AuthState }) {
 
   const resolveProposal = async (proposalId: string, action: 'approved' | 'rejected') => {
     try {
-      const res = await fetch(`${getApiBase()}/api/nightcycle/proposals/${encodeURIComponent(proposalId)}/resolve`, {
-        method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+      const res = await adminCommand(base, headers, 'resolve_proposal', {
+        proposal_id: proposalId,
+        action,
       })
       if (res.ok) await refresh()
     } catch {
@@ -109,7 +118,7 @@ export function NightCyclePanel({ auth }: { auth: AuthState }) {
       {/* Status card */}
       <Card className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Night Cycle Status</h3>
+          <h3 className="text-sm font-semibold text-foreground">Daemon Status</h3>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={refresh}>Refresh</Button>
             <Button size="sm" onClick={triggerRun} disabled={triggering || (status?.is_running ?? false)}>

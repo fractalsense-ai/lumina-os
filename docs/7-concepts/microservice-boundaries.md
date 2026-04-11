@@ -221,19 +221,16 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 
 ---
 
-### Night Cycle & Vocabulary
+### Daemon Batch & Vocabulary
 
-`routes/nightcycle.py` and `routes/vocabulary.py` are mounted on the gateway alongside the
-core orchestrator routes. Night cycle provides batch processing endpoints (trigger, status,
-report, proposals, resolve). Vocabulary provides metric submission and a growth dashboard.
+Daemon batch processing operations (trigger, status, report, proposals, resolve) are
+dispatched through `POST /api/admin/command` with the appropriate `operation` field.
+See the admin command reference for details. `routes/vocabulary.py` is mounted on the
+gateway for metric submission and a growth dashboard.
 
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
-| POST | `/api/nightcycle/trigger` | user (root/da) | Trigger batch run |
-| GET | `/api/nightcycle/status` | user | Scheduler status |
-| GET | `/api/nightcycle/report/{run_id}` | user (root/da/qa/auditor) | Run report |
-| GET | `/api/nightcycle/proposals` | user (root/da) | Pending proposals |
-| POST | `/api/nightcycle/proposals/{proposal_id}/resolve` | user (root/da) | Accept/reject proposal |
+| POST | `/api/admin/command` | user (root/da) | Daemon ops via `operation` field |
 | POST | `/api/user/{user_id}/vocabulary-metric` | user | Submit vocab metric |
 | GET | `/api/dashboard/education/vocabulary-growth` | user (root/da/qa/auditor) | Growth dashboard |
 

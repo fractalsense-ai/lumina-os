@@ -19,7 +19,7 @@ a single ``session-admin-_admin.jsonl`` file.
 
 | Tier     | Path template                                       | Typical contents                       |
 |----------|-----------------------------------------------------|----------------------------------------|
-| System   | ``system/session-{session_id}.jsonl``               | Auth, HITL, nightcycle, audit traces   |
+| System   | ``system/session-{session_id}.jsonl``               | Auth, HITL, daemon, audit traces       |
 | Domain   | ``domains/{domain_id}/domain.jsonl``                | Domain-pack activation, domain roles   |
 | Module   | ``domains/{domain_id}/modules/{module_id}.jsonl``   | Student assignments, module evidence   |
 

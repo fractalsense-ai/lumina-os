@@ -84,10 +84,10 @@ _DAEMON_SCHEDULER: Any = None
 
 
 def _get_daemon_scheduler() -> Any:
-    """Lazy-init the daemon task scheduler (replaces nightcycle scheduler)."""
+    """Lazy-init the daemon task scheduler."""
     global _DAEMON_SCHEDULER
     if _DAEMON_SCHEDULER is None:
-        from lumina.daemon.scheduler import NightCycleScheduler
+        from lumina.daemon.scheduler import DaemonScheduler
 
         nc_cfg: dict[str, Any] = {}
         try:
@@ -95,7 +95,7 @@ def _get_daemon_scheduler() -> Any:
             nc_cfg = rt.get("daemon", {})
         except Exception:
             pass
-        _DAEMON_SCHEDULER = NightCycleScheduler(config=nc_cfg, persistence=_cfg.PERSISTENCE)
+        _DAEMON_SCHEDULER = DaemonScheduler(config=nc_cfg, persistence=_cfg.PERSISTENCE)
     return _DAEMON_SCHEDULER
 
 
@@ -613,7 +613,6 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "approve_interpretation": "domain_authority",
     "reject_ingestion": "domain_authority",
     "trigger_daemon_task": "domain_authority",
-    "trigger_night_cycle": "domain_authority",
     "invite_user": "domain_authority",
     "list_users": "domain_authority",
     "get_domain_physics": "domain_authority",

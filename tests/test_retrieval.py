@@ -461,11 +461,11 @@ class TestHousekeeper:
 
 
 # ══════════════════════════════════════════════════════════════
-#  Night-cycle task registration
+#  Daemon batch task registration
 # ══════════════════════════════════════════════════════════════
 
 
-class TestHousekeeperNightCycleTask:
+class TestHousekeeperDaemonTask:
     def test_registered(self):
         from lumina.daemon.tasks import get_cross_domain_task
         task = get_cross_domain_task("housekeeper_full_reindex")

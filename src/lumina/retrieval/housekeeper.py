@@ -7,7 +7,7 @@ not re-embedded.
 
 The housekeeper can run in two modes:
 
-* **Foreground full reindex** — called by the night-cycle scheduler or
+* **Foreground full reindex** -- called by the daemon batch scheduler or
   manually via ``housekeeper_full_reindex()``.
 * **Incremental poll** — called by the ResourceMonitorDaemon's idle-dispatch
   loop via ``housekeeper_incremental()``.

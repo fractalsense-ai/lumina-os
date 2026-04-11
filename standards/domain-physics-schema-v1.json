@@ -214,7 +214,7 @@
         "enabled": {
           "type": "boolean",
           "default": false,
-          "description": "When true, this domain participates in cross-domain synthesis analysis during night cycle processing. When false or omitted, the domain remains fully isolated."
+          "description": "When true, this domain participates in cross-domain synthesis analysis during daemon batch processing. When false or omitted, the domain remains fully isolated."
         },
         "peer_domains": {
           "type": "array",

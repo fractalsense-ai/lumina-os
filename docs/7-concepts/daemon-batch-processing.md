@@ -122,7 +122,7 @@ Key differences from scheduled/manual runs:
 | Trigger | Cron clock or API call | Load score below idle threshold |
 | Preemption | Runs to completion | Cooperative preemption if load spikes |
 | Frequency | Once per schedule | As often as idle windows allow |
-| Configuration | `night_cycle:` section (removed) | `daemon:` section in runtime-config.yaml |
+| Configuration | `daemon:` section in runtime-config.yaml | `daemon:` section in runtime-config.yaml |
 
 The daemon maintains its own priority-ordered task list (`daemon.task_priority`)
 which is a subset of the full task catalog.  See

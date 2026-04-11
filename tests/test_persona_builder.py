@@ -72,7 +72,7 @@ class TestDomainOverride:
             PersonaContext.PHYSICS_INTERPRETER,
             PersonaContext.COMMAND_TRANSLATOR,
             PersonaContext.LOGIC_SCRAPER,
-            PersonaContext.NIGHT_CYCLE,
+            PersonaContext.DAEMON_BATCH,
         ]
         for context in internal_contexts:
             prompt = build_system_prompt(context, domain_override=override)
@@ -192,21 +192,21 @@ class TestLogicScraperDirectives:
         assert "prompt_contract" not in prompt
 
 
-class TestNightCycleDirectives:
+class TestDaemonBatchDirectives:
 
     @pytest.mark.unit
-    def test_night_cycle_no_user_facing_output(self) -> None:
-        prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+    def test_daemon_batch_no_user_facing_output(self) -> None:
+        prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
         assert "no user-facing" in prompt.lower() or "user-facing" in prompt.lower()
 
     @pytest.mark.unit
-    def test_night_cycle_structured_results(self) -> None:
-        prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+    def test_daemon_batch_structured_results(self) -> None:
+        prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
         assert "structured" in prompt.lower()
 
     @pytest.mark.unit
-    def test_night_cycle_no_conversation_instructions(self) -> None:
-        prompt = build_system_prompt(PersonaContext.NIGHT_CYCLE)
+    def test_daemon_batch_no_conversation_instructions(self) -> None:
+        prompt = build_system_prompt(PersonaContext.DAEMON_BATCH)
         assert "prompt_contract" not in prompt
 
 

@@ -7,7 +7,7 @@ Design
 ------
 Tasks call ``await token.checkpoint()`` (async) or
 ``token.checkpoint_sync()`` (thread) at natural break points — e.g.
-between processing each domain in a night-cycle task.  If the daemon
+between processing each domain in a daemon batch task.  If the daemon
 has called ``token.request_yield()`` because user load spiked, the
 next checkpoint raises ``TaskPreempted`` and the task unwinds cleanly.
 

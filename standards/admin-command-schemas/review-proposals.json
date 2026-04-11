@@ -4,7 +4,7 @@
   "schema_version": "1.0.0",
   "last_updated": "2026-03-20",
   "title": "review_proposals",
-  "description": "List pending night-cycle proposals for review, optionally filtered by domain.",
+  "description": "List pending daemon batch proposals for review, optionally filtered by domain.",
   "type": "object",
   "required": [
     "operation",

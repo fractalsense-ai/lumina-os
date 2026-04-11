@@ -40,7 +40,7 @@ _SYSTEM_COMMITMENT_TYPES = frozenset({
     "user_invited",
     "account_activated",
     "session_close",
-    "nightcycle_proposal_resolution",
+    "daemon_proposal_resolution",
     "preference_update",
     "system_physics_activation",
 })

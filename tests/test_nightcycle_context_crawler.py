@@ -1,4 +1,4 @@
-"""Tests for the context_crawler night-cycle task."""
+"""Tests for the context_crawler daemon batch task."""
 
 from __future__ import annotations
 

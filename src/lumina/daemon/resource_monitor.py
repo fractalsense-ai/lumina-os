@@ -1,7 +1,7 @@
 """resource_monitor.py — Resource Monitor Daemon.
 
 Background asyncio task that periodically samples system load and
-opportunistically dispatches night-cycle maintenance tasks when the
+opportunistically dispatches daemon maintenance tasks when the
 system is idle.  If user load spikes while a task is running, the
 daemon requests cooperative preemption via ``PreemptionToken``.
 
@@ -59,7 +59,7 @@ class ResourceMonitorDaemon:
         ``LoadEstimator`` instance for taking load snapshots.
     task_runner:
         Async callable ``(task_name, token) -> dict`` that executes one
-        night-cycle task with preemption support.  Typically
+        daemon task with preemption support.  Typically
         ``task_adapter.run_task_preemptible``.
     task_priority:
         Ordered list of task names to dispatch when idle.

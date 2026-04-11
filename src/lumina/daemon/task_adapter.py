@@ -28,12 +28,12 @@ async def run_task_preemptible(
     persistence: Any = None,
     call_slm_fn: Callable[..., str] | None = None,
 ) -> dict[str, Any]:
-    """Execute a single night-cycle task across all domains with preemption.
+    """Execute a single daemon batch task across all domains with preemption.
 
     Parameters
     ----------
     task_name:
-        Registered night-cycle task name (e.g. ``"glossary_expansion"``).
+        Registered daemon batch task name (e.g. ``"glossary_expansion"``).
     token:
         ``PreemptionToken`` — checked between each domain iteration.
     domain_loader:
@@ -121,7 +121,7 @@ async def run_cross_domain_task_preemptible(
     domain_loader: Callable[[], list[dict[str, Any]]] | None = None,
     **extra_kw: Any,
 ) -> dict[str, Any]:
-    """Execute a cross-domain night-cycle task with preemption.
+    """Execute a cross-domain daemon batch task with preemption.
 
     Cross-domain tasks receive the full domain list and iterate internally.
     The adapter still checks preemption before dispatch.

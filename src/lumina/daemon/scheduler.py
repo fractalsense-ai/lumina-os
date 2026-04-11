@@ -1,5 +1,5 @@
 """
-scheduler.py — Daemon task scheduler (migrated from nightcycle).
+scheduler.py -- Daemon task scheduler.
 
 Provides a scheduler that can be driven by cron (external trigger),
 by the daemon, or by manual API invocation. Keeps history of runs
@@ -13,14 +13,14 @@ import threading
 import time
 from typing import Any, Callable
 
-from lumina.daemon.report import NightCycleReport, TaskResult
+from lumina.daemon.report import DaemonReport, TaskResult
 from lumina.daemon.tasks import get_task, get_cross_domain_task, list_tasks, list_cross_domain_tasks
 
 log = logging.getLogger("lumina-daemon")
 
 
-class NightCycleScheduler:
-    """Manages and executes night-cycle runs."""
+class DaemonScheduler:
+    """Manages and executes daemon batch runs."""
 
     def __init__(
         self,
@@ -36,11 +36,11 @@ class NightCycleScheduler:
         self._lock = threading.Lock()
 
         # Run history (most recent first)
-        self._runs: list[NightCycleReport] = []
+        self._runs: list[DaemonReport] = []
         self._max_history = 50
 
         # Current run (if in progress)
-        self._current_run: NightCycleReport | None = None
+        self._current_run: DaemonReport | None = None
 
     # ── Configuration helpers ─────────────────────────────────
 
@@ -131,16 +131,16 @@ class NightCycleScheduler:
         actor_id: str,
         task_names: list[str] | None = None,
         domain_ids: list[str] | None = None,
-    ) -> NightCycleReport:
-        """Execute a night cycle run synchronously. Returns the report."""
+    ) -> DaemonReport:
+        """Execute a daemon batch run synchronously. Returns the report."""
         return self._execute(
             triggered_by=actor_id,
             task_names=task_names or self.configured_tasks,
             domain_ids=domain_ids,
         )
 
-    def trigger_scheduled(self) -> NightCycleReport:
-        """Execute a scheduled night cycle run."""
+    def trigger_scheduled(self) -> DaemonReport:
+        """Execute a scheduled daemon batch run."""
         return self._execute(
             triggered_by="scheduler",
             task_names=self.configured_tasks,
@@ -152,8 +152,8 @@ class NightCycleScheduler:
         task_names: list[str] | None = None,
         domain_ids: list[str] | None = None,
     ) -> str:
-        """Start a night cycle run in a background thread. Returns run_id."""
-        report = NightCycleReport(triggered_by=actor_id)
+        """Start a daemon batch run in a background thread. Returns run_id."""
+        report = DaemonReport(triggered_by=actor_id)
         run_id = report.run_id
 
         def _run() -> None:
@@ -164,7 +164,7 @@ class NightCycleScheduler:
                 prebuilt_report=report,
             )
 
-        thread = threading.Thread(target=_run, daemon=True, name=f"nightcycle-{run_id}")
+        thread = threading.Thread(target=_run, daemon=True, name=f"daemon-batch-{run_id}")
         thread.start()
         return run_id
 
@@ -173,9 +173,9 @@ class NightCycleScheduler:
         triggered_by: str,
         task_names: list[str],
         domain_ids: list[str] | None = None,
-        prebuilt_report: NightCycleReport | None = None,
-    ) -> NightCycleReport:
-        report = prebuilt_report or NightCycleReport(triggered_by=triggered_by)
+        prebuilt_report: DaemonReport | None = None,
+    ) -> DaemonReport:
+        report = prebuilt_report or DaemonReport(triggered_by=triggered_by)
 
         with self._lock:
             if self._current_run is not None:
@@ -190,12 +190,12 @@ class NightCycleScheduler:
 
             for task_name in task_names:
                 if time.monotonic() > deadline:
-                    log.warning("Night cycle exceeded max duration, stopping")
+                    log.warning("Daemon batch exceeded max duration, stopping")
                     break
 
                 task_fn = get_task(task_name)
                 if task_fn is None:
-                    log.warning("Unknown night cycle task: %s", task_name)
+                    log.warning("Unknown daemon task: %s", task_name)
                     continue
 
                 for domain in domains:
@@ -229,7 +229,7 @@ class NightCycleScheduler:
                     and time.monotonic() <= deadline):
                 for task_name in cross_domain_task_names:
                     if time.monotonic() > deadline:
-                        log.warning("Night cycle exceeded max duration during cross-domain tasks")
+                        log.warning("Daemon batch exceeded max duration during cross-domain tasks")
                         break
 
                     cd_task_fn = get_cross_domain_task(task_name)
@@ -260,7 +260,7 @@ class NightCycleScheduler:
                     self._runs = self._runs[:self._max_history]
 
         log.info(
-            "Night cycle %s finished: %s tasks, %d proposals",
+            "Daemon batch %s finished: %s tasks, %d proposals",
             report.run_id,
             report.status,
             report.total_proposals,
@@ -283,15 +283,15 @@ class NightCycleScheduler:
         self,
         task_name: str,
         domain_ids: list[str] | None = None,
-    ) -> NightCycleReport:
+    ) -> DaemonReport:
         """Execute a single task for all (or selected) domains.
 
         Called by the Resource Monitor Daemon when the system is idle.
         Unlike ``trigger_manual`` this runs exactly one task, not the
-        full night-cycle suite, making it suitable for interleaved
+        full daemon batch suite, making it suitable for interleaved
         opportunistic scheduling.
 
-        Returns a ``NightCycleReport`` containing results for the
+        Returns a ``DaemonReport`` containing results for the
         single task across the targeted domains.
         """
         return self._execute(

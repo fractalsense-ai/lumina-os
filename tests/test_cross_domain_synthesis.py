@@ -1,6 +1,6 @@
 """
 Tests for cross-domain synthesis analysis, opt-in filtering,
-dual-approval proposals, and the night-cycle task integration.
+dual-approval proposals, and the daemon batch task integration.
 """
 
 from __future__ import annotations
@@ -287,7 +287,7 @@ class TestDualApproval:
         assert prop.status == "approved"
 
 
-# ── Night cycle task registration tests ─────────────────────────
+# ── Daemon batch task registration tests ────────────────────────
 
 class TestCrossDomainTaskRegistration:
     def test_task_is_registered(self):

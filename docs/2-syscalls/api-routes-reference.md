@@ -339,7 +339,7 @@ Dispatched via `POST /api/admin/command` with a natural-language `instruction`. 
 
 ## 7. Core Orchestrator
 
-**Source routes:** `routes/chat.py`, `routes/system.py`, `routes/consent.py`, `routes/holodeck.py`, `routes/panels.py`, `routes/nightcycle.py`, `routes/vocabulary.py`
+**Source routes:** `routes/chat.py`, `routes/system.py`, `routes/consent.py`, `routes/holodeck.py`, `routes/panels.py`, `routes/vocabulary.py`
 
 ### Chat
 
@@ -404,27 +404,12 @@ Dispatched via `POST /api/admin/command` with a natural-language `instruction`. 
 **Response:** `{panel_id, updated: true}`
 **Errors:** 401 (unauthenticated), 403 (non-writable source), 404 (panel not found)
 
-### Night Cycle
+### Daemon Batch Operations
 
-| Method | Path | Track | Roles | Description |
-|--------|------|-------|-------|-------------|
-| POST | `/api/nightcycle/trigger` | user | root, da | Trigger batch night cycle |
-| GET | `/api/nightcycle/status` | user | any | Scheduler status |
-| GET | `/api/nightcycle/report/{run_id}` | user | root, da, qa, auditor | Run report |
-| GET | `/api/nightcycle/proposals` | user | root, da | Pending proposals |
-| POST | `/api/nightcycle/proposals/{proposal_id}/resolve` | user | root, da | Accept/reject proposal |
-
-#### POST `/api/nightcycle/trigger`
-
-**Request:** `{domain_id?, force?}`
-**Response:** `{run_id, status: "started"}`
-**Errors:** 403 (insufficient role), 409 (run already in progress)
-
-#### POST `/api/nightcycle/proposals/{proposal_id}/resolve`
-
-**Request:** `{decision}` — `"accept"` or `"reject"`
-**Response:** `{proposal_id, decision, applied}`
-**Errors:** 404 (proposal not found)
+Batch processing operations (trigger, status, report, proposals, resolve) are dispatched
+through `POST /api/admin/command` with the appropriate `operation` field:
+`trigger_daemon_task`, `daemon_status`, `daemon_report`, `review_proposals`, `resolve_proposal`.
+See Section 1 (Admin) for the admin command endpoint specification.
 
 ### Vocabulary
 

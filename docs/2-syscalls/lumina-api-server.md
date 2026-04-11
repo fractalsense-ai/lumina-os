@@ -56,7 +56,6 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `routes/system.py` | Health, domain listing, tool adapter, System Log validate |
 | `routes/events.py` | SSE real-time event stream (token-auth + RBAC-filtered) |
 | `routes/dashboard.py` | Governance dashboard data endpoints |
-| `routes/nightcycle.py` | Night cycle trigger, status, report, proposals, resolve |
 | `routes/holodeck.py` | Holodeck physics sandbox simulation |
 | `routes/consent.py` | Consent acceptance recording |
 | `routes/panels.py` | Domain-agnostic panel data resolver (11 data-source resolvers) |
@@ -554,17 +553,11 @@ Return aggregate system telemetry (active sessions, pending escalations, ingesti
 
 ---
 
-### Night Cycle
+### Daemon Batch Operations
 
-Batch processing endpoints for the night cycle scheduler. Also available via `trigger_daemon_task`, `daemon_status`, and `review_proposals` admin commands.
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/nightcycle/trigger` | Trigger batch night cycle |
-| GET | `/api/nightcycle/status` | Scheduler status |
-| GET | `/api/nightcycle/report/{run_id}` | Run report |
-| GET | `/api/nightcycle/proposals` | Pending proposals |
-| POST | `/api/nightcycle/proposals/{proposal_id}/resolve` | Accept/reject proposal |
+Batch processing operations (trigger, status, report, proposals, resolve) are now dispatched
+through `POST /api/admin/command` with the appropriate `operation` field:
+`trigger_daemon_task`, `daemon_status`, `daemon_report`, `review_proposals`, `resolve_proposal`.
 
 ### Panels
 

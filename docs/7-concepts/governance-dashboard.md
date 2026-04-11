@@ -131,7 +131,7 @@ src/web/
       DashboardPage.tsx            — Dynamic tab container (TAB_MANIFEST with role-based visibility)
       EscalationQueue.tsx          — Escalation list and resolution actions
       IngestionReview.tsx          — Ingestion lifecycle and interpretation viewer
-      NightCyclePanel.tsx          — Night cycle status and proposal management
+      DaemonPanel.tsx              — Daemon status and proposal management
       StagedCommandsPanel.tsx      — HITL staged command list with accept/reject
       SystemLogPanel.tsx           — Filtered system log viewer (all/warnings/alerts)
       DaemonMonitorPanel.tsx       — Resource Monitor Daemon status display
@@ -147,7 +147,7 @@ A typical domain authority session:
 2. Check the **Overview** for any pending items
 3. Review **Escalations** — approve, reject, or defer as needed
 4. Check **Ingestions** — extract and review uploaded documents, commit approved interpretations
-5. Review **Night Cycle** proposals — approve glossary additions, reject stale entries
+5. Review **Daemon Batch** proposals — approve glossary additions, reject stale entries
 6. Switch back to chat for conversational domain work
 
 ## Source Files
@@ -155,7 +155,7 @@ A typical domain authority session:
 - `src/web/components/dashboard/DashboardPage.tsx` — Main dashboard container
 - `src/web/components/dashboard/EscalationQueue.tsx` — Escalation management
 - `src/web/components/dashboard/IngestionReview.tsx` — Ingestion review
-- `src/web/components/dashboard/NightCyclePanel.tsx` — Night cycle panel
+- `src/web/components/dashboard/DaemonPanel.tsx` — Daemon panel
 - `src/web/components/dashboard/StagedCommandsPanel.tsx` — Staged command management
 - `src/web/components/dashboard/SystemLogPanel.tsx` — System log viewer
 - `src/web/components/dashboard/DaemonMonitorPanel.tsx` — Daemon status monitor

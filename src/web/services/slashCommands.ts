@@ -174,7 +174,7 @@ const COMMANDS: SlashCommandDef[] = [
   {
     name: 'proposals',
     operation: 'review_proposals',
-    description: 'List pending night-cycle proposals',
+    description: 'List pending daemon proposals',
     args: ['domain_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['review_proposals'],

@@ -12,7 +12,7 @@ relies on *before* any SLM or LLM is invoked:
 
 The index is persisted as flat JSON at ``data/knowledge-index/`` and
 eagerly loaded at server startup.  The ``knowledge_graph_rebuild``
-night-cycle / daemon task calls :meth:`KnowledgeIndex.build` to refresh it.
+daemon batch task calls :meth:`KnowledgeIndex.build` to refresh it.
 """
 
 from __future__ import annotations
