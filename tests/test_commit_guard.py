@@ -348,6 +348,22 @@ _EXPECTED_DECORATED = {
     "nightcycle.py": ["nightcycle_resolve_proposal"],
 }
 
+# Map route filenames that have been extracted into service packages to their
+# canonical source file.  When the routes/ file is a thin re-export stub the
+# tests must inspect the actual implementation instead.
+_SERVICE_SOURCE_MAP: dict[str, Path] = {
+    "auth.py": SRC_ROOT / "services" / "auth" / "routes.py",
+    "staging.py": SRC_ROOT / "services" / "ingestion" / "staging_routes.py",
+    "ingestion.py": SRC_ROOT / "services" / "ingestion" / "routes.py",
+    "domain.py": SRC_ROOT / "services" / "domain" / "routes.py",
+    "domain_roles.py": SRC_ROOT / "services" / "domain" / "roles_routes.py",
+}
+
+
+def _resolve_source(filename: str) -> Path:
+    """Return the canonical source path for a route filename."""
+    return _SERVICE_SOURCE_MAP.get(filename, ROUTES_DIR / filename)
+
 
 class TestDecoratorPresenceInSource:
     """Parse each route file and verify the expected functions have
@@ -359,7 +375,7 @@ class TestDecoratorPresenceInSource:
         ids=list(_EXPECTED_DECORATED.keys()),
     )
     def test_functions_have_decorator(self, filename, expected_fns):
-        source_file = ROUTES_DIR / filename
+        source_file = _resolve_source(filename)
         assert source_file.exists(), f"{source_file} not found"
 
         tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
@@ -397,7 +413,7 @@ _ROUTE_FILES_WITH_GUARD = [
 class TestRouteImports:
     @pytest.mark.parametrize("filename", _ROUTE_FILES_WITH_GUARD)
     def test_imports_requires_log_commit(self, filename):
-        source = (ROUTES_DIR / filename).read_text(encoding="utf-8")
+        source = _resolve_source(filename).read_text(encoding="utf-8")
         assert "requires_log_commit" in source, (
             f"{filename} does not import requires_log_commit"
         )
@@ -434,11 +450,11 @@ class TestRegisterLogsRecord:
     """Verify the register endpoint writes a user_registered trace event."""
 
     def test_register_writes_log_record(self):
-        source = (ROUTES_DIR / "auth.py").read_text(encoding="utf-8")
+        source = _resolve_source("auth.py").read_text(encoding="utf-8")
         assert "user_registered" in source
 
     def test_register_calls_append_log_record(self):
-        source = (ROUTES_DIR / "auth.py").read_text(encoding="utf-8")
+        source = _resolve_source("auth.py").read_text(encoding="utf-8")
         # Find the register function and ensure it has append_log_record
         tree = ast.parse(source)
         for node in ast.walk(tree):

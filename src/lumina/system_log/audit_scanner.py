@@ -108,14 +108,29 @@ def scan_source_ast(routes_dir: Path | None = None) -> dict[str, list[str]]:
 
     Parses each route module's source and checks that every registered
     state-mutating function is decorated with ``@requires_log_commit``.
+    For modules extracted into service packages the scanner follows the
+    canonical source mapping automatically.
     """
     if routes_dir is None:
         routes_dir = Path(__file__).resolve().parent.parent / "api" / "routes"
 
+    # Extracted service modules: route stub → canonical source path.
+    services_root = routes_dir.parent.parent / "services"
+    _service_source: dict[str, Path] = {
+        "auth": services_root / "auth" / "routes.py",
+        "staging": services_root / "ingestion" / "staging_routes.py",
+        "ingestion": services_root / "ingestion" / "routes.py",
+        "domain": services_root / "domain" / "routes.py",
+        "domain_roles": services_root / "domain" / "roles_routes.py",
+    }
+
     unguarded: dict[str, list[str]] = {}
 
     for module_name, expected_fns in STATE_MUTATING_ENDPOINTS.items():
-        source_file = routes_dir / f"{module_name}.py"
+        # Prefer the service package source when available.
+        source_file = _service_source.get(module_name)
+        if source_file is None or not source_file.exists():
+            source_file = routes_dir / f"{module_name}.py"
         if not source_file.exists():
             log.warning("Source file %s not found", source_file)
             unguarded[module_name] = sorted(expected_fns)

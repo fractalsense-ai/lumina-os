@@ -346,6 +346,14 @@ artifacts:
     last_updated: 2026-03-15
     sha256: ed6f784be8825ee85ca6f01598fd6ad23156d38351548e1f62a97a5e6dc198ca
 
+  - path: docs/7-concepts/microservice-boundaries.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-04-11
+    sha256: 1ca05c5f3e02ab99b8f310fb0dd7a40af8157b13e9f26376dcfa0baede4f2c22
+
   - path: docs/7-concepts/daemon-batch-processing.md
     type: doc
     section: 7
