@@ -56,7 +56,11 @@ Generic runtime host for D.S.A. orchestration with built-in JWT authentication. 
 | `routes/system.py` | Health, domain listing, tool adapter, System Log validate |
 | `routes/events.py` | SSE real-time event stream (token-auth + RBAC-filtered) |
 | `routes/dashboard.py` | Governance dashboard data endpoints |
-| `routes/nightcycle.py` | *(removed)* — batch tasks now managed via daemon and admin commands |
+| `routes/nightcycle.py` | Night cycle trigger, status, report, proposals, resolve |
+| `routes/holodeck.py` | Holodeck physics sandbox simulation |
+| `routes/consent.py` | Consent acceptance recording |
+| `routes/panels.py` | Domain-agnostic panel data resolver (11 data-source resolvers) |
+| `routes/vocabulary.py` | Vocabulary metric submission and growth dashboard |
 | `structured_content.py` | Action-card builders for ChatResponse structured content |
 
 ### Domain-declared routes
@@ -550,16 +554,43 @@ Return aggregate system telemetry (active sessions, pending escalations, ingesti
 
 ---
 
-### Daemon Batch Processing
+### Night Cycle
 
-Batch processing tasks are triggered via the `trigger_daemon_task` admin
-command or dispatched automatically by the Resource Monitor Daemon.  The
-former `/api/nightcycle/*` endpoint family has been removed.
+Batch processing endpoints for the night cycle scheduler. Also available via `trigger_daemon_task`, `daemon_status`, and `review_proposals` admin commands.
 
-Use admin chat commands:
-- `trigger_daemon_task` — manually trigger a batch run
-- `daemon_status` — check daemon scheduler status
-- `review_proposals` — list pending proposals
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/nightcycle/trigger` | Trigger batch night cycle |
+| GET | `/api/nightcycle/status` | Scheduler status |
+| GET | `/api/nightcycle/report/{run_id}` | Run report |
+| GET | `/api/nightcycle/proposals` | Pending proposals |
+| POST | `/api/nightcycle/proposals/{proposal_id}/resolve` | Accept/reject proposal |
+
+### Panels
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/panels/{panel_id}` | Resolve panel data from role layout |
+| PATCH | `/api/panels/{panel_id}` | Update panel (self_preferences only) |
+
+### Vocabulary
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/user/{user_id}/vocabulary-metric` | Submit vocabulary metric |
+| GET | `/api/dashboard/education/vocabulary-growth` | Vocabulary growth dashboard |
+
+### Holodeck
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/holodeck/simulate` | Run physics sandbox simulation |
+
+### Consent
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/consent/accept` | Record consent acceptance |
 
 ---
 

@@ -13,6 +13,12 @@ last_updated: 2026-03-20
 
 ## Overview
 
+> **Note:** System-level roles are organized into three parallel authority tracks, not a
+> single hierarchy. `root` and `it_support` operate on the **system track**;
+> `domain_authority` operates on the **domain track**; all other roles operate on the
+> **user track**. Domain roles described here are an additive overlay within the user
+> track. See [parallel-authority-tracks](parallel-authority-tracks.md) for the full model.
+
 Domain Role Hierarchy is an extension to Lumina's RBAC system that allows each domain to define its own role tiers beneath the Domain Authority ceiling. While the 7 system-level roles (`root`, `domain_authority`, `it_support`, `qa`, `auditor`, `user`, `guest`) provide coarse-grained access control across the entire system, domain roles provide fine-grained access control *within* a specific domain.
 
 **Problem:** In an education deployment, a department head (Domain Authority), teachers, teaching assistants, and students all need different levels of access to the same domain module. The system-level `user` role treats them all identically. An enterprise deployment has the same challenge with managers, team leads, and employees.

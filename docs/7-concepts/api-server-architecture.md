@@ -45,16 +45,34 @@ src/lumina/api/
 │   ├── glossary.py      ← detect_glossary_query, per-domain definition cache
 │   ├── coercion.py      ← normalize_turn_data, field-type coercers
 │   └── templates.py     ← template rendering for tool-call policy strings
-└── routes/
+└── routes/              ← thin re-export stubs; canonical code in services/
     ├── chat.py          ← POST /api/chat
-    ├── auth.py          ← auth and user-management endpoints
+    ├── auth.py          ← → services/auth/routes.py
     ├── admin.py         ← escalation, audit, manifest, HITL admin-command endpoints
-    ├── system_log.py    ← System Log record-browsing endpoints
-    ├── domain.py        ← domain-pack lifecycle and session-close endpoints
-    ├── ingestion.py     ← document ingestion pipeline endpoints
+    ├── admin_auth.py    ← → services/auth/admin_routes.py
+    ├── system_log.py    ← → services/system_log/routes.py
+    ├── domain.py        ← → services/domain/routes.py
+    ├── domain_roles.py  ← → services/domain/roles_routes.py
+    ├── ingestion.py     ← → services/ingestion/routes.py
+    ├── staging.py       ← → services/ingestion/staging_routes.py
     ├── system.py        ← health, domain listing, tool adapter, System Log validate
-    ├── dashboard.py     ← governance dashboard telemetry endpoints
-    └── events.py       ← SSE event stream and escalation event endpoints
+    ├── dashboard.py     ← → services/dashboard/routes.py
+    ├── events.py        ← → services/system_log/events_routes.py
+    ├── consent.py       ← POST /api/consent/accept
+    ├── holodeck.py      ← POST /api/holodeck/simulate
+    ├── nightcycle.py    ← night cycle trigger, status, report, proposals, resolve
+    ├── panels.py        ← GET/PATCH /api/panels/{panel_id}
+    ├── vocabulary.py    ← vocabulary metric submission and growth dashboard
+    └── ops/             ← admin command operation handlers (8 modules)
+
+src/lumina/services/     ← canonical service implementations (Phase 2 decomposition)
+├── auth/                ← user registration, login, token issuance, invite, CRUD
+├── system_log/          ← append-only log, hash-chain, SSE events, warnings, alerts
+├── ingestion/           ← file upload, extraction, staging workflow
+├── domain/              ← domain pack lifecycle, physics, domain roles
+├── dashboard/           ← read-only analytics aggregation
+├── admin/               ← escalation lifecycle, admin command pipeline
+└── registry.py          ← service discovery metadata
 ```
 
 ### Key invariant

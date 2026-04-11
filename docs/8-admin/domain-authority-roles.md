@@ -23,6 +23,12 @@ A **Domain Authority** is a human participant who has been granted authoring rig
 
 The Domain Authority is not an administrator or manager. Their authority is specifically about **what is correct and acceptable within their subject domain**. A teacher is the Domain Authority for "what is correct in algebra" — not for "school IT policy." A lead physician is the Domain Authority for "what is correct in this treatment protocol" — not for "hospital HR policy."
 
+### Architectural Isolation
+
+Domain Authorities operate on a **separate JWT track** from system administrators. DA tokens are signed with `LUMINA_DOMAIN_JWT_SECRET` (issuer: `lumina-domain`, scope: `"domain"`), while system admin tokens use `LUMINA_ADMIN_JWT_SECRET`. These tracks are cryptographically isolated — a DA token cannot be used to access system-track endpoints, and a system token cannot impersonate a DA within their governed scope.
+
+This means Domain Authority is not a rung on a hierarchy below `root` — it is a **parallel authority** with equal privilege within a different scope. See [parallel-authority-tracks](../7-concepts/parallel-authority-tracks.md) for the full model.
+
 ---
 
 ## Domain Authority Rights

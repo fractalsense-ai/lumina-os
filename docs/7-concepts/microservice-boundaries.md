@@ -219,9 +219,23 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 
 **Source routes:** `routes/dashboard.py`
 
-> **Note:** `routes/vocabulary.py` and `routes/nightcycle.py` define routers
-> but are **not mounted** in `server.py`.  They are deferred to a future
-> release and excluded from the decomposition scope.
+---
+
+### Night Cycle & Vocabulary
+
+`routes/nightcycle.py` and `routes/vocabulary.py` are mounted on the gateway alongside the
+core orchestrator routes. Night cycle provides batch processing endpoints (trigger, status,
+report, proposals, resolve). Vocabulary provides metric submission and a growth dashboard.
+
+| Method | Path | Auth Track | Notes |
+|--------|------|------------|-------|
+| POST | `/api/nightcycle/trigger` | user (root/da) | Trigger batch run |
+| GET | `/api/nightcycle/status` | user | Scheduler status |
+| GET | `/api/nightcycle/report/{run_id}` | user (root/da/qa/auditor) | Run report |
+| GET | `/api/nightcycle/proposals` | user (root/da) | Pending proposals |
+| POST | `/api/nightcycle/proposals/{proposal_id}/resolve` | user (root/da) | Accept/reject proposal |
+| POST | `/api/user/{user_id}/vocabulary-metric` | user | Submit vocab metric |
+| GET | `/api/dashboard/education/vocabulary-growth` | user (root/da/qa/auditor) | Growth dashboard |
 
 ---
 

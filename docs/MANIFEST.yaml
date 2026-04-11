@@ -1,1531 +1,1266 @@
-# Project Lumina — Core Artifact Registry
-# docs/MANIFEST.yaml
-#
-# Machine-readable index of all versioned core artifacts.
-# AI agents: read this file first to discover available artifacts and their versions.
-# Domain-pack artifacts are indexed in per-pack MANIFEST.yaml files, not here.
-#
-# sha256 values must be recomputed whenever an artifact is modified.
-# See docs/5-standards/document-versioning-policy.md — UPDATING THE MANIFEST.
-# The value "pending" is reserved for the initial bootstrap only.
-
 schema_version: 1.0.0
 last_updated: 2026-04-11
-
 artifacts:
-
-  # ── Section 1: Commands ───────────────────────────────────────────────────
-
-  - path: docs/1-commands/README.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: fb7035726a1bfa517c1a01903f4650fb98b0dfc498522e832919441b2ffc53f6
-
-  - path: docs/1-commands/system-log-validator.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: c01abcd8fefa21b46d5c3e77ba95421f80209b10339e45341738b248c7864d63
-
-  - path: docs/1-commands/installation-and-packaging.md
-    type: doc
-    section: 1
-    doc_version: 1.3.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 75a8274cce2831acd4d55b5be87057ec84dd5e4d3573e67c97277d83f84a105c
-
-  - path: docs/1-commands/integrity-check.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: ed93ceebaf279cc08c62a8d1b1454d79d1dddc03bbfcdbf0901012c8915c7ba1
-
-  - path: docs/1-commands/list-commands.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-24
-    sha256: c11faa09535d3f44aa51d39602b96aef227ec7ebced94209ea10343bde59bab6
-
-  - path: docs/1-commands/list-domains.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: c94a48de661b60477e4fef5717028f0bd0c7a402896506ea235b6e3a02b1e100
-
-  - path: docs/1-commands/list-modules.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 917ba66012f66eecb69164598149ceed7e645ec229046eb91fc8f5f78540c430
-
-  - path: docs/1-commands/manifest-regenerate.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: eb0f82e47e3e72f3b94dd0b002da89f1b2e42217651b543d6ce6f086b514d2e1
-
-  - path: docs/1-commands/ppa-orchestrator-demo.md
-    type: doc
-    section: 1
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: cbbc8cce02e26baaeaf2571e4090d726a60439f2c6c20f0037d9eae1039cdbc7
-
-  - path: docs/1-commands/verify-repo-integrity.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 14dde62d02810114f125e9ca72ab2886667fb522a00ca8022cba7980b5b55145
-
-  - path: docs/1-commands/yaml-to-json-converter.md
-    type: doc
-    section: 1
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: a46f5f0de51349b52b1085ed6c6c5cb93619680446e14587d5bd3626d3200dee
-
-
-  # ── Section 2: System Calls ───────────────────────────────────────────────
-
-  - path: docs/2-syscalls/README.md
-    type: doc
-    section: 2
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 1c3e9354606dce75fa5d97b77e16b28c9ff969f468907184c3a2925f192499b3
-
-  - path: docs/2-syscalls/lumina-api-server.md
-    type: doc
-    section: 2
-    doc_version: 1.4.0
-    status: active
-    last_updated: 2026-06-15
-    sha256: c0f783978596f5143b6eb24ddb7f865bad90b131ec61597b756dbee061e47358
-
-
-  # ── Section 3: Functions ──────────────────────────────────────────────────
-
-  - path: docs/3-functions/README.md
-    type: doc
-    section: 3
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: e0ff70fb6dbb2e3f389139137f99fec17fa2a66b079fae37fb8abbb561c6daf6
-
-  - path: docs/3-functions/auth.md
-    type: doc
-    section: 3
-    doc_version: 1.2.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 33d8da5024e093b47de0fefa6be417ec95f7896f9bb4f777d4432db3e03160a0
-
-  - path: docs/3-functions/permissions.md
-    type: doc
-    section: 3
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: abe6e1de94e3155f33b5fee2ad8f23de48844b2f7dd7003ee4627063de5eb9cd
-
-  - path: docs/3-functions/persistence-adapter.md
-    type: doc
-    section: 3
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 21934c0a13e813e190d3ad17559d6f85ced3a510211af4d0c6860f42a3974983
-
-
-  # ── Section 4: Formats ────────────────────────────────────────────────────
-
-  - path: docs/4-formats/README.md
-    type: doc
-    section: 4
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: d8ee389d85f63af69eff35ef2f3e49486392e8ab5843831ed5e41268d3b6beaf
-
-  - path: docs/4-formats/artifact-manifest-format.md
-    type: doc
-    section: 4
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: e17db77063c78201184627f9902f72dd36f4e9766184c4c7db05a190af801b4f
-
-  - path: docs/4-formats/tool-adapter-versioning.md
-    type: doc
-    section: 4
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: d2118ceef555d5ea2f5c2377e370d1d719dda718905bac942d86550d86a0b4a6
-
-
-  # ── Section 5: Standards ──────────────────────────────────────────────────
-
-  - path: docs/5-standards/README.md
-    type: doc
-    section: 5
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 6625905c48f92ca401f1d1f5166e97865471fe723d76703ab5eaaec891454e5a
-
-  - path: docs/5-standards/adapter-naming-convention.md
-    type: doc
-    section: 5
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 6eaff97b0ad3e6704ab3b1be2b29f437a478e5b3da13d58d9816489372eff21a
-
-  - path: docs/5-standards/document-versioning-policy.md
-    type: doc
-    section: 5
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: e3702a638dceb4e8961e3940885efb84cadfbba364867bfdf12dc2c54ad391f9
-
-  - path: docs/5-standards/domain-library-lifecycle.md
-    type: doc
-    section: 5
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 159e47f6da864eec2003bc3961d4ce8e4e90cb903410526a90f08a9a2b9466ed
-
-
-  # ── Section 6: Examples ───────────────────────────────────────────────────
-
-  - path: docs/6-examples/README.md
-    type: doc
-    section: 6
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 409a2c2d47b6d383008e15af45a6f531f7baea9c8386dcecc5e2d1f9012c7d50
-
-
-  # ── Section 7: Concepts ───────────────────────────────────────────────────
-
-  - path: docs/7-concepts/README.md
-    type: doc
-    section: 7
-    doc_version: 1.3.0
-    status: active
-    last_updated: 2026-03-18
-    sha256: e56f15442cda7d81e2c3e4fd6bcb86b368b34e8929a48cab608d728fcf3de6e0
-
-  - path: docs/7-concepts/api-server-architecture.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-18
-    sha256: 08dbb512851f8efbee8718361d53d0ac697d69320a66cdd27253b075eb9e6131
-
-  - path: docs/7-concepts/cross-domain-synthesis.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 01d4e4c6df6a4cfd12fe3ca14b0909a75c3f3f000f688dcedc4ba3f111822095
-
-  - path: docs/7-concepts/dsa-actor-model.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-23
-    sha256: b2b437db92266ba9d2af2dfd2eabfdd2960ec149661dea35da7e388b929cb495
-
-  - path: docs/7-concepts/domain-adapter-pattern.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-18
-    sha256: e47d85fce25384c3b1c1618af6e5bba740d1cd5e6197ee50e3e7aa59bdc45114
-
-  - path: docs/7-concepts/domain-evidence-extension.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: ea0bdda400d361a2f8b88129bcf986f6eecc27f7d5a320923f37c8c7503770ae
-
-  - path: docs/7-concepts/domain-role-hierarchy.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-19
-    sha256: 7112e38caa6f49119235b661e1260b15ea60a6dfecea016736abcdd8f7c3a72d
-
-  - path: docs/7-concepts/file-generation-staging.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 0243464c36f258f302786c3a7990d69a8e4467a9408e7509ca7093e5921badfe
-
-  - path: docs/7-concepts/governance-dashboard.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-06-15
-    sha256: 9496937e5595650f7885078231f8a17ad2488f253df32d0bf58fc8340146f285
-
-  - path: docs/7-concepts/graceful-degradation.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 7c9b032a9d0fb6896a10490c59001794aedee73327eea85eca24abb8bb3c1881
-
-  - path: docs/7-concepts/ingestion-pipeline.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: ebf3b58ef526b826b418ebcf3d4acabb8953aa92e4d094aabe8c5dbf1f0a54aa
-
-  - path: docs/7-concepts/inspection-middleware.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 3a2f0346f4f2e5f18bcdf31be4f8d6cf7c0b0f80970fcf6efe226b74a877d2ec
-
-  - path: docs/7-concepts/llm-assisted-governance-adapters.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-03
-    sha256: 677245429b7b1e56bb86b4bd161305ee076351adc8688db794ddb2a5d8c15681
-
-  - path: docs/7-concepts/logic-scraping.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: ed6f784be8825ee85ca6f01598fd6ad23156d38351548e1f62a97a5e6dc198ca
-
-  - path: docs/7-concepts/microservice-boundaries.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-11
-    sha256: 1ca05c5f3e02ab99b8f310fb0dd7a40af8157b13e9f26376dcfa0baede4f2c22
-
-  - path: docs/7-concepts/daemon-batch-processing.md
-    type: doc
-    section: 7
-    doc_version: 2.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 65571c7a30e5cc97f3cfe341c85a78611c21c4268e867374415fa70214f0a5e1
-
-  - path: docs/7-concepts/nlp-semantic-router.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-13
-    sha256: 94dced2fc34c2252f077558cf4cb72e26ef15b330464b14f22557be2eb3d3415
-
-  - path: docs/7-concepts/novel-synthesis-framework.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-18
-    sha256: cdbb35648ae5135486a25920867f0af1d718d39ee1e4e34d0f99ce35f87d5ef0
-
-  - path: docs/7-concepts/parallel-authority-tracks.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-07-14
-    sha256: 773cacfa422cf5c609fe7d54893d4a1716994f7d77cbecb22c885451a6b10496
-
-  - path: docs/7-concepts/prompt-packet-assembly.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-13
-    sha256: 50dc19c0ff6a408af355c2ffb5ab826514bf392fbd65642b5556cf53d7352c3d
-
-  - path: docs/7-concepts/resource-monitor-daemon.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-06-15
-    sha256: 4d6703b8441e3f4d84f70dfe6ebe8655a1495abf44a52696320f110d772b33e0
-
-  - path: docs/7-concepts/slm-compute-distribution.md
-    type: doc
-    section: 7
-    doc_version: 1.2.0
-    status: active
-    last_updated: 2026-03-18
-    sha256: 59db718b41fa0d4e2f74c9a4360b646df626b2688696e4b4ff3b6f2b39b2e8f7
-
-  - path: docs/7-concepts/system-log-micro-router.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-23
-    sha256: 2523cda90388a1235b21c805a9a2dea13253d58ea2e1aedd87be858fbd2215a6
-
-  - path: docs/7-concepts/world-sim-persona-pattern.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: a4a35e1c1ad68de15838f4a0fe49f7939edb97876adfd1e387cf5887859f52e2
-
-  - path: docs/7-concepts/zero-trust-architecture.md
-    type: doc
-    section: 7
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 0ab2daa4b03170a336b1f0193740765d162100f941a44e1baaa1bb3924812cc3
-
-  - path: docs/7-concepts/escalation-auto-freeze.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-05
-    sha256: 2b523072f2b9f7c701350a4bcc1da914ad469212dedf0c7d52161b2ef18a4cde
-
-  - path: docs/7-concepts/student-commons.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-05
-    sha256: b4c22ebd062757ce3ee734b648886c288c64133cdbec6c2c1e1ed7b3268b3eda
-
-  - path: docs/7-concepts/learning-profile.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-05
-    sha256: 101c9734bbabd2d9bde691b0addbec96d919f7a85e7d10799c83635b4118edd6
-
-  - path: docs/7-concepts/telemetry-masking.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-24
-    sha256: beac1d748982db68162e818e0379f90c24f0570ec9ff039eaf6c2a2f6f978e1b
-
-  - path: docs/7-concepts/telemetry-and-blackbox.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2025-07-15
-    sha256: 4dd7199d35dc5f880970ea927b20751f33db0d470ba79dca4c8e50b2db934ef0
-
-  - path: docs/7-concepts/state-change-commit-policy.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: b43c0a3d9d1858881b6922f078432a417d16748061eca2e2ed9bb21e54e82db1
-
-  - path: docs/7-concepts/command-execution-pipeline.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-21
-    sha256: ad8949c2e4a5cec234095d0782aa4a4ea5062366548123a801b42874e8cf2521
-
-  - path: docs/7-concepts/domain-pack-anatomy.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-21
-    sha256: 19ff30ea2222ace91cecec8e36c8711afcde8547d001ce7803f5112e04ec2640
-
-  - path: docs/7-concepts/hmvc-heritage.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-23
-    sha256: f070f23a9bd488162d90ca47f6fab9fd49ecc977ecee3193ce6bfeeac9a61d66
-
-  - path: docs/7-concepts/ledger-tier-separation.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-23
-    sha256: 5dead097543c7c14260f6e837aa682a91f0acb97182901f2e761310101fe9b2a
-
-  - path: docs/7-concepts/group-libraries-and-tools.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-27
-    sha256: 1823147837cbae4a29b09c2e1b16a0c7cc78caa403ccebddc28cff178bc69c03
-
-  - path: docs/7-concepts/edge-vectorization.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-27
-    sha256: 34fbdf48e8c2c6a9194244bba697b69b1c6066eb7429557a20371fe62fabe7d6
-
-  - path: docs/7-concepts/execution-route-compilation.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-27
-    sha256: 3b44796987657b36271bee83f4402a18e4d951e9586773ad44aeb094c40bb96f
-
-  - path: docs/7-concepts/compressed-state-pattern.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-28
-    sha256: a173c7cdf9b5bfada8230b37289dc80b25308201271ba44919f0e75ecc91b4c7
-
-  - path: docs/7-concepts/holodeck-physics-sandbox.md
-    type: doc
-    section: 7
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-28
-    sha256: 68a4a845f404bdb872c6eeedf64604b49323e9141d40338a15208c5d5cc4ce27
-
-
-  # ── Section 8: Administration ─────────────────────────────────────────────
-
-  - path: docs/8-admin/README.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 546e6a5f487811725c813580a555cfe41fab9e8e6a01108e6c3610403c2fcfc5
-
-  - path: docs/8-admin/admin-command-schemas.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: e3e09363f3f35baf1e032e4fbef6ea705fb5972b625fc6239706fe55f59f01c4
-
-  - path: docs/8-admin/air-gapped-admin-architecture.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 54d097d123bf45acd0a2b589a3aa62550ca87da70bbb10e4511637797b3e99b8
-
-  - path: docs/8-admin/escalation-pin-unlock.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-19
-    sha256: f575458b259602459b6f30912add2de9a78a5a9c099dad71396885d3a6b1aeea
-
-  - path: docs/8-admin/rbac-administration.md
-    type: doc
-    section: 8
-    doc_version: 1.2.0
-    status: active
-    last_updated: 2026-03-22
-    sha256: f93892db1f52a74b69fa2d42fe0a9b2d8d67ea6b1ac0de5f33eb76c9201a639a
-
-  - path: docs/8-admin/secrets-and-runtime-config.md
-    type: doc
-    section: 8
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: fd5e09c22b0101544ac76a15bf2a44c9b63dd165f4bf12b7f870fa86eabe22a1
-
-  - path: docs/8-admin/system-domain-operations.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-13
-    sha256: 4f32373f501321f185a5248b21553c70a4cd50fafdf2aa2a3a19066d7f95a5c3
-
-
-  # ── Docs Root ─────────────────────────────────────────────────────────────
-
-  - path: docs/README.md
-    type: doc
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 40f9ab31417132cd9b4746e376270b162d34b3ef1f501bfcca78d78a0cf68f4c
-
-
-  # ── Specs (relocated to docs/) ────────────────────────────────────────────
-
-  - path: docs/8-admin/audit-log-spec.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 11dc81cdc7ebeb7e67c56750b38583894b9fe95a546843daeae40f7fed98b700
-
-  - path: docs/7-concepts/domain-profile-spec.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 9f304f1463eb02326f2244361c19425339b67ec1d1a83cb7907dd0ecd5f1fd07
-
-  - path: docs/7-concepts/dsa-framework.md
-    type: spec
-    doc_version: 1.2.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: ab2f799e7e8c7ee54f1b8104699e358fc9e9819b8acf43a8a5f985ef0d532fc5
-
-  - path: docs/8-admin/evaluation-harness.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: daa06594c1ab8fe2d1e93529c73b12ece14ddd1a5457a01960526b0b18f3cfc7
-
-  - path: docs/5-standards/global-system-prompt.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: d99d0651d9dd9ba395b2992002a069b5ebb7d7cd7fa76ea8ab80f74defe74141
-
-  - path: docs/7-concepts/memory-spec.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: e0d752086c2740c4b6bd2fa4d59a3567d79d18f09cb3ad0501029d51695fc735
-
-  - path: docs/5-standards/orchestrator-system-prompt.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 2d60e6d9e7e29c62cc68eb576fcdc24cc1137089b39defa44ebed9b1a302c93c
-
-  - path: docs/7-concepts/principles.md
-    type: spec
-    doc_version: 2.0.0
-    status: active
-    last_updated: 2026-03-03
-    sha256: 04dfcd65c3aae1cd87b39afe8b0cf75620226bd13c9e39cb95d42093d1aef058
-
-  - path: docs/5-standards/rbac-spec.md
-    type: spec
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 4f6ee86355ff4bf2eb0b7b1a944be6300ca92d5ea3af27b30330f62038001bf3
-
-  - path: docs/8-admin/reports-spec.md
-    type: spec
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 9370b5d0b578f4a930041c9a8e8faaaa1eeabbc074b5f32e0f2ba282649bdb3b
-
-
-  # ── Governance (relocated to docs/8-admin/) ───────────────────────────────
-
-  - path: docs/8-admin/audit-and-rollback.md
-    type: doc
-    section: 8
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-02
-    sha256: 6b875cafc35de9f9b289cc971fc1abeba24c55168857b4889f886d7da4bab238
-
-  - path: docs/8-admin/domain-authority-roles.md
-    type: doc
-    section: 8
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-09
-    sha256: 9ee2af99b9125c0be6db31105c2e45922e7407d76971b3b98522bf7ffb1fc27f
-
-
-  # ── Standards (.md, relocated to docs/) ───────────────────────────────────
-
-  - path: docs/5-standards/system-log.md
-    type: standard
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 8fee40bf64508bb585d3dce52b6bd6c43aedede381d1cca26bf938fa6d062b51
-
-  - path: docs/7-concepts/domain-evidence-extension.md
-    type: standard
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: ea0bdda400d361a2f8b88129bcf986f6eecc27f7d5a320923f37c8c7503770ae
-
-  - path: docs/3-functions/domain-state-lib.md
-    type: standard
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: b45a77872123a658dffcbf325a30b063bb902730c60bf136dd87be86809cbf97
-
-  - path: docs/5-standards/lumina-core.md
-    type: standard
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: c14bc237b4503bd51025669db2f366f7182509429125ab50d9a0212e5e169134
-
-
-  # ── Standards (JSON Schemas) ──────────────────────────────────────────────
-
-  - path: standards/domain-authority-track-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-07-14
-    sha256: 156b40dc9c9694fed72b8b3ada5e7ddaa1883bd86aa8516a48352aa7f5ab69e1
-
-  - path: standards/domain-evidence-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 984edb46b842629a479aa46f16420f6b026c1486a3fc21d88a05ae00e0745dc9
-
-  - path: standards/domain-physics-schema-v1.json
-    type: schema
-    doc_version: 1.2.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 1071730179fad710d49b5722ad51313a1a330a15edcddccc81055eb2ea5c58d9
-
-  - path: standards/domain-registry-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 7644a785bc68185c67ceea7ff9e6115e03858a69105ecbe132abc8101fc7b9dd
-
-  - path: standards/domain-role-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 5dd1d09c524b97ca7ae340605711b5ae50414048836311acea95e42cc765024d
-
-  - path: standards/group-definition-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: c8c5100bef96ac258c777ca33eb5672110e8787898c5421d473656679db1108b
-
-  - path: standards/inspection-result-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 18b44ed3d755dbb1b259e230f9e3665633b2f5238eb1fba1f41caca9bb60a7ac
-
-  - path: standards/physics-edit-proposal-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 43506bcce29a531e0b9c91f8d879ec2575656801abcb4ec25af14d79ed1fe80a
-
-  - path: standards/prompt-contract-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 96a816c8f0021510164461d70b59354c0639615e212687facd4957d42b13ab3a
-
-  - path: standards/rbac-permission-schema-v1.json
-    type: schema
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: ad75563fba5cf2a26bd209b35ca0c1c7c38cd3ce7ccb81060ebf94a4c2db35f1
-
-  - path: standards/role-definition-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: ab6df0ff7577a0eb672bc913e341fc01382f8546f38d9d1b0b5222b3b657a1eb
-
-  - path: standards/role-layout-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-02
-    sha256: 6d0267809a6e01f6e55c1d514e2151d44c4854a1c16d0ed6a4ebf3ecdeaf550d
-
-  - path: standards/staged-file-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: ee699180e7bd1480fed590bbd7a0c134a7c4bfe1cd1ed2e37b2a2728f03b6ff2
-
-  - path: standards/system-physics-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: 21e457b3893de7e451e644b20b6818decb34284a8510afed193880673812fe63
-
-  - path: standards/tool-adapter-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 14e60e342e6f90a196501ede06cb221e128c876648cbd861e5e818423f2efde8
-
-  - path: standards/state-transaction-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-24
-    sha256: 6f01a28bb0a2b8e57302c8d077c7ac8b71ab396684a531b5a2d53839bf181edb
-
-  - path: standards/telemetry-masking-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-24
-    sha256: 5a9a3fe3f4d100a39d4bd21ef386593291315452a65bb2f601df400ff1c91fab
-
-  - path: standards/blackbox-snapshot-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2025-07-15
-    sha256: abde9307e065c5a21582376704fffd38cbd10b3ccffed65a7cfa392f4dba8350
-
-  - path: standards/action-card-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-06-15
-    sha256: 4e9fae537d4c643a4b673dd2f2e107141643139def6f2073afba26c8fc517a3d
-
-
-  # ── Admin Command Schemas ─────────────────────────────────────────────────
-
-  - path: standards/admin-command-schemas/approve-interpretation.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: f1913880a28ce043a07cc91046f1dcef685cc2616b7f02875fd9fc3dab9c7aac
-
-  - path: standards/admin-command-schemas/assign-domain-role.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 6ba3498ea0a31b7fd0fd826bd264b99c56daf963f3b2f4ab6f6e2978b6443a25
-
-  - path: standards/admin-command-schemas/commit-domain-physics.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 959428d79bd4ce7c022bfd4f36ccd7a9883592ccb1385aa6c3edfd60dd72ae3b
-
-  - path: standards/admin-command-schemas/deactivate-user.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 1cc6eeb857b4a7fee6dc0e578aa6eaadf1be0e5f3a4eb1fc255fe4badc72be93
-
-  - path: standards/admin-command-schemas/explain-reasoning.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 0ef409cebb408c3c9365780be392c96aa89d683200402ece84fe97480c417dff
-
-  - path: standards/admin-command-schemas/invite-user.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: d23189c36e564495cc3eea8ee5b84fdf24f75cc45c0aef7dc4ecfff2a849b9f8
-
-  - path: standards/admin-command-schemas/list-commands.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-24
-    sha256: 80ef285ed9b0f0375329a5e80cc81bacf121bc2853e4aadadde30d2156949db1
-
-  - path: standards/admin-command-schemas/list-domains.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 292d3ead304cff934fb95742146e86559d1196ff80b2c0533025853c78f40789
-
-  - path: standards/admin-command-schemas/list-escalations.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: ba7ce4ec0cc2c97d2a755c6c251d3c2a3a77b7d82f8aa0045840c6e2a79d6fe6
-
-  - path: standards/admin-command-schemas/list-ingestions.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 9f72ae304750d11e481c4214d141a68f3a95c35646abbc179f59c85a11d372be
-
-  - path: standards/admin-command-schemas/list-modules.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 506509bae3255423183e743c617ccfe06e8a7a90c3b4f24ca78f44e4707b346d
-
-  - path: standards/admin-command-schemas/module-status.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: ccdfd4ed512e431e4f65dae1c4c5f9042e99f0092c86f06da5ebec1dda170014
-
-  - path: standards/admin-command-schemas/daemon-status.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 21934dbf8e2c9755dc851b3a6d7c3e2603b0cf714b7d58ac3c8e6c72ebe7a2d3
-
-  - path: standards/admin-command-schemas/list-domain-rbac-roles.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: e711715b7d87d9bbef17e71b7f6d351df5f74e84974564933ac9ff9f606208e5
-
-  - path: standards/admin-command-schemas/get-domain-module-manifest.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 7c1f2bb8cdd1b4dea2200241606579bbc468605c5a85fdbf0e1301a6001cab84
-
-  - path: standards/admin-command-schemas/list-users.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 012e5970b26dfd8b1dc9b2806235438c52909837211718eb17ad09ac74f77272
-
-  - path: standards/admin-command-schemas/get-domain-physics.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: eadf73a37be2c37d9a96b498ff31df266413bdd2c9e9554d4b9588fc07940c95
-
-  - path: standards/admin-command-schemas/list-daemon-tasks.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 46d7c1b8b447bece7e715b03fbe4208ed46bd2217da8468ffbc428630857e49f
-
-  - path: standards/admin-command-schemas/request-module-assignment.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: 010e92e3c66710edeecdb15e388ec802229d0a011ae965b8104a423bb713ab3d
-
-  - path: standards/admin-command-schemas/reject-ingestion.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 1b270e6c0d310deceb7c8231668f31d0c529b30bb4c8f95ed330f618bc8dbf1f
-
-  - path: standards/admin-command-schemas/view-my-profile.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-08
-    sha256: f8405cf73c29ccdd851f8ddf59f4fd5ce4558ec55d699a4b93bb43e92fc5619f
-
-  - path: standards/admin-command-schemas/update-user-preferences.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-08
-    sha256: 742939acc312e3925838551cd693e470755a8a2615cdac08c4d94ceabbb854e3
-
-  - path: standards/admin-command-schemas/resolve-escalation.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: dd047a7168523f8195552b37b97aecc3a17ea21c8bf7f6c16e473231f7b14811
-
-  - path: standards/admin-command-schemas/review-ingestion.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 778eda2f2e8ccf9103a783202e2788a8e058d146c14e041b2610a0df12c2dc85
-
-  - path: standards/admin-command-schemas/review-proposals.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 00f81804099777ea0e5c5b65ca7b5b0849149aab57ad6107994daec393c59157
-
-  - path: standards/admin-command-schemas/revoke-domain-role.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: d31d618626f1b8b4309124b1e9f32152433b802ea5afd9a6dfb7dbe5ba9fa9c7
-
-  - path: standards/admin-command-schemas/trigger-daemon-task.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-31
-    sha256: dfef161b1ec572f14621660d7a16a15dcf6c9af2856fba4bba5be3049de0514f
-
-  - path: standards/admin-command-schemas/update-domain-physics.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 55c2e261da21583b8333c55769e7d52b390403baaf3905718a97bb27eb668653
-
-  - path: standards/admin-command-schemas/update-user-role.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-23
-    sha256: 334d8e03bdfcd072e8bdc6a85f0900ddbd808e20dbef4ff3fff6b814ed651807
-
-
-  # ── Ledger Schemas ────────────────────────────────────────────────────────
-
-  - path: standards/system-log-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-02
-    sha256: 7296801f2658e04cffb05ae61c8d6bae3d7ae1fbf332b3a541aed0a6208c22f2
-
-  - path: standards/commitment-record-schema-v1.json
-    type: schema
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: b8c748207bb3b2252033850f93dfcdf2bd59a871df4c4327bb4615c8a229b12f
-
-  - path: standards/escalation-record-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-02
-    sha256: 47561ec9ea876ce2669eb0fd5be80ac47d52abc049e9d795d8984cfdff21b2f0
-
-  - path: standards/ingestion-record-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 4588fca1a0c7742a94e65ebe9b6a9ecbb3adb7a9c9561bab3b49777191c82ef3
-
-  - path: standards/trace-event-schema-v1.json
-    type: schema
-    doc_version: 1.1.0
-    status: active
-    last_updated: 2026-03-15
-    sha256: 53a8bf0b25ffc4d467423781f2460dc124cb4c15c48577a40090ef1bc559be3f
-
-
-  # ── System Config ─────────────────────────────────────────────────────────
-
-  - path: domain-packs/system/cfg/domain-registry.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 3642e77db66abc61c03e78d784906121bb97904dc2aab7e359a62efb8ee3de09
-
-  - path: domain-packs/system/cfg/system-physics.json
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: a84a16850f80d6bfa31f04d6c13bb62089762e564bf6c2817ef046ba694c5453
-
-  - path: domain-packs/system/cfg/system-physics.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-12
-    sha256: ce0201c73f94c066ebeb672ce31626d43c29bb7676613cb9d0d85e06c92714d5
-
-
-  # ── Retrieval (relocated) ─────────────────────────────────────────────────
-
-  - path: docs/7-concepts/rag-contracts.md
-    type: doc
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-20
-    sha256: 0b9c8969cbd6937a4ae34760cbb442a795ee8c97bf3f878cb580b9a54bab18ab
-
-  - path: standards/retrieval-index-schema-v1.json
-    type: schema
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-03-08
-    sha256: 74f82ef2a4366e21045841b32f6f5a80cc525e2a4b3dcb3e0acfe616facc9c9c
-  - path: domain-packs/agriculture/docs/1-commands/README.md
-    sha256: 62791ccb67feda1e6099e9a1cb914b21190ae53bd35d55d5de7dc1371fceb56d
-  - path: domain-packs/agriculture/docs/3-functions/README.md
-    sha256: 77f4183aadfce37c1eb083d9519cf896aab5decb7ceee07059c98b5344574608
-  - path: domain-packs/agriculture/docs/7-concepts/README.md
-    sha256: 88842ae16cee097da451084f626b16d33d270a192b331f0ee364095551d242f4
-  - path: domain-packs/agriculture/docs/README.md
-    sha256: 6c39a5c510f94bc53a3c7ed669b69bb1341d09466e3f6ecce55f35749b61cfb7
-  - path: domain-packs/education/docs/1-commands/README.md
-    sha256: 01f79b923a1c7c3e7d81144712577e83441db55ff9ac050c5125d492f0e97247
-  - path: domain-packs/education/docs/3-functions/fluency-monitor.md
-    sha256: 393617f748a845941847fb47850b50e39868c9cb1ea4adab9ac5347fc7e1865e
-  - path: domain-packs/education/docs/3-functions/nlp-pre-interpreter.md
-    sha256: b1350464d45b112a0c848d945addcc05f3deb8c41048d91c2fc7ba1fb777ede2
-  - path: domain-packs/education/docs/3-functions/problem-generator.md
-    sha256: abe5a4b3a29d3d87c19ea5f2463c1fb0685c690ae15607679e45899773835f01
-  - path: domain-packs/education/docs/7-concepts/README.md
-    sha256: 3c29d17ffd32fbdc2b696abb21aaf05f1a85d694ed34aad341c1013afc4e1e61
-  - path: domain-packs/education/docs/README.md
-    sha256: 5db651f901e02d74353ae33e0d36d2015eeccbe9578b25e39edf9ac5940e601f
-  - path: domain-packs/system/docs/1-commands/README.md
-    sha256: e2aeb44cf9c24a3183f7af216f0a8338c7867ba700468d0153cc8b460dd3f91b
-  - path: domain-packs/system/docs/3-functions/README.md
-    sha256: 03cb3dc46cf0e3079fb186e4a77af20230ec05b85072c1eba39ee27cb8f43acb
-  - path: domain-packs/system/docs/3-functions/state-transaction-adapter.md
-    sha256: ec1962b6fda2c7c4c926d61563516b924d7add2e3e213653d5b849239fd21d53
-  - path: domain-packs/system/docs/7-concepts/README.md
-    sha256: 68f5b0fdbac1ab1ba86265f817359976e1ea72119d179e96fafa13407476bace
-  - path: domain-packs/system/docs/README.md
-    sha256: 384cf5fb74bdb74dbece6b5b8d121574edfc78a4f8f2c37798291fcf00c8092b
-
-
-  # ── Domain Pack Configs ───────────────────────────────────────────────────
-
-  - path: domain-packs/system/cfg/admin-operations.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-05
-    sha256: e9647e20f49947eb01e5ba3369385ad2bd8497def252c95fa2b8207925fd71d4
-
-  - path: domain-packs/system/cfg/base-entity-profile.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 65db313a7735b7a5ef39ef1d7d79a265527aded8a715ec280d79b7e87892faad
-
-  - path: domain-packs/system/cfg/domain-role-defaults.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: d98ad40310ce2f91461f807e37bc059ae3c46352daa034fafc60204d264b13f9
-
-  - path: domain-packs/system/cfg/runtime-config.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 1fd1c516d1318d528f5826213fc5302fda1d93fba272ca808e02d1f82844ed7a
-
-  - path: domain-packs/education/cfg/runtime-config.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 8fc612bb43db5c463c8a8851c082c8f1b82bd0a2c9e40210741b418da0a4c7a2
-
-  - path: domain-packs/education/cfg/domain-profile-extension.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 5336cf744396c68a236c11c76b8c3c31d826860616046a14468114af98828b41
-
-  - path: domain-packs/education/cfg/admin-operations.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-05
-    sha256: 2d83b553cbd391768f84eb4b9b24a6ebca4158e6460a612c5aa8ac40df45d4cb
-
-  - path: domain-packs/agriculture/cfg/runtime-config.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
-
-
-  # ── Domain Physics (YAML) ────────────────────────────────────────────────
-
-  - path: domain-packs/education/modules/pre-algebra/domain-physics.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: fd317779148a9623fbdd1064c66a426bd68667e484b7a0a4279b82fec9046209
-
-  - path: domain-packs/education/modules/algebra-intro/domain-physics.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 9ce15fdd639a7144196cbd302f0f6a7f40a399fe795a518d23c2396a1895584c
-
-  - path: domain-packs/education/modules/algebra-1/domain-physics.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: fa0e835e7ded48b882bea508d41581c637cfe58d67ac06392f586c8befa549f8
-
-  - path: domain-packs/education/modules/algebra-level-1/domain-physics.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: f4f182f22e922a3edc1d9b40681553942a1198dcdfd40ea3a8fe63568664647f
-
-
-  # ── Tool Adapters ─────────────────────────────────────────────────────────
-
-  - path: domain-packs/education/modules/teaching-assistant/tool-adapters/student-view-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 5f1b248f7c57670a2e259387350f1909ae484f225e1d34a6cbd2382b22c4f1fb
-
-  - path: domain-packs/education/modules/teaching-assistant/tool-adapters/hint-delivery-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: ecd0cf14aef9f922f774c34bdc1db4c7a7a6003130883e43939054f5a7b0629d
-
-  - path: domain-packs/education/modules/teacher/tool-adapters/student-roster-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: d19a343631215bf027bed0a2a7044b10f43e25e1467d40d52a7e029847473616
-
-  - path: domain-packs/education/modules/teacher/tool-adapters/module-assignment-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 679558d5a0fb421ea1f97bb14e1be89ac9fe1768eb86dca1f7bcb894e27d6b56
-
-  - path: domain-packs/education/modules/teacher/tool-adapters/escalation-handler-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: a766abd2992e805b02434ee52774817508fefb5437d8ee2f372fe8ec1fe64023
-
-  - path: domain-packs/education/modules/domain-authority/tool-adapters/role-assignment-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 955d30cf9f4e946b85a636b0c759d706c51fdb24ac6ad89f8fb79ced4b90c02b
-
-  - path: domain-packs/education/modules/domain-authority/tool-adapters/progress-overview-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 7eac524b85ed7e9990923ce133ae7609a5b9b64c8198bfd9ee4527950a870da1
-
-  - path: domain-packs/education/modules/domain-authority/tool-adapters/physics-staging-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 88f99f5e020d0c63d9d80da532b0865b13c86c80b9cc9f5200d1272214e7dc45
-
-  - path: domain-packs/education/modules/domain-authority/tool-adapters/ingestion-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: ddc4e82f351f3918eecae6fb66aa9b9ef2d9a46d66a34bb61b8536eabecf9216
-
-  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/substitution-checker-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 85fbaff36ff9e7369794b8e38f20fe0f1fc0e834f15897667a83adebe6bed6a0
-
-  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/calculator-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: e498137770078791d1e6c75e27af53a480c3a1e6426baeee9cb3c4ed90d4f769
-
-  - path: domain-packs/education/modules/algebra-level-1/tool-adapters/algebra-parser-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 7517fb5d9b3ca1e4f07173de5f388ff4031e166845eed839c317cc214fdee2e7
-
-  - path: domain-packs/agriculture/modules/operations-level-1/tool-adapters/collar-sensor-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: db9db79bb78682b86351f32167cdf61290091825b8776f6d4f855067a1efdc5f
-
-  - path: domain-packs/education/modules/guardian/tool-adapters/child-progress-adapter-v1.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 5640264d48a26ec501b0b464ae2a0fe703d3f8545a6110154fca1b43784a4852
-
-
-  # ── Profiles & Templates ─────────────────────────────────────────────────
-
-  - path: domain-packs/education/profiles/domain_authority.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: bf337e3b3eb0e3e2e9bb54abf53e806478b31d19b3d9cfd26665394aa5068ef5
-
-  - path: domain-packs/education/profiles/teacher.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 875997e3eeab01f7cdfcb96e331bdee2e99e7068689010b1a8e36d801326e62e
-
-  - path: domain-packs/education/profiles/teaching_assistant.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 3a012a7e4f0fbdc42f513558cb69a21b51907a521907e36aad1429b3651bef89
-
-  - path: domain-packs/education/profiles/student.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 4b9bb6401167f29216143f1b688bb2f4ad01e9fb447bd74b15f0f06cf9666f5c
-
-  - path: domain-packs/education/profiles/parent.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 26a6725c3d098ea7a7dbab9d842a5480c2cf78aa394dc155a35ccc2a3fad27d6
-
-  - path: domain-packs/system/modules/system-core/operator-profile.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 84d761fee68adc2a64df1c52fbb1d16335e9fb4bb9cdaadb2d6346b87a07c1d5
-
-  - path: domain-packs/education/modules/pre-algebra/student-profile-template.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 0b3bbe4dfe46da02c2ef085d8f785ed7c3712a9d67ca3a02bb3e9bdc4e6df4d4
-
-  - path: domain-packs/education/modules/algebra-intro/student-profile-template.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: b8b9f9f9d9b4a907616f6c3ccbfd25d7572f8273beb3dc0de367564f068a7ec8
-
-  - path: domain-packs/education/modules/algebra-1/student-profile-template.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: a15f04d601713ad4b5d01e3b78e78ab28b9f24c0fffd0153b0e394ff957f091e
-
-  - path: domain-packs/education/modules/algebra-level-1/student-profile-template.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: bc084fdff8b48650a603987bc8c0c26f0b98f9089dc854db6a48b8a175687b04
-
-  - path: domain-packs/education/modules/algebra-level-1/example-student-alice.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 489e400765d0dc9a59d6335d423b64aea3b2f66f1376d1027712e456b311d228
-
-  - path: domain-packs/agriculture/modules/operations-level-1/example-subject.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 44c70b9e1c75b17e6149811322f58d27e477023c64d969aabfdc758eff9eb6a9
-
-
-  # ── Pack Metadata ─────────────────────────────────────────────────────────
-
-  - path: domain-packs/system/pack.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 2bb29c3b1c5d305aa46262a13988143c40a0af850014f2f03f263595c9465af4
-
-  - path: domain-packs/education/pack.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 38d3303e5d503564fe37700185f012b0aee7769dc9edc8d7c2811226f07ee260
-
-  - path: domain-packs/agriculture/pack.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 95718a2ff385ed40278a4322b0b257359bfedbf7dfa5f544a68aaa4e92f11783
-
-  - path: domain-packs/education/world-sim/mud-world-templates.yaml
-    type: config
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: 08baab90e60c42b314963f039043778c2d082bccf6e7aef132a8896a18e5e0d5
-
-
-  # ── Examples (YAML) ───────────────────────────────────────────────────────
-
-  - path: examples/escalation-example-packet.yaml
-    type: doc
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: c0fcd0defc647fa4af0588fca1377fdcdd94dfba27dec19a951176e385172d83
-
-  - path: examples/invite-onboarding-example.yaml
-    type: doc
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: f56d51a6dd9ec706fdb9ce68e4215c9fdcffdadc7d4c12190c1ffe89784c73e1
-
-  - path: docs/8-admin/meta-authority-policy-template.yaml
-    type: doc
-    doc_version: 1.0.0
-    status: active
-    last_updated: 2026-04-04
-    sha256: f733e89037f3e2817288883d71ee536d327b2953973af65b7bd4c45aa2a47e6e
+- path: docs/1-commands/README.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: fb7035726a1bfa517c1a01903f4650fb98b0dfc498522e832919441b2ffc53f6
+- path: docs/1-commands/system-log-validator.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: c01abcd8fefa21b46d5c3e77ba95421f80209b10339e45341738b248c7864d63
+- path: docs/1-commands/installation-and-packaging.md
+  type: doc
+  section: 1
+  doc_version: 1.3.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 75a8274cce2831acd4d55b5be87057ec84dd5e4d3573e67c97277d83f84a105c
+- path: docs/1-commands/integrity-check.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: ed93ceebaf279cc08c62a8d1b1454d79d1dddc03bbfcdbf0901012c8915c7ba1
+- path: docs/1-commands/list-commands.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-24
+  sha256: c11faa09535d3f44aa51d39602b96aef227ec7ebced94209ea10343bde59bab6
+- path: docs/1-commands/list-domains.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: c94a48de661b60477e4fef5717028f0bd0c7a402896506ea235b6e3a02b1e100
+- path: docs/1-commands/list-modules.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 917ba66012f66eecb69164598149ceed7e645ec229046eb91fc8f5f78540c430
+- path: docs/1-commands/manifest-regenerate.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: eb0f82e47e3e72f3b94dd0b002da89f1b2e42217651b543d6ce6f086b514d2e1
+- path: docs/1-commands/ppa-orchestrator-demo.md
+  type: doc
+  section: 1
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: cbbc8cce02e26baaeaf2571e4090d726a60439f2c6c20f0037d9eae1039cdbc7
+- path: docs/1-commands/verify-repo-integrity.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 14dde62d02810114f125e9ca72ab2886667fb522a00ca8022cba7980b5b55145
+- path: docs/1-commands/yaml-to-json-converter.md
+  type: doc
+  section: 1
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: a46f5f0de51349b52b1085ed6c6c5cb93619680446e14587d5bd3626d3200dee
+- path: docs/2-syscalls/README.md
+  type: doc
+  section: 2
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 1c3e9354606dce75fa5d97b77e16b28c9ff969f468907184c3a2925f192499b3
+- path: docs/2-syscalls/api-routes-reference.md
+  type: doc
+  section: 2
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-15
+  sha256: 61798726e92e9d94467e97e4ffc15ad7e82b3d99a2d3d76880ea83333b7eada2
+- path: docs/2-syscalls/lumina-api-server.md
+  type: doc
+  section: 2
+  doc_version: 1.4.0
+  status: active
+  last_updated: 2026-06-15
+  sha256: 9fe22fbe8b8948a14e8ac70b29958b62542b37ea8e471d1c35104b3d8e398385
+- path: docs/3-functions/README.md
+  type: doc
+  section: 3
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: e0ff70fb6dbb2e3f389139137f99fec17fa2a66b079fae37fb8abbb561c6daf6
+- path: docs/3-functions/auth.md
+  type: doc
+  section: 3
+  doc_version: 1.2.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 33d8da5024e093b47de0fefa6be417ec95f7896f9bb4f777d4432db3e03160a0
+- path: docs/3-functions/permissions.md
+  type: doc
+  section: 3
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: abe6e1de94e3155f33b5fee2ad8f23de48844b2f7dd7003ee4627063de5eb9cd
+- path: docs/3-functions/persistence-adapter.md
+  type: doc
+  section: 3
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 21934c0a13e813e190d3ad17559d6f85ced3a510211af4d0c6860f42a3974983
+- path: docs/4-formats/README.md
+  type: doc
+  section: 4
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: d8ee389d85f63af69eff35ef2f3e49486392e8ab5843831ed5e41268d3b6beaf
+- path: docs/4-formats/artifact-manifest-format.md
+  type: doc
+  section: 4
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: e17db77063c78201184627f9902f72dd36f4e9766184c4c7db05a190af801b4f
+- path: docs/4-formats/tool-adapter-versioning.md
+  type: doc
+  section: 4
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: d2118ceef555d5ea2f5c2377e370d1d719dda718905bac942d86550d86a0b4a6
+- path: docs/5-standards/README.md
+  type: doc
+  section: 5
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 6625905c48f92ca401f1d1f5166e97865471fe723d76703ab5eaaec891454e5a
+- path: docs/5-standards/adapter-naming-convention.md
+  type: doc
+  section: 5
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 6eaff97b0ad3e6704ab3b1be2b29f437a478e5b3da13d58d9816489372eff21a
+- path: docs/5-standards/document-versioning-policy.md
+  type: doc
+  section: 5
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: e3702a638dceb4e8961e3940885efb84cadfbba364867bfdf12dc2c54ad391f9
+- path: docs/5-standards/domain-library-lifecycle.md
+  type: doc
+  section: 5
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 159e47f6da864eec2003bc3961d4ce8e4e90cb903410526a90f08a9a2b9466ed
+- path: docs/6-examples/README.md
+  type: doc
+  section: 6
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 409a2c2d47b6d383008e15af45a6f531f7baea9c8386dcecc5e2d1f9012c7d50
+- path: docs/7-concepts/README.md
+  type: doc
+  section: 7
+  doc_version: 1.3.0
+  status: active
+  last_updated: 2026-03-18
+  sha256: e56f15442cda7d81e2c3e4fd6bcb86b368b34e8929a48cab608d728fcf3de6e0
+- path: docs/7-concepts/api-server-architecture.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-18
+  sha256: b29c30865b590c1621ac24954b9f673c2a113910462eb9f1f12317732a4e04c0
+- path: docs/7-concepts/cross-domain-synthesis.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 01d4e4c6df6a4cfd12fe3ca14b0909a75c3f3f000f688dcedc4ba3f111822095
+- path: docs/7-concepts/dsa-actor-model.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-23
+  sha256: b2b437db92266ba9d2af2dfd2eabfdd2960ec149661dea35da7e388b929cb495
+- path: docs/7-concepts/domain-adapter-pattern.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-18
+  sha256: e47d85fce25384c3b1c1618af6e5bba740d1cd5e6197ee50e3e7aa59bdc45114
+- path: docs/7-concepts/domain-evidence-extension.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: ea0bdda400d361a2f8b88129bcf986f6eecc27f7d5a320923f37c8c7503770ae
+- path: docs/7-concepts/domain-role-hierarchy.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-19
+  sha256: 39490af9f6015de77bca441d8eb203e355c91c3235accdee1b0c02523f5081eb
+- path: docs/7-concepts/file-generation-staging.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 0243464c36f258f302786c3a7990d69a8e4467a9408e7509ca7093e5921badfe
+- path: docs/7-concepts/governance-dashboard.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-06-15
+  sha256: 9496937e5595650f7885078231f8a17ad2488f253df32d0bf58fc8340146f285
+- path: docs/7-concepts/graceful-degradation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 7c9b032a9d0fb6896a10490c59001794aedee73327eea85eca24abb8bb3c1881
+- path: docs/7-concepts/ingestion-pipeline.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: ebf3b58ef526b826b418ebcf3d4acabb8953aa92e4d094aabe8c5dbf1f0a54aa
+- path: docs/7-concepts/inspection-middleware.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 3a2f0346f4f2e5f18bcdf31be4f8d6cf7c0b0f80970fcf6efe226b74a877d2ec
+- path: docs/7-concepts/llm-assisted-governance-adapters.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-03
+  sha256: 677245429b7b1e56bb86b4bd161305ee076351adc8688db794ddb2a5d8c15681
+- path: docs/7-concepts/logic-scraping.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: ed6f784be8825ee85ca6f01598fd6ad23156d38351548e1f62a97a5e6dc198ca
+- path: docs/7-concepts/microservice-boundaries.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-11
+  sha256: c52b813e3dd72c586c7c0f8ee9bd70c2796399e24d09fe28be9a7086a216993e
+- path: docs/7-concepts/daemon-batch-processing.md
+  type: doc
+  section: 7
+  doc_version: 2.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 65571c7a30e5cc97f3cfe341c85a78611c21c4268e867374415fa70214f0a5e1
+- path: docs/7-concepts/nlp-semantic-router.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-13
+  sha256: 94dced2fc34c2252f077558cf4cb72e26ef15b330464b14f22557be2eb3d3415
+- path: docs/7-concepts/novel-synthesis-framework.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-18
+  sha256: cdbb35648ae5135486a25920867f0af1d718d39ee1e4e34d0f99ce35f87d5ef0
+- path: docs/7-concepts/parallel-authority-tracks.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-14
+  sha256: 773cacfa422cf5c609fe7d54893d4a1716994f7d77cbecb22c885451a6b10496
+- path: docs/7-concepts/prompt-packet-assembly.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-13
+  sha256: 50dc19c0ff6a408af355c2ffb5ab826514bf392fbd65642b5556cf53d7352c3d
+- path: docs/7-concepts/resource-monitor-daemon.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-15
+  sha256: 4d6703b8441e3f4d84f70dfe6ebe8655a1495abf44a52696320f110d772b33e0
+- path: docs/7-concepts/slm-compute-distribution.md
+  type: doc
+  section: 7
+  doc_version: 1.2.0
+  status: active
+  last_updated: 2026-03-18
+  sha256: 59db718b41fa0d4e2f74c9a4360b646df626b2688696e4b4ff3b6f2b39b2e8f7
+- path: docs/7-concepts/system-log-micro-router.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-23
+  sha256: 2523cda90388a1235b21c805a9a2dea13253d58ea2e1aedd87be858fbd2215a6
+- path: docs/7-concepts/world-sim-persona-pattern.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: a4a35e1c1ad68de15838f4a0fe49f7939edb97876adfd1e387cf5887859f52e2
+- path: docs/7-concepts/zero-trust-architecture.md
+  type: doc
+  section: 7
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 1e91d44f68f2ad2a82c1edb3a18ee9773c477d9f12682781cf9e0bca0a720a04
+- path: docs/7-concepts/escalation-auto-freeze.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-05
+  sha256: 2b523072f2b9f7c701350a4bcc1da914ad469212dedf0c7d52161b2ef18a4cde
+- path: docs/7-concepts/student-commons.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-05
+  sha256: b4c22ebd062757ce3ee734b648886c288c64133cdbec6c2c1e1ed7b3268b3eda
+- path: docs/7-concepts/learning-profile.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-05
+  sha256: 101c9734bbabd2d9bde691b0addbec96d919f7a85e7d10799c83635b4118edd6
+- path: docs/7-concepts/telemetry-masking.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-24
+  sha256: beac1d748982db68162e818e0379f90c24f0570ec9ff039eaf6c2a2f6f978e1b
+- path: docs/7-concepts/telemetry-and-blackbox.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2025-07-15
+  sha256: 4dd7199d35dc5f880970ea927b20751f33db0d470ba79dca4c8e50b2db934ef0
+- path: docs/7-concepts/state-change-commit-policy.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: b43c0a3d9d1858881b6922f078432a417d16748061eca2e2ed9bb21e54e82db1
+- path: docs/7-concepts/command-execution-pipeline.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-21
+  sha256: ad8949c2e4a5cec234095d0782aa4a4ea5062366548123a801b42874e8cf2521
+- path: docs/7-concepts/domain-pack-anatomy.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-21
+  sha256: 19ff30ea2222ace91cecec8e36c8711afcde8547d001ce7803f5112e04ec2640
+- path: docs/7-concepts/hmvc-heritage.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-23
+  sha256: f070f23a9bd488162d90ca47f6fab9fd49ecc977ecee3193ce6bfeeac9a61d66
+- path: docs/7-concepts/ledger-tier-separation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-23
+  sha256: 5dead097543c7c14260f6e837aa682a91f0acb97182901f2e761310101fe9b2a
+- path: docs/7-concepts/group-libraries-and-tools.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-27
+  sha256: 1823147837cbae4a29b09c2e1b16a0c7cc78caa403ccebddc28cff178bc69c03
+- path: docs/7-concepts/edge-vectorization.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-27
+  sha256: 34fbdf48e8c2c6a9194244bba697b69b1c6066eb7429557a20371fe62fabe7d6
+- path: docs/7-concepts/execution-route-compilation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-27
+  sha256: 3b44796987657b36271bee83f4402a18e4d951e9586773ad44aeb094c40bb96f
+- path: docs/7-concepts/compressed-state-pattern.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-28
+  sha256: a173c7cdf9b5bfada8230b37289dc80b25308201271ba44919f0e75ecc91b4c7
+- path: docs/7-concepts/holodeck-physics-sandbox.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-28
+  sha256: 68a4a845f404bdb872c6eeedf64604b49323e9141d40338a15208c5d5cc4ce27
+- path: docs/8-admin/README.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 546e6a5f487811725c813580a555cfe41fab9e8e6a01108e6c3610403c2fcfc5
+- path: docs/8-admin/admin-command-schemas.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: e3e09363f3f35baf1e032e4fbef6ea705fb5972b625fc6239706fe55f59f01c4
+- path: docs/8-admin/air-gapped-admin-architecture.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 5e96c06aa802a7df98a6026df7f4ec6ec98573250ec30ea52cc9b02853c97921
+- path: docs/8-admin/escalation-pin-unlock.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-19
+  sha256: f575458b259602459b6f30912add2de9a78a5a9c099dad71396885d3a6b1aeea
+- path: docs/8-admin/rbac-administration.md
+  type: doc
+  section: 8
+  doc_version: 1.2.0
+  status: active
+  last_updated: 2026-03-22
+  sha256: f93892db1f52a74b69fa2d42fe0a9b2d8d67ea6b1ac0de5f33eb76c9201a639a
+- path: docs/8-admin/secrets-and-runtime-config.md
+  type: doc
+  section: 8
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: fd5e09c22b0101544ac76a15bf2a44c9b63dd165f4bf12b7f870fa86eabe22a1
+- path: docs/8-admin/system-domain-operations.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-13
+  sha256: 4f32373f501321f185a5248b21553c70a4cd50fafdf2aa2a3a19066d7f95a5c3
+- path: docs/README.md
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 40f9ab31417132cd9b4746e376270b162d34b3ef1f501bfcca78d78a0cf68f4c
+- path: docs/8-admin/audit-log-spec.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 11dc81cdc7ebeb7e67c56750b38583894b9fe95a546843daeae40f7fed98b700
+- path: docs/7-concepts/domain-profile-spec.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 9f304f1463eb02326f2244361c19425339b67ec1d1a83cb7907dd0ecd5f1fd07
+- path: docs/7-concepts/dsa-framework.md
+  type: spec
+  doc_version: 1.2.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: ab2f799e7e8c7ee54f1b8104699e358fc9e9819b8acf43a8a5f985ef0d532fc5
+- path: docs/8-admin/evaluation-harness.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: daa06594c1ab8fe2d1e93529c73b12ece14ddd1a5457a01960526b0b18f3cfc7
+- path: docs/5-standards/global-system-prompt.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: d99d0651d9dd9ba395b2992002a069b5ebb7d7cd7fa76ea8ab80f74defe74141
+- path: docs/7-concepts/memory-spec.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: e0d752086c2740c4b6bd2fa4d59a3567d79d18f09cb3ad0501029d51695fc735
+- path: docs/5-standards/orchestrator-system-prompt.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 2d60e6d9e7e29c62cc68eb576fcdc24cc1137089b39defa44ebed9b1a302c93c
+- path: docs/7-concepts/principles.md
+  type: spec
+  doc_version: 2.0.0
+  status: active
+  last_updated: 2026-03-03
+  sha256: 04dfcd65c3aae1cd87b39afe8b0cf75620226bd13c9e39cb95d42093d1aef058
+- path: docs/5-standards/rbac-spec.md
+  type: spec
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 4f6ee86355ff4bf2eb0b7b1a944be6300ca92d5ea3af27b30330f62038001bf3
+- path: docs/8-admin/reports-spec.md
+  type: spec
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 9370b5d0b578f4a930041c9a8e8faaaa1eeabbc074b5f32e0f2ba282649bdb3b
+- path: docs/8-admin/audit-and-rollback.md
+  type: doc
+  section: 8
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-02
+  sha256: 6b875cafc35de9f9b289cc971fc1abeba24c55168857b4889f886d7da4bab238
+- path: docs/8-admin/domain-authority-roles.md
+  type: doc
+  section: 8
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-09
+  sha256: e39868c6fed220472c36e6f6168302333549210965718863540079c62f3a9c15
+- path: docs/5-standards/system-log.md
+  type: standard
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 8fee40bf64508bb585d3dce52b6bd6c43aedede381d1cca26bf938fa6d062b51
+- path: docs/7-concepts/domain-evidence-extension.md
+  type: standard
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: ea0bdda400d361a2f8b88129bcf986f6eecc27f7d5a320923f37c8c7503770ae
+- path: docs/3-functions/domain-state-lib.md
+  type: standard
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: b45a77872123a658dffcbf325a30b063bb902730c60bf136dd87be86809cbf97
+- path: docs/5-standards/lumina-core.md
+  type: standard
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: c14bc237b4503bd51025669db2f366f7182509429125ab50d9a0212e5e169134
+- path: standards/domain-authority-track-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-14
+  sha256: 156b40dc9c9694fed72b8b3ada5e7ddaa1883bd86aa8516a48352aa7f5ab69e1
+- path: standards/domain-evidence-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 984edb46b842629a479aa46f16420f6b026c1486a3fc21d88a05ae00e0745dc9
+- path: standards/domain-physics-schema-v1.json
+  type: schema
+  doc_version: 1.2.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 1071730179fad710d49b5722ad51313a1a330a15edcddccc81055eb2ea5c58d9
+- path: standards/domain-registry-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 7644a785bc68185c67ceea7ff9e6115e03858a69105ecbe132abc8101fc7b9dd
+- path: standards/domain-role-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 5dd1d09c524b97ca7ae340605711b5ae50414048836311acea95e42cc765024d
+- path: standards/group-definition-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: c8c5100bef96ac258c777ca33eb5672110e8787898c5421d473656679db1108b
+- path: standards/inspection-result-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 18b44ed3d755dbb1b259e230f9e3665633b2f5238eb1fba1f41caca9bb60a7ac
+- path: standards/physics-edit-proposal-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 43506bcce29a531e0b9c91f8d879ec2575656801abcb4ec25af14d79ed1fe80a
+- path: standards/prompt-contract-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 96a816c8f0021510164461d70b59354c0639615e212687facd4957d42b13ab3a
+- path: standards/rbac-permission-schema-v1.json
+  type: schema
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: ad75563fba5cf2a26bd209b35ca0c1c7c38cd3ce7ccb81060ebf94a4c2db35f1
+- path: standards/role-definition-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: ab6df0ff7577a0eb672bc913e341fc01382f8546f38d9d1b0b5222b3b657a1eb
+- path: standards/role-layout-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-02
+  sha256: 6d0267809a6e01f6e55c1d514e2151d44c4854a1c16d0ed6a4ebf3ecdeaf550d
+- path: standards/staged-file-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: ee699180e7bd1480fed590bbd7a0c134a7c4bfe1cd1ed2e37b2a2728f03b6ff2
+- path: standards/system-physics-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: 21e457b3893de7e451e644b20b6818decb34284a8510afed193880673812fe63
+- path: standards/tool-adapter-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 14e60e342e6f90a196501ede06cb221e128c876648cbd861e5e818423f2efde8
+- path: standards/state-transaction-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-24
+  sha256: 6f01a28bb0a2b8e57302c8d077c7ac8b71ab396684a531b5a2d53839bf181edb
+- path: standards/telemetry-masking-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-24
+  sha256: 5a9a3fe3f4d100a39d4bd21ef386593291315452a65bb2f601df400ff1c91fab
+- path: standards/blackbox-snapshot-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2025-07-15
+  sha256: abde9307e065c5a21582376704fffd38cbd10b3ccffed65a7cfa392f4dba8350
+- path: standards/action-card-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-15
+  sha256: 4e9fae537d4c643a4b673dd2f2e107141643139def6f2073afba26c8fc517a3d
+- path: standards/admin-command-schemas/approve-interpretation.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: f1913880a28ce043a07cc91046f1dcef685cc2616b7f02875fd9fc3dab9c7aac
+- path: standards/admin-command-schemas/assign-domain-role.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 6ba3498ea0a31b7fd0fd826bd264b99c56daf963f3b2f4ab6f6e2978b6443a25
+- path: standards/admin-command-schemas/commit-domain-physics.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 959428d79bd4ce7c022bfd4f36ccd7a9883592ccb1385aa6c3edfd60dd72ae3b
+- path: standards/admin-command-schemas/deactivate-user.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 1cc6eeb857b4a7fee6dc0e578aa6eaadf1be0e5f3a4eb1fc255fe4badc72be93
+- path: standards/admin-command-schemas/explain-reasoning.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 0ef409cebb408c3c9365780be392c96aa89d683200402ece84fe97480c417dff
+- path: standards/admin-command-schemas/invite-user.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: d23189c36e564495cc3eea8ee5b84fdf24f75cc45c0aef7dc4ecfff2a849b9f8
+- path: standards/admin-command-schemas/list-commands.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-24
+  sha256: 80ef285ed9b0f0375329a5e80cc81bacf121bc2853e4aadadde30d2156949db1
+- path: standards/admin-command-schemas/list-domains.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 292d3ead304cff934fb95742146e86559d1196ff80b2c0533025853c78f40789
+- path: standards/admin-command-schemas/list-escalations.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: ba7ce4ec0cc2c97d2a755c6c251d3c2a3a77b7d82f8aa0045840c6e2a79d6fe6
+- path: standards/admin-command-schemas/list-ingestions.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 9f72ae304750d11e481c4214d141a68f3a95c35646abbc179f59c85a11d372be
+- path: standards/admin-command-schemas/list-modules.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 506509bae3255423183e743c617ccfe06e8a7a90c3b4f24ca78f44e4707b346d
+- path: standards/admin-command-schemas/module-status.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: ccdfd4ed512e431e4f65dae1c4c5f9042e99f0092c86f06da5ebec1dda170014
+- path: standards/admin-command-schemas/daemon-status.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 21934dbf8e2c9755dc851b3a6d7c3e2603b0cf714b7d58ac3c8e6c72ebe7a2d3
+- path: standards/admin-command-schemas/list-domain-rbac-roles.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: e711715b7d87d9bbef17e71b7f6d351df5f74e84974564933ac9ff9f606208e5
+- path: standards/admin-command-schemas/get-domain-module-manifest.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 7c1f2bb8cdd1b4dea2200241606579bbc468605c5a85fdbf0e1301a6001cab84
+- path: standards/admin-command-schemas/list-users.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 012e5970b26dfd8b1dc9b2806235438c52909837211718eb17ad09ac74f77272
+- path: standards/admin-command-schemas/get-domain-physics.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: eadf73a37be2c37d9a96b498ff31df266413bdd2c9e9554d4b9588fc07940c95
+- path: standards/admin-command-schemas/list-daemon-tasks.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 46d7c1b8b447bece7e715b03fbe4208ed46bd2217da8468ffbc428630857e49f
+- path: standards/admin-command-schemas/request-module-assignment.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: 010e92e3c66710edeecdb15e388ec802229d0a011ae965b8104a423bb713ab3d
+- path: standards/admin-command-schemas/reject-ingestion.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 1b270e6c0d310deceb7c8231668f31d0c529b30bb4c8f95ed330f618bc8dbf1f
+- path: standards/admin-command-schemas/view-my-profile.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-08
+  sha256: f8405cf73c29ccdd851f8ddf59f4fd5ce4558ec55d699a4b93bb43e92fc5619f
+- path: standards/admin-command-schemas/update-user-preferences.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-08
+  sha256: 742939acc312e3925838551cd693e470755a8a2615cdac08c4d94ceabbb854e3
+- path: standards/admin-command-schemas/resolve-escalation.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: dd047a7168523f8195552b37b97aecc3a17ea21c8bf7f6c16e473231f7b14811
+- path: standards/admin-command-schemas/review-ingestion.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 778eda2f2e8ccf9103a783202e2788a8e058d146c14e041b2610a0df12c2dc85
+- path: standards/admin-command-schemas/review-proposals.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 00f81804099777ea0e5c5b65ca7b5b0849149aab57ad6107994daec393c59157
+- path: standards/admin-command-schemas/revoke-domain-role.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: d31d618626f1b8b4309124b1e9f32152433b802ea5afd9a6dfb7dbe5ba9fa9c7
+- path: standards/admin-command-schemas/trigger-daemon-task.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-31
+  sha256: dfef161b1ec572f14621660d7a16a15dcf6c9af2856fba4bba5be3049de0514f
+- path: standards/admin-command-schemas/update-domain-physics.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 55c2e261da21583b8333c55769e7d52b390403baaf3905718a97bb27eb668653
+- path: standards/admin-command-schemas/update-user-role.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-23
+  sha256: 334d8e03bdfcd072e8bdc6a85f0900ddbd808e20dbef4ff3fff6b814ed651807
+- path: standards/system-log-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-02
+  sha256: 7296801f2658e04cffb05ae61c8d6bae3d7ae1fbf332b3a541aed0a6208c22f2
+- path: standards/commitment-record-schema-v1.json
+  type: schema
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: b8c748207bb3b2252033850f93dfcdf2bd59a871df4c4327bb4615c8a229b12f
+- path: standards/escalation-record-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-02
+  sha256: 47561ec9ea876ce2669eb0fd5be80ac47d52abc049e9d795d8984cfdff21b2f0
+- path: standards/ingestion-record-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 4588fca1a0c7742a94e65ebe9b6a9ecbb3adb7a9c9561bab3b49777191c82ef3
+- path: standards/trace-event-schema-v1.json
+  type: schema
+  doc_version: 1.1.0
+  status: active
+  last_updated: 2026-03-15
+  sha256: 53a8bf0b25ffc4d467423781f2460dc124cb4c15c48577a40090ef1bc559be3f
+- path: domain-packs/system/cfg/domain-registry.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 3642e77db66abc61c03e78d784906121bb97904dc2aab7e359a62efb8ee3de09
+- path: domain-packs/system/cfg/system-physics.json
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: a84a16850f80d6bfa31f04d6c13bb62089762e564bf6c2817ef046ba694c5453
+- path: domain-packs/system/cfg/system-physics.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-12
+  sha256: ce0201c73f94c066ebeb672ce31626d43c29bb7676613cb9d0d85e06c92714d5
+- path: docs/7-concepts/rag-contracts.md
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-20
+  sha256: 0b9c8969cbd6937a4ae34760cbb442a795ee8c97bf3f878cb580b9a54bab18ab
+- path: standards/retrieval-index-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-03-08
+  sha256: 74f82ef2a4366e21045841b32f6f5a80cc525e2a4b3dcb3e0acfe616facc9c9c
+- path: domain-packs/agriculture/docs/1-commands/README.md
+  sha256: 62791ccb67feda1e6099e9a1cb914b21190ae53bd35d55d5de7dc1371fceb56d
+- path: domain-packs/agriculture/docs/3-functions/README.md
+  sha256: 77f4183aadfce37c1eb083d9519cf896aab5decb7ceee07059c98b5344574608
+- path: domain-packs/agriculture/docs/7-concepts/README.md
+  sha256: 88842ae16cee097da451084f626b16d33d270a192b331f0ee364095551d242f4
+- path: domain-packs/agriculture/docs/README.md
+  sha256: 6c39a5c510f94bc53a3c7ed669b69bb1341d09466e3f6ecce55f35749b61cfb7
+- path: domain-packs/education/docs/1-commands/README.md
+  sha256: 01f79b923a1c7c3e7d81144712577e83441db55ff9ac050c5125d492f0e97247
+- path: domain-packs/education/docs/3-functions/fluency-monitor.md
+  sha256: 393617f748a845941847fb47850b50e39868c9cb1ea4adab9ac5347fc7e1865e
+- path: domain-packs/education/docs/3-functions/nlp-pre-interpreter.md
+  sha256: b1350464d45b112a0c848d945addcc05f3deb8c41048d91c2fc7ba1fb777ede2
+- path: domain-packs/education/docs/3-functions/problem-generator.md
+  sha256: abe5a4b3a29d3d87c19ea5f2463c1fb0685c690ae15607679e45899773835f01
+- path: domain-packs/education/docs/7-concepts/README.md
+  sha256: 3c29d17ffd32fbdc2b696abb21aaf05f1a85d694ed34aad341c1013afc4e1e61
+- path: domain-packs/education/docs/README.md
+  sha256: 5db651f901e02d74353ae33e0d36d2015eeccbe9578b25e39edf9ac5940e601f
+- path: domain-packs/system/docs/1-commands/README.md
+  sha256: e2aeb44cf9c24a3183f7af216f0a8338c7867ba700468d0153cc8b460dd3f91b
+- path: domain-packs/system/docs/3-functions/README.md
+  sha256: 03cb3dc46cf0e3079fb186e4a77af20230ec05b85072c1eba39ee27cb8f43acb
+- path: domain-packs/system/docs/3-functions/state-transaction-adapter.md
+  sha256: ec1962b6fda2c7c4c926d61563516b924d7add2e3e213653d5b849239fd21d53
+- path: domain-packs/system/docs/7-concepts/README.md
+  sha256: 68f5b0fdbac1ab1ba86265f817359976e1ea72119d179e96fafa13407476bace
+- path: domain-packs/system/docs/README.md
+  sha256: 384cf5fb74bdb74dbece6b5b8d121574edfc78a4f8f2c37798291fcf00c8092b
+- path: domain-packs/system/cfg/admin-operations.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-05
+  sha256: e9647e20f49947eb01e5ba3369385ad2bd8497def252c95fa2b8207925fd71d4
+- path: domain-packs/system/cfg/base-entity-profile.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 65db313a7735b7a5ef39ef1d7d79a265527aded8a715ec280d79b7e87892faad
+- path: domain-packs/system/cfg/domain-role-defaults.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: d98ad40310ce2f91461f807e37bc059ae3c46352daa034fafc60204d264b13f9
+- path: domain-packs/system/cfg/runtime-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 1fd1c516d1318d528f5826213fc5302fda1d93fba272ca808e02d1f82844ed7a
+- path: domain-packs/education/cfg/runtime-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 8fc612bb43db5c463c8a8851c082c8f1b82bd0a2c9e40210741b418da0a4c7a2
+- path: domain-packs/education/cfg/domain-profile-extension.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 5336cf744396c68a236c11c76b8c3c31d826860616046a14468114af98828b41
+- path: domain-packs/education/cfg/admin-operations.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-05
+  sha256: 2d83b553cbd391768f84eb4b9b24a6ebca4158e6460a612c5aa8ac40df45d4cb
+- path: domain-packs/agriculture/cfg/runtime-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
+- path: domain-packs/education/modules/pre-algebra/domain-physics.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: fd317779148a9623fbdd1064c66a426bd68667e484b7a0a4279b82fec9046209
+- path: domain-packs/education/modules/algebra-intro/domain-physics.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 9ce15fdd639a7144196cbd302f0f6a7f40a399fe795a518d23c2396a1895584c
+- path: domain-packs/education/modules/algebra-1/domain-physics.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: fa0e835e7ded48b882bea508d41581c637cfe58d67ac06392f586c8befa549f8
+- path: domain-packs/education/modules/algebra-level-1/domain-physics.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: f4f182f22e922a3edc1d9b40681553942a1198dcdfd40ea3a8fe63568664647f
+- path: domain-packs/education/modules/teaching-assistant/tool-adapters/student-view-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 5f1b248f7c57670a2e259387350f1909ae484f225e1d34a6cbd2382b22c4f1fb
+- path: domain-packs/education/modules/teaching-assistant/tool-adapters/hint-delivery-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: ecd0cf14aef9f922f774c34bdc1db4c7a7a6003130883e43939054f5a7b0629d
+- path: domain-packs/education/modules/teacher/tool-adapters/student-roster-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: d19a343631215bf027bed0a2a7044b10f43e25e1467d40d52a7e029847473616
+- path: domain-packs/education/modules/teacher/tool-adapters/module-assignment-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 679558d5a0fb421ea1f97bb14e1be89ac9fe1768eb86dca1f7bcb894e27d6b56
+- path: domain-packs/education/modules/teacher/tool-adapters/escalation-handler-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: a766abd2992e805b02434ee52774817508fefb5437d8ee2f372fe8ec1fe64023
+- path: domain-packs/education/modules/domain-authority/tool-adapters/role-assignment-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 955d30cf9f4e946b85a636b0c759d706c51fdb24ac6ad89f8fb79ced4b90c02b
+- path: domain-packs/education/modules/domain-authority/tool-adapters/progress-overview-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 7eac524b85ed7e9990923ce133ae7609a5b9b64c8198bfd9ee4527950a870da1
+- path: domain-packs/education/modules/domain-authority/tool-adapters/physics-staging-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 88f99f5e020d0c63d9d80da532b0865b13c86c80b9cc9f5200d1272214e7dc45
+- path: domain-packs/education/modules/domain-authority/tool-adapters/ingestion-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: ddc4e82f351f3918eecae6fb66aa9b9ef2d9a46d66a34bb61b8536eabecf9216
+- path: domain-packs/education/modules/algebra-level-1/tool-adapters/substitution-checker-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 85fbaff36ff9e7369794b8e38f20fe0f1fc0e834f15897667a83adebe6bed6a0
+- path: domain-packs/education/modules/algebra-level-1/tool-adapters/calculator-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: e498137770078791d1e6c75e27af53a480c3a1e6426baeee9cb3c4ed90d4f769
+- path: domain-packs/education/modules/algebra-level-1/tool-adapters/algebra-parser-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 7517fb5d9b3ca1e4f07173de5f388ff4031e166845eed839c317cc214fdee2e7
+- path: domain-packs/agriculture/modules/operations-level-1/tool-adapters/collar-sensor-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: db9db79bb78682b86351f32167cdf61290091825b8776f6d4f855067a1efdc5f
+- path: domain-packs/education/modules/guardian/tool-adapters/child-progress-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 5640264d48a26ec501b0b464ae2a0fe703d3f8545a6110154fca1b43784a4852
+- path: domain-packs/education/profiles/domain_authority.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: bf337e3b3eb0e3e2e9bb54abf53e806478b31d19b3d9cfd26665394aa5068ef5
+- path: domain-packs/education/profiles/teacher.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 875997e3eeab01f7cdfcb96e331bdee2e99e7068689010b1a8e36d801326e62e
+- path: domain-packs/education/profiles/teaching_assistant.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 3a012a7e4f0fbdc42f513558cb69a21b51907a521907e36aad1429b3651bef89
+- path: domain-packs/education/profiles/student.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 4b9bb6401167f29216143f1b688bb2f4ad01e9fb447bd74b15f0f06cf9666f5c
+- path: domain-packs/education/profiles/parent.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 26a6725c3d098ea7a7dbab9d842a5480c2cf78aa394dc155a35ccc2a3fad27d6
+- path: domain-packs/system/modules/system-core/operator-profile.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 84d761fee68adc2a64df1c52fbb1d16335e9fb4bb9cdaadb2d6346b87a07c1d5
+- path: domain-packs/education/modules/pre-algebra/student-profile-template.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 0b3bbe4dfe46da02c2ef085d8f785ed7c3712a9d67ca3a02bb3e9bdc4e6df4d4
+- path: domain-packs/education/modules/algebra-intro/student-profile-template.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: b8b9f9f9d9b4a907616f6c3ccbfd25d7572f8273beb3dc0de367564f068a7ec8
+- path: domain-packs/education/modules/algebra-1/student-profile-template.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: a15f04d601713ad4b5d01e3b78e78ab28b9f24c0fffd0153b0e394ff957f091e
+- path: domain-packs/education/modules/algebra-level-1/student-profile-template.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: bc084fdff8b48650a603987bc8c0c26f0b98f9089dc854db6a48b8a175687b04
+- path: domain-packs/education/modules/algebra-level-1/example-student-alice.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 489e400765d0dc9a59d6335d423b64aea3b2f66f1376d1027712e456b311d228
+- path: domain-packs/agriculture/modules/operations-level-1/example-subject.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 44c70b9e1c75b17e6149811322f58d27e477023c64d969aabfdc758eff9eb6a9
+- path: domain-packs/system/pack.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 2bb29c3b1c5d305aa46262a13988143c40a0af850014f2f03f263595c9465af4
+- path: domain-packs/education/pack.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 38d3303e5d503564fe37700185f012b0aee7769dc9edc8d7c2811226f07ee260
+- path: domain-packs/agriculture/pack.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 95718a2ff385ed40278a4322b0b257359bfedbf7dfa5f544a68aaa4e92f11783
+- path: domain-packs/education/world-sim/mud-world-templates.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: 08baab90e60c42b314963f039043778c2d082bccf6e7aef132a8896a18e5e0d5
+- path: examples/escalation-example-packet.yaml
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: c0fcd0defc647fa4af0588fca1377fdcdd94dfba27dec19a951176e385172d83
+- path: examples/invite-onboarding-example.yaml
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: f56d51a6dd9ec706fdb9ce68e4215c9fdcffdadc7d4c12190c1ffe89784c73e1
+- path: docs/8-admin/meta-authority-policy-template.yaml
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-04
+  sha256: f733e89037f3e2817288883d71ee536d327b2953973af65b7bd4c45aa2a47e6e
