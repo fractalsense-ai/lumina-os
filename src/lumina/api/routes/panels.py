@@ -202,6 +202,19 @@ async def _resolve_domain_overview(
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
     all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
+    if user_data.get("role") == "domain_authority":
+        governed = set(user_data.get("governed_modules") or [])
+        # Keep only domains that contain at least one governed module
+        filtered = []
+        for d in all_domains:
+            did = d.get("domain_id", "")
+            try:
+                rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
+                if governed & set(rt.get("module_map") or {}):
+                    filtered.append(d)
+            except Exception:
+                pass
+        all_domains = filtered
     return {
         "panel": pcfg.get("id", "domain_overview"),
         "domain_count": len(all_domains),
@@ -231,6 +244,9 @@ async def _resolve_module_directory(
     """Module inventory — requires elevated system role."""
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
+    governed: set[str] | None = None
+    if user_data.get("role") == "domain_authority":
+        governed = set(user_data.get("governed_modules") or [])
     all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
     modules = []
     for d in all_domains:
@@ -238,6 +254,8 @@ async def _resolve_module_directory(
         try:
             rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
             for mk in (rt.get("module_map") or {}):
+                if governed is not None and mk not in governed:
+                    continue
                 modules.append({"domain_id": did, "module_id": mk})
         except Exception:
             pass
@@ -278,6 +296,9 @@ async def _resolve_staff_directory(
     """Teachers + TAs visible to the domain authority."""
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
+    governed: set[str] | None = None
+    if user_data.get("role") == "domain_authority":
+        governed = set(user_data.get("governed_modules") or [])
     all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
     staff: list[dict[str, Any]] = []
     for u in all_users:
@@ -285,6 +306,8 @@ async def _resolve_staff_directory(
         d_roles = u.get("domain_roles") or {}
         for _mid, _rid in d_roles.items():
             if _rid in ("teacher", "teaching_assistant"):
+                if governed is not None and _mid not in governed:
+                    continue
                 staff.append({
                     "user_id": uid,
                     "display_name": u.get("display_name", uid),
