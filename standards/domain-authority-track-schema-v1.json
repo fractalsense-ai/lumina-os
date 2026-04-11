@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/domain-authority-track-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-11",
+  "title": "Lumina Domain Authority Track Schema V1",
+  "description": "JSON Schema for the domain authority parallel track. Domain authorities are NOT system-level roles — they operate on a separate authentication track with their own signing secret. See docs/7-concepts/parallel-authority-tracks.md.",
+  "type": "object",
+  "required": [
+    "role_id",
+    "role_name",
+    "track",
+    "description",
+    "default_module_mode",
+    "scope_type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "role_id": {
+      "type": "string",
+      "const": "domain_authority",
+      "description": "The sole role on the domain track."
+    },
+    "role_name": {
+      "type": "string",
+      "description": "Human-readable display name."
+    },
+    "track": {
+      "type": "string",
+      "const": "domain",
+      "description": "Authority track identifier. Always 'domain' for this schema."
+    },
+    "description": {
+      "type": "string",
+      "description": "Purpose and responsibilities of the domain authority role."
+    },
+    "default_module_mode": {
+      "type": "string",
+      "pattern": "^[0-7]{3}$",
+      "description": "Default octal mode when this DA owns a module."
+    },
+    "scope_type": {
+      "type": "string",
+      "const": "governed_modules",
+      "description": "Access scope is always bounded by the governed_modules JWT claim."
+    },
+    "jwt_issuer": {
+      "type": "string",
+      "const": "lumina-domain",
+      "description": "JWT issuer for domain-track tokens."
+    },
+    "token_scope": {
+      "type": "string",
+      "const": "domain",
+      "description": "Token scope claim value for domain-track tokens."
+    },
+    "max_session_scope": {
+      "type": "string",
+      "const": "governed",
+      "description": "Domain authorities can view sessions only in their governed modules."
+    },
+    "audit_visibility": {
+      "type": "string",
+      "const": "governed",
+      "description": "Domain authorities can inspect audit trails only for their governed modules."
+    },
+    "may_create_users": {
+      "type": "boolean",
+      "description": "Whether this role can invite new users (limited to user/guest roles within governed modules)."
+    },
+    "may_assign_roles": {
+      "type": "boolean",
+      "const": false,
+      "description": "Domain authorities cannot assign system-level roles. They can assign domain roles within their modules."
+    },
+    "may_assign_domain_roles": {
+      "type": "boolean",
+      "description": "Whether this role can assign domain-scoped roles within governed modules."
+    },
+    "bypass_permissions": {
+      "type": "boolean",
+      "const": false,
+      "description": "Domain authorities never bypass permission checks. They resolve as owner within governed modules."
+    }
+  }
+}

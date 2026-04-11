@@ -88,6 +88,8 @@ def check_permission(
     domain_role: str | None = None,
     domain_roles_config: dict[str, Any] | None = None,
     groups_config: dict[str, Any] | None = None,
+    governed_modules: list[str] | None = None,
+    module_id: str | None = None,
 ) -> bool:
     """Evaluate whether a user may perform *operation* on a module.
 
@@ -111,6 +113,13 @@ def check_permission(
     groups_config:
         Optional ``groups`` block from the module's domain-physics
         document.  Maps group names to membership criteria.
+    governed_modules:
+        Optional list of module IDs from the DA's JWT ``governed_modules``
+        claim.  When the user is a ``domain_authority``, access is denied
+        outright for modules outside this list (no fallback to group/others).
+    module_id:
+        The ID of the module being accessed.  Used together with
+        *governed_modules* to enforce domain authority scope.
 
     Returns
     -------
@@ -120,6 +129,15 @@ def check_permission(
     # Step 1: root always bypasses
     if user_role == "root":
         return True
+
+    # Step 1b: domain_authority — scope-bounded access
+    # DA has owner-level access within governed_modules; denied outright
+    # for anything outside their scope.  See parallel-authority-tracks.md.
+    if user_role == "domain_authority":
+        if governed_modules is not None and module_id is not None:
+            if module_id not in governed_modules:
+                return False
+        # Within scope, DA resolves as owner (fall through to mode check)
 
     # Step 2: INGEST is ACL-only — never in octal mode bits
     if operation == Operation.INGEST:
@@ -263,6 +281,8 @@ def check_permission_or_raise(
     domain_role: str | None = None,
     domain_roles_config: dict[str, Any] | None = None,
     groups_config: dict[str, Any] | None = None,
+    governed_modules: list[str] | None = None,
+    module_id: str | None = None,
 ) -> None:
     """Like :func:`check_permission` but raises ``PermissionError`` on denial."""
     if not check_permission(
@@ -273,6 +293,8 @@ def check_permission_or_raise(
         domain_role=domain_role,
         domain_roles_config=domain_roles_config,
         groups_config=groups_config,
+        governed_modules=governed_modules,
+        module_id=module_id,
     ):
         op_name = operation.name or str(operation)
         raise PermissionError(

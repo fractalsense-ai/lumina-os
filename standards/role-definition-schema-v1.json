@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/role-definition-schema-v1.json",
-  "schema_version": "1.0.0",
-  "last_updated": "2026-03-20",
+  "schema_version": "1.1.0",
+  "last_updated": "2026-04-11",
   "title": "Lumina Role Definition Schema V1",
-  "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical role in the system.",
+  "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical system-track and user-track role. Domain authority is on a separate parallel track; see domain-authority-track-schema-v1.json.",
   "type": "object",
   "required": [
     "role_id",
@@ -19,14 +19,13 @@
       "type": "string",
       "enum": [
         "root",
-        "domain_authority",
         "it_support",
         "qa",
         "auditor",
         "user",
         "guest"
       ],
-      "description": "Unique canonical identifier for the role."
+      "description": "Unique canonical identifier for a system-track or user-track role. Domain authority is NOT in this enum — it lives on the domain track."
     },
     "role_name": {
       "type": "string",

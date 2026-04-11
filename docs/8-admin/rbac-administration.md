@@ -1,30 +1,42 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-20
+version: 1.1.0
+last_updated: 2026-04-11
 ---
 
 # RBAC Administration
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Status:** Active
-**Last updated:** 2026-03-22
+**Last updated:** 2026-04-11
 
 ---
 
 ## Overview
 
-Project Lumina uses a chmod-style permission model with 6 canonical roles. Permissions are stored as 3-digit octal values in each module's domain-physics document.
+Project Lumina uses a chmod-style permission model organized into **three
+parallel authority tracks**.  Each track has its own JWT signing secret,
+issuer, and login endpoint.  The tracks do not share escalation paths.
+See [parallel-authority-tracks](../7-concepts/parallel-authority-tracks.md)
+for the full concept.
+
+## Authority Tracks
+
+| Track | Roles | JWT Issuer | Login Endpoint |
+|-------|-------|------------|----------------|
+| **System** | `root`, `it_support` | `lumina-admin` | `POST /api/admin/auth/login` |
+| **Domain** | `domain_authority` | `lumina-domain` | `POST /api/domain/auth/login` |
+| **User** | `user`, `qa`, `auditor`, `guest` | `lumina-user` | `POST /api/auth/login` |
 
 ## Roles
 
-| Role | ID | Hierarchy | Default Mode | Description |
-|------|----|-----------|--------------|-------------|
-| Root / OS Admin | `root` | 0 | 777 | Full system access, bypasses all permission checks |
-| Domain Authority | `domain_authority` | 1 | 750 | Owns and manages domain pack modules |
-| IT Support | `it_support` | 2 | 644 | System configuration and user management |
-| Quality Assurance | `qa` | 2 | 644 | Evaluation access, read-only to modules |
-| Auditor | `auditor` | 2 | 644 | System Log and compliance read access |
-| Standard User | `user` | 3 | 644 | Session execution only |
+| Role | ID | Track | Default Mode | Description |
+|------|----|-------|--------------|-------------|
+| Root / OS Admin | `root` | System | 777 | Full system access, bypasses all permission checks |
+| IT Support | `it_support` | System | 644 | System configuration and user management |
+| Domain Authority | `domain_authority` | Domain | 750 | Owns and manages domain pack modules within governed_modules |
+| Quality Assurance | `qa` | User | 644 | Evaluation access, read-only to modules |
+| Auditor | `auditor` | User | 644 | System Log and compliance read access |
+| Standard User | `user` | User | 644 | Session execution only |
 
 ## Permission Model
 
@@ -98,25 +110,30 @@ export LUMINA_BOOTSTRAP_MODE=false
 
 ## Managing Users
 
-Users are managed through the API:
+Users are managed through track-specific API endpoints:
 
 ```bash
-# Register
+# Register (user track only — admin/domain accounts use the invite flow)
 curl -X POST /api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username": "alice", "password": "secure_pass_123", "role": "user"}'
 
-# Login
-curl -X POST /api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "secure_pass_123"}'
+# Login — each track has its own endpoint
+curl -X POST /api/auth/login         # user track
+curl -X POST /api/admin/auth/login   # system track (root, it_support)
+curl -X POST /api/domain/auth/login  # domain track (domain_authority)
 
-# View profile
-curl -H "Authorization: Bearer <token>" /api/auth/me
+# View profile — use the endpoint matching your track
+curl -H "Authorization: Bearer <token>" /api/auth/me           # user
+curl -H "Authorization: Bearer <token>" /api/admin/auth/me     # system
+curl -H "Authorization: Bearer <token>" /api/domain/auth/me    # domain
 
-# List users (root/it_support only)
-curl -H "Authorization: Bearer <token>" /api/auth/users
+# List users (root/it_support only — system track)
+curl -H "Authorization: Bearer <admin-token>" /api/auth/users
 ```
+
+> **Track enforcement:** Attempting to log in on the wrong track returns
+> 403 with a message indicating the correct endpoint.
 
 ## Domain Authority Onboarding
 
@@ -159,6 +176,8 @@ curl -X POST /api/auth/setup-password \
   -H "Content-Type: application/json" \
   -d '{"token": "<setup_token>", "new_password": "chosen-secure-pass"}'
 # Response: {"access_token": "...", "token_type": "bearer"}
+# NOTE: The returned token is domain-scoped (iss: lumina-domain).
+# Subsequent logins must use POST /api/domain/auth/login.
 ```
 
 ### Key Rules
@@ -293,6 +312,7 @@ domain role.
 
 ## SEE ALSO
 
+- [parallel-authority-tracks](../7-concepts/parallel-authority-tracks.md) — Three-track authority model concept
 - [rbac-spec-v1](../../specs/rbac-spec-v1.md) — Full RBAC specification
 - [auth(3)](../3-functions/auth.md) — JWT authentication module
 - [permissions(3)](../3-functions/permissions.md) — Permission checker

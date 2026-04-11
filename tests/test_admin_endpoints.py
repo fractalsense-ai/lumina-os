@@ -203,9 +203,9 @@ class TestPasswordReset:
             headers=_auth_header(root_token),
         )
         assert resp.status_code == 200
-        # Login with new password
+        # Login with new password (root uses admin-track endpoint)
         login = client.post(
-            "/api/auth/login",
+            "/api/admin/auth/login",
             json={"username": "admin", "password": "new-pass-12345"},
         )
         assert login.status_code == 200
@@ -462,7 +462,7 @@ class TestAuditLogScoping:
             headers=_auth_header(root_token),
         )
         da_token = client.post(
-            "/api/auth/login",
+            "/api/domain/auth/login",
             json={"username": "da-user", "password": "test-pass-123"},
         ).json()["access_token"]
         resp = client.get("/api/audit/log", headers=_auth_header(da_token))

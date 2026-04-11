@@ -10,7 +10,7 @@
 # The value "pending" is reserved for the initial bootstrap only.
 
 schema_version: 1.0.0
-last_updated: 2026-04-09
+last_updated: 2026-04-11
 
 artifacts:
 
@@ -370,6 +370,14 @@ artifacts:
     last_updated: 2026-03-18
     sha256: cdbb35648ae5135486a25920867f0af1d718d39ee1e4e34d0f99ce35f87d5ef0
 
+  - path: docs/7-concepts/parallel-authority-tracks.md
+    type: doc
+    section: 7
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-07-14
+    sha256: 773cacfa422cf5c609fe7d54893d4a1716994f7d77cbecb22c885451a6b10496
+
   - path: docs/7-concepts/prompt-packet-assembly.md
     type: doc
     section: 7
@@ -579,7 +587,7 @@ artifacts:
     doc_version: 1.2.0
     status: active
     last_updated: 2026-03-22
-    sha256: 684489e3805ae1a42d3b4f2f86cf80e076d679ecdb419aff6023342cd2f0578b
+    sha256: f93892db1f52a74b69fa2d42fe0a9b2d8d67ea6b1ac0de5f33eb76c9201a639a
 
   - path: docs/8-admin/secrets-and-runtime-config.md
     type: doc
@@ -733,6 +741,13 @@ artifacts:
 
   # ── Standards (JSON Schemas) ──────────────────────────────────────────────
 
+  - path: standards/domain-authority-track-schema-v1.json
+    type: schema
+    doc_version: 1.0.0
+    status: active
+    last_updated: 2026-07-14
+    sha256: 156b40dc9c9694fed72b8b3ada5e7ddaa1883bd86aa8516a48352aa7f5ab69e1
+
   - path: standards/domain-evidence-schema-v1.json
     type: schema
     doc_version: 1.0.0
@@ -801,7 +816,7 @@ artifacts:
     doc_version: 1.0.0
     status: active
     last_updated: 2026-03-08
-    sha256: 7d38c0f14be4b364684fddf7b6ec19fe989a86fc85e1d5233fecaca720b38b9a
+    sha256: ab6df0ff7577a0eb672bc913e341fc01382f8546f38d9d1b0b5222b3b657a1eb
 
   - path: standards/role-layout-schema-v1.json
     type: schema

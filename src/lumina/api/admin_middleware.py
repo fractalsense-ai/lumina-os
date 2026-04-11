@@ -4,9 +4,10 @@ Provides ``require_admin_auth`` and ``require_user_auth`` helpers that
 verify tokens using the *scoped* verification path and enforce that the
 token belongs to the correct tier.
 
-Existing routes continue to use the legacy ``middleware.py`` functions
-during the migration period.  New admin-only routes should use
-``require_admin_auth`` exclusively.
+Domain-track tokens (``token_scope: "domain"``) are explicitly rejected
+by both functions.  Domain authorities use the domain middleware instead.
+
+See docs/7-concepts/parallel-authority-tracks.md for the three-track design.
 """
 
 from __future__ import annotations

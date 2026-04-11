@@ -18,6 +18,8 @@ from lumina.auth import auth
 from lumina.auth.auth import (
     ADMIN_JWT_ISSUER,
     ADMIN_ROLES,
+    DOMAIN_AUTHORITY_ROLES,
+    DOMAIN_JWT_ISSUER,
     USER_JWT_ISSUER,
     USER_ROLES,
     AuthError,
@@ -34,9 +36,10 @@ from lumina.auth.auth import (
 
 @pytest.fixture(autouse=True)
 def _configure_secrets(monkeypatch):
-    """Set up separate admin/user/legacy secrets for each test."""
+    """Set up separate admin/domain/user/legacy secrets for each test."""
     monkeypatch.setattr(auth, "JWT_SECRET", "legacy-secret-for-tests")
     monkeypatch.setattr(auth, "ADMIN_JWT_SECRET", "admin-secret-for-tests")
+    monkeypatch.setattr(auth, "DOMAIN_JWT_SECRET", "domain-secret-for-tests")
     monkeypatch.setattr(auth, "USER_JWT_SECRET", "user-secret-for-tests")
     monkeypatch.setattr(auth, "JWT_ALGORITHM", "HS256")
 
@@ -51,10 +54,11 @@ class TestCreateScopedJwt:
         assert payload["token_scope"] == "admin"
         assert payload["iss"] == ADMIN_JWT_ISSUER
 
-    def test_domain_authority_gets_admin_scope(self):
+    def test_domain_authority_gets_domain_scope(self):
         token = create_scoped_jwt(user_id="u2", role="domain_authority")
         payload = verify_scoped_jwt(token)
-        assert payload["token_scope"] == "admin"
+        assert payload["token_scope"] == "domain"
+        assert payload["iss"] == DOMAIN_JWT_ISSUER
 
     def test_it_support_gets_admin_scope(self):
         token = create_scoped_jwt(user_id="u3", role="it_support")
@@ -215,6 +219,12 @@ class TestSecretFallback:
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "admin"
 
+    def test_no_domain_secret_falls_back_to_jwt_secret(self, monkeypatch):
+        monkeypatch.setattr(auth, "DOMAIN_JWT_SECRET", "")
+        token = create_scoped_jwt(user_id="u", role="domain_authority")
+        payload = verify_scoped_jwt(token)
+        assert payload["token_scope"] == "domain"
+
     def test_no_user_secret_falls_back_to_jwt_secret(self, monkeypatch):
         monkeypatch.setattr(auth, "USER_JWT_SECRET", "")
         token = create_scoped_jwt(user_id="u", role="user")
@@ -295,9 +305,19 @@ class TestRoleConstants:
         from lumina.auth.auth import VALID_ROLES
         assert USER_ROLES <= VALID_ROLES
 
+    def test_domain_roles_are_subset_of_valid_roles(self):
+        from lumina.auth.auth import VALID_ROLES
+        assert DOMAIN_AUTHORITY_ROLES <= VALID_ROLES
+
     def test_admin_and_user_roles_are_disjoint(self):
         assert ADMIN_ROLES & USER_ROLES == frozenset()
 
-    def test_admin_plus_user_covers_all_roles(self):
+    def test_admin_and_domain_roles_are_disjoint(self):
+        assert ADMIN_ROLES & DOMAIN_AUTHORITY_ROLES == frozenset()
+
+    def test_user_and_domain_roles_are_disjoint(self):
+        assert USER_ROLES & DOMAIN_AUTHORITY_ROLES == frozenset()
+
+    def test_all_three_tracks_cover_all_roles(self):
         from lumina.auth.auth import VALID_ROLES
-        assert ADMIN_ROLES | USER_ROLES == VALID_ROLES
+        assert ADMIN_ROLES | DOMAIN_AUTHORITY_ROLES | USER_ROLES == VALID_ROLES

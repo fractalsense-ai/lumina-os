@@ -29,21 +29,25 @@ JWT_ALGORITHM: str = os.environ.get("LUMINA_JWT_ALGORITHM", "HS256").upper()
 JWT_TTL_MINUTES: int = int(os.environ.get("LUMINA_JWT_TTL_MINUTES", "60"))
 JWT_ISSUER: str = "lumina"
 
-# ── Air-gapped admin auth ─────────────────────────────────────
-# Separate secrets and issuers for admin (root, domain_authority, it_support)
-# vs end-user (user, qa, auditor, guest) tokens.
-# When either env var is unset, both paths fall back to JWT_SECRET for
-# backward compatibility during migration.
+# ── Parallel authority tracks ──────────────────────────────────
+# Three separate signing secrets and issuers for system (root, it_support),
+# domain (domain_authority), and user (user, qa, auditor, guest) tracks.
+# See docs/7-concepts/parallel-authority-tracks.md for the design.
+# When a scoped env var is unset, that track falls back to JWT_SECRET.
 
 ADMIN_JWT_SECRET: str = os.environ.get("LUMINA_ADMIN_JWT_SECRET", "")
+DOMAIN_JWT_SECRET: str = os.environ.get("LUMINA_DOMAIN_JWT_SECRET", "")
 USER_JWT_SECRET: str = os.environ.get("LUMINA_USER_JWT_SECRET", "")
 
 ADMIN_JWT_ISSUER: str = "lumina-admin"
+DOMAIN_JWT_ISSUER: str = "lumina-domain"
 USER_JWT_ISSUER: str = "lumina-user"
 
-# Roles considered "admin-tier" — tokens for these are signed with
-# the admin secret and carry token_scope="admin".
-ADMIN_ROLES: frozenset[str] = frozenset({"root", "domain_authority", "it_support"})
+# Roles on the system (admin) track — signed with ADMIN_JWT_SECRET.
+ADMIN_ROLES: frozenset[str] = frozenset({"root", "it_support"})
+# Roles on the domain track — signed with DOMAIN_JWT_SECRET.
+DOMAIN_AUTHORITY_ROLES: frozenset[str] = frozenset({"domain_authority"})
+# Roles on the user track — signed with USER_JWT_SECRET.
 USER_ROLES: frozenset[str] = frozenset({"user", "qa", "auditor", "guest"})
 
 # Password hashing — supported values: "argon2id", "bcrypt", "sha256"
@@ -384,6 +388,8 @@ def _resolve_secret(scope: str) -> str:
     """Return the signing secret for the given scope, falling back to JWT_SECRET."""
     if scope == "admin":
         return ADMIN_JWT_SECRET or JWT_SECRET
+    if scope == "domain":
+        return DOMAIN_JWT_SECRET or JWT_SECRET
     if scope == "user":
         return USER_JWT_SECRET or JWT_SECRET
     return JWT_SECRET
@@ -392,9 +398,20 @@ def _resolve_secret(scope: str) -> str:
 def _resolve_issuer(scope: str) -> str:
     if scope == "admin":
         return ADMIN_JWT_ISSUER
+    if scope == "domain":
+        return DOMAIN_JWT_ISSUER
     if scope == "user":
         return USER_JWT_ISSUER
     return JWT_ISSUER
+
+
+def _scope_for_role(role: str) -> str:
+    """Return the token scope for a given role."""
+    if role in ADMIN_ROLES:
+        return "admin"
+    if role in DOMAIN_AUTHORITY_ROLES:
+        return "domain"
+    return "user"
 
 
 def create_scoped_jwt(
@@ -406,22 +423,24 @@ def create_scoped_jwt(
 ) -> str:
     """Create a JWT with automatic scope based on the role.
 
-    Admin-tier roles (root, domain_authority, it_support) are signed with
-    ``LUMINA_ADMIN_JWT_SECRET`` and carry ``token_scope: "admin"`` +
-    ``iss: "lumina-admin"``.
+    System-track roles (root, it_support) are signed with
+    ``LUMINA_ADMIN_JWT_SECRET`` and carry ``token_scope: "admin"``.
 
-    User-tier roles are signed with ``LUMINA_USER_JWT_SECRET`` and carry
-    ``token_scope: "user"`` + ``iss: "lumina-user"``.
+    Domain-track roles (domain_authority) are signed with
+    ``LUMINA_DOMAIN_JWT_SECRET`` and carry ``token_scope: "domain"``.
+
+    User-track roles are signed with ``LUMINA_USER_JWT_SECRET`` and carry
+    ``token_scope: "user"``.
 
     When the scoped secrets are not configured, falls back to the
-    legacy ``JWT_SECRET`` with ``iss: "lumina"`` for backward compat.
+    legacy ``JWT_SECRET`` for backward compat.
     """
     if role not in VALID_ROLES:
         raise ValueError(f"Invalid role: {role!r}")
     if JWT_ALGORITHM != "HS256":
         raise AuthError(f"Unsupported algorithm: {JWT_ALGORITHM}")
 
-    scope = "admin" if role in ADMIN_ROLES else "user"
+    scope = _scope_for_role(role)
     secret = _resolve_secret(scope)
     if not secret:
         raise AuthError(
@@ -489,13 +508,16 @@ def verify_scoped_jwt(token: str, required_scope: str | None = None) -> dict[str
     if iss == ADMIN_JWT_ISSUER:
         secret = _resolve_secret("admin")
         token_scope = "admin"
+    elif iss == DOMAIN_JWT_ISSUER:
+        secret = _resolve_secret("domain")
+        token_scope = "domain"
     elif iss == USER_JWT_ISSUER:
         secret = _resolve_secret("user")
         token_scope = "user"
     elif iss == JWT_ISSUER:
         # Legacy token — infer scope from role, verify with legacy secret
         secret = JWT_SECRET
-        token_scope = "admin" if role in ADMIN_ROLES else "user"
+        token_scope = _scope_for_role(role)
     else:
         raise TokenInvalidError(f"Unexpected issuer: {iss!r}")
 

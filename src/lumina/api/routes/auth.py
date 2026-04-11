@@ -28,7 +28,10 @@ from lumina.api.models import (
 )
 from lumina.auth.auth import (
     VALID_ROLES,
+    ADMIN_ROLES,
+    DOMAIN_AUTHORITY_ROLES,
     create_jwt,
+    create_scoped_jwt,
     hash_password,
     revoke_token_jti,
     verify_password,
@@ -114,6 +117,17 @@ async def login(req: LoginRequest) -> TokenResponse:
 
     if not user.get("active", True):
         raise HTTPException(status_code=403, detail="Account deactivated")
+
+    if user["role"] in ADMIN_ROLES:
+        raise HTTPException(
+            status_code=403,
+            detail="System-track users must use /api/admin/auth/login",
+        )
+    if user["role"] in DOMAIN_AUTHORITY_ROLES:
+        raise HTTPException(
+            status_code=403,
+            detail="Domain authorities must use /api/domain/auth/login",
+        )
 
     token = create_jwt(
         user_id=user["user_id"],
@@ -531,7 +545,7 @@ async def setup_password(req: SetupPasswordRequest) -> TokenResponse:
     except Exception:
         log.debug("Could not write account_activated trace event")
 
-    token = create_jwt(
+    token = create_scoped_jwt(
         user_id=user["user_id"],
         role=user["role"],
         governed_modules=user.get("governed_modules") or [],

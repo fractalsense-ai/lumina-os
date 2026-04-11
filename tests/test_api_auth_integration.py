@@ -64,18 +64,18 @@ def test_login_and_me_flow(client: TestClient) -> None:
     )
     assert reg.status_code == 200
 
+    # First registered user is auto-promoted to root (system track).
     login = client.post(
-        "/api/auth/login",
+        "/api/admin/auth/login",
         json={"username": "bob", "password": "test-pass-123"},
     )
     assert login.status_code == 200
     token = login.json()["access_token"]
 
-    me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+    me = client.get("/api/admin/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.status_code == 200
     me_body = me.json()
-    assert me_body["username"] == "bob"
-    # First registered user in this isolated fixture is root.
+    assert me_body["user_id"]
     assert me_body["role"] == "root"
 
 
