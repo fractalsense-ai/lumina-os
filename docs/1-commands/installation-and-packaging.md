@@ -197,22 +197,34 @@ Deterministic mode (no provider set, no API key required) is always available as
 
 ## Authentication setup
 
-Lumina uses a **dual-secret JWT architecture** that isolates admin-tier and
-user-tier tokens at the cryptographic level. Three environment variables
-control JWT signing:
+Lumina uses a **three-track JWT architecture** that cryptographically isolates
+admin, domain, and user tokens. Four environment variables control JWT signing:
 
 | Variable | Required | Signed roles | `iss` claim |
 |----------|----------|--------------|-------------|
 | `LUMINA_JWT_SECRET` | Always | Legacy fallback for all tokens | `lumina` |
-| `LUMINA_ADMIN_JWT_SECRET` | Production admin tier | `root`, `domain_authority`, `it_support` | `lumina-admin` |
-| `LUMINA_USER_JWT_SECRET` | Production user tier | `user`, `qa`, `auditor`, `guest` | `lumina-user` |
+| `LUMINA_ADMIN_JWT_SECRET` | Production admin track | `root`, `it_support` | `lumina-admin` |
+| `LUMINA_DOMAIN_JWT_SECRET` | Production domain track | `domain_authority` | `lumina-domain` |
+| `LUMINA_USER_JWT_SECRET` | Production user track | `user`, `qa`, `auditor`, `guest` | `lumina-user` |
 
-When `LUMINA_ADMIN_JWT_SECRET` and `LUMINA_USER_JWT_SECRET` are both set,
-admin-tier tokens are issued by `POST /api/admin/auth/login` and user-tier
-tokens by `POST /api/auth/login`. The `iss` claim in each token selects the
-correct secret for validation — the two tiers are cryptographically separated.
-When only `LUMINA_JWT_SECRET` is set all tokens use it as a single shared
-secret (development mode).
+When the three track-specific secrets are set, each track has its own login
+endpoint and cryptographically isolated token:
+
+| Track | Login endpoint | Roles |
+|-------|----------------|-------|
+| Admin | `POST /api/admin/auth/login` | `root`, `it_support` |
+| Domain | `POST /api/domain/auth/login` | `domain_authority` |
+| User | `POST /api/auth/login` | `user`, `qa`, `auditor`, `guest` |
+
+The `iss` claim in each token selects the correct secret for validation — the
+three tracks are cryptographically separated. The frontend handles track
+routing automatically: it attempts the user-track endpoint first, and on a 403
+redirects to the correct track based on the server response. When only
+`LUMINA_JWT_SECRET` is set all tokens use it as a single shared secret
+(development mode).
+
+See [parallel-authority-tracks(7)](../7-concepts/parallel-authority-tracks.md)
+for the full three-track model.
 
 ```bash
 # Generate secrets
@@ -318,11 +330,16 @@ With Ollama running and `gemma3:4b` pulled, start the API server and send a glos
 # Terminal 1 — start the server
 lumina-api
 
-# Terminal 2 — log in and capture the token
-$response = Invoke-RestMethod -Uri 'http://localhost:8000/api/auth/login' `
+# Terminal 2 — log in and capture the token (use the endpoint matching your role)
+# Admin (root / it_support):
+$response = Invoke-RestMethod -Uri 'http://localhost:8000/api/admin/auth/login' `
   -Method POST -ContentType 'application/json' `
   -Body '{"username":"admin","password":"<pw>"}'
-$token = $response.token
+# Standard user:
+# $response = Invoke-RestMethod -Uri 'http://localhost:8000/api/auth/login' `
+#   -Method POST -ContentType 'application/json' `
+#   -Body '{"username":"student1","password":"<pw>"}'
+$token = $response.access_token
 
 # Send a glossary query
 Invoke-RestMethod -Uri 'http://localhost:8000/api/chat' `

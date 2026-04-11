@@ -91,6 +91,7 @@ interface AuthState {
   userId: string
   username: string
   role: string
+  scope?: 'user' | 'admin' | 'domain'
 }
 
 const DEFAULT_MANIFEST: UiManifest = {
@@ -222,11 +223,35 @@ function LoginScreen({
     setIsLoading(true)
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
-      const res = await fetch(`${getApiBase()}${endpoint}`, {
+      let res = await fetch(`${getApiBase()}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: u, password: p }),
       })
+      let scope: AuthState['scope'] = 'user'
+      // On 403 during login, the backend tells us which track to use
+      if (mode === 'login' && res.status === 403) {
+        const body = await res.json().catch(() => ({}))
+        const detail: string = body?.detail ?? ''
+        let retryEndpoint: string | null = null
+        if (detail.includes('System-track')) {
+          retryEndpoint = '/api/admin/auth/login'
+          scope = 'admin'
+        } else if (detail.includes('Domain authorities')) {
+          retryEndpoint = '/api/domain/auth/login'
+          scope = 'domain'
+        }
+        if (retryEndpoint) {
+          res = await fetch(`${getApiBase()}${retryEndpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p }),
+          })
+        } else {
+          setError(detail || 'Login failed.')
+          return
+        }
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setError(body?.detail ?? `${mode === 'login' ? 'Login' : 'Registration'} failed.`)
@@ -238,6 +263,7 @@ function LoginScreen({
         userId: data.user_id,
         username: u,
         role: data.role,
+        scope,
       }
       localStorage.setItem('lumina.auth', JSON.stringify(auth))
       onAuth(auth)
@@ -1121,10 +1147,14 @@ function App() {
     enabled: showDashboard && consentGiven,
   })
 
-  // Validate stored token against /api/auth/me on mount; clear if stale
+  // Validate stored token against the correct /me endpoint on mount; clear if stale
   useEffect(() => {
     if (auth === null) return
-    fetch(`${getApiBase()}/api/auth/me`, {
+    const meEndpoint =
+      auth.scope === 'admin' ? '/api/admin/auth/me'
+      : auth.scope === 'domain' ? '/api/domain/auth/me'
+      : '/api/auth/me'
+    fetch(`${getApiBase()}${meEndpoint}`, {
       headers: { Authorization: `Bearer ${auth.token}` },
     }).then((res) => {
       if (res.status === 401) {

@@ -31,26 +31,29 @@ Use environment injection for secrets in staging/production, never committed sec
 
 ### JWT secrets
 
-Lumina uses a **dual-secret JWT architecture** separating admin-tier and user-tier tokens:
+Lumina uses a **three-track JWT architecture** separating admin, domain, and user tokens:
 
 | Variable | Required when | Description |
 |----------|---------------|-------------|
-| `LUMINA_JWT_SECRET` | Always | Legacy shared secret; fallback when tier-specific secrets are absent |
-| `LUMINA_ADMIN_JWT_SECRET` | Production (admin tier) | Signs tokens for `root`, `domain_authority`, `it_support`; `iss: lumina-admin` |
-| `LUMINA_USER_JWT_SECRET` | Production (user tier) | Signs tokens for `user`, `qa`, `auditor`, `guest`; `iss: lumina-user` |
+| `LUMINA_JWT_SECRET` | Always | Legacy shared secret; fallback when track-specific secrets are absent |
+| `LUMINA_ADMIN_JWT_SECRET` | Production (admin track) | Signs tokens for `root`, `it_support`; `iss: lumina-admin` |
+| `LUMINA_DOMAIN_JWT_SECRET` | Production (domain track) | Signs tokens for `domain_authority`; `iss: lumina-domain` |
+| `LUMINA_USER_JWT_SECRET` | Production (user track) | Signs tokens for `user`, `qa`, `auditor`, `guest`; `iss: lumina-user` |
 
 #### JWT air-gap setup
 
-When `LUMINA_ADMIN_JWT_SECRET` and `LUMINA_USER_JWT_SECRET` are both set, the two
-tiers are cryptographically isolated:
+When all three track-specific secrets are set, the tracks are cryptographically
+isolated:
 
-- Admin roles authenticate via `POST /api/admin/auth/login` — tokens carry `iss: lumina-admin`
-  and are validated exclusively against `LUMINA_ADMIN_JWT_SECRET`.
+- Admin roles (`root`, `it_support`) authenticate via `POST /api/admin/auth/login` —
+  tokens carry `iss: lumina-admin` and are validated against `LUMINA_ADMIN_JWT_SECRET`.
+- Domain authorities authenticate via `POST /api/domain/auth/login` — tokens carry
+  `iss: lumina-domain` and are validated against `LUMINA_DOMAIN_JWT_SECRET`.
 - User roles authenticate via `POST /api/auth/login` — tokens carry `iss: lumina-user`
-  and are validated exclusively against `LUMINA_USER_JWT_SECRET`.
+  and are validated against `LUMINA_USER_JWT_SECRET`.
 
-A compromised user-tier secret cannot be used to forge admin-tier tokens, and vice
-versa. When only `LUMINA_JWT_SECRET` is set all tokens share one secret (development
+A compromised secret on one track cannot be used to forge tokens for another track.
+When only `LUMINA_JWT_SECRET` is set all tokens share one secret (development
 mode only — not recommended for production).
 
 See [air-gapped-admin-architecture(8)](air-gapped-admin-architecture.md) for
