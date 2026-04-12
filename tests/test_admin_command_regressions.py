@@ -204,3 +204,60 @@ def test_governed_modules_all_string_coerced_to_list(api_module) -> None:
     }
     result = _normalize_slm_command(cmd)
     assert result["params"]["governed_modules"] == ["some_module"]
+
+
+# ── domain_id resolution from session module path ─────────────────────────────
+
+
+@pytest.fixture
+def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
+    """Fixture with multi-domain registry for domain_id resolution tests."""
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
+    mod = _load_api_module()
+    mod.PERSISTENCE = NullPersistenceAdapter()
+    mod.BOOTSTRAP_MODE = True
+    mod._session_containers.clear()
+    monkeypatch.setattr(auth, "JWT_SECRET", "test-secret-regressions-md")
+
+    from lumina.api import config as _cfg
+    registry = DomainRegistry(
+        repo_root=_REPO_ROOT,
+        registry_path=str(_REPO_ROOT / "domain-packs" / "system" / "cfg" / "domain-registry.yaml"),
+        load_runtime_context_fn=load_runtime_context,
+    )
+    monkeypatch.setattr(_cfg, "DOMAIN_REGISTRY", registry)
+    return mod
+
+
+@pytest.fixture
+def md_client(multi_domain_module):
+    return TestClient(multi_domain_module.app)
+
+
+@pytest.mark.integration
+def test_invite_domain_id_resolved_from_module_path(md_client: TestClient, multi_domain_module) -> None:
+    """When domain_id is a module path like 'domain/edu/domain-authority/v1',
+    it should be resolved to the registry domain_id 'education'."""
+    # First register to consume bootstrap slot (gets promoted to root)
+    root_resp = md_client.post(
+        "/api/auth/register",
+        json={"username": "root_admin", "password": "test-pass-123", "role": "user"},
+    )
+    assert root_resp.status_code == 200
+    root_token = root_resp.json()["access_token"]
+
+    resp = md_client.post(
+        "/api/admin/command",
+        json={
+            "operation": "invite_user",
+            "params": {"username": "NewStudent", "role": "user", "intended_domain_role": "student"},
+            "domain_id": "domain/edu/domain-authority/v1",
+        },
+        headers={"Authorization": f"Bearer {root_token}"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    staged = body["staged_command"]
+    # domain_id must be resolved to the registry domain ID, not the raw module path
+    assert staged["params"]["domain_id"] == "education"

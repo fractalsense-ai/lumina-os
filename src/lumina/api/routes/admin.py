@@ -1431,9 +1431,18 @@ async def admin_command(
 
     # Inject domain_id from the request into params so query operations
     # (e.g. list_commands) can scope to the session's active domain.
+    # The frontend sends the session's active module path (e.g.
+    # "domain/edu/domain-authority/v1") which must be resolved to the
+    # registry domain ID ("education") before injection.
     _parsed_params = parsed.get("params")
     if isinstance(_parsed_params, dict) and not _parsed_params.get("domain_id") and req.domain_id:
-        _parsed_params["domain_id"] = req.domain_id
+        _injected_domain = req.domain_id
+        if _cfg.DOMAIN_REGISTRY is not None:
+            try:
+                _injected_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(req.domain_id)
+            except Exception:
+                pass  # fall back to raw value
+        _parsed_params["domain_id"] = _injected_domain
 
     # For SLM-parsed commands, extract operation/instruction from parse result.
     if not req.operation:
