@@ -322,6 +322,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             "handler_fn": _rfn,
             "roles": route_cfg.get("roles") or [],
             "request_body": route_cfg.get("request_body") or {},
+            "commit_guard": bool(route_cfg.get("commit_guard", False)),
         })
 
     deterministic_templates = runtime_cfg.get("deterministic_templates") or {}

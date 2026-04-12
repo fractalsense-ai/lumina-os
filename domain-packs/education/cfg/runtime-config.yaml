@@ -689,3 +689,30 @@ adapters:
       module_path: domain-packs/education/controllers/api_handlers.py
       callable: dashboard_vocabulary_growth
       roles: [root, domain_authority, teacher]
+    # ── Escalation management (domain-owned) ──────────────────
+    list_escalations:
+      path: /api/escalations
+      method: GET
+      module_path: domain-packs/education/controllers/escalation_handlers.py
+      callable: list_escalations
+      roles: []
+    get_escalation_detail:
+      path: /api/escalations/{escalation_id}
+      method: GET
+      module_path: domain-packs/education/controllers/escalation_handlers.py
+      callable: get_escalation_detail
+      roles: []
+    clear_stale_escalations:
+      path: /api/escalations/stale
+      method: DELETE
+      module_path: domain-packs/education/controllers/escalation_handlers.py
+      callable: clear_stale_escalations
+      roles: []
+    resolve_escalation:
+      path: /api/escalations/{escalation_id}/resolve
+      method: POST
+      module_path: domain-packs/education/controllers/escalation_handlers.py
+      callable: resolve_escalation
+      roles: []
+      request_body: {}
+      commit_guard: true

@@ -63,6 +63,7 @@ interface UiManifest {
     accent?: string
     background?: string
   }
+  [key: string]: unknown
 }
 
 interface SidebarPanel {

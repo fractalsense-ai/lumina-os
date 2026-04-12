@@ -53,7 +53,6 @@ STATE_MUTATING_ENDPOINTS: dict[str, set[str]] = {
         "revoke_domain_role",
     },
     "admin": {
-        "resolve_escalation",
         "manifest_regen",
         "admin_command",
         "admin_command_resolve",

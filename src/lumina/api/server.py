@@ -21,8 +21,10 @@ import sys
 import types
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials
+from starlette.requests import Request
 
 
 class _ModProxy(types.ModuleType):
@@ -212,6 +214,9 @@ app.include_router(vocabulary_router)
 # ─────────────────────────────────────────────────────────────
 
 
+_domain_routes_mounted = False
+
+
 def _mount_domain_api_routes() -> int:
     """Iterate all domains, discover api_route_defs, and mount them on *app*.
 
@@ -222,14 +227,26 @@ def _mount_domain_api_routes() -> int:
     The core server wraps each handler with auth + role enforcement so the
     domain handler stays free of FastAPI / middleware imports.
 
+    Idempotent: subsequent calls are no-ops.
+
     Returns the number of routes mounted.
     """
-    from fastapi import Depends, HTTPException, Request
-    from fastapi.security import HTTPAuthorizationCredentials
+    global _domain_routes_mounted
+    if _domain_routes_mounted:
+        return 0
+    _domain_routes_mounted = True
+
+    from fastapi import HTTPException
     from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
 
     mounted = 0
-    for domain_info in DOMAIN_REGISTRY.list_domains():
+    domains = DOMAIN_REGISTRY.list_domains()
+    # In single-domain mode list_domains() returns [] because the
+    # "_default" pseudo-domain is hidden from the public catalog.
+    # Fall back so that domain-declared routes are still mounted.
+    if not domains and DOMAIN_REGISTRY.default_domain_id:
+        domains = [{"domain_id": DOMAIN_REGISTRY.default_domain_id}]
+    for domain_info in domains:
         domain_id = domain_info["domain_id"]
         try:
             ctx = DOMAIN_REGISTRY.get_runtime_context(domain_id)
@@ -244,6 +261,7 @@ def _mount_domain_api_routes() -> int:
             _handler_fn = rdef.get("handler_fn")
             _roles: list = rdef.get("roles") or []
             _body_schema: dict = rdef.get("request_body") or {}
+            _commit_guard: bool = rdef.get("commit_guard", False)
 
             if not _path or not _handler_fn:
                 continue
@@ -251,10 +269,9 @@ def _mount_domain_api_routes() -> int:
             # Capture in closure
             _fn = _handler_fn
             _r = list(_roles)
-            _has_body = bool(_body_schema) and _method in ("POST", "PUT", "PATCH")
 
-            if _method == "POST" and "{user_id}" in _path:
-                # POST with path param + body
+            # Legacy pattern: POST with {user_id} path param (old-style signature)
+            if _method == "POST" and "{user_id}" in _path and "{" not in _path.replace("{user_id}", ""):
                 async def _endpoint(
                     user_id: str,
                     request: Request,
@@ -280,31 +297,47 @@ def _mount_domain_api_routes() -> int:
                         raise HTTPException(status_code=result["__status"], detail=result.get("detail", ""))
                     return result
 
-            elif _method == "GET":
+            # Generic pattern: any method, any path params, full kwargs
+            else:
+                _wants_body = _method in ("POST", "PUT", "PATCH")
+
                 async def _endpoint(
                     request: Request,
                     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
                     *,
                     _handler=_fn,
                     _allowed_roles=_r,
-                ) -> dict:
+                    _has_body=_wants_body,
+                ) -> dict | list:
                     current = await get_current_user(credentials)
                     user_data = require_auth(current)
                     if _allowed_roles:
                         require_role(user_data, *_allowed_roles)
+                    body = None
+                    if _has_body:
+                        try:
+                            body = await request.json()
+                        except Exception:
+                            body = {}
                     result = await _handler(
                         user_data=user_data,
                         persistence=_config_module.PERSISTENCE,
                         resolve_profile_path=_resolve_user_profile_path,
                         profiles_dir=_config_module._PROFILES_DIR,
+                        domain_registry=_config_module.DOMAIN_REGISTRY,
+                        session_containers=_session_containers,
+                        path_params=dict(request.path_params),
+                        query_params=dict(request.query_params),
+                        body=body,
                     )
                     if isinstance(result, dict) and "__status" in result:
                         raise HTTPException(status_code=result["__status"], detail=result.get("detail", ""))
                     return result
 
-            else:
-                log.warning("domain_api_routes: unsupported method %s for %s", _method, _path)
-                continue
+            # Apply commit guard if requested
+            if _commit_guard:
+                from lumina.system_log.commit_guard import requires_log_commit
+                _endpoint = requires_log_commit(_endpoint)
 
             app.add_api_route(_path, _endpoint, methods=[_method])
             mounted += 1

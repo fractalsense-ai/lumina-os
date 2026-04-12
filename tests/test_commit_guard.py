@@ -341,7 +341,7 @@ _EXPECTED_DECORATED = {
     "domain.py": ["domain_pack_commit", "update_domain_physics", "close_session"],
     "domain_roles.py": ["assign_domain_role", "revoke_domain_role"],
     "admin.py": [
-        "resolve_escalation", "manifest_regen",
+        "manifest_regen",
         "admin_command", "admin_command_resolve",
     ],
     "chat.py": ["chat"],
@@ -470,7 +470,11 @@ class TestEscalationResolveHasLog:
     """Confirm escalation resolve already writes a commitment record."""
 
     def test_resolve_escalation_has_append_log_record(self):
-        source = (ROUTES_DIR / "admin.py").read_text(encoding="utf-8")
+        # resolve_escalation moved to domain pack (education)
+        _handler_path = Path(__file__).resolve().parent.parent / (
+            "domain-packs/education/controllers/escalation_handlers.py"
+        )
+        source = _handler_path.read_text(encoding="utf-8")
         tree = ast.parse(source)
         for node in ast.walk(tree):
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "resolve_escalation":

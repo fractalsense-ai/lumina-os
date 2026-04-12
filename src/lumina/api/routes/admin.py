@@ -1,4 +1,9 @@
-"""Admin endpoints: escalations, audit log, manifest, HITL admin command staging."""
+"""Admin endpoints: audit log, manifest, HITL admin command staging.
+
+Escalation REST endpoints have been extracted to the education domain pack
+(domain-packs/education/controllers/escalation_handlers.py) and are
+mounted dynamically at startup via api_routes in runtime-config.yaml.
+"""
 
 from __future__ import annotations
 
@@ -20,11 +25,10 @@ from lumina.api import config as _cfg
 from lumina.api.config import _resolve_user_profile_path
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
 from lumina.api.session import _session_containers
-from lumina.core.session_unlock import generate_unlock_pin, validate_unlock_pin
+from lumina.core.session_unlock import validate_unlock_pin
 from lumina.api.models import (
     AdminCommandRequest,
     CommandResolveRequest,
-    EscalationResolveRequest,
     ManifestCheckResponse,
     ManifestRegenResponse,
     SessionUnlockRequest,
@@ -100,35 +104,8 @@ def _get_daemon_scheduler() -> Any:
 
 
 def _has_escalation_capability(user_data: dict[str, Any], module_id: str) -> bool:
-    """Check if user has a domain role with ``receive_escalations: true`` for *module_id*."""
-    domain_roles_map = user_data.get("domain_roles") or {}
-    role_id = domain_roles_map.get(module_id)
-    if not role_id:
-        return False
-    # Load the module's domain-physics to inspect scoped_capabilities
-    if _cfg.DOMAIN_REGISTRY is None:
-        return False
-    try:
-        # Resolve the domain from the module_id prefix
-        for domain_info in _cfg.DOMAIN_REGISTRY.list_domains():
-            modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(domain_info["domain_id"])
-            for mod in modules:
-                if mod["module_id"] != module_id:
-                    continue
-                physics_path = mod.get("domain_physics_path")
-                if not physics_path or not Path(physics_path).is_file():
-                    return False
-                with open(physics_path, encoding="utf-8") as fh:
-                    physics = json.load(fh)
-                for r in (physics.get("domain_roles") or {}).get("roles", []):
-                    if r.get("role_id") == role_id:
-                        return bool(
-                            (r.get("scoped_capabilities") or {}).get("receive_escalations")
-                        )
-                return False
-    except Exception:
-        log.debug("Could not check escalation capability for %s", module_id, exc_info=True)
-    return False
+    """Thin wrapper: delegates to ``_has_domain_capability``."""
+    return _has_domain_capability(user_data, module_id, "receive_escalations")
 
 
 def _has_domain_capability(user_data: dict[str, Any], module_id: str, capability: str) -> bool:
@@ -166,268 +143,8 @@ def _has_domain_capability(user_data: dict[str, Any], module_id: str, capability
     return False
 
 
-# ─────────────────────────────────────────────────────────────
-# Escalation management
-# ─────────────────────────────────────────────────────────────
-
-
-@router.get("/api/escalations")
-async def list_escalations(
-    status: str | None = None,
-    domain_id: str | None = None,
-    limit: int = 100,
-    offset: int = 0,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> list[dict[str, Any]]:
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-
-    # System roles that can always view escalations
-    allowed_roles = ("root", "it_support", "qa", "auditor")
-    is_domain_authority = user_data["role"] == "domain_authority"
-
-    # Teachers (system role "user") with receive_escalations capability
-    # can also access escalations scoped to their modules.
-    has_esc_capability = False
-    if user_data["role"] not in allowed_roles and not is_domain_authority:
-        domain_roles_map = user_data.get("domain_roles") or {}
-        for mod_id in domain_roles_map:
-            if _has_escalation_capability(user_data, mod_id):
-                has_esc_capability = True
-                break
-        if not has_esc_capability:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    records = await run_in_threadpool(
-        _cfg.PERSISTENCE.query_escalations,
-        status=status,
-        # DA and teachers with escalation capability post-filter by
-        # governed_modules / allowed_modules.  Passing the caller's own
-        # domain_id (e.g. domain/edu/domain-authority/v1) would pre-filter
-        # out student-module escalations before the post-filter runs.
-        domain_id=domain_id if not (is_domain_authority or has_esc_capability) else None,
-        limit=limit,
-        offset=offset,
-    )
-
-    if is_domain_authority:
-        governed = user_data.get("governed_modules") or []
-        records = [r for r in records if r.get("domain_pack_id") in governed]
-    elif has_esc_capability:
-        # Scope to modules where the user has escalation capability
-        allowed_modules = {
-            mod_id for mod_id in (user_data.get("domain_roles") or {})
-            if _has_escalation_capability(user_data, mod_id)
-        }
-        records = [r for r in records if r.get("domain_pack_id") in allowed_modules]
-
-    return records
-
-
-@router.get("/api/escalations/{escalation_id}")
-async def get_escalation_detail(
-    escalation_id: str,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> dict[str, Any]:
-    """Return a single escalation record by ID."""
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-
-    allowed_roles = ("root", "it_support", "qa", "auditor", "domain_authority")
-    quick_pass = user_data["role"] in allowed_roles
-
-    # Users without a privileged system role must have at least one module
-    # with receive_escalations capability; reject early if not.
-    if not quick_pass:
-        domain_roles_map = user_data.get("domain_roles") or {}
-        if not any(_has_escalation_capability(user_data, m) for m in domain_roles_map):
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    all_escalations = await run_in_threadpool(_cfg.PERSISTENCE.query_escalations)
-    target = None
-    for esc in all_escalations:
-        if esc.get("record_id") == escalation_id:
-            target = esc
-            break
-
-    if target is None:
-        raise HTTPException(status_code=404, detail="Escalation not found")
-
-    module_id = target.get("domain_pack_id", "")
-
-    if user_data["role"] == "domain_authority":
-        if not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
-            raise HTTPException(status_code=403, detail="Not authorized for this domain")
-    elif not quick_pass:
-        if not _has_escalation_capability(user_data, module_id):
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    return target
-
-
-@router.delete("/api/escalations/stale")
-async def clear_stale_escalations(
-    max_age_hours: int = 24,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> dict[str, Any]:
-    """Purge escalation records older than *max_age_hours*. Root only."""
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-    if user_data["role"] != "root":
-        raise HTTPException(status_code=403, detail="Root only")
-
-    all_esc = await run_in_threadpool(
-        _cfg.PERSISTENCE.query_escalations, limit=10000,
-    )
-    cutoff = datetime.now(timezone.utc).timestamp() - (max_age_hours * 3600)
-    stale_ids: list[str] = []
-    for esc in all_esc:
-        ts_str = esc.get("timestamp_utc", "")
-        try:
-            ts = datetime.fromisoformat(ts_str).timestamp()
-        except (ValueError, TypeError):
-            ts = 0.0
-        if ts < cutoff and esc.get("status", "open") == "open":
-            stale_ids.append(esc["record_id"])
-
-    # Mark each stale escalation as expired in the log
-    for rid in stale_ids:
-        expired = {
-            "record_type": "EscalationRecord",
-            "record_id": rid,
-            "status": "expired",
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        }
-        _cfg.PERSISTENCE.append_log_record(
-            "admin", expired,
-            ledger_path=_cfg.PERSISTENCE.get_system_ledger_path("admin"),
-        )
-
-    return {"purged": len(stale_ids), "max_age_hours": max_age_hours}
-
-
-@router.post("/api/escalations/{escalation_id}/resolve")
-@requires_log_commit
-async def resolve_escalation(
-    escalation_id: str,
-    req: EscalationResolveRequest,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> dict[str, Any]:
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-
-    if req.decision not in ("approve", "reject", "defer"):
-        raise HTTPException(status_code=400, detail="decision must be approve, reject, or defer")
-
-    # Defer full RBAC check until we know the escalation's module —
-    # domain-role users with receive_escalations capability are also allowed.
-    _role = user_data["role"]
-    _quick_pass = _role in ("root", "domain_authority")
-
-    all_escalations = await run_in_threadpool(_cfg.PERSISTENCE.query_escalations)
-    target = None
-    for esc in all_escalations:
-        if esc.get("record_id") == escalation_id:
-            target = esc
-            break
-
-    if target is None:
-        raise HTTPException(status_code=404, detail="Escalation not found")
-
-    module_id = target.get("domain_pack_id", "")
-
-    if _role == "domain_authority":
-        if not can_govern_domain(user_data, module_id, registry=_cfg.DOMAIN_REGISTRY):
-            raise HTTPException(status_code=403, detail="Not authorized for this domain")
-    elif not _quick_pass:
-        # Not root/DA — check for domain-role escalation capability
-        if not _has_escalation_capability(user_data, module_id):
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    record = build_commitment_record(
-        actor_id=user_data["sub"],
-        actor_role=map_role_to_actor_role(user_data["role"]),
-        commitment_type="escalation_resolution",
-        subject_id=escalation_id,
-        summary=f"Escalation {req.decision}: {req.reasoning[:200]}",
-        metadata={
-            "decision": req.decision,
-            "reasoning": req.reasoning,
-            "original_trigger": target.get("trigger", ""),
-        },
-        references=[escalation_id],
-    )
-
-    session_id = target.get("session_id", "admin")
-    _cfg.PERSISTENCE.append_log_record(
-        session_id, record,
-        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
-    )
-
-    # ── Mark original EscalationRecord as resolved ──
-    resolved_esc = dict(target)
-    resolved_esc["status"] = "resolved"
-    resolved_esc["resolution_commitment_id"] = record["record_id"]
-    _cfg.PERSISTENCE.append_log_record(
-        session_id, resolved_esc,
-        ledger_path=_cfg.PERSISTENCE.get_system_ledger_path(session_id),
-    )
-
-    # ── PIN generation ── freeze session so student must unlock with OTP ──
-    response_extra: dict[str, Any] = {}
-    if req.generate_pin:
-        pin = generate_unlock_pin(session_id, escalation_id)
-        response_extra["unlock_pin"] = pin
-        container = _session_containers.get(session_id)
-        if container is not None:
-            container.frozen = True
-            # Also freeze the user across all sessions
-            _freeze_uid = ""
-            if hasattr(container, "user") and container.user:
-                _freeze_uid = container.user.get("sub", "")
-            if _freeze_uid:
-                from lumina.core.session_unlock import freeze_user
-                freeze_user(_freeze_uid, escalation_id=escalation_id, session_id=session_id)
-        log.info("[%s] Session frozen; unlock PIN issued for escalation %s", session_id, escalation_id)
-
-    # ── Intervention notes ── append to student profile if present ────────
-    if req.intervention_notes:
-        actor_id = target.get("actor_id", "")
-        if actor_id:
-            profile_path: str | None = None
-            container = _session_containers.get(session_id)
-            if container is not None:
-                try:
-                    profile_path = container.active_context.subject_profile_path
-                except (KeyError, AttributeError):
-                    pass
-            if profile_path:
-                try:
-                    profile = await run_in_threadpool(
-                        _cfg.PERSISTENCE.load_subject_profile, profile_path
-                    )
-                    if isinstance(profile, dict):
-                        history = list(profile.get("intervention_history") or [])
-                        history.append({
-                            "escalation_id": escalation_id,
-                            "teacher_id": user_data["sub"],
-                            "notes": req.intervention_notes,
-                            "recorded_utc": datetime.now(timezone.utc).isoformat(),
-                            "generated_proposal": bool(req.generate_proposal),
-                        })
-                        profile["intervention_history"] = history
-                        await run_in_threadpool(
-                            _cfg.PERSISTENCE.save_subject_profile, profile_path, profile
-                        )
-                except Exception:
-                    log.debug("Could not update student profile with intervention notes", exc_info=True)
-
-    return {
-        "record_id": record["record_id"],
-        "escalation_id": escalation_id,
-        "decision": req.decision,
-        **response_extra,
-    }
+# ── Escalation REST endpoints — moved to domain-packs/education/controllers/escalation_handlers.py
+# Mounted dynamically at startup via api_routes in runtime-config.yaml.
 
 
 # ─────────────────────────────────────────────────────────────
