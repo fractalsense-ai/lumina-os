@@ -24,22 +24,13 @@ from starlette.concurrency import run_in_threadpool
 from lumina.api import config as _cfg
 from lumina.api.config import _resolve_user_profile_path
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
-from lumina.api.session import _session_containers
 from lumina.api.models import (
     AdminCommandRequest,
     CommandResolveRequest,
     ManifestCheckResponse,
     ManifestRegenResponse,
 )
-from lumina.api.routes.ingestion import _get_ingest_service
-from lumina.auth.auth import VALID_ROLES
-from lumina.core.domain_registry import DomainNotFoundError
 from lumina.core import slm as _slm_mod
-from lumina.core.email_sender import send_invite_email
-from lumina.core.invite_store import (
-    generate_invite_token,
-    _INVITE_TOKEN_TTL_SECONDS as _INVITE_TOKEN_TTL,
-)
 from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
     build_commitment_record,
@@ -49,7 +40,7 @@ from lumina.system_log.admin_operations import (
     can_govern_domain,
     map_role_to_actor_role,
 )
-from lumina.core.state_machine import StateTransaction, TransactionState, IllegalTransitionError
+from lumina.core.state_machine import StateTransaction, TransactionState
 from lumina.core.yaml_loader import load_yaml
 from lumina.middleware.command_schema_registry import get_schema as _get_cmd_schema, validate_command
 from lumina.systools.manifest_integrity import check_manifest_report, regen_manifest_report
@@ -277,294 +268,21 @@ async def manifest_regen(
 # HITL Admin Command Staging
 # ─────────────────────────────────────────────────────────────
 
-# ── Governance Config Loader ──────────────────────────────────
-#
-# Canonical source: domain-packs/system/modules/system-core/domain-physics.json
-# → subsystem_configs.admin_operations  (operation_ids, hitl_policy)
-# → subsystem_configs.governance        (role_hierarchy, min_role_policy, domain_role_aliases)
-#
-# The path is discovered via the domain registry ("system" domain) or by
-# the well-known convention if the registry is unavailable.  There are no
-# hardcoded fallback operation lists — the JSON is the single source of
-# truth.  If the file is missing, an empty set of operations is used and
-# a critical warning is logged.
-
-_governance_cache: dict[str, Any] | None = None
-
-
-def _load_governance_config() -> dict[str, Any]:
-    """Load governance policies from system domain physics with fallback."""
-    global _governance_cache
-    if _governance_cache is not None:
-        return _governance_cache
-
-    repo_root = Path(os.environ.get(
-        "LUMINA_REPO_ROOT", Path(__file__).resolve().parents[4],
-    ))
-
-    # ── Discover system physics path via domain registry ──────
-    physics_path: Path | None = None
-    try:
-        if _cfg.DOMAIN_REGISTRY is not None:
-            for mod in _cfg.DOMAIN_REGISTRY.list_modules_for_domain("system"):
-                dp = mod.get("domain_physics_path", "")
-                if dp:
-                    candidate = repo_root / dp
-                    if candidate.is_file():
-                        physics_path = candidate
-                        break
-    except Exception:
-        pass
-
-    # Well-known convention fallback
-    if physics_path is None:
-        physics_path = repo_root / "domain-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
-
-    # Minimal empty defaults — used only when the JSON is unreadable.
-    result: dict[str, Any] = {
-        "known_operations": frozenset(),
-        "hitl_exempt": frozenset(),
-        "role_hierarchy": {"root": 100, "user": 20},
-        "min_role_policy": {},
-        "domain_role_aliases": {},
-    }
-
-    if physics_path.is_file():
-        try:
-            import json as _json
-            data = _json.loads(physics_path.read_text(encoding="utf-8"))
-            sub = data.get("subsystem_configs") or {}
-
-            # Admin operations block
-            admin_ops = sub.get("admin_operations") or {}
-            op_ids = admin_ops.get("operation_ids")
-            if isinstance(op_ids, list) and op_ids:
-                result["known_operations"] = frozenset(op_ids)
-
-            hitl = admin_ops.get("hitl_policy") or {}
-            exempt = hitl.get("system_exempt")
-            if isinstance(exempt, list):
-                result["hitl_exempt"] = frozenset(exempt)
-
-            # Governance block
-            gov = sub.get("governance") or {}
-            rh = gov.get("role_hierarchy")
-            if isinstance(rh, dict) and rh:
-                result["role_hierarchy"] = rh
-
-            mrp = gov.get("min_role_policy")
-            if isinstance(mrp, dict) and mrp:
-                result["min_role_policy"] = mrp
-
-            dra = gov.get("domain_role_aliases")
-            if isinstance(dra, dict) and dra:
-                result["domain_role_aliases"] = dra
-
-            log.info("Loaded governance config from %s", physics_path)
-        except Exception as exc:
-            log.critical("Failed to load governance config from %s: %s", physics_path, exc)
-    else:
-        log.critical("System domain physics not found at %s — governance policies unavailable", physics_path)
-
-    _governance_cache = result
-    return result
-
-
-def _get_known_operations() -> frozenset[str]:
-    base = _load_governance_config()["known_operations"]
-    domain_ops = _get_domain_handler_ops()
-    return base | domain_ops if domain_ops else base
-
-
-def _get_domain_scoped_operations(domain_id: str | None = None) -> frozenset[str]:
-    """Return operations visible in a specific domain context.
-
-    System-level operations (from governance config) are always included.
-    Domain-pack operations are included only when *domain_id* matches the
-    handler's owning domain.  When *domain_id* is None or ``"system"``,
-    only base system operations are returned.
-    """
-    base = _load_governance_config()["known_operations"]
-    if not domain_id or domain_id == "system":
-        return base
-    domain_handlers = _load_domain_operation_handlers()
-    domain_ops = frozenset(
-        op for op, cfg in domain_handlers.items()
-        if cfg.get("domain_id") == domain_id
-    )
-    return base | domain_ops if domain_ops else base
-
-
-def _get_hitl_exempt_ops() -> frozenset[str]:
-    base = _load_governance_config()["hitl_exempt"]
-    domain_handlers = _load_domain_operation_handlers()
-    domain_exempt = frozenset(
-        op for op, cfg in domain_handlers.items() if cfg.get("hitl_exempt")
-    )
-    return base | domain_exempt if domain_exempt else base
-
-
-def _get_min_role_policy() -> dict[str, str]:
-    base = dict(_load_governance_config()["min_role_policy"])
-    domain_handlers = _load_domain_operation_handlers()
-    for op, cfg in domain_handlers.items():
-        if op not in base:
-            base[op] = cfg.get("min_role", "user")
-    return base
-
-
-def _get_role_hierarchy() -> dict[str, int]:
-    return _load_governance_config()["role_hierarchy"]
-
-
-def _get_domain_role_aliases() -> dict[str, str]:
-    """Dynamically aggregate domain role → system role mappings.
-
-    Scans all modules across all domains, reading the ``domain_roles.roles``
-    block for ``maps_to_system_role``.  Falls back to the static governance
-    config ``domain_role_aliases`` if no dynamic roles are found.
-    """
-    aliases: dict[str, str] = {}
-    try:
-        _doms = _cfg.DOMAIN_REGISTRY.list_domains()
-        if not _doms and _cfg.DOMAIN_REGISTRY.default_domain_id:
-            _doms = [{"domain_id": _cfg.DOMAIN_REGISTRY.default_domain_id}]
-        for dom in _doms:
-            dom_id = dom.get("domain_id", "")
-            if not dom_id:
-                continue
-            modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(dom_id)
-            for mod in modules:
-                dp_path = mod.get("domain_physics_path", "")
-                if not dp_path:
-                    continue
-                try:
-                    dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
-                    dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
-                    for role in dp_data.get("domain_roles", {}).get("roles", []):
-                        if isinstance(role, dict) and role.get("role_id"):
-                            aliases[role["role_id"]] = role.get(
-                                "maps_to_system_role", "user"
-                            )
-                except Exception:
-                    continue
-    except Exception:
-        pass
-    # Fall back to static governance config if nothing found dynamically
-    if not aliases:
-        try:
-            aliases = _load_governance_config().get("domain_role_aliases", {})
-        except Exception:
-            pass
-    return aliases
-
-
-def _get_domain_role_level(domain_id: str, role_id: str) -> int | None:
-    """Return the ``hierarchy_level`` for *role_id* in any module of *domain_id*.
-
-    Scans domain-physics.json files for the domain's modules and returns the
-    first matching ``hierarchy_level``, or ``None`` if not found.
-    """
-    try:
-        resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
-    except Exception:
-        return None
-    for mod in _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved):
-        dp_path = mod.get("domain_physics_path", "")
-        if not dp_path:
-            continue
-        try:
-            dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / dp_path
-            dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
-            for role in dp_data.get("domain_roles", {}).get("roles", []):
-                if isinstance(role, dict) and role.get("role_id") == role_id:
-                    lvl = role.get("hierarchy_level")
-                    if lvl is not None:
-                        return int(lvl)
-        except Exception:
-            continue
-    return None
-
-
-# Legacy aliases removed — use _get_known_operations() and _get_hitl_exempt_ops().
-# Governance data now lives exclusively in domain-packs/system/modules/system-core/domain-physics.json.
-
-
-# ─────────────────────────────────────────────────────────────
-# Domain Operation Handler Registry
-# ─────────────────────────────────────────────────────────────
-# Domain packs can declare operation_handlers in their runtime-config.yaml.
-# Each entry maps an operation name to a handler module/callable plus
-# metadata (hitl_exempt, min_role).  These are loaded once and cached.
-#
-# See docs/7-concepts/domain-adapter-pattern.md
-
-_domain_handler_cache: dict[str, Any] | None = None
-_domain_handler_cache_registry_id: int | None = None
-
-
-def _load_domain_operation_handlers() -> dict[str, dict[str, Any]]:
-    """Scan all domains for ``operation_handlers`` in runtime-config.yaml.
-
-    Returns ``{operation_name: {"callable": fn, "hitl_exempt": bool, "min_role": str}}``.
-    """
-    global _domain_handler_cache, _domain_handler_cache_registry_id
-    reg = _cfg.DOMAIN_REGISTRY
-    reg_id = id(reg) if reg is not None else None
-    if _domain_handler_cache is not None and _domain_handler_cache_registry_id == reg_id:
-        return _domain_handler_cache
-
-    from lumina.core.runtime_loader import _load_callable
-
-    handlers: dict[str, dict[str, Any]] = {}
-    repo_root = Path(os.environ.get(
-        "LUMINA_REPO_ROOT", Path(__file__).resolve().parents[4],
-    ))
-
-    if _cfg.DOMAIN_REGISTRY is None:
-        # Don't cache the empty result — DOMAIN_REGISTRY may be set later
-        return handlers
-
-    for dom in _cfg.DOMAIN_REGISTRY.list_domains():
-        dom_id = dom.get("domain_id", "")
-        if not dom_id:
-            continue
-        cfg_path = dom.get("runtime_config_path", "")
-        if not cfg_path:
-            continue
-        try:
-            cfg_data = load_yaml(Path(repo_root / cfg_path))
-        except Exception:
-            continue
-        op_handlers = cfg_data.get("operation_handlers")
-        if not isinstance(op_handlers, dict):
-            continue
-        for op_name, op_cfg in op_handlers.items():
-            if not isinstance(op_cfg, dict):
-                continue
-            mod_path = op_cfg.get("module_path", "")
-            callable_name = op_cfg.get("callable", "")
-            if not mod_path or not callable_name:
-                continue
-            try:
-                fn = _load_callable(repo_root, mod_path, callable_name)
-                handlers[op_name] = {
-                    "callable": fn,
-                    "hitl_exempt": bool(op_cfg.get("hitl_exempt", False)),
-                    "min_role": str(op_cfg.get("min_role", "user")),
-                    "domain_id": dom_id,
-                }
-            except Exception as exc:
-                log.warning("Failed to load operation handler %s from %s: %s", op_name, mod_path, exc)
-
-    _domain_handler_cache = handlers
-    _domain_handler_cache_registry_id = reg_id
-    return handlers
-
-
-def _get_domain_handler_ops() -> frozenset[str]:
-    """Return the set of operation names handled by domain packs."""
-    return frozenset(_load_domain_operation_handlers().keys())
+# ── Governance config & domain handler registry ──────────────
+# Extracted to lumina.api.governance — re-exported here for backward
+# compatibility with existing imports.
+from lumina.api.governance import (  # noqa: E402
+    _load_governance_config,
+    _get_known_operations,
+    _get_domain_scoped_operations,
+    _get_hitl_exempt_ops,
+    _get_min_role_policy,
+    _get_role_hierarchy,
+    _get_domain_role_aliases,
+    _get_domain_role_level,
+    _load_domain_operation_handlers,
+    _get_domain_handler_ops,
+)
 
 
 def _build_admin_context() -> AdminOperationContext:
@@ -612,218 +330,11 @@ def _compute_schema_delta(original: dict[str, Any], modified: dict[str, Any]) ->
     return delta
 
 
-# ─────────────────────────────────────────────────────────────
-# Domain SLM normalizer hook discovery
-# ─────────────────────────────────────────────────────────────
-
-_domain_normalizer_cache: list[Any] | None = None
-_domain_normalizer_cache_registry_id: int | None = None
-
-
-def _load_domain_slm_normalizers() -> list[Any]:
-    """Discover ``slm_normalizer_fn`` callables from all domain runtime contexts."""
-    global _domain_normalizer_cache, _domain_normalizer_cache_registry_id
-    reg = _cfg.DOMAIN_REGISTRY
-    reg_id = id(reg) if reg is not None else None
-    if _domain_normalizer_cache is not None and _domain_normalizer_cache_registry_id == reg_id:
-        return _domain_normalizer_cache
-
-    normalizers: list[Any] = []
-    if reg is None:
-        return normalizers
-
-    domains = reg.list_domains()
-    # Single-domain fallback (same pattern as _mount_domain_api_routes)
-    if not domains and reg.default_domain_id:
-        domains = [{"domain_id": reg.default_domain_id}]
-
-    for dom in domains:
-        dom_id = dom.get("domain_id", "")
-        if not dom_id:
-            continue
-        try:
-            ctx = reg.get_runtime_context(dom_id)
-        except Exception:
-            continue
-        fn = ctx.get("slm_normalizer_fn")
-        if fn is not None:
-            normalizers.append(fn)
-
-    _domain_normalizer_cache = normalizers
-    _domain_normalizer_cache_registry_id = reg_id
-    return normalizers
-
-
-def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction: str = "") -> dict[str, Any]:
-    """Normalise SLM-produced command dicts so they match admin-command-schemas.
-
-    The SLM is probabilistic --- it may return ``"Domain Authority"`` instead of
-    ``"domain_authority"``, put the user name in ``target`` instead of
-    ``params.user_id``, or include extra keys like ``governed_modules`` at the
-    top level rather than inside ``params``.  This function applies best-effort
-    structural mapping **before** schema validation.
-
-    Domain-specific normalization (role alias mapping, intended_domain_role
-    inference) is delegated to ``slm_normalizer`` adapter hooks declared in
-    each domain pack's runtime-config.yaml.
-    """
-    import re
-
-    cmd = {k: v for k, v in parsed_command.items()}  # shallow copy
-    _raw_params = cmd.get("params")
-    if isinstance(_raw_params, list):
-        # SLM sometimes returns params as a list of strings; coerce to dict
-        params: dict[str, Any] = {str(p): True for p in _raw_params}
-    else:
-        params = dict(_raw_params or {})
-    target = cmd.get("target", "")
-    operation = cmd.get("operation", "")
-
-    if operation in ("update_user_role", "invite_user"):
-        # ── user_id / username fallback: SLM often puts the name in 'target' ──
-        if operation == "update_user_role":
-            if not params.get("user_id") and target:
-                params["user_id"] = target
-        elif operation == "invite_user":
-            if not params.get("username") and target:
-                params["username"] = target
-
-        # ── new_role / role normalisation: "Domain Authority" → "domain_authority" ──
-        role_key = "new_role" if operation == "update_user_role" else "role"
-        raw_role = params.get(role_key, "")
-        if raw_role and not re.fullmatch(r"[a-z_]+", raw_role):
-            params[role_key] = re.sub(r"[\s-]+", "_", raw_role.strip()).lower()
-
-        cmd["params"] = params
-
-        # ── Domain normalizer hooks (role alias, intended_domain_role) ──
-        # Each domain pack may declare an ``slm_normalizer`` adapter that
-        # handles domain-specific role alias mapping, prefix stripping, and
-        # intended_domain_role inference.
-        _domain_ids: list[str] = []
-        try:
-            if _cfg.DOMAIN_REGISTRY is not None:
-                _doms = _cfg.DOMAIN_REGISTRY.list_domains()
-                if not _doms and _cfg.DOMAIN_REGISTRY.default_domain_id:
-                    _doms = [{"domain_id": _cfg.DOMAIN_REGISTRY.default_domain_id}]
-                _domain_ids = [
-                    d["domain_id"]
-                    for d in _doms
-                    if d.get("domain_id")
-                ]
-        except Exception:
-            pass
-        for _normalizer_fn in _load_domain_slm_normalizers():
-            try:
-                cmd = _normalizer_fn(
-                    cmd,
-                    original_instruction,
-                    valid_roles=VALID_ROLES,
-                    domain_role_aliases=_get_domain_role_aliases(),
-                    domain_ids=_domain_ids,
-                )
-            except Exception:
-                log.debug("Domain SLM normalizer failed", exc_info=True)
-        params = cmd.get("params") or {}
-
-        if operation == "invite_user":
-            # ── Infer domain_id from target or instruction context ──
-            # If the SLM didn't set domain_id, check whether any registered
-            # domain ID appears in the target field.
-            if not params.get("domain_id") and _cfg.DOMAIN_REGISTRY is not None:
-                _search_text = f"{target or ''} {original_instruction}".lower()
-                try:
-                    for _dom in _cfg.DOMAIN_REGISTRY.list_domains():
-                        _did = _dom.get("domain_id", "")
-                        if _did and _did.lower() in _search_text:
-                            params["domain_id"] = _did
-                            break
-                except Exception:
-                    pass
-
-            # ── Strip governed_modules for non-DA roles ──
-            if params.get(role_key) != "domain_authority":
-                params.pop("governed_modules", None)
-
-        # ── governed_modules: may appear at top level or inside params ──
-        if "governed_modules" not in params and cmd.get("governed_modules"):
-            params["governed_modules"] = cmd.pop("governed_modules")
-
-        # Normalise governed_modules to a list when a single string is provided
-        gm = params.get("governed_modules")
-        if isinstance(gm, str):
-            params["governed_modules"] = [gm]
-
-        # ── Expand "all": SLM may output governed_modules: "all" or ["all"] ──
-        gm_list = params.get("governed_modules")
-        if isinstance(gm_list, list) and any(
-            isinstance(m, str) and m.lower() == "all" for m in gm_list
-        ):
-            # Determine domain from context — use target field or the first
-            # module_prefix hint in existing governed_modules
-            _domain_hint = cmd.get("target", "") or params.get("domain_id", "")
-            try:
-                if _domain_hint and _cfg.DOMAIN_REGISTRY is not None:
-                    # Resolve prefixes (e.g. "edu" → "education") before lookup
-                    _domain_hint = _cfg.DOMAIN_REGISTRY._prefix_to_domain.get(_domain_hint, _domain_hint)
-                    _resolved_domain = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_domain_hint)
-                    _mod_list = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(_resolved_domain)
-                    if _mod_list:
-                        params["governed_modules"] = [m["module_id"] for m in _mod_list]
-            except Exception:
-                # If we can't resolve, leave as-is — graceful degradation
-                # will catch it downstream
-                pass
-
-        # ── Expand wildcard patterns: "domain/edu/*" → actual module IDs ──
-        gm_list = params.get("governed_modules")
-        if isinstance(gm_list, list) and _cfg.DOMAIN_REGISTRY is not None:
-            expanded: list[str] = []
-            changed = False
-            for mod_id in gm_list:
-                if isinstance(mod_id, str) and ("*" in mod_id or mod_id.endswith("/")):
-                    _parts = mod_id.replace("*", "").rstrip("/").split("/")
-                    _hint = _parts[-1] if _parts else ""
-                    if not _hint:
-                        _hint = _parts[-2] if len(_parts) > 1 else ""
-                    try:
-                        # Resolve prefixes (e.g. "edu" → "education") before lookup
-                        _hint = _cfg.DOMAIN_REGISTRY._prefix_to_domain.get(_hint, _hint)
-                        _resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(_hint)
-                        _mods = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(_resolved)
-                        if _mods:
-                            expanded.extend(m["module_id"] for m in _mods)
-                            changed = True
-                            continue
-                    except Exception:
-                        pass
-                expanded.append(mod_id)
-            if changed:
-                params["governed_modules"] = expanded
-
-    elif operation in ("assign_domain_role", "revoke_domain_role"):
-        # Similar user_id fallback for role assignment operations
-        if not params.get("user_id") and target:
-            params["user_id"] = target
-
-    elif operation in ("list_users", "list_escalations", "list_modules"):
-        # ── Infer domain_id from target or instruction context ──
-        # Follow the same pattern as invite_user: when the SLM didn't
-        # set domain_id, check whether any registered domain ID appears
-        # in the target field or the original instruction.
-        if not params.get("domain_id") and _cfg.DOMAIN_REGISTRY is not None:
-            _search_text = f"{target or ''} {original_instruction}".lower()
-            try:
-                for _dom in _cfg.DOMAIN_REGISTRY.list_domains():
-                    _did = _dom.get("domain_id", "")
-                    if _did and _did.lower() in _search_text:
-                        params["domain_id"] = _did
-                        break
-            except Exception:
-                pass
-
-    cmd["params"] = params
-    return cmd
+# ── SLM normalization — extracted to lumina.api.pipeline.slm_normalizer
+from lumina.api.pipeline.slm_normalizer import (  # noqa: E402
+    _normalize_slm_command,
+    _load_domain_slm_normalizers,
+)
 
 
 def _stage_command(
@@ -1210,7 +721,7 @@ async def _dispatch_command(
 # ── Tiered Command Endpoints ─────────────────────────────────
 #
 # Commands are split into three tiers by access level:
-#   /api/command        — any authenticated user (student, teacher, etc.)
+#   /api/command        — any authenticated user
 #   /api/domain/command — domain authority + root
 #   /api/admin/command  — root / it_support only
 #
