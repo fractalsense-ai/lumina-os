@@ -1,13 +1,13 @@
 ---
-version: 1.3.0
-last_updated: 2026-06-15
+version: 1.4.0
+last_updated: 2026-04-12
 ---
 
 # Domain Pack Anatomy
 
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Status:** Active  
-**Last updated:** 2026-06-15  
+**Last updated:** 2026-04-12  
 
 ---
 
@@ -331,7 +331,160 @@ Every domain pack includes exactly as much structure as its subject area demands
 
 ---
 
-## G. Quick Reference — File Layout
+## G. Slash Command Debugging Loop
+
+Developing a domain pack involves constant iteration on operation handlers, HITL exemptions,
+and role boundaries. The majority of this work is **deterministic** — it does not need a
+running LLM or SLM. The debugging loop described here lets a developer validate the full
+command pipeline from HTTP request to operation execution using only `pytest` and the
+`TestClient`, with no external inference services.
+
+### Why this works
+
+The command dispatch pipeline (`_dispatch_command`) supports two entry modes:
+
+1. **Natural-language** — requires an SLM to parse the instruction into a structured
+   operation dict. This is the production path through the frontend chat box.
+2. **Direct dispatch** — the caller supplies `operation` and `params` directly in the
+   request body. The SLM is bypassed entirely.
+
+Direct dispatch is the same code path the frontend's slash command parser uses: when a user
+types `/assign TestStudent16`, the frontend resolves this to
+`{ operation: "assign_student", params: { ... } }` and POSTs it to the appropriate tier
+endpoint. No SLM is involved.
+
+This means every domain-pack operation handler can be integration-tested end-to-end — from
+HTTP request through RBAC gate, domain_id injection, HITL staging/exemption, and operation
+execution — without any LLM or SLM dependency.
+
+### The three-tier endpoint structure
+
+Commands route through one of three endpoints based on the caller's required access level:
+
+| Endpoint | Gate | Who can reach it |
+|---|---|---|
+| `POST /api/command` | Any authenticated user | Students, teachers, all roles |
+| `POST /api/domain/command` | `domain_authority`, `root`, `it_support` | Domain administrators and above |
+| `POST /api/admin/command` | `root`, `it_support` | System-level operators only |
+
+The frontend slash command registry (`src/web/services/slashCommands.ts`) assigns each
+command a `tier` that maps to one of these endpoints via `tierEndpoint()`. When adding a new
+operation handler to a domain pack, you must also decide its tier. The rule is simple:
+
+- If any authenticated user should be able to invoke it → **user tier**
+- If it requires domain governance authority → **domain tier**
+- If it is a system-level mutation → **admin tier**
+
+Per-operation `min_role` enforcement (declared in `runtime-config.yaml §operation_handlers`)
+provides fine-grained RBAC within each tier. The endpoint gate is defence-in-depth; the
+operation's `min_role` is the real access control.
+
+### The inner loop
+
+The recommended development cycle for a new operation handler:
+
+```
+1.  Declare the handler in runtime-config.yaml §operation_handlers
+      → set callable, hitl_exempt, min_role
+
+2.  Implement the handler in controllers/
+
+3.  Write a direct-dispatch test:
+      resp = client.post(
+          "/api/command",                  # or /api/domain/command
+          json={
+              "operation": "my_new_op",
+              "params": {"target": "x"},
+          },
+          headers={"Authorization": f"Bearer {token}"},
+      )
+      assert resp.status_code == 200
+
+4.  Run: pytest tests/test_my_file.py::test_my_new_op -xvs
+
+5.  Iterate on steps 1-4 until the handler works correctly.
+
+6.  Add the slash command definition to slashCommands.ts
+      → set name, operation, params mapping, tier
+
+7.  Write tier-gate tests to verify RBAC boundaries:
+      - user token → /api/domain/command → 403
+      - DA token  → /api/admin/command  → 403
+```
+
+Steps 1–5 run in under a second per test. No server startup, no SLM, no LLM. The `TestClient`
+from FastAPI/Starlette runs the ASGI app in-process with `NullPersistenceAdapter`, so there
+is no database or filesystem setup either.
+
+### What to test without an SLM
+
+The deterministic parts of the pipeline that **should** be covered by direct-dispatch tests:
+
+| Area | What to assert | Example |
+|---|---|---|
+| **Operation routing** | Known operation returns 200; unknown returns 422 | `"operation": "assign_student"` → 200 |
+| **HITL exemption** | Exempt ops execute immediately (`staged_id: null`); non-exempt ops return a `staged_id` | `hitl_exempt: true` in runtime-config → `resp.json()["staged_id"] is None` |
+| **Tier gate enforcement** | Wrong role at wrong endpoint returns 403 | User token at `/api/domain/command` → 403 |
+| **min_role enforcement** | Operation rejects callers below its declared min_role | `min_role: domain_authority` + user token → 403 |
+| **domain_id injection** | `domain_id` from request body propagates into `params` | Send `"domain_id": "education"` in body, verify handler receives it |
+| **Parameter normalisation** | `_normalize_slm_command` coerces types correctly | `governed_modules: "single"` → `["single"]` |
+| **Handler return value** | The operation's result dict contains expected fields | `resp.json()["result"]["students"]` is a list |
+
+### What still needs the SLM
+
+Only two things require a live SLM:
+
+1. **Natural-language parsing accuracy** — does the SLM correctly translate
+   `"assign TestStudent16 to algebra"` into `{ operation: "assign_student", params: ... }`?
+2. **Ambiguous instruction disambiguation** — does the SLM pick the right operation when
+   the instruction is vague?
+
+These are tested separately, typically with recorded fixtures or a small dedicated SLM test
+suite. They should not block the inner development loop.
+
+### Test fixture pattern
+
+The standard test fixture for domain-pack operation testing:
+
+```python
+@pytest.fixture
+def api_module(monkeypatch):
+    monkeypatch.setenv(
+        "LUMINA_RUNTIME_CONFIG_PATH",
+        "domain-packs/education/cfg/runtime-config.yaml",
+    )
+    mod = _load_api_module()
+    mod.PERSISTENCE = NullPersistenceAdapter()
+    mod.BOOTSTRAP_MODE = True
+    mod._session_containers.clear()
+    monkeypatch.setattr(auth, "JWT_SECRET", "test-secret")
+    return mod
+
+@pytest.fixture
+def client(api_module):
+    return TestClient(api_module.app)
+```
+
+`BOOTSTRAP_MODE = True` auto-promotes the first registered user to root, giving you a
+root token without external auth setup. Register additional users at lower roles to test
+RBAC boundaries.
+
+### Checklist for new domain-pack operations
+
+When adding a new operation to a domain pack, verify all of the following pass before
+considering the operation complete:
+
+- [ ] Handler declared in `runtime-config.yaml §operation_handlers`
+- [ ] `hitl_exempt` set correctly (true for read-only queries, false for mutations)
+- [ ] `min_role` set to the least-privileged role that should invoke it
+- [ ] Direct-dispatch integration test passes at the correct tier endpoint
+- [ ] Tier-gate test confirms lower roles are rejected at higher-tier endpoints
+- [ ] Slash command definition added to `slashCommands.ts` with correct tier
+- [ ] `pytest -x -q` passes with no regressions
+
+---
+
+## H. Quick Reference — File Layout
 
 The canonical domain pack directory layout. Pack-level items apply to the whole domain;
 module-level items apply to one specific subject area (algebra-level-1, operations-level-1,
@@ -424,7 +577,7 @@ contract, and three-layer component distinction in depth, see
 
 ---
 
-## H. Domain Pack `/docs` — Unix Man-Page Sections
+## I. Domain Pack `/docs` — Unix Man-Page Sections
 
 Every domain pack should include a `/docs` directory that mirrors the root `docs/` man-page
 section layout (1–8). This makes domain documentation structurally identical to system
