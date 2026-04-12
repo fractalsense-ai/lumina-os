@@ -287,6 +287,14 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             repo_root, _ec_cfg["module_path"], _ec_cfg["callable"],
         )
 
+    # Optional SLM normalizer hook (domain-specific role alias mapping).
+    slm_normalizer_fn: Callable[..., Any] | None = None
+    _sn_cfg = adapters_cfg.get("slm_normalizer")
+    if _sn_cfg is not None:
+        slm_normalizer_fn = _load_callable(
+            repo_root, _sn_cfg["module_path"], _sn_cfg["callable"],
+        )
+
     tool_fns: dict[str, Callable[..., Any]] = {}
     tools_cfg = adapters_cfg.get("tools") or {}
     for tool_id, tool_cfg in tools_cfg.items():
@@ -384,6 +392,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "profile_serializer_fn": profile_serializer_fn,
         "turn_0_presenter_fn": turn_0_presenter_fn,
         "escalation_context_fn": escalation_context_fn,
+        "slm_normalizer_fn": slm_normalizer_fn,
         "tool_fns": tool_fns,
         "api_route_defs": api_route_defs,
         "world_sim": _world_sim_cfg,

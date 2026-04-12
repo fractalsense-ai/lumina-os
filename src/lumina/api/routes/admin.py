@@ -336,12 +336,6 @@ _FALLBACK_MIN_ROLE: dict[str, str] = {
     "update_user_preferences": "user",
 }
 
-_FALLBACK_DOMAIN_ROLE_ALIASES: dict[str, str] = {
-    "student": "user", "teacher": "user", "teaching_assistant": "user",
-    "parent": "user", "observer": "user", "field_operator": "user",
-    "site_manager": "user", "ta": "user",
-}
-
 
 def _load_governance_config() -> dict[str, Any]:
     """Load governance policies from system domain physics with fallback."""
@@ -359,7 +353,7 @@ def _load_governance_config() -> dict[str, Any]:
         "hitl_exempt": _FALLBACK_HITL_EXEMPT,
         "role_hierarchy": _FALLBACK_ROLE_HIERARCHY,
         "min_role_policy": _FALLBACK_MIN_ROLE,
-        "domain_role_aliases": _FALLBACK_DOMAIN_ROLE_ALIASES,
+        "domain_role_aliases": {},
     }
 
     if physics_path.is_file():
@@ -457,7 +451,10 @@ def _get_domain_role_aliases() -> dict[str, str]:
     """
     aliases: dict[str, str] = {}
     try:
-        for dom in _cfg.DOMAIN_REGISTRY.list_domains():
+        _doms = _cfg.DOMAIN_REGISTRY.list_domains()
+        if not _doms and _cfg.DOMAIN_REGISTRY.default_domain_id:
+            _doms = [{"domain_id": _cfg.DOMAIN_REGISTRY.default_domain_id}]
+        for dom in _doms:
             dom_id = dom.get("domain_id", "")
             if not dom_id:
                 continue
@@ -641,11 +638,46 @@ def _compute_schema_delta(original: dict[str, Any], modified: dict[str, Any]) ->
     return delta
 
 
-# Domain-specific roles the SLM may output that map to the "user" system role.
-# The intended domain role is preserved in params["intended_domain_role"] so
-# downstream logic (e.g. assign_domain_role chaining) can use it.
-# Loaded from domain-physics.json subsystem_configs.governance.domain_role_aliases.
-_DOMAIN_ROLE_ALIASES: dict[str, str] = _FALLBACK_DOMAIN_ROLE_ALIASES
+# ─────────────────────────────────────────────────────────────
+# Domain SLM normalizer hook discovery
+# ─────────────────────────────────────────────────────────────
+
+_domain_normalizer_cache: list[Any] | None = None
+_domain_normalizer_cache_registry_id: int | None = None
+
+
+def _load_domain_slm_normalizers() -> list[Any]:
+    """Discover ``slm_normalizer_fn`` callables from all domain runtime contexts."""
+    global _domain_normalizer_cache, _domain_normalizer_cache_registry_id
+    reg = _cfg.DOMAIN_REGISTRY
+    reg_id = id(reg) if reg is not None else None
+    if _domain_normalizer_cache is not None and _domain_normalizer_cache_registry_id == reg_id:
+        return _domain_normalizer_cache
+
+    normalizers: list[Any] = []
+    if reg is None:
+        return normalizers
+
+    domains = reg.list_domains()
+    # Single-domain fallback (same pattern as _mount_domain_api_routes)
+    if not domains and reg.default_domain_id:
+        domains = [{"domain_id": reg.default_domain_id}]
+
+    for dom in domains:
+        dom_id = dom.get("domain_id", "")
+        if not dom_id:
+            continue
+        try:
+            ctx = reg.get_runtime_context(dom_id)
+        except Exception:
+            continue
+        fn = ctx.get("slm_normalizer_fn")
+        if fn is not None:
+            normalizers.append(fn)
+
+    _domain_normalizer_cache = normalizers
+    _domain_normalizer_cache_registry_id = reg_id
+    return normalizers
 
 
 def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction: str = "") -> dict[str, Any]:
@@ -655,7 +687,11 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
     ``"domain_authority"``, put the user name in ``target`` instead of
     ``params.user_id``, or include extra keys like ``governed_modules`` at the
     top level rather than inside ``params``.  This function applies best-effort
-    mapping **before** schema validation so the pipeline doesn't silently fail.
+    structural mapping **before** schema validation.
+
+    Domain-specific normalization (role alias mapping, intended_domain_role
+    inference) is delegated to ``slm_normalizer`` adapter hooks declared in
+    each domain pack's runtime-config.yaml.
     """
     import re
 
@@ -684,61 +720,39 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
         if raw_role and not re.fullmatch(r"[a-z_]+", raw_role):
             params[role_key] = re.sub(r"[\s-]+", "_", raw_role.strip()).lower()
 
-        # ── Domain-role alias table: map domain-specific roles to system role ──
-        # SLM often outputs domain roles like "student", "teacher", "field_operator"
-        # which are NOT system roles.  Map them to the system role "user" and
-        # preserve the intended domain role for downstream chaining.
-        normalised_role = params.get(role_key, "")
-        if normalised_role and normalised_role not in VALID_ROLES:
-            # Strip common domain prefixes the SLM invents
-            # e.g. "education_user" → "user", "education_domain_user" → "user"
-            _stripped = re.sub(
-                r"^(education|agriculture|system)_?(domain_?)?", "", normalised_role,
-            )
-            if _stripped and _stripped in VALID_ROLES:
-                params["intended_domain_role"] = normalised_role
-                params[role_key] = _stripped
-            elif normalised_role in _get_domain_role_aliases():
-                params["intended_domain_role"] = normalised_role
-                params[role_key] = _get_domain_role_aliases()[normalised_role]
-            else:
-                # Fuzzy substring match against known system roles
-                matched = [vr for vr in VALID_ROLES if vr in normalised_role]
-                if matched:
-                    params["intended_domain_role"] = normalised_role
-                    params[role_key] = max(matched, key=len)
+        cmd["params"] = params
 
-        # ── invite_user: infer missing role from intended_domain_role ──
+        # ── Domain normalizer hooks (role alias, intended_domain_role) ──
+        # Each domain pack may declare an ``slm_normalizer`` adapter that
+        # handles domain-specific role alias mapping, prefix stripping, and
+        # intended_domain_role inference.
+        _domain_ids: list[str] = []
+        try:
+            if _cfg.DOMAIN_REGISTRY is not None:
+                _doms = _cfg.DOMAIN_REGISTRY.list_domains()
+                if not _doms and _cfg.DOMAIN_REGISTRY.default_domain_id:
+                    _doms = [{"domain_id": _cfg.DOMAIN_REGISTRY.default_domain_id}]
+                _domain_ids = [
+                    d["domain_id"]
+                    for d in _doms
+                    if d.get("domain_id")
+                ]
+        except Exception:
+            pass
+        for _normalizer_fn in _load_domain_slm_normalizers():
+            try:
+                cmd = _normalizer_fn(
+                    cmd,
+                    original_instruction,
+                    valid_roles=VALID_ROLES,
+                    domain_role_aliases=_get_domain_role_aliases(),
+                    domain_ids=_domain_ids,
+                )
+            except Exception:
+                log.debug("Domain SLM normalizer failed", exc_info=True)
+        params = cmd.get("params") or {}
+
         if operation == "invite_user":
-            # ── Reject system roles leaked into intended_domain_role ──
-            # The SLM sometimes puts system roles ("user", "domain_authority")
-            # into intended_domain_role.  That field is exclusively for
-            # domain-specific roles like "student", "teacher", etc.
-            _idr_raw = params.get("intended_domain_role", "")
-            if _idr_raw and _idr_raw in VALID_ROLES:
-                params["intended_domain_role"] = None
-
-            if not params.get(role_key):
-                _idr = params.get("intended_domain_role", "")
-                if _idr and _idr in _get_domain_role_aliases():
-                    params[role_key] = _get_domain_role_aliases()[_idr]
-                elif _idr:
-                    params[role_key] = "user"
-                else:
-                    params[role_key] = "user"
-
-            # ── Infer intended_domain_role when SLM pre-mapped to system role ──
-            # If the SLM already mapped e.g. "student" → role="user" and set
-            # intended_domain_role to null, try to recover from the original
-            # instruction text stored in target or from known domain role aliases.
-            if not params.get("intended_domain_role"):
-                _search_text = f"{target or ''} {original_instruction}".lower()
-                _aliases = _get_domain_role_aliases()
-                for _alias in _aliases:
-                    if _alias in _search_text:
-                        params["intended_domain_role"] = _alias
-                        break
-
             # ── Infer domain_id from target or instruction context ──
             # If the SLM didn't set domain_id, check whether any registered
             # domain ID appears in the target field.
@@ -753,9 +767,7 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
                 except Exception:
                     pass
 
-            # ── Strip governed_modules for non-DA roles unconditionally ──
-            # The SLM frequently hallucinates governed_modules for student/user
-            # invites.  Only domain_authority should ever have governed_modules.
+            # ── Strip governed_modules for non-DA roles ──
             if params.get(role_key) != "domain_authority":
                 params.pop("governed_modules", None)
 

@@ -41,9 +41,9 @@ def build_clarification_response(
     if "schema validation failed" in error_msg.lower():
         raw_role = params.get("new_role", params.get("role", ""))
         if raw_role:
-            from lumina.api.routes.admin import _DOMAIN_ROLE_ALIASES
+            from lumina.api.routes.admin import _get_domain_role_aliases
 
-            if raw_role in _DOMAIN_ROLE_ALIASES:
+            if raw_role in _get_domain_role_aliases():
                 hints.append(
                     f"'{raw_role}' is a domain role, not a system role. "
                     f"The system role should be 'user'. "

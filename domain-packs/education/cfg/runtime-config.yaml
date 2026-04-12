@@ -649,6 +649,9 @@ adapters:
   escalation_context:
     module_path: domain-packs/education/controllers/education_escalation_context.py
     callable: education_escalation_context
+  slm_normalizer:
+    module_path: domain-packs/education/controllers/slm_normalizer.py
+    callable: normalize_slm_command
   tools:
     calculator:
       module_path: domain-packs/education/controllers/tool_adapters.py
