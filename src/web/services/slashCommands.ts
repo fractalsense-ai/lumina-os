@@ -10,6 +10,8 @@
  *   /api/admin/command  — admin tier  (root / IT support)
  */
 
+import { getPluginCommands } from '@/plugins/PluginRegistry'
+
 export type CommandTier = 'user' | 'domain' | 'admin'
 
 export interface SlashCommandDef {
@@ -60,26 +62,6 @@ export function tierEndpoint(tier: CommandTier): string {
 const COMMANDS: SlashCommandDef[] = [
   // ── User tier — any authenticated user ─────────────────
   {
-    name: 'teachers',
-    operation: 'list_users',
-    description: 'Show available teachers',
-    args: [],
-    defaultParams: { domain_role: 'teacher', domain_id: 'education' },
-    allowedRoles: ['student', 'guardian', 'teaching_assistant', 'teacher', 'domain_authority'],
-    domainScope: 'education',
-    aliases: ['list_teachers'],
-    tier: 'user',
-  },
-  {
-    name: 'join',
-    operation: 'request_teacher_assignment',
-    description: 'Request assignment to a teacher',
-    args: ['teacher_id'],
-    allowedRoles: ['student'],
-    domainScope: 'education',
-    tier: 'user',
-  },
-  {
     name: 'switch',
     operation: 'switch_active_module',
     description: 'Switch your active module',
@@ -129,25 +111,7 @@ const COMMANDS: SlashCommandDef[] = [
     aliases: ['list_commands'],
     tier: 'user',
   },
-  {
-    name: 'students',
-    operation: 'list_users',
-    description: 'List your students',
-    args: [],
-    defaultParams: { domain_role: 'student', domain_id: 'education' },
-    allowedRoles: ['teaching_assistant', 'teacher', 'domain_authority'],
-    domainScope: 'education',
-    tier: 'user',
-  },
-  {
-    name: 'assign',
-    operation: 'assign_student',
-    description: 'Assign a student to your roster',
-    args: ['student_id'],
-    allowedRoles: ['teacher', 'domain_authority'],
-    domainScope: 'education',
-    tier: 'user',
-  },
+
   {
     name: 'escalations',
     operation: 'list_escalations',
@@ -380,6 +344,28 @@ for (const cmd of COMMANDS) {
 }
 
 /**
+ * Merge the static framework commands with any plugin-contributed commands.
+ * Rebuilt on each call so newly-registered plugins are picked up.
+ */
+export function getAllCommands(): SlashCommandDef[] {
+  const pluginCmds = getPluginCommands()
+  return pluginCmds.length > 0 ? [...COMMANDS, ...pluginCmds] : COMMANDS
+}
+
+function buildMergedMap(): Map<string, SlashCommandDef> {
+  const pluginCmds = getPluginCommands()
+  if (pluginCmds.length === 0) return COMMAND_MAP
+  const merged = new Map(COMMAND_MAP)
+  for (const cmd of pluginCmds) {
+    merged.set(cmd.name, cmd)
+    for (const alias of cmd.aliases ?? []) {
+      merged.set(alias, cmd)
+    }
+  }
+  return merged
+}
+
+/**
  * Map non-education domain roles to their equivalent slash-command role.
  * This lets system-domain roles (system_admin, system_operator) see the
  * correct governance or operational commands.
@@ -398,11 +384,12 @@ const ROLE_EQUIVALENCE: Record<string, string> = {
  * @param domainKey      Optional current domain key (e.g. 'education', 'system')
  */
 export function getCommandsForRole(effectiveRole: string, platformRole?: string, domainKey?: string): SlashCommandDef[] {
+  const all = getAllCommands()
   // Platform root sees every command
-  if (platformRole === 'root') return COMMANDS
+  if (platformRole === 'root') return all
 
   const normalizedRole = ROLE_EQUIVALENCE[effectiveRole] ?? effectiveRole
-  return COMMANDS.filter(
+  return all.filter(
     (cmd) =>
       (cmd.allowedRoles.length === 0 || cmd.allowedRoles.includes(normalizedRole)) &&
       (!cmd.domainScope || cmd.domainScope === domainKey),
@@ -421,7 +408,7 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
   const commandName = (parts[0] ?? '').toLowerCase()
   if (!commandName) return null
 
-  const def = COMMAND_MAP.get(commandName)
+  const def = buildMergedMap().get(commandName)
   if (!def) return null
 
   // Map positional args to named params

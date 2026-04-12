@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': rootDir,
+      '@domain/system': path.resolve(rootDir, '../../domain-packs/system/web'),
+      '@domain/education': path.resolve(rootDir, '../../domain-packs/education/web'),
     },
   },
   test: {

@@ -9,9 +9,8 @@
  */
 
 import type { ComponentType } from 'react'
-import { EscalationQueue } from '@/components/dashboard/EscalationQueue'
-import { SystemLogPanel } from '@/components/dashboard/SystemLogPanel'
 import { DataPanel } from '@/components/sidebar/DataPanel'
+import { resolvePluginPanel } from '@/plugins/PluginRegistry'
 
 interface AuthState {
   token: string
@@ -29,29 +28,15 @@ export interface PanelComponentProps {
   domainKey?: string
 }
 
-/**
- * Wrapper that adapts existing dashboard components (which accept
- * `{ auth, domainId? }`) to the PanelComponentProps interface.
- */
-function wrapLegacy(
-  Comp: ComponentType<{ auth: AuthState; domainId?: string; domainKey?: string }>,
-): ComponentType<PanelComponentProps> {
-  return function LegacyWrapper({ auth, domainId, domainKey }: PanelComponentProps) {
-    return <Comp auth={auth} domainId={domainId} domainKey={domainKey} />
-  }
-}
-
 /** Map of component name → React component.  Names are case-sensitive
  *  and must match the `component` strings used in domain-pack role_layouts. */
 const REGISTRY: Record<string, ComponentType<PanelComponentProps>> = {
-  EscalationQueue: wrapLegacy(EscalationQueue),
-  SystemLogPanel: wrapLegacy(SystemLogPanel),
   DataPanel: DataPanel,
 }
 
-/** Resolve a component name to a React component.  Unknown names
- *  fall back to DataPanel so domain packs can still render endpoint
- *  data without a dedicated component. */
+/** Resolve a component name to a React component.
+ *  Checks the plugin registry first, then the static registry,
+ *  then falls back to DataPanel. */
 export function resolvePanel(name: string): ComponentType<PanelComponentProps> {
-  return REGISTRY[name] ?? DataPanel
+  return resolvePluginPanel(name) ?? REGISTRY[name] ?? DataPanel
 }

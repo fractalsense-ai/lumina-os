@@ -345,6 +345,11 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if ui_manifest is not None and not isinstance(ui_manifest, dict):
         raise RuntimeError("'ui_manifest' must be a mapping/dict when provided")
 
+    # ── Domain-pack UI plugin metadata (plugin_bundle, slash_commands, dashboard_tabs) ──
+    ui_plugin = cfg.get("ui")
+    if ui_plugin is not None and not isinstance(ui_plugin, dict):
+        raise RuntimeError("'ui' must be a mapping/dict when provided")
+
     slm_weight_overrides = runtime_cfg.get("slm_weight_overrides") or {}
     if slm_weight_overrides and not isinstance(slm_weight_overrides, dict):
         raise RuntimeError("'runtime.slm_weight_overrides' must be a mapping/dict when provided")
@@ -379,6 +384,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "tool_call_policies": tool_call_policies,
         "slm_weight_overrides": slm_weight_overrides,
         "ui_manifest": ui_manifest,
+        "ui_plugin": ui_plugin,
         "system_prompt": system_prompt,
         "turn_interpretation_prompt": turn_interpretation_prompt,
         "runtime_provenance": runtime_provenance,

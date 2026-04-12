@@ -254,3 +254,26 @@ blackbox:
   output_dir: data/blackbox
   max_files: 100
   include_trace_events: true
+
+# ── UI Plugin ─────────────────────────────────────────────
+ui:
+  plugin_bundle: domain-packs/system/web/dist/plugin.js
+  dashboard_tabs:
+    - id: escalations
+      label: Escalations
+      roles: [root, domain_authority, it_support, qa, auditor]
+    - id: commands
+      label: Commands
+      roles: [root, domain_authority, it_support]
+    - id: ingestions
+      label: Ingestions
+      roles: [root, domain_authority]
+    - id: logs
+      label: System Log
+      roles: [root, domain_authority, qa, auditor]
+    - id: daemon
+      label: Daemon
+      roles: [root, auditor]
+    - id: daemon-monitor
+      label: Monitor
+      roles: [root, it_support, auditor]

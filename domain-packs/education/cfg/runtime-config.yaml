@@ -728,3 +728,24 @@ adapters:
       roles: []
       request_body:
         pin: {type: str, required: true}
+
+# ── Frontend UI contributions ─────────────────────────────
+ui:
+  plugin_bundle: domain-packs/education/web/dist/plugin.js
+  slash_commands:
+    - name: teachers
+      operation: list_users
+      description: Show available teachers
+      tier: user
+    - name: join
+      operation: request_teacher_assignment
+      description: Request assignment to a teacher
+      tier: user
+    - name: students
+      operation: list_users
+      description: List your students
+      tier: user
+    - name: assign
+      operation: assign_student
+      description: Assign a student to your roster
+      tier: user

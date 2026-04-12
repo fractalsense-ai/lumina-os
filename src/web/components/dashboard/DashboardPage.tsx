@@ -1,18 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { EscalationQueue } from './EscalationQueue'
-import { IngestionReview } from './IngestionReview'
-import { DaemonMonitorPanel } from './DaemonMonitorPanel'
-import { SystemLogPanel } from './SystemLogPanel'
-import { StagedCommandsPanel } from './StagedCommandsPanel'
-
-interface AuthState {
-  token: string
-  userId: string
-  username: string
-  role: string
-}
+import { getPluginDashboardTabs } from '@/plugins/PluginRegistry'
+import type { AuthState, DashboardTabDef } from '@/plugins/types'
 
 interface DomainSummary {
   domain_id: string
@@ -60,11 +50,6 @@ interface UiManifest {
 
 const TAB_MANIFEST: TabDef[] = [
   { id: 'overview',   label: 'Overview',     roles: ['root', 'domain_authority'] },
-  { id: 'escalations', label: 'Escalations', roles: ['root', 'domain_authority', 'it_support', 'qa', 'auditor'] },
-  { id: 'commands',   label: 'Commands',      roles: ['root', 'domain_authority', 'it_support'] },
-  { id: 'ingestions', label: 'Ingestions',    roles: ['root', 'domain_authority'] },
-  { id: 'logs',       label: 'System Log',   roles: ['root', 'domain_authority', 'qa', 'auditor'] },
-  { id: 'daemon',     label: 'Daemon',       roles: ['root', 'auditor'] },
 ]
 
 function getApiBase(): string {
@@ -72,12 +57,16 @@ function getApiBase(): string {
 }
 
 export function DashboardPage({ auth, manifest }: { auth: AuthState; manifest?: UiManifest }) {
-  // Merge static governance tabs with domain-specific panels
+  // Merge static governance tabs + plugin tabs + domain-specific panels
+  const pluginTabs: TabDef[] = getPluginDashboardTabs()
+    .filter((t) => t.roles.includes(auth.role))
+    .map((t) => ({ id: `plugin:${t.id}`, label: t.label, roles: t.roles }))
   const domainPanels: TabDef[] = (manifest?.panels ?? [])
     .filter((p) => p.roles.includes(auth.role))
     .map((p) => ({ id: `panel:${p.id}`, label: p.label, roles: p.roles }))
   const allTabs = [
     ...TAB_MANIFEST.filter((t) => t.roles.includes(auth.role)),
+    ...pluginTabs,
     ...domainPanels,
   ]
   const visibleTabs = allTabs
@@ -135,21 +124,14 @@ export function DashboardPage({ auth, manifest }: { auth: AuthState; manifest?: 
       {tab === 'overview' && (
         <OverviewTab domains={domains} telemetry={telemetry} />
       )}
-      {tab === 'escalations' && (
-        <EscalationQueue auth={auth} />
-      )}
-      {tab === 'commands' && (
-        <StagedCommandsPanel auth={auth} />
-      )}
-      {tab === 'ingestions' && (
-        <IngestionReview auth={auth} onRefresh={refreshDashboard} />
-      )}
-      {tab === 'logs' && (
-        <SystemLogPanel auth={auth} />
-      )}
-      {tab === 'daemon' && (
-        <DaemonMonitorPanel auth={auth} />
-      )}
+
+      {/* Plugin-contributed tabs */}
+      {tab.startsWith('plugin:') && (() => {
+        const pluginTab = getPluginDashboardTabs().find((t) => `plugin:${t.id}` === tab)
+        if (!pluginTab) return null
+        const Comp = pluginTab.component
+        return <Comp auth={auth} />
+      })()}
 
       {/* Domain-specific panels from ui_manifest */}
       {tab.startsWith('panel:') && (

@@ -1,10 +1,64 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, beforeAll, afterAll } from 'vitest'
 
 import {
   parseSlashCommand,
   getCommandsForRole,
   generateHelpText,
 } from '@/services/slashCommands'
+import { registerPlugin, _resetForTesting } from '@/plugins/PluginRegistry'
+import type { DomainPlugin } from '@/plugins/types'
+
+// Education plugin commands (mirroring domain-packs/education/web/plugin.ts)
+const educationPlugin: DomainPlugin = {
+  id: 'education-test',
+  register(reg) {
+    reg.addSlashCommands([
+      {
+        name: 'teachers',
+        operation: 'list_users',
+        description: 'Show available teachers',
+        args: [],
+        defaultParams: { domain_role: 'teacher', domain_id: 'education' },
+        allowedRoles: ['student', 'guardian', 'teaching_assistant', 'teacher', 'domain_authority'],
+        domainScope: 'education',
+        aliases: ['list_teachers'],
+        tier: 'user',
+      },
+      {
+        name: 'join',
+        operation: 'request_teacher_assignment',
+        description: 'Request assignment to a teacher',
+        args: ['teacher_id'],
+        allowedRoles: ['student'],
+        domainScope: 'education',
+        tier: 'user',
+      },
+      {
+        name: 'students',
+        operation: 'list_users',
+        description: 'List your students',
+        args: [],
+        defaultParams: { domain_role: 'student', domain_id: 'education' },
+        allowedRoles: ['teaching_assistant', 'teacher', 'domain_authority'],
+        domainScope: 'education',
+        tier: 'user',
+      },
+      {
+        name: 'assign',
+        operation: 'assign_student',
+        description: 'Assign a student to your roster',
+        args: ['student_id'],
+        allowedRoles: ['teacher', 'domain_authority'],
+        domainScope: 'education',
+        tier: 'user',
+      },
+    ])
+  },
+}
+
+// Register education plugin for tests that depend on education commands
+beforeAll(() => { registerPlugin(educationPlugin) })
+afterAll(() => { _resetForTesting() })
 
 // ── parseSlashCommand — basic dispatch ───────────────────
 

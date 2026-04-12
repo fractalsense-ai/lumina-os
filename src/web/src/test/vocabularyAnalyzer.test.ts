@@ -5,7 +5,7 @@ import {
   postVocabularyMetric,
   type VocabularyMetric,
   type VocabAnalyzerConfig,
-} from '@/services/vocabularyAnalyzer'
+} from '@domain/education/services/vocabularyAnalyzer'
 
 // ── analyzeVocabulary — lexical analysis ───────────────────
 

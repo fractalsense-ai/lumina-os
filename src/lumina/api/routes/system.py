@@ -171,13 +171,20 @@ async def domain_info(
     # ── Resolve role-based layout for the authenticated user ──
     role_layout = _resolve_role_layout(manifest, user, domain)
 
-    return {
+    resp: dict[str, Any] = {
         "domain_id": domain.get("id", "unknown"),
         "domain_key": resolved,
         "domain_version": domain.get("version", "unknown"),
         "ui_manifest": manifest,
         "role_layout": role_layout,
     }
+
+    # ── Expose domain-pack UI plugin metadata (plugin_bundle, slash_commands, dashboard_tabs) ──
+    ui_plugin = runtime.get("ui_plugin")
+    if isinstance(ui_plugin, dict):
+        resp["ui_plugin"] = ui_plugin
+
+    return resp
 
 
 @router.post("/api/tool/{tool_id}", response_model=ToolResponse)

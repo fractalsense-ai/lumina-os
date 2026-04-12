@@ -31,8 +31,13 @@ async def post_vocabulary_metric(
     """
     from starlette.concurrency import run_in_threadpool
 
+    # Validate required fields
+    score = body.get("vocabulary_complexity_score")
+    if score is None or not isinstance(score, (int, float)) or score < 0.0 or score > 1.0:
+        return {"__status": 422, "detail": "vocabulary_complexity_score must be a float between 0.0 and 1.0"}
+
     # Students can only update their own metric
-    if user_data["user_id"] != user_id and user_data["role"] not in ("root",):
+    if user_data["sub"] != user_id and user_data["role"] not in ("root",):
         return {"__status": 403, "detail": "Cannot update another user's vocabulary metric"}
 
     profile_path = resolve_profile_path(user_id, "education")
