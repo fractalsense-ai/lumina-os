@@ -716,3 +716,12 @@ adapters:
       roles: []
       request_body: {}
       commit_guard: true
+    # ── Session unlock (domain-owned) ─────────────────────────
+    session_unlock:
+      path: /api/sessions/{session_id}/unlock
+      method: POST
+      module_path: domain-packs/education/controllers/session_unlock_handlers.py
+      callable: unlock_session
+      roles: []
+      request_body:
+        pin: {type: str, required: true}

@@ -1,7 +1,7 @@
 """Admin endpoints: audit log, manifest, HITL admin command staging.
 
-Escalation REST endpoints have been extracted to the education domain pack
-(domain-packs/education/controllers/escalation_handlers.py) and are
+Escalation REST endpoints and session-unlock have been extracted to the
+education domain pack (domain-packs/education/controllers/) and are
 mounted dynamically at startup via api_routes in runtime-config.yaml.
 """
 
@@ -25,13 +25,11 @@ from lumina.api import config as _cfg
 from lumina.api.config import _resolve_user_profile_path
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
 from lumina.api.session import _session_containers
-from lumina.core.session_unlock import validate_unlock_pin
 from lumina.api.models import (
     AdminCommandRequest,
     CommandResolveRequest,
     ManifestCheckResponse,
     ManifestRegenResponse,
-    SessionUnlockRequest,
 )
 from lumina.api.routes.ingestion import _get_ingest_service
 from lumina.auth.auth import VALID_ROLES
@@ -1454,29 +1452,3 @@ async def admin_command_resolve(
     if txn is not None:
         response["transaction_state"] = txn.state.value
     return response
-
-
-# ─────────────────────────────────────────────────────────────
-# Session unlock via OTP PIN
-# ─────────────────────────────────────────────────────────────
-
-
-@router.post("/api/sessions/{session_id}/unlock")
-async def unlock_session(
-    session_id: str,
-    req: SessionUnlockRequest,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
-) -> dict[str, Any]:
-    """Allow a student to unlock a frozen session by submitting the OTP issued by their teacher."""
-    current = await get_current_user(credentials)
-    require_auth(current)   # any authenticated user may attempt; PIN is the secret
-
-    if not validate_unlock_pin(session_id, req.pin):
-        raise HTTPException(status_code=403, detail="Invalid or expired unlock PIN")
-
-    container = _session_containers.get(session_id)
-    if container is not None:
-        container.frozen = False
-        log.info("[%s] Session unfrozen via PIN unlock", session_id)
-
-    return {"session_id": session_id, "unlocked": True}
