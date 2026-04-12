@@ -30,8 +30,15 @@ async def execute(
         new_role = str(params.get("new_role", ""))
         if not target_user_id or new_role not in VALID_ROLES:
             raise ctx.HTTPException(status_code=422, detail="user_id and valid new_role required")
-        await ctx.run_in_threadpool(ctx.persistence.update_user_role, target_user_id, new_role)
-        return {"operation": operation, "user_id": target_user_id, "new_role": new_role}
+        governed_modules_raw = params.get("governed_modules")
+        governed_modules = list(governed_modules_raw) if governed_modules_raw else None
+        await ctx.run_in_threadpool(
+            ctx.persistence.update_user_role, target_user_id, new_role, governed_modules,
+        )
+        result: dict[str, Any] = {"operation": operation, "user_id": target_user_id, "new_role": new_role}
+        if governed_modules is not None:
+            result["governed_modules"] = governed_modules
+        return result
 
     if operation == "deactivate_user":
         if user_data["role"] != "root":

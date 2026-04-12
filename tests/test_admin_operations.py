@@ -197,6 +197,21 @@ def test_can_govern_domain_non_authority_role() -> None:
     assert can_govern_domain({"role": "user"}, "education") is False
 
 
+@pytest.mark.unit
+def test_can_govern_domain_unrestricted_da() -> None:
+    """DA with empty governed_modules and no domain_roles has unrestricted access."""
+    user = {"role": "domain_authority", "governed_modules": [], "domain_roles": {}}
+    assert can_govern_domain(user, "education") is True
+    assert can_govern_domain(user, "agriculture") is True
+
+
+@pytest.mark.unit
+def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
+    """DA with neither governed_modules nor domain_roles keys is unrestricted."""
+    user = {"role": "domain_authority"}
+    assert can_govern_domain(user, "any-domain") is True
+
+
 # ── map_role_to_actor_role ────────────────────────────────────────────────────
 
 

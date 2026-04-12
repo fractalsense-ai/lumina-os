@@ -135,14 +135,44 @@ def test_can_govern_domain_via_domain_roles_with_registry() -> None:
 
 @pytest.mark.unit
 def test_can_govern_domain_empty_governed_and_roles() -> None:
-    """DA with neither governed_modules nor domain_roles is rejected."""
+    """DA with neither governed_modules nor domain_roles has unrestricted access.
+
+    This matches the invite_user design where governed_modules=None means
+    "all modules".  The None is stored as [] in persistence/JWT, so a DA
+    promoted without explicit scope should still be able to govern any domain.
+    """
     user = {
         "role": "domain_authority",
         "governed_modules": [],
         "domain_roles": {},
     }
     reg = _mock_registry("education", ["domain/edu/algebra-level-1/v1"])
-    assert can_govern_domain(user, "education", registry=reg) is False
+    assert can_govern_domain(user, "education", registry=reg) is True
+
+
+@pytest.mark.unit
+def test_can_govern_domain_unrestricted_da_no_registry() -> None:
+    """Unrestricted DA (empty governed + empty domain_roles) passes even without registry."""
+    user = {"role": "domain_authority", "governed_modules": [], "domain_roles": {}}
+    assert can_govern_domain(user, "anything") is True
+
+
+@pytest.mark.unit
+def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
+    """DA with no governed_modules/domain_roles keys at all passes (unrestricted)."""
+    user = {"role": "domain_authority"}
+    assert can_govern_domain(user, "education") is True
+
+
+@pytest.mark.unit
+def test_can_govern_domain_scoped_da_wrong_domain() -> None:
+    """DA with specific governed_modules cannot access other domains."""
+    user = {
+        "role": "domain_authority",
+        "governed_modules": ["agriculture"],
+        "domain_roles": {},
+    }
+    assert can_govern_domain(user, "education") is False
 
 
 # ── list_users domain filtering ──────────────────────────────────────────────

@@ -135,6 +135,11 @@ def can_govern_domain(
         return False
     governed = user.get("governed_modules") or []
     domain_roles = user.get("domain_roles") or {}
+    # A DA with no explicit governance scope has unrestricted access.
+    # This matches the invite_user design where governed_modules=None
+    # means "all modules" (the None is stored as [] in persistence/JWT).
+    if not governed and not domain_roles:
+        return True
     if domain_id in governed:
         return True
     if domain_id in domain_roles:
