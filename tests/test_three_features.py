@@ -134,13 +134,13 @@ class TestListCommandsOperation:
 
     @pytest.mark.unit
     def test_list_commands_in_known_ops(self) -> None:
-        from lumina.api.routes.admin import _KNOWN_OPERATIONS
-        assert "list_commands" in _KNOWN_OPERATIONS
+        from lumina.api.routes.admin import _get_known_operations
+        assert "list_commands" in _get_known_operations()
 
     @pytest.mark.unit
     def test_list_commands_is_hitl_exempt(self) -> None:
-        from lumina.api.routes.admin import _HITL_EXEMPT_OPS
-        assert "list_commands" in _HITL_EXEMPT_OPS
+        from lumina.api.routes.admin import _get_hitl_exempt_ops
+        assert "list_commands" in _get_hitl_exempt_ops()
 
     @pytest.mark.integration
     def test_list_commands_via_api(self, client: TestClient, api_module) -> None:

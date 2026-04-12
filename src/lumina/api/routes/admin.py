@@ -283,58 +283,13 @@ async def manifest_regen(
 # → subsystem_configs.admin_operations  (operation_ids, hitl_policy)
 # → subsystem_configs.governance        (role_hierarchy, min_role_policy, domain_role_aliases)
 #
-# The loader reads the JSON once and caches.  If the file is missing or
-# the subsystem_configs blocks are absent, hardcoded fallbacks are used.
+# The path is discovered via the domain registry ("system" domain) or by
+# the well-known convention if the registry is unavailable.  There are no
+# hardcoded fallback operation lists — the JSON is the single source of
+# truth.  If the file is missing, an empty set of operations is used and
+# a critical warning is logged.
 
 _governance_cache: dict[str, Any] | None = None
-
-# See: docs/7-concepts/domain-role-hierarchy.md
-# See: docs/7-concepts/command-execution-pipeline.md
-_FALLBACK_KNOWN_OPERATIONS: frozenset[str] = frozenset({
-    "update_domain_physics", "commit_domain_physics", "update_user_role",
-    "deactivate_user", "assign_domain_role", "revoke_domain_role",
-    "resolve_escalation", "list_ingestions", "review_ingestion",
-    "approve_interpretation", "reject_ingestion", "list_escalations",
-    "explain_reasoning", "module_status", "trigger_daemon_task",
-    "daemon_status", "review_proposals", "invite_user",
-    "list_domains", "list_modules", "list_commands",
-    "list_domain_rbac_roles", "get_domain_module_manifest",
-    "list_users", "get_domain_physics", "list_daemon_tasks",
-    "view_my_profile", "update_user_preferences",
-})
-
-_FALLBACK_HITL_EXEMPT: frozenset[str] = frozenset({
-    "list_domains", "list_modules", "list_ingestions", "list_escalations",
-    "module_status", "daemon_status", "explain_reasoning",
-    "list_commands", "review_ingestion", "review_proposals",
-    "list_domain_rbac_roles", "get_domain_module_manifest",
-    "list_users", "get_domain_physics", "list_daemon_tasks",
-    "view_my_profile", "update_user_preferences",
-})
-
-_FALLBACK_ROLE_HIERARCHY: dict[str, int] = {
-    "root": 100, "it_support": 80, "domain_authority": 60,
-    "qa": 40, "auditor": 40, "user": 20, "guest": 10,
-}
-
-_FALLBACK_MIN_ROLE: dict[str, str] = {
-    "update_domain_physics": "domain_authority",
-    "commit_domain_physics": "domain_authority",
-    "update_user_role": "root",
-    "deactivate_user": "root",
-    "assign_domain_role": "domain_authority",
-    "revoke_domain_role": "domain_authority",
-    "resolve_escalation": "domain_authority",
-    "approve_interpretation": "domain_authority",
-    "reject_ingestion": "domain_authority",
-    "trigger_daemon_task": "domain_authority",
-    "invite_user": "domain_authority",
-    "list_users": "domain_authority",
-    "get_domain_physics": "domain_authority",
-    "list_daemon_tasks": "domain_authority",
-    "view_my_profile": "user",
-    "update_user_preferences": "user",
-}
 
 
 def _load_governance_config() -> dict[str, Any]:
@@ -346,13 +301,31 @@ def _load_governance_config() -> dict[str, Any]:
     repo_root = Path(os.environ.get(
         "LUMINA_REPO_ROOT", Path(__file__).resolve().parents[4],
     ))
-    physics_path = repo_root / "domain-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
 
+    # ── Discover system physics path via domain registry ──────
+    physics_path: Path | None = None
+    try:
+        if _cfg.DOMAIN_REGISTRY is not None:
+            for mod in _cfg.DOMAIN_REGISTRY.list_modules_for_domain("system"):
+                dp = mod.get("domain_physics_path", "")
+                if dp:
+                    candidate = repo_root / dp
+                    if candidate.is_file():
+                        physics_path = candidate
+                        break
+    except Exception:
+        pass
+
+    # Well-known convention fallback
+    if physics_path is None:
+        physics_path = repo_root / "domain-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
+
+    # Minimal empty defaults — used only when the JSON is unreadable.
     result: dict[str, Any] = {
-        "known_operations": _FALLBACK_KNOWN_OPERATIONS,
-        "hitl_exempt": _FALLBACK_HITL_EXEMPT,
-        "role_hierarchy": _FALLBACK_ROLE_HIERARCHY,
-        "min_role_policy": _FALLBACK_MIN_ROLE,
+        "known_operations": frozenset(),
+        "hitl_exempt": frozenset(),
+        "role_hierarchy": {"root": 100, "user": 20},
+        "min_role_policy": {},
         "domain_role_aliases": {},
     }
 
@@ -389,7 +362,9 @@ def _load_governance_config() -> dict[str, Any]:
 
             log.info("Loaded governance config from %s", physics_path)
         except Exception as exc:
-            log.warning("Failed to load governance config (%s); using fallback", exc)
+            log.critical("Failed to load governance config from %s: %s", physics_path, exc)
+    else:
+        log.critical("System domain physics not found at %s — governance policies unavailable", physics_path)
 
     _governance_cache = result
     return result
@@ -511,9 +486,8 @@ def _get_domain_role_level(domain_id: str, role_id: str) -> int | None:
     return None
 
 
-# Legacy aliases for backwards compatibility (used in tests and elsewhere).
-_KNOWN_OPERATIONS = _FALLBACK_KNOWN_OPERATIONS
-_HITL_EXEMPT_OPS = _FALLBACK_HITL_EXEMPT
+# Legacy aliases removed — use _get_known_operations() and _get_hitl_exempt_ops().
+# Governance data now lives exclusively in domain-packs/system/modules/system-core/domain-physics.json.
 
 
 # ─────────────────────────────────────────────────────────────

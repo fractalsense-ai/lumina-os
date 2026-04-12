@@ -368,7 +368,9 @@
         "get_domain_module_manifest",
         "list_users",
         "get_domain_physics",
-        "list_daemon_tasks"
+        "list_daemon_tasks",
+        "view_my_profile",
+        "update_user_preferences"
       ],
       "hitl_policy": {
         "system_exempt": [
@@ -386,7 +388,9 @@
           "get_domain_module_manifest",
           "list_users",
           "get_domain_physics",
-          "list_daemon_tasks"
+          "list_daemon_tasks",
+          "view_my_profile",
+          "update_user_preferences"
         ],
         "per_domain_overrides_enabled": true
       }
@@ -415,7 +419,9 @@
         "invite_user": "domain_authority",
         "list_users": "domain_authority",
         "get_domain_physics": "domain_authority",
-        "list_daemon_tasks": "domain_authority"
+        "list_daemon_tasks": "domain_authority",
+        "view_my_profile": "user",
+        "update_user_preferences": "user"
       }
     }
   }

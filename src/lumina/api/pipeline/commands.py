@@ -114,7 +114,7 @@ def build_command_content(
 
     try:
         from lumina.api.routes.admin import (
-            _HITL_EXEMPT_OPS,
+            _get_hitl_exempt_ops,
             _normalize_slm_command,
             _stage_command,
         )
@@ -122,7 +122,7 @@ def build_command_content(
         operation = cmd_dispatch.get("operation", "")
 
         # ── HITL-exempt: execute immediately ──────────────────
-        if operation in _HITL_EXEMPT_OPS:
+        if operation in _get_hitl_exempt_ops():
             return _execute_immediate(
                 cmd_dispatch, input_text, user, resolved_domain_id,
                 _actor_id, _actor_role, operation,
