@@ -41,6 +41,11 @@ src/web/coverage/
 src/web/test-results/
 src/web/lib/openaikey.md
 
+# Domain-pack frontend builds
+domain-packs/*/web/node_modules/
+domain-packs/*/web/dist/
+domain-packs/*/web/package-lock.json
+
 # Per-domain vector stores (generated at runtime)
 data/retrieval-index/*/vectors.npz
 data/retrieval-index/*/metadata.json
