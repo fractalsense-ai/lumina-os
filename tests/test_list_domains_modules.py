@@ -164,7 +164,7 @@ def test_list_modules_da_with_domain_roles(client: TestClient, api_module) -> No
         domain_roles={"education": "domain_authority"},
     )
     resp = client.post(
-        "/api/admin/command",
+        "/api/domain/command",
         json={
             "operation": "list_modules",
             "params": {"domain_id": "education"},
@@ -195,7 +195,7 @@ def test_list_modules_da_with_governed_modules(client: TestClient, api_module) -
         governed_modules=[first_mod],
     )
     resp = client.post(
-        "/api/admin/command",
+        "/api/domain/command",
         json={
             "operation": "list_modules",
             "params": {"domain_id": "education"},
@@ -220,7 +220,7 @@ def test_list_modules_da_wrong_domain_403(client: TestClient, api_module) -> Non
         domain_roles={"education": "domain_authority"},
     )
     resp = client.post(
-        "/api/admin/command",
+        "/api/domain/command",
         json={
             "operation": "list_modules",
             "params": {"domain_id": "agriculture"},

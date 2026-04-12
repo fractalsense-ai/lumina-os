@@ -232,7 +232,7 @@ class TestListCommandsDomainScoping:
                 "params": {"domain_id": "system"},
             }
             resp = multi_client.post(
-                "/api/admin/command",
+                "/api/command",
                 json={"instruction": "list commands", "domain_id": "system"},
                 headers=_auth_header(token),
             )
@@ -251,7 +251,7 @@ class TestListCommandsDomainScoping:
                 "params": {"domain_id": "education"},
             }
             resp = multi_client.post(
-                "/api/admin/command",
+                "/api/command",
                 json={"instruction": "list commands", "domain_id": "education"},
                 headers=_auth_header(token),
             )
@@ -272,7 +272,7 @@ class TestListCommandsDomainScoping:
                 "params": {},
             }
             resp = multi_client.post(
-                "/api/admin/command",
+                "/api/command",
                 json={"instruction": "list commands", "domain_id": "system"},
                 headers=_auth_header(token),
             )

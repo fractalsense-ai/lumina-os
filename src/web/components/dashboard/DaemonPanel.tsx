@@ -45,7 +45,7 @@ async function adminCommand(
   operation: string,
   parameters?: Record<string, unknown>,
 ): Promise<Response> {
-  return fetch(`${base}/api/admin/command`, {
+  return fetch(`${base}/api/domain/command`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({ operation, parameters: parameters ?? {} }),

@@ -89,18 +89,71 @@ def _auth_header(token: str) -> dict:
 
 @pytest.mark.integration
 def test_regular_user_reaches_pipeline(client: TestClient, api_module) -> None:
-    """All authenticated users pass the endpoint gate — security is enforced
+    """All authenticated users pass the /api/command gate — security is enforced
     by per-operation min_role checks, not the endpoint.  With no SLM the
     natural-language path returns 503; direct dispatch checks min_role."""
     _register_root(client)  # first user becomes root
     token = _register_user(client, "viewer", "user")
     # Natural-language instruction hits SLM-unavailable (503) since no SLM
     resp = client.post(
-        "/api/admin/command",
+        "/api/command",
         json={"instruction": "update something"},
         headers=_auth_header(token),
     )
     assert resp.status_code in (503, 422)  # SLM unavailable or unparseable
+
+
+@pytest.mark.integration
+def test_user_blocked_at_domain_gate(client: TestClient, api_module) -> None:
+    """Regular user must get 403 at the /api/domain/command endpoint."""
+    _register_root(client)
+    token = _register_user(client, "viewer2", "user")
+    resp = client.post(
+        "/api/domain/command",
+        json={"instruction": "do something"},
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.integration
+def test_user_blocked_at_admin_gate(client: TestClient, api_module) -> None:
+    """Regular user must get 403 at the /api/admin/command endpoint."""
+    _register_root(client)
+    token = _register_user(client, "viewer3", "user")
+    resp = client.post(
+        "/api/admin/command",
+        json={"instruction": "do something"},
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.integration
+def test_da_blocked_at_admin_gate(client: TestClient, api_module) -> None:
+    """Domain authority must get 403 at the /api/admin/command endpoint."""
+    _register_root(client)
+    token = _register_user(client, "da_blocked", "domain_authority")
+    resp = client.post(
+        "/api/admin/command",
+        json={"instruction": "do something"},
+        headers=_auth_header(token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.integration
+def test_da_passes_domain_gate(client: TestClient, api_module) -> None:
+    """Domain authority passes the /api/domain/command gate."""
+    _register_root(client)
+    token = _register_user(client, "da_pass", "domain_authority")
+    resp = client.post(
+        "/api/domain/command",
+        json={"instruction": "do something"},
+        headers=_auth_header(token),
+    )
+    # DA passes the gate; SLM unavailable or operation dispatch takes over
+    assert resp.status_code in (200, 422, 503)
 
 
 @pytest.mark.integration
@@ -244,9 +297,9 @@ def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
         # update_user_role now goes through HITL staging.
-        # domain_authority can stage the command but role check happens at approval.
+        # domain_authority can stage the command via domain tier; role check happens at approval.
         resp = client.post(
-            "/api/admin/command",
+            "/api/domain/command",
             json={"instruction": "change someone's role to auditor"},
             headers=_auth_header(da_token),
         )

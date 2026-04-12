@@ -123,14 +123,14 @@ class TestDomainTokenCannotReachAdmin:
     def test_domain_token_can_trigger_daemon_task(self, client: TestClient) -> None:
         _register_root(client)
         da_token = _make_domain_token()
-        # DA *should* be allowed for daemon task trigger via admin command --
+        # DA *should* be allowed for daemon task trigger via domain command --
         # this tests the boundary correctly.
         from unittest.mock import MagicMock
         sched = MagicMock()
         sched.trigger_async.return_value = "run-x"
         with patch("lumina.api.routes.admin._get_daemon_scheduler", return_value=sched):
             resp = client.post(
-                "/api/admin/command",
+                "/api/domain/command",
                 json={"operation": "trigger_daemon_task", "params": {}},
                 headers=_auth_header(da_token),
             )
@@ -168,14 +168,14 @@ class TestUserTokenCannotReachAdmin:
         user_token = _make_user_token()
         # trigger_daemon_task requires DA or root -- user should get staged
         # but the operation's inner role check blocks execution when resolved.
-        # At the endpoint level, user can reach admin command but the operation
+        # At the endpoint level, user can reach /api/command but the operation
         # min_role policy prevents immediate execution for non-exempt ops.
         resp = client.post(
-            "/api/admin/command",
+            "/api/command",
             json={"operation": "trigger_daemon_task", "params": {}},
             headers=_auth_header(user_token),
         )
-        # Command gets staged (user can reach admin command), but the
+        # Command gets staged (user can reach user-tier command), but the
         # operation itself will fail at resolve time due to role check.
         assert resp.status_code == 200
         body = resp.json()
@@ -189,7 +189,7 @@ class TestUserTokenCannotReachAdmin:
         sched.get_status.return_value = {"active": False}
         with patch("lumina.api.routes.admin._get_daemon_scheduler", return_value=sched):
             resp = client.post(
-                "/api/admin/command",
+                "/api/command",
                 json={"operation": "daemon_status", "params": {}},
                 headers=_auth_header(user_token),
             )

@@ -1395,21 +1395,16 @@ async def list_staged_commands(
     }
 
 
-@router.post("/api/admin/command")
-@requires_log_commit
-async def admin_command(
+async def _dispatch_command(
     req: AdminCommandRequest,
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+    user_data: dict[str, Any],
 ) -> dict[str, Any]:
+    """Shared command dispatch logic used by all command tier endpoints.
+
+    Handles direct-dispatch (operation + params) and SLM-parsed commands,
+    domain_id injection, HITL staging, and immediate execution for exempt ops.
+    """
     _purge_expired_staged_commands()
-
-    current = await get_current_user(credentials)
-    user_data = require_auth(current)
-
-    # Per-operation min_role checks (+ HITL staging) enforce fine-grained
-    # access control.  All authenticated users are allowed through the
-    # endpoint gate so domain-role-level operations (e.g. student slash
-    # commands) can reach their handlers.
 
     # ── Direct dispatch: skip SLM when operation + params supplied ──
     if req.operation:
@@ -1509,6 +1504,55 @@ async def admin_command(
         "log_stage_record_id": entry["log_stage_record_id"],
         "structured_content": entry["structured_content"],
     }
+
+
+# ── Tiered Command Endpoints ─────────────────────────────────
+#
+# Commands are split into three tiers by access level:
+#   /api/command        — any authenticated user (student, teacher, etc.)
+#   /api/domain/command — domain authority + root
+#   /api/admin/command  — root / it_support only
+#
+# All three share _dispatch_command(); per-operation min_role checks
+# still enforce fine-grained RBAC within each tier.
+
+
+@router.post("/api/command")
+@requires_log_commit
+async def user_command(
+    req: AdminCommandRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """User-tier command endpoint — any authenticated user."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    return await _dispatch_command(req, user_data)
+
+
+@router.post("/api/domain/command")
+@requires_log_commit
+async def domain_command(
+    req: AdminCommandRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Domain-tier command endpoint — domain authority and above."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    require_role(user_data, "domain_authority", "root", "it_support")
+    return await _dispatch_command(req, user_data)
+
+
+@router.post("/api/admin/command")
+@requires_log_commit
+async def admin_command(
+    req: AdminCommandRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> dict[str, Any]:
+    """Admin-tier command endpoint — root / IT support only."""
+    current = await get_current_user(credentials)
+    user_data = require_auth(current)
+    require_role(user_data, "root", "it_support")
+    return await _dispatch_command(req, user_data)
 
 
 @router.post("/api/admin/command/{staged_id}/resolve")

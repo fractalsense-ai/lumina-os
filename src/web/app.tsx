@@ -161,11 +161,12 @@ type AdminCommandResponse = {
   expires_at?: number
 }
 
-async function adminCommandCall(
+async function commandCall(
   operation: string,
   params: Record<string, string>,
   auth: AuthState | null,
   domainId?: string,
+  endpoint: string = '/api/command',
 ): Promise<AdminCommandResponse> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ async function adminCommandCall(
   if (domainId) {
     body.domain_id = domainId
   }
-  const res = await fetch(`${getApiBase()}/api/admin/command`, {
+  const res = await fetch(`${getApiBase()}${endpoint}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -190,6 +191,9 @@ async function adminCommandCall(
 
   return (await res.json()) as AdminCommandResponse
 }
+
+/** @deprecated Use commandCall with explicit endpoint instead */
+const adminCommandCall = commandCall
 
 function applyThemeOverrides(theme: UiManifest['theme']) {
   if (!theme) return
@@ -861,8 +865,8 @@ function ChatInterface({
           return
         }
 
-        // Direct dispatch to /api/admin/command
-        const cmdResponse = await adminCommandCall(slashCmd.operation, slashCmd.params, auth, domainId)
+        // Direct dispatch to tiered command endpoint
+        const cmdResponse = await commandCall(slashCmd.operation, slashCmd.params, auth, domainId, slashCmd.endpoint)
         const resultData = cmdResponse.result ?? {}
         const content = cmdResponse.hitl_exempt
           ? (resultData as Record<string, unknown>).message as string ?? `Command executed: ${slashCmd.operation}`

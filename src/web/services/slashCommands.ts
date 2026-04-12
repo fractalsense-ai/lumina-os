@@ -1,14 +1,21 @@
 /**
  * Slash command parser and registry for the Lumina chat UI.
  *
- * Maps IRC-style "/command" input to structured admin operations
+ * Maps IRC-style "/command" input to structured operations
  * that bypass the SLM via direct dispatch.
+ *
+ * Commands are routed to one of three tiered endpoints:
+ *   /api/command        — user tier  (any authenticated user)
+ *   /api/domain/command — domain tier (domain authority+)
+ *   /api/admin/command  — admin tier  (root / IT support)
  */
+
+export type CommandTier = 'user' | 'domain' | 'admin'
 
 export interface SlashCommandDef {
   /** The slash command name (without the leading "/"). */
   name: string
-  /** Operation name sent to /api/admin/command. Null = client-side only. */
+  /** Operation name sent to the command endpoint. Null = client-side only. */
   operation: string | null
   /** Human-readable description shown in help / palette. */
   description: string
@@ -24,6 +31,8 @@ export interface SlashCommandDef {
   aliases?: string[]
   /** If true, the last arg captures all remaining tokens joined with spaces. */
   joinTrailingArgs?: boolean
+  /** Command tier — determines which API endpoint to use. */
+  tier: CommandTier
 }
 
 export interface ParsedSlashCommand {
@@ -33,12 +42,23 @@ export interface ParsedSlashCommand {
   operation: string | null
   /** Merged params ready to POST. */
   params: Record<string, string>
+  /** The API endpoint path for this command's tier. */
+  endpoint: string
+}
+
+/** Map a command tier to its API endpoint path. */
+export function tierEndpoint(tier: CommandTier): string {
+  switch (tier) {
+    case 'user':   return '/api/command'
+    case 'domain': return '/api/domain/command'
+    case 'admin':  return '/api/admin/command'
+  }
 }
 
 // ── Command registry ──────────────────────────────────────
 
 const COMMANDS: SlashCommandDef[] = [
-  // ── Student-accessible ─────────────────────────────────
+  // ── User tier — any authenticated user ─────────────────
   {
     name: 'teachers',
     operation: 'list_users',
@@ -48,6 +68,7 @@ const COMMANDS: SlashCommandDef[] = [
     allowedRoles: ['student', 'guardian', 'teaching_assistant', 'teacher', 'domain_authority'],
     domainScope: 'education',
     aliases: ['list_teachers'],
+    tier: 'user',
   },
   {
     name: 'join',
@@ -56,6 +77,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['teacher_id'],
     allowedRoles: ['student'],
     domainScope: 'education',
+    tier: 'user',
   },
   {
     name: 'switch',
@@ -63,6 +85,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Switch your active module',
     args: ['module_id'],
     allowedRoles: [],
+    tier: 'user',
   },
   {
     name: 'profile',
@@ -70,6 +93,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'View your own profile',
     args: [],
     allowedRoles: [],
+    tier: 'user',
   },
   {
     name: 'modules',
@@ -78,6 +102,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id'],
     allowedRoles: [],
     aliases: ['list_modules'],
+    tier: 'user',
   },
   {
     name: 'preferences',
@@ -85,6 +110,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Update a preference (key value)',
     args: ['key', 'value'],
     allowedRoles: [],
+    tier: 'user',
   },
   {
     name: 'help',
@@ -92,17 +118,17 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Show available slash commands',
     args: [],
     allowedRoles: [],
+    tier: 'user',
   },
   {
     name: 'commands',
     operation: 'list_commands',
-    description: 'List all admin commands from the server',
+    description: 'List all commands from the server',
     args: [],
     allowedRoles: [],
     aliases: ['list_commands'],
+    tier: 'user',
   },
-
-  // ── Teacher-accessible ─────────────────────────────────
   {
     name: 'students',
     operation: 'list_users',
@@ -111,6 +137,7 @@ const COMMANDS: SlashCommandDef[] = [
     defaultParams: { domain_role: 'student', domain_id: 'education' },
     allowedRoles: ['teaching_assistant', 'teacher', 'domain_authority'],
     domainScope: 'education',
+    tier: 'user',
   },
   {
     name: 'assign',
@@ -119,32 +146,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['student_id'],
     allowedRoles: ['teacher', 'domain_authority'],
     domainScope: 'education',
-  },
-
-  // ── Governance (DA / root) ─────────────────────────────
-  {
-    name: 'users',
-    operation: 'list_users',
-    description: 'List all users',
-    args: [],
-    allowedRoles: ['domain_authority'],
-    aliases: ['list_users'],
-  },
-  {
-    name: 'invite',
-    operation: 'invite_user',
-    description: 'Invite a new user (username role)',
-    args: ['username', 'role'],
-    allowedRoles: ['domain_authority'],
-    aliases: ['invite_user'],
-  },
-  {
-    name: 'domains',
-    operation: 'list_domains',
-    description: 'List all domains',
-    args: [],
-    allowedRoles: ['domain_authority'],
-    aliases: ['list_domains'],
+    tier: 'user',
   },
   {
     name: 'escalations',
@@ -153,31 +155,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: [],
     allowedRoles: ['teacher', 'domain_authority'],
     aliases: ['list_escalations'],
-  },
-
-  // ── Read-only / HITL-exempt operations ─────────────────
-  {
-    name: 'ingestions',
-    operation: 'list_ingestions',
-    description: 'List ingestion records',
-    args: ['domain_id', 'status'],
-    allowedRoles: ['domain_authority'],
-    aliases: ['list_ingestions'],
-  },
-  {
-    name: 'review_ingestion',
-    operation: 'review_ingestion',
-    description: 'Review an ingestion record',
-    args: ['ingestion_id'],
-    allowedRoles: ['domain_authority'],
-  },
-  {
-    name: 'proposals',
-    operation: 'review_proposals',
-    description: 'List pending daemon proposals',
-    args: ['domain_id'],
-    allowedRoles: ['domain_authority'],
-    aliases: ['review_proposals'],
+    tier: 'user',
   },
   {
     name: 'module_status',
@@ -185,13 +163,7 @@ const COMMANDS: SlashCommandDef[] = [
     description: 'Check module runtime status',
     args: ['domain_id', 'module_id'],
     allowedRoles: [],
-  },
-  {
-    name: 'daemon_status',
-    operation: 'daemon_status',
-    description: 'Show daemon scheduler status',
-    args: [],
-    allowedRoles: ['domain_authority'],
+    tier: 'user',
   },
   {
     name: 'explain',
@@ -200,6 +172,70 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['event_id'],
     allowedRoles: [],
     aliases: ['explain_reasoning'],
+    tier: 'user',
+  },
+
+  // ── Domain tier — domain authority + root ──────────────
+  {
+    name: 'users',
+    operation: 'list_users',
+    description: 'List all users',
+    args: [],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_users'],
+    tier: 'domain',
+  },
+  {
+    name: 'invite',
+    operation: 'invite_user',
+    description: 'Invite a new user (username role)',
+    args: ['username', 'role'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['invite_user'],
+    tier: 'domain',
+  },
+  {
+    name: 'domains',
+    operation: 'list_domains',
+    description: 'List all domains',
+    args: [],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_domains'],
+    tier: 'domain',
+  },
+  {
+    name: 'ingestions',
+    operation: 'list_ingestions',
+    description: 'List ingestion records',
+    args: ['domain_id', 'status'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['list_ingestions'],
+    tier: 'domain',
+  },
+  {
+    name: 'review_ingestion',
+    operation: 'review_ingestion',
+    description: 'Review an ingestion record',
+    args: ['ingestion_id'],
+    allowedRoles: ['domain_authority'],
+    tier: 'domain',
+  },
+  {
+    name: 'proposals',
+    operation: 'review_proposals',
+    description: 'List pending daemon proposals',
+    args: ['domain_id'],
+    allowedRoles: ['domain_authority'],
+    aliases: ['review_proposals'],
+    tier: 'domain',
+  },
+  {
+    name: 'daemon_status',
+    operation: 'daemon_status',
+    description: 'Show daemon scheduler status',
+    args: [],
+    allowedRoles: ['domain_authority'],
+    tier: 'domain',
   },
   {
     name: 'roles',
@@ -208,6 +244,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['list_domain_rbac_roles'],
+    tier: 'domain',
   },
   {
     name: 'manifest',
@@ -216,6 +253,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['get_domain_module_manifest'],
+    tier: 'domain',
   },
   {
     name: 'physics',
@@ -224,6 +262,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id', 'module_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['get_domain_physics'],
+    tier: 'domain',
   },
   {
     name: 'daemon_tasks',
@@ -232,6 +271,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: [],
     allowedRoles: ['domain_authority'],
     aliases: ['list_daemon_tasks'],
+    tier: 'domain',
   },
   {
     name: 'approve',
@@ -240,9 +280,8 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['ingestion_id', 'interpretation_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['approve_interpretation'],
+    tier: 'domain',
   },
-
-  // ── Mutating / HITL-required operations ────────────────
   {
     name: 'update_physics',
     operation: 'update_domain_physics',
@@ -251,6 +290,7 @@ const COMMANDS: SlashCommandDef[] = [
     allowedRoles: ['domain_authority'],
     joinTrailingArgs: true,
     aliases: ['update_domain_physics'],
+    tier: 'domain',
   },
   {
     name: 'commit_physics',
@@ -259,22 +299,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['commit_domain_physics'],
-  },
-  {
-    name: 'update_role',
-    operation: 'update_user_role',
-    description: 'Change a user platform role (root only)',
-    args: ['user_id', 'new_role'],
-    allowedRoles: ['root'],
-    aliases: ['update_user_role'],
-  },
-  {
-    name: 'deactivate',
-    operation: 'deactivate_user',
-    description: 'Deactivate a user account (root only)',
-    args: ['user_id'],
-    allowedRoles: ['root'],
-    aliases: ['deactivate_user'],
+    tier: 'domain',
   },
   {
     name: 'assign_role',
@@ -283,6 +308,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['user_id', 'module_id', 'domain_role'],
     allowedRoles: ['domain_authority'],
     aliases: ['assign_domain_role'],
+    tier: 'domain',
   },
   {
     name: 'revoke_role',
@@ -291,6 +317,7 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['user_id', 'module_id'],
     allowedRoles: ['domain_authority'],
     aliases: ['revoke_domain_role'],
+    tier: 'domain',
   },
   {
     name: 'resolve',
@@ -300,6 +327,7 @@ const COMMANDS: SlashCommandDef[] = [
     allowedRoles: ['domain_authority'],
     joinTrailingArgs: true,
     aliases: ['resolve_escalation'],
+    tier: 'domain',
   },
   {
     name: 'reject',
@@ -309,6 +337,7 @@ const COMMANDS: SlashCommandDef[] = [
     allowedRoles: ['domain_authority'],
     joinTrailingArgs: true,
     aliases: ['reject_ingestion'],
+    tier: 'domain',
   },
   {
     name: 'trigger_daemon',
@@ -317,6 +346,27 @@ const COMMANDS: SlashCommandDef[] = [
     args: ['domain_id', 'tasks'],
     allowedRoles: ['domain_authority'],
     aliases: ['trigger_daemon_task'],
+    tier: 'domain',
+  },
+
+  // ── Admin tier — root / IT support only ────────────────
+  {
+    name: 'update_role',
+    operation: 'update_user_role',
+    description: 'Change a user platform role (root only)',
+    args: ['user_id', 'new_role'],
+    allowedRoles: ['root'],
+    aliases: ['update_user_role'],
+    tier: 'admin',
+  },
+  {
+    name: 'deactivate',
+    operation: 'deactivate_user',
+    description: 'Deactivate a user account (root only)',
+    args: ['user_id'],
+    allowedRoles: ['root'],
+    aliases: ['deactivate_user'],
+    tier: 'admin',
   },
 ]
 
@@ -408,7 +458,7 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
     delete params['value']
   }
 
-  return { def, operation: def.operation, params }
+  return { def, operation: def.operation, params, endpoint: tierEndpoint(def.tier) }
 }
 
 /**
