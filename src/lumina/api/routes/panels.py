@@ -80,6 +80,42 @@ def _find_panel_config(
     return None
 
 
+def _resolve_da_governed(user_data: dict[str, Any]) -> set[str] | None:
+    """Return the effective governed-module set for a domain_authority.
+
+    Returns ``None`` for non-DA roles (meaning no filtering needed).
+    Unrestricted DAs (empty ``governed_modules`` *and* empty
+    ``domain_roles``) are resolved to *all* modules in their default
+    domain so panel resolvers return real data.
+    """
+    if user_data.get("role") != "domain_authority":
+        return None
+    governed = set(user_data.get("governed_modules") or [])
+    domain_roles = user_data.get("domain_roles") or {}
+    if governed or domain_roles:
+        governed |= set(domain_roles.keys())
+    else:
+        # Unrestricted DA — resolve all modules in their default domain
+        default_domain = _cfg.DOMAIN_REGISTRY.resolve_default_for_user(user_data)
+        governed.add(default_domain)
+        try:
+            rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(default_domain)
+            governed |= set(rt.get("module_map") or {})
+        except Exception:
+            pass
+        return governed
+    # Expand to include bare domain_ids for domains containing governed modules
+    for d in _cfg.DOMAIN_REGISTRY.list_domains():
+        did = d.get("domain_id", "")
+        try:
+            rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
+            if governed & set(rt.get("module_map") or {}):
+                governed.add(did)
+        except Exception:
+            pass
+    return governed
+
+
 # ─────────────────────────────────────────────────────────────
 # Generic data-source resolvers
 # ─────────────────────────────────────────────────────────────
@@ -198,23 +234,63 @@ async def _resolve_governed_modules(
 async def _resolve_domain_overview(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
-    """Domain inventory — requires elevated system role."""
+    """Domain inventory — shape varies by role.
+
+    System-track (root / it_support): domain-centric with domain_count.
+    Domain-track (domain_authority): module-centric with module_count,
+    active student and staff counts.
+    """
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
-    all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
-    if user_data.get("role") == "domain_authority":
-        governed = set(user_data.get("governed_modules") or [])
-        # Keep only domains that contain at least one governed module
-        filtered = []
+
+    governed = _resolve_da_governed(user_data)
+
+    # ── DA gets a module-centric overview ──────────────────────
+    if governed is not None:
+        all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
+        modules: list[dict[str, Any]] = []
         for d in all_domains:
             did = d.get("domain_id", "")
             try:
                 rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
-                if governed & set(rt.get("module_map") or {}):
-                    filtered.append(d)
+                for mk in (rt.get("module_map") or {}):
+                    if mk in governed:
+                        modules.append({"module_id": mk, "domain_id": did})
             except Exception:
                 pass
-        all_domains = filtered
+        # Count active students / staff from persistence
+        all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
+        active_students = 0
+        active_staff = 0
+        for u in (all_users or []):
+            d_roles = u.get("domain_roles") or {}
+            for mid, rid in d_roles.items():
+                if mid not in governed:
+                    continue
+                if rid == "student":
+                    active_students += 1
+                elif rid in ("teacher", "teaching_assistant", "domain_authority"):
+                    active_staff += 1
+                break  # count each user once
+        # Also count system-role DAs whose governed scope overlaps
+        for u in (all_users or []):
+            if u.get("role") != "domain_authority":
+                continue
+            if u.get("domain_roles"):
+                continue  # already counted above if applicable
+            u_gov = set(u.get("governed_modules") or [])
+            if not u_gov or (u_gov & governed):
+                active_staff += 1
+        return {
+            "panel": pcfg.get("id", "domain_overview"),
+            "module_count": len(modules),
+            "modules": modules,
+            "active_students": active_students,
+            "active_staff": active_staff,
+        }
+
+    # ── System-track: domain-centric overview ──────────────────
+    all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
     return {
         "panel": pcfg.get("id", "domain_overview"),
         "domain_count": len(all_domains),
@@ -244,9 +320,7 @@ async def _resolve_module_directory(
     """Module inventory — requires elevated system role."""
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
-    governed: set[str] | None = None
-    if user_data.get("role") == "domain_authority":
-        governed = set(user_data.get("governed_modules") or [])
+    governed = _resolve_da_governed(user_data)
     all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
     modules = []
     for d in all_domains:
@@ -293,35 +367,42 @@ async def _resolve_empty_queue(
 async def _resolve_staff_directory(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
-    """Teachers + TAs visible to the domain authority."""
+    """Staff visible to the domain authority — teachers, TAs, and DAs."""
     if user_data.get("role") not in ("root", "domain_authority", "it_support"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
-    governed: set[str] | None = None
-    if user_data.get("role") == "domain_authority":
-        governed = set(user_data.get("governed_modules") or [])
-        # Also include bare domain_ids so staff keyed by domain name match
-        for d in _cfg.DOMAIN_REGISTRY.list_domains():
-            did = d.get("domain_id", "")
-            try:
-                rt = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
-                if governed & set(rt.get("module_map") or {}):
-                    governed.add(did)
-            except Exception:
-                pass
+    governed = _resolve_da_governed(user_data)
     all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
     staff: list[dict[str, Any]] = []
-    for u in all_users:
+    _seen_ids: set[str] = set()
+    for u in (all_users or []):
+        uid = u.get("user_id", "")
         d_roles = u.get("domain_roles") or {}
         for _mid, _rid in d_roles.items():
-            if _rid in ("teacher", "teaching_assistant"):
+            if _rid in ("teacher", "teaching_assistant", "domain_authority"):
                 if governed is not None and _mid not in governed:
                     continue
                 staff.append({
-                    "display_name": u.get("display_name") or u.get("username") or u.get("user_id", ""),
+                    "display_name": u.get("display_name") or u.get("username") or uid,
                     "domain_role": _rid,
                     "module_id": _mid,
                 })
+                _seen_ids.add(uid)
                 break  # one entry per user
+    # Include system-role DAs who lack domain_roles entries
+    for u in (all_users or []):
+        uid = u.get("user_id", "")
+        if uid in _seen_ids:
+            continue
+        if u.get("role") != "domain_authority":
+            continue
+        u_gov = set(u.get("governed_modules") or [])
+        if governed is not None and u_gov and not (u_gov & governed):
+            continue  # scoped to a different domain
+        staff.append({
+            "display_name": u.get("display_name") or u.get("username") or uid,
+            "domain_role": "domain_authority",
+            "module_id": "",
+        })
     return {
         "panel": pcfg.get("id", "staff_directory"),
         "staff": staff,
