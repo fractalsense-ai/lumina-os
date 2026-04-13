@@ -69,6 +69,7 @@ from lumina.core.slm import (
 from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
 log = logging.getLogger("lumina-api")
+vlog = logging.getLogger("lumina.verbose")
 
 # Backward-compatible alias — tests import this from processing.
 _build_clarification_response = build_clarification_response
@@ -153,6 +154,8 @@ def process_message(
         holodeck = True
 
     session = get_or_create_session(session_id, domain_id=domain_id, user=user)
+
+    vlog.debug("[GATE] session=%s domain=%s user=%s", session_id, domain_id, user.get("username") if user else None)
 
     # ── Layer 1: Pre-turn gates ───────────────────────────────
     _gate = check_user_freeze(
@@ -272,6 +275,7 @@ def process_message(
     mud_world_state = getattr(orch.state, "mud_world_state", {}) or {}
 
     # ── Turn interpretation ───────────────────────────────────
+    vlog.debug("[TURN] Interpreting turn input (override=%s, deterministic=%s)", turn_data_override is not None, deterministic_response)
     if turn_data_override is not None:
         turn_data = turn_data_override
     elif deterministic_response:
@@ -302,6 +306,7 @@ def process_message(
             world_sim_theme=world_sim_theme, mud_world_state=mud_world_state,
         )
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
+    vlog.debug("[TURN] turn_data keys: %s", list(turn_data.keys()))
 
     # ── Deferred greeting (after turn interpretation) ─────────
     if _greeting_eligible:
@@ -317,6 +322,7 @@ def process_message(
             return _g_result
 
     # ── Layer 3: Enrichment ───────────────────────────────────
+    vlog.debug("[ENRICH] Enriching turn data (domain=%s)", resolved_domain_id)
     glossary = (
         domain_physics.get("glossary")
         or (runtime.get("domain") or {}).get("glossary")
@@ -336,6 +342,7 @@ def process_message(
 
     _turn_schema = runtime.get("turn_input_schema") or {}
     _domain_invariants = (runtime.get("domain") or {}).get("invariants", [])
+    vlog.debug("[INSPECT] Running inspection pipeline (invariants=%d)", len(_domain_invariants))
     _inspection = InspectionPipeline(
         turn_input_schema=_turn_schema,
         invariants=_domain_invariants,
@@ -362,6 +369,7 @@ def process_message(
     turn_data = _inspection_result.sanitized_payload or turn_data
 
     # ── Layer 4: Orchestration ────────────────────────────────
+    vlog.debug("[ORCH] Orchestrating turn (domain=%s)", resolved_domain_id)
     turn_provenance: dict[str, Any] = dict(runtime_provenance)
     turn_provenance["turn_data_hash"] = _canonical_sha256(turn_data)
     if model_id is not None:
@@ -376,10 +384,12 @@ def process_message(
         turn_data,
         provenance_metadata=turn_provenance,
     )
+    vlog.debug("[ORCH] action=%s prompt_type=%s", resolved_action, prompt_contract.get("prompt_type"))
 
     # ── Post-turn processing (domain-hook driven) ──────────────
     _new_problem_presented = False
     _ptp_fn = _active_mod.get("post_turn_processor_fn") or runtime.get("post_turn_processor_fn")
+    vlog.debug("[POST] Post-turn processing (hook=%s)", _ptp_fn is not None)
     if _ptp_fn is not None:
         _ptp_result = _ptp_fn(
             turn_data=turn_data,
@@ -399,6 +409,7 @@ def process_message(
     session["turn_count"] += 1
 
     # ── Sync session + auto-save profile ──────────────────────
+    vlog.debug("[SYNC] Syncing session state (turn=%d)", session["turn_count"])
     container = _session_containers.get(session_id)
     if container is not None:
         container.active_context.sync_from_dict(session)
@@ -452,6 +463,7 @@ def process_message(
     )
 
     # ── Layer 5: Response assembly ────────────────────────────
+    vlog.debug("[RESPONSE] Assembling response (turn=%d)", session["turn_count"])
     escalated, structured_content = build_escalation_content(
         session_id, orch, resolved_domain_id, runtime, _active_mod,
     )
@@ -473,6 +485,7 @@ def process_message(
     )
 
     # ── Layer 6: LLM payload + invocation ─────────────────────
+    vlog.debug("[LLM] Assembling LLM payload (tool_results=%d)", len(tool_results))
     llm_payload = assemble_llm_payload(
         prompt_contract, input_text, _answered_problem, current_problem,
         _new_problem_presented, turn_data, tool_results,
@@ -492,6 +505,8 @@ def process_message(
         TaskWeight=TaskWeight,
     )
 
+    vlog.debug("[LLM] Response received (%d chars)", len(llm_response))
+
     # ── Ring buffer push ──────────────────────────────────────
     _rb_container = _session_containers.get(session_id)
     if _rb_container is not None and hasattr(_rb_container, "ring_buffer"):
@@ -503,6 +518,7 @@ def process_message(
         )
 
     # ── Transcript seal ───────────────────────────────────────
+    vlog.debug("[SEAL] Computing transcript seal")
     _seal, _seal_meta, _transcript = _compute_transcript_seal(
         session_id, session, resolved_domain_id, user, holodeck,
     )
@@ -524,6 +540,7 @@ def process_message(
     log.info("[%s] Response length: %s chars", session_id, len(llm_response))
 
     # ── Provenance trace ──────────────────────────────────────
+    vlog.debug("[PROV] Recording provenance trace")
     post_payload_provenance = dict(turn_provenance)
     post_payload_provenance["prompt_contract_hash"] = _canonical_sha256(prompt_contract)
     post_payload_provenance["tool_results_hash"] = _canonical_sha256(tool_results)
@@ -537,6 +554,7 @@ def process_message(
     )
 
     # ── Build final result ────────────────────────────────────
+    vlog.debug("[RESULT] Building final result (action=%s, escalated=%s)", resolved_action, escalated)
     result = build_result(
         llm_response, resolved_action, prompt_contract, escalated,
         tool_results, resolved_domain_id, structured_content,

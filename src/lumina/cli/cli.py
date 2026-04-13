@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import runpy
+import sys
 from pathlib import Path
 
 
@@ -16,6 +18,10 @@ def _run_systool(script_name: str) -> None:
 
 
 def api() -> None:
+    # Accept --verbose / -v anywhere in argv; set env var for server.py
+    if "--verbose" in sys.argv or "-v" in sys.argv:
+        os.environ["LUMINA_VERBOSE"] = "1"
+        sys.argv = [a for a in sys.argv if a not in ("--verbose", "-v")]
     script_path = _repo_root() / "src" / "lumina" / "api" / "server.py"
     if not script_path.exists():
         raise FileNotFoundError(f"Missing API server: {script_path}")

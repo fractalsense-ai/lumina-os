@@ -15,7 +15,7 @@ last_updated: 2026-06-15
 
 The Governance Dashboard is a React SPA route within the Lumina web interface, accessible only to users with `root` or `domain_authority` roles. It provides a centralized view for managing domain governance operations: reviewing escalations, monitoring ingestions, overseeing daemon batch proposals, and observing system telemetry.
 
-Since v1.1.0 the dashboard uses a **dynamic tab manifest** that filters visible tabs by the authenticated user's RBAC role. Tabs are defined in a `TAB_MANIFEST` array within `DashboardPage.tsx`. Real-time events are delivered via the SSE event stream (`GET /api/events/stream`).
+Since v1.1.0 the dashboard uses a **dynamic tab manifest** that filters visible tabs by the authenticated user's RBAC role. Since the HMVC frontend decomposition, dashboard tabs are no longer hardcoded in a `TAB_MANIFEST` array — they are contributed at runtime by each domain pack's web plugin via the `PluginRegistry.addDashboardTabs()` API. The framework's `DashboardPage.tsx` reads registered tabs from the `PluginRegistry` and filters them by role. Real-time events are delivered via the SSE event stream (`GET /api/events/stream`).
 
 ## Access Control
 
@@ -118,23 +118,32 @@ The `useEventStream` React hook manages token acquisition, EventSource connectio
 
 ## Architecture
 
-The dashboard is implemented as a set of React components within the existing SPA:
+The dashboard is implemented as a set of React components. After the HMVC frontend
+decomposition, governance panel components live in the **system** domain pack, not in
+the framework `src/web/` directory:
 
 ```
+domain-packs/system/web/
+  plugin.ts                        — registers dashboard tabs and sidebar panels via PluginRegistry
+  components/
+    EscalationQueue.tsx            — Escalation list and resolution actions
+    IngestionReview.tsx            — Ingestion lifecycle and interpretation viewer
+    DaemonPanel.tsx                — Daemon status and proposal management
+    StagedCommandsPanel.tsx        — HITL staged command list with accept/reject
+    SystemLogPanel.tsx             — Filtered system log viewer (all/warnings/alerts)
+    DaemonMonitorPanel.tsx         — Resource Monitor Daemon status display
+
 src/web/
+  plugins/
+    PluginRegistry.ts              — Central plugin registry (addDashboardTabs, addSidebarPanels, etc.)
+    types.ts                       — DomainPlugin, PluginRegistration, DashboardTabDef interfaces
   app.tsx                          — AppHeader with dashboard toggle + unread badge, view routing
   hooks/
     useEventStream.ts              — SSE connection, token auth, event tracking
   components/
     ActionCard.tsx                  — Inline action card for chat (escalation / command proposal)
     dashboard/
-      DashboardPage.tsx            — Dynamic tab container (TAB_MANIFEST with role-based visibility)
-      EscalationQueue.tsx          — Escalation list and resolution actions
-      IngestionReview.tsx          — Ingestion lifecycle and interpretation viewer
-      DaemonPanel.tsx              — Daemon status and proposal management
-      StagedCommandsPanel.tsx      — HITL staged command list with accept/reject
-      SystemLogPanel.tsx           — Filtered system log viewer (all/warnings/alerts)
-      DaemonMonitorPanel.tsx       — Resource Monitor Daemon status display
+      DashboardPage.tsx            — Dynamic tab container (reads tabs from PluginRegistry)
 ```
 
 No client-side router is used. The dashboard is controlled by a `view` state in the top-level `App` component that switches between `'chat'` and `'dashboard'` views.
@@ -152,13 +161,16 @@ A typical domain authority session:
 
 ## Source Files
 
+- `domain-packs/system/web/plugin.ts` — System domain plugin (registers dashboard tabs + sidebar panels)
+- `domain-packs/system/web/components/EscalationQueue.tsx` — Escalation management
+- `domain-packs/system/web/components/IngestionReview.tsx` — Ingestion review
+- `domain-packs/system/web/components/DaemonPanel.tsx` — Daemon panel
+- `domain-packs/system/web/components/StagedCommandsPanel.tsx` — Staged command management
+- `domain-packs/system/web/components/SystemLogPanel.tsx` — System log viewer
+- `domain-packs/system/web/components/DaemonMonitorPanel.tsx` — Daemon status monitor
+- `src/web/plugins/PluginRegistry.ts` — Central plugin registry
+- `src/web/plugins/types.ts` — Plugin type definitions
 - `src/web/components/dashboard/DashboardPage.tsx` — Main dashboard container
-- `src/web/components/dashboard/EscalationQueue.tsx` — Escalation management
-- `src/web/components/dashboard/IngestionReview.tsx` — Ingestion review
-- `src/web/components/dashboard/DaemonPanel.tsx` — Daemon panel
-- `src/web/components/dashboard/StagedCommandsPanel.tsx` — Staged command management
-- `src/web/components/dashboard/SystemLogPanel.tsx` — System log viewer
-- `src/web/components/dashboard/DaemonMonitorPanel.tsx` — Daemon status monitor
 - `src/web/components/ActionCard.tsx` — Chat action card component
 - `src/web/hooks/useEventStream.ts` — SSE event stream hook
 - `src/web/app.tsx` — View routing and header component

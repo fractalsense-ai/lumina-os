@@ -90,7 +90,7 @@ The education domain includes a passive vocabulary complexity monitor for Studen
 
 - **Vocabulary growth monitor** (`domain-lib/vocabulary_growth_monitor_v0_1.py`) — receives pre-computed complexity scores from the client-side analyzer, maintains a rolling baseline, and produces a non-negative growth delta. No transcript content is processed server-side.
 
-- **Client-side analyzer** (`src/web/services/vocabularyAnalyzer.ts`) — buffers student messages, computes lexical diversity, average word length, embedding spread, and domain-term detection. Posts structured metrics via the domain-declared API route.
+- **Client-side analyzer** (`domain-packs/education/web/services/vocabularyAnalyzer.ts`) — buffers student messages, computes lexical diversity, average word length, embedding spread, and domain-term detection. Posts structured metrics via the domain-declared API route.
 
 - **API route handlers** (`controllers/api_handlers.py`) — domain-owned HTTP endpoints for vocabulary metric submission (`POST /api/user/{user_id}/vocabulary-metric`) and dashboard data (`GET /api/dashboard/education/vocabulary-growth`). Declared in `cfg/runtime-config.yaml` under `adapters.api_routes` and mounted by the core server at startup.
 

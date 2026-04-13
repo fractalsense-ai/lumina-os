@@ -149,20 +149,36 @@ computational logic. A domain pack with world-sim disabled and a domain pack wit
 "space exploration" theme produce identical evidence dicts — only the LLM's surface
 prose changes.
 
-Additionally, each domain pack declares a `ui_manifest` in its `runtime-config.yaml`.
-This manifest is the **declarative View binding** for the frontend:
+Additionally, each domain pack declares a `ui` section in its `runtime-config.yaml`.
+This section is the **declarative View binding** for the frontend:
 
-- `title`, `subtitle`, `domain_label` — chrome text and breadcrumb
-- `theme` — CSS custom property overrides (primary, accent, background)
-- `panels` — an array of domain-specific dashboard views, each specifying:
-  - `id` — unique panel identifier
-  - `label` — human-readable tab label
-  - `endpoint` — the API path the panel fetches data from
-  - `roles` — which RBAC roles may see this panel
-  - `type` — rendering hint (`chart`, `table`, or `metric`)
+- `plugin_bundle` — path to the domain's built ES module (e.g. `domain-packs/education/web/dist/plugin.js`)
+- `slash_commands` — array of domain-contributed slash commands
+- `dashboard_tabs` — array of tab definitions (id, label, endpoint, roles, type)
 
-The frontend reads `ui_manifest.panels` and merges them into the Dashboard tab bar
-alongside the static governance tabs.  Each domain can define its own telemetry and
+The legacy `ui_manifest` (title, subtitle, theme) is still read for backward
+compatibility, but dashboard panels and sidebar registrations are now plugin-owned.
+
+Each domain pack owns its frontend code in `domain-packs/{domain}/web/`:
+
+```
+web/
+  plugin.ts        — exports register(api) called by the framework PluginRegistry
+  components/      — domain-specific React components
+  services/        — domain-specific client-side services
+  package.json     — domain web package (Vite build)
+  vite.config.ts   — builds an ES module bundle
+```
+
+The framework's `PluginRegistry` (`src/web/plugins/PluginRegistry.ts`) loads each
+domain's plugin bundle and calls its `register(api)` function.  The plugin uses:
+
+- `api.addDashboardTabs()` — contribute dashboard tab components
+- `api.addSidebarPanels()` — contribute sidebar panel components
+- `api.addSlashCommands()` — contribute chat slash commands
+- `api.addChatHooks()` — contribute chat lifecycle hooks
+
+This achieves full HMVC View isolation: each domain can define its own telemetry and
 monitoring views (e.g., education: ZPD distribution; system: pack integrity; agriculture:
 
 ---

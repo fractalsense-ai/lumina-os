@@ -25,6 +25,12 @@ The original `server.py` grew to ~3,600 lines as the system acquired new capabil
 
 The refactor replaces the monolith with a ~200-line app factory that assembles routers from 22 focused sub-modules.
 
+> **Note:** The frontend has undergone a parallel HMVC decomposition. Domain-specific
+> dashboard panels, sidebar components, and client-side services now live in each domain
+> pack's `web/` directory and register via the `PluginRegistry`. See
+> [`governance-dashboard.md`](governance-dashboard.md) and
+> [`hmvc-heritage.md`](hmvc-heritage.md) for details.
+
 ---
 
 ## B. Module Responsibilities

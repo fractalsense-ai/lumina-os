@@ -270,8 +270,9 @@ Lumina's domain-pack architecture descends from **Hierarchical MVC**. Domain pac
 | Service layer (shared domain logic) | Domain Library | `domain-lib/` |
 | Module routes / config | Runtime Config | `cfg/runtime-config.yaml` |
 | Framework router | Domain Registry | `cfg/domain-registry.yaml` + `src/lumina/core/domain_registry.py` |
+| Frontend plugin (View) | Domain Web Plugin | `domain-packs/{domain}/web/plugin.ts` via `PluginRegistry` |
 
-The `ui_manifest` in `runtime-config.yaml` is the declarative View binding for the frontend — it declares panels, themes, and endpoints. The `controllers/` directory naming reflects this HMVC lineage (renamed from `systools/`).
+The `ui` section in `runtime-config.yaml` is the declarative View binding. It declares the plugin bundle path and any slash commands or dashboard tabs the domain contributes. At runtime the framework's `PluginRegistry` (`src/web/plugins/PluginRegistry.ts`) loads each domain's plugin bundle; the plugin calls `addDashboardTabs()`, `addSidebarPanels()`, `addSlashCommands()`, and `addChatHooks()` to register its UI contributions. The legacy `ui_manifest` (theme, chrome text) is still read for backward compatibility but `panels` are now plugin-owned. The `controllers/` directory naming reflects this HMVC lineage (renamed from `systools/`).
 
 See [`docs/7-concepts/hmvc-heritage.md`](docs/7-concepts/hmvc-heritage.md) for the full mapping and design rationale.
 
@@ -445,6 +446,7 @@ lumina-os/
 │       ├── controllers/                   ← nlp_pre_interpreter, runtime_adapters, tool_adapters, group_tool_adapters
 │       ├── domain-lib/                    ← Group Libraries + passive state estimator specs
 │       ├── docs/                          ← domain-scoped man pages (sections 1–8)
+│       ├── web/                           ← domain-owned frontend plugin (plugin.ts, components/, services/)
 │       └── world-sim/                     ← optional narrative framing
 ├── specs/
 ├── standards/

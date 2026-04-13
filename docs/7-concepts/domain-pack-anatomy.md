@@ -46,8 +46,8 @@ entirely inside the pack. This is the **self-containment contract** (see §E).
 
 ## B. The Eight Components
 
-Every domain pack is composed of up to eight components. Not all are required for a minimal
-pack, but all eight are present in a fully-realised production pack.
+Every domain pack is composed of up to nine components. Not all are required for a minimal
+pack, but all nine are present in a fully-realised production pack.
 
 | Component | Location | Who calls it | Mandatory | What it owns |
 |---|---|---|---|---|
@@ -58,6 +58,7 @@ pack, but all eight are present in a fully-realised production pack.
 | **Domain library** | `domain-lib/reference/*.md` specs + `controllers/*.py` implementations | Runtime adapter only — never the engine directly | Where applicable | Passive reference specs (interpretation schemas, estimator definitions) and state estimators tracking entity state across turns (ZPD monitor, fluency tracker, fatigue model) |
 | **Group Libraries / Group Tools** | `domain-lib/*.py` (libraries) + `controllers/group_tool_adapters.py` (tools) | Runtime adapter (libraries) or policy system (tools) — declared in physics files | Where applicable | Shared pure-function libraries and shared active verifiers used by multiple modules within the domain |
 | **API route handlers** | `controllers/api_handlers.py` + `cfg/runtime-config.yaml` §adapters.api_routes | Core server at startup (dynamically mounted) | No | Domain-owned HTTP endpoints — telemetry submission, dashboard data, domain-specific queries. The core server wraps each handler with auth + role enforcement; the domain handler stays framework-free |
+| **Frontend plugin** | `web/plugin.ts` + `web/components/` + `web/services/` | Framework `PluginRegistry` at UI load time | No | Domain-owned UI: dashboard tabs, sidebar panels, slash commands, chat hooks, client-side services. Built as ES module via Vite; declared in `cfg/runtime-config.yaml` §ui |
 | **World-sim (optional)** | `world-sim/*.md` + `world-sim/templates.yaml` | Runtime adapter, once at session start | No | Narrative framing layer — cosmetic only; domain physics and invariants are unchanged inside any world-sim theme |
 
 These components are not interchangeable and must not be substituted for one another. The

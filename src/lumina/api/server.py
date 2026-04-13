@@ -60,6 +60,13 @@ class _ModProxy(types.ModuleType):
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 log = logging.getLogger("lumina-api")
 
+# ── Verbose coloured output (opt-in) ────────────────────────
+from lumina.api.verbose_formatter import install_verbose_handler, is_verbose
+
+if is_verbose():
+    install_verbose_handler()
+    log.info("Verbose turn output enabled (LUMINA_VERBOSE)")
+
 # ─────────────────────────────────────────────────────────────
 # Configuration singletons (re-exported for backward compat)
 # ─────────────────────────────────────────────────────────────
