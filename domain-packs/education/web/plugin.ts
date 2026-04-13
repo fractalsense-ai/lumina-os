@@ -52,6 +52,15 @@ const EDUCATION_COMMANDS: SlashCommandDef[] = [
     tier: 'user',
   },
   {
+    name: 'assignmodules',
+    operation: 'assign_modules',
+    description: 'Assign learning modules to a student, classroom, or self',
+    args: ['module_ids', 'target'],
+    allowedRoles: ['teacher', 'domain_authority'],
+    domainScope: 'education',
+    tier: 'user',
+  },
+  {
     name: 'escalations',
     operation: 'list_escalations',
     description: 'List pending escalations',

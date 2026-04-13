@@ -26,13 +26,19 @@ def education_escalation_context(
     using education-specific field names.
     """
     actor_pseudonym = ""
+    assigned_teacher_id = ""
+    assigned_room_id = ""
     if hasattr(orchestrator, "_writer"):
         profile = orchestrator._writer._profile
         actor_pseudonym = profile.get(
             "subject_id",
             profile.get("student_id", ""),
         )
+        assigned_teacher_id = profile.get("assigned_teacher_id", "")
+        assigned_room_id = profile.get("assigned_room_id", "")
     return {
         "domain_id": domain_id,
         "actor_pseudonym": actor_pseudonym,
+        "assigned_teacher_id": assigned_teacher_id,
+        "assigned_room_id": assigned_room_id,
     }

@@ -104,6 +104,13 @@ async def list_escalations(
             if _has_escalation_capability(user_data, mod_id, domain_registry)
         }
         records = [r for r in records if r.get("domain_pack_id") in allowed_modules]
+        # Teacher scoping: only show escalations targeted at this teacher
+        # or unassigned (target_id is None/empty).
+        caller_id = user_data["sub"]
+        records = [
+            r for r in records
+            if not r.get("escalation_target_id") or r["escalation_target_id"] == caller_id
+        ]
 
     return records
 
@@ -259,6 +266,11 @@ async def resolve_escalation(
     elif not _quick_pass:
         if not _has_escalation_capability(user_data, module_id, domain_registry):
             return {"__status": 403, "detail": "Insufficient permissions"}
+        # Teacher scoping: can only resolve escalations targeted at them
+        # or unassigned (no escalation_target_id).
+        esc_target = target.get("escalation_target_id")
+        if esc_target and esc_target != user_data["sub"]:
+            return {"__status": 403, "detail": "Not authorized for this escalation"}
 
     record = build_commitment_record(
         actor_id=user_data["sub"],

@@ -236,8 +236,10 @@ async def assign_modules(
                 detail="No students on your roster. Use /assign to add students first.",
             )
         target_ids = list(roster)
+    elif target.lower() == "self":
+        target_ids = [user_data["sub"]]
     else:
-        user_rec = await require_user_exists(ctx, target, label="Target student")
+        user_rec = await require_user_exists(ctx, target, label="Target user")
         target_ids = [user_rec["user_id"]]
 
     # Assign each module to each target

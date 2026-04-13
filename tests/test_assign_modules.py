@@ -444,3 +444,62 @@ class TestSwitchModuleShortName:
         )
         assert result["status"] == "switched"
         assert result["module_id"] == "domain/edu/pre-algebra/v1"
+
+
+# ═════════════════════════════════════════════════════════════
+# Phase 5: DA self-keyword and label
+# ═════════════════════════════════════════════════════════════
+
+@pytest.mark.unit
+class TestAssignModulesSelfKeyword:
+    """DA can assign modules to themselves using 'self' keyword."""
+
+    def test_da_self_keyword_resolves_to_own_id(self) -> None:
+        ctx = _make_ctx()
+        da = _da_user("da1")
+        result = asyncio.run(
+            assign_modules_handler(
+                "assign_modules",
+                {"module_ids": "pre-algebra", "target": "self"},
+                da, ctx,
+            )
+        )
+        assert result["status"] == "assigned"
+        assert result["assignments"][0]["user_id"] == "da1"
+
+    def test_self_keyword_case_insensitive(self) -> None:
+        ctx = _make_ctx()
+        da = _da_user("da1")
+        result = asyncio.run(
+            assign_modules_handler(
+                "assign_modules",
+                {"module_ids": "pre-algebra", "target": "Self"},
+                da, ctx,
+            )
+        )
+        assert result["assignments"][0]["user_id"] == "da1"
+
+    def test_teacher_self_keyword(self) -> None:
+        ctx = _make_ctx()
+        teacher = _teacher_user("teacher1")
+        result = asyncio.run(
+            assign_modules_handler(
+                "assign_modules",
+                {"module_ids": "pre-algebra", "target": "self"},
+                teacher, ctx,
+            )
+        )
+        assert result["assignments"][0]["user_id"] == "teacher1"
+
+    def test_da_assign_to_teacher(self) -> None:
+        ctx = _make_ctx(user_lookup={"teacher1": {"user_id": "teacher1", "sub": "teacher1", "role": "user"}})
+        da = _da_user("da1")
+        result = asyncio.run(
+            assign_modules_handler(
+                "assign_modules",
+                {"module_ids": "pre-algebra", "target": "teacher1"},
+                da, ctx,
+            )
+        )
+        assert result["status"] == "assigned"
+        assert result["assignments"][0]["user_id"] == "teacher1"
