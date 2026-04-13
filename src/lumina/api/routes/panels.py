@@ -36,9 +36,19 @@ _Resolver = Callable[
 # Helpers
 # ─────────────────────────────────────────────────────────────
 
-def _load_profile(user_id: str) -> dict[str, Any]:
-    """Load a user profile by flat path."""
-    path = str(Path("data/profiles") / f"{user_id}.yaml")
+def _load_profile(user_id: str, domain_key: str = "") -> dict[str, Any]:
+    """Load a user profile.
+
+    When *domain_key* is given, reads the domain-scoped path
+    ``data/profiles/{user_id}/{domain_key}.yaml`` that education-ops
+    and other domain-pack handlers write to.  Falls back to the flat
+    ``data/profiles/{user_id}.yaml`` for backward compatibility.
+    """
+    if domain_key:
+        from lumina.api.config import _resolve_user_profile_path
+        path = str(_resolve_user_profile_path(user_id, domain_key))
+    else:
+        path = str(Path("data/profiles") / f"{user_id}.yaml")
     try:
         profile = _cfg.PERSISTENCE.load_subject_profile(path)
     except Exception:
@@ -59,15 +69,18 @@ def _follow_path(data: dict[str, Any], dotted: str) -> Any:
 
 def _resolve_caller_layout(
     user_data: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Resolve the caller's effective role layout from the domain pack."""
+) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
+    """Resolve the caller's effective role layout from the domain pack.
+
+    Returns ``(layout, sidebar_panels, domain_id)``.
+    """
     from lumina.api.routes.system import _resolve_role_layout
 
     domain_id = _cfg.DOMAIN_REGISTRY.resolve_default_for_user(user_data)
     runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(domain_id)
     manifest = runtime.get("ui_manifest") or {}
     layout = _resolve_role_layout(manifest, user_data, {"id": domain_id})
-    return layout, layout.get("sidebar_panels") or []
+    return layout, layout.get("sidebar_panels") or [], domain_id
 
 
 def _find_panel_config(
@@ -203,7 +216,7 @@ async def _resolve_managed_user_progress(
     progress = []
     for uid in user_ids:
         uid_str = str(uid)
-        uprof = await run_in_threadpool(_load_profile, uid_str)
+        uprof = await run_in_threadpool(_load_profile, uid_str, pcfg.get("_domain_id", ""))
         modules = uprof.get("modules") if isinstance(uprof.get("modules"), dict) else {}
         progress.append({
             "user_id": uid_str,
@@ -488,7 +501,7 @@ async def get_panel_data(
     user_data = require_auth(current)
 
     # Verify panel is in the caller's resolved layout
-    _layout, panels = _resolve_caller_layout(user_data)
+    _layout, panels, domain_id = _resolve_caller_layout(user_data)
     pcfg = _find_panel_config(panels, panel_id)
     if pcfg is None:
         raise HTTPException(status_code=404, detail=f"Panel not available: {panel_id}")
@@ -498,7 +511,9 @@ async def get_panel_data(
     if resolver is None:
         raise HTTPException(status_code=404, detail=f"Unknown data source: {data_source}")
 
-    profile = await run_in_threadpool(_load_profile, user_data["sub"])
+    profile = await run_in_threadpool(_load_profile, user_data["sub"], domain_id)
+    # Inject domain_id so resolvers that load sub-profiles can use it.
+    pcfg = {**pcfg, "_domain_id": domain_id}
     return await resolver(user_data, profile, pcfg)
 
 
@@ -513,7 +528,7 @@ async def update_panel_data(
     user_data = require_auth(current)
     caller_id = user_data["sub"]
 
-    _layout, panels = _resolve_caller_layout(user_data)
+    _layout, panels, domain_id = _resolve_caller_layout(user_data)
     pcfg = _find_panel_config(panels, panel_id)
     if pcfg is None:
         raise HTTPException(status_code=404, detail=f"Panel not available: {panel_id}")
@@ -526,7 +541,8 @@ async def update_panel_data(
     if not isinstance(updates, dict) or not updates:
         raise HTTPException(status_code=422, detail="Request body must contain preference updates")
 
-    profile_path = str(Path("data/profiles") / f"{caller_id}.yaml")
+    from lumina.api.config import _resolve_user_profile_path
+    profile_path = str(_resolve_user_profile_path(caller_id, domain_id)) if domain_id else str(Path("data/profiles") / f"{caller_id}.yaml")
     try:
         profile = await run_in_threadpool(_cfg.PERSISTENCE.load_subject_profile, profile_path)
     except Exception:

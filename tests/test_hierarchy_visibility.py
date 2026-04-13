@@ -127,7 +127,8 @@ class TestHierarchyVisibility:
     def test_student_sees_teacher_and_ta_only(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("student1", "user", domain_roles={"algebra-1": "student"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         usernames = {u["username"] for u in result["users"]}
         # Student (level 3) should see teacher (level 1) and TA (level 2) only
@@ -141,7 +142,8 @@ class TestHierarchyVisibility:
     def test_student_user_id_stripped(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("student1", "user", domain_roles={"algebra-1": "student"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         for u in result["users"]:
             assert "user_id" not in u, f"user_id should be stripped for students, found in {u}"
@@ -149,7 +151,8 @@ class TestHierarchyVisibility:
     def test_ta_sees_teachers_and_students(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("ta1", "user", domain_roles={"teaching-assistant": "teaching_assistant"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         usernames = {u["username"] for u in result["users"]}
         # TA (level 2) should see teacher (level 1) and students (level 3)
@@ -162,7 +165,8 @@ class TestHierarchyVisibility:
     def test_teacher_sees_everyone_in_domain(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("teacher1", "user", domain_roles={"teacher": "teacher"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         usernames = {u["username"] for u in result["users"]}
         # Teacher (level 1) should see DA, TAs, and students
@@ -179,6 +183,7 @@ class TestHierarchyVisibility:
             governed_modules=["domain-authority", "teacher", "teaching-assistant", "guardian", "algebra-1"],
         )
         with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg), \
              patch("lumina.api.routes.admin.can_govern_domain", return_value=True):
             result = _exec_list_users(caller)
         # DA should see everyone in governed modules (hierarchy filter doesn't apply)
@@ -189,14 +194,16 @@ class TestHierarchyVisibility:
         itself has no domain_roles, so it's excluded by the domain filter)."""
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("root1", "root")
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         assert result["count"] == len(_DOMAIN_USERS)
 
     def test_teacher_user_id_not_stripped(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("teacher1", "user", domain_roles={"teacher": "teacher"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller)
         # Teachers should see user_id (not stripped)
         for u in result["users"]:
@@ -207,7 +214,8 @@ class TestHierarchyVisibility:
         hierarchy filter does not activate — all users are returned."""
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller("student1", "user", domain_roles={"algebra-1": "student"})
-        with patch("lumina.api.routes.admin._cfg", cfg):
+        with patch("lumina.api.routes.admin._cfg", cfg), \
+             patch("lumina.api.governance._cfg", cfg):
             result = _exec_list_users(caller, params={"role": ""})
         # No domain_id → hierarchy filter doesn't activate → sees all users
         assert result["count"] == len(_ALL_USERS)

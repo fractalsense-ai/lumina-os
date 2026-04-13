@@ -804,7 +804,7 @@ class TestProcessingLocalOnlyNlpWiring:
             patch.object(proc, "call_slm", return_value="ok"),
             patch.object(proc, "call_llm", return_value="Done."),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
         ):
@@ -839,7 +839,7 @@ class TestProcessingLocalOnlyNlpWiring:
             patch.object(proc, "call_slm", return_value="ok"),
             patch.object(proc, "call_llm", return_value="Hello."),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
         ):
@@ -941,7 +941,7 @@ class TestPhysicsContextLocalOnly:
             patch.object(proc, "call_slm", return_value="ok"),
             patch.object(proc, "call_llm", return_value="Hello."),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
         ):

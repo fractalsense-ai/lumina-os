@@ -78,12 +78,12 @@ def _auth_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _fake_layout_with_panels(panels: list[dict[str, Any]]):
+def _fake_layout_with_panels(panels: list[dict[str, Any]], domain_id: str = "education"):
     """Return a mock for _resolve_caller_layout returning the given panels."""
     layout = {"sidebar_panels": panels, "capabilities": []}
 
     def _resolver(user_data):
-        return layout, panels
+        return layout, panels, domain_id
 
     return _resolver
 

@@ -188,7 +188,7 @@ class TestProcessingTimingCapture:
             patch.object(proc, "slm_available", return_value=False),
             patch.object(proc, "call_llm", return_value="good job"),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
         ):
@@ -244,7 +244,7 @@ class TestProcessingTimingCapture:
             patch.object(proc, "slm_available", return_value=False),
             patch.object(proc, "call_llm", return_value="Here is your next problem"),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
             patch.object(_post_turn_mod, "time") as mock_hook_time,
@@ -428,7 +428,7 @@ class TestTaskCompletePayloadSeparation:
             patch.object(proc, "slm_available", return_value=False),
             patch.object(proc, "call_llm", side_effect=fake_llm),
             patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
-            patch.object(proc, "apply_tool_call_policy", return_value=None),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
             patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
             patch("lumina.api.processing.time") as mock_time,
         ):
