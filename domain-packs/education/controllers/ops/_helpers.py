@@ -86,8 +86,16 @@ async def require_user_exists(
     user_id: str,
     label: str = "User",
 ) -> dict[str, Any]:
-    """Return the user record, or raise 404."""
+    """Return the user record, or raise 404.
+
+    Accepts either a user ID (UUID) or a username.  Tries ID lookup first,
+    then falls back to username lookup so that ``/join TeacherName`` works.
+    """
     user = await ctx.run_in_threadpool(ctx.persistence.get_user, user_id)
+    if user is None:
+        user = await ctx.run_in_threadpool(
+            ctx.persistence.get_user_by_username, user_id,
+        )
     if user is None:
         raise ctx.HTTPException(
             status_code=404, detail=f"{label} not found: {user_id}",

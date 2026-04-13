@@ -129,15 +129,6 @@ const COMMANDS: SlashCommandDef[] = [
     allowedRoles: [],
     tier: 'user',
   },
-  {
-    name: 'explain',
-    operation: 'explain_reasoning',
-    description: 'Explain reasoning for a log event',
-    args: ['event_id'],
-    allowedRoles: [],
-    aliases: ['explain_reasoning'],
-    tier: 'user',
-  },
 
   // ── Domain tier — domain authority + root ──────────────
   {

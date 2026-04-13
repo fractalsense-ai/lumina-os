@@ -10,7 +10,7 @@
  *  - Daemon Monitor
  */
 
-import type { DomainPlugin, DashboardTabDef, SidebarPanelDef, PanelComponentProps } from '@lumina/plugins'
+import type { DomainPlugin, DashboardTabDef, SidebarPanelDef, SlashCommandDef, PanelComponentProps } from '@lumina/plugins'
 import { EscalationQueue } from './components/EscalationQueue'
 import { StagedCommandsPanel } from './components/StagedCommandsPanel'
 import { IngestionReview } from './components/IngestionReview'
@@ -31,6 +31,20 @@ function wrapLegacy(
     return createElement(Comp, { auth, domainId, domainKey })
   }
 }
+
+// ── System slash commands ────────────────────────────────
+
+const SYSTEM_COMMANDS: SlashCommandDef[] = [
+  {
+    name: 'explain',
+    operation: 'explain_reasoning',
+    description: 'Explain reasoning for a log event',
+    args: ['event_id'],
+    allowedRoles: ['domain_authority', 'qa'],
+    aliases: ['explain_reasoning'],
+    tier: 'user',
+  },
+]
 
 // ── Sidebar panels ──────────────────────────────────────
 
@@ -85,6 +99,7 @@ const SYSTEM_DASHBOARD_TABS: DashboardTabDef[] = [
 export const systemPlugin: DomainPlugin = {
   id: 'system',
   register(reg) {
+    reg.addSlashCommands(SYSTEM_COMMANDS)
     reg.addDashboardTabs(SYSTEM_DASHBOARD_TABS)
     reg.addSidebarPanels(SYSTEM_SIDEBAR_PANELS)
   },
