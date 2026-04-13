@@ -55,6 +55,7 @@ def _mock_cfg() -> MagicMock:
     cfg.PERSISTENCE.append_log_record.return_value = None
     cfg.PERSISTENCE.load_subject_profile.return_value = {}
     cfg.PERSISTENCE.save_subject_profile.return_value = None
+    cfg.PERSISTENCE.get_user_by_username.return_value = None
     cfg.PERSISTENCE.update_user_governed_modules.return_value = {"governed_modules": []}
     cfg.DOMAIN_REGISTRY.resolve_domain_id.return_value = "education"
     cfg.DOMAIN_REGISTRY.list_modules_for_domain.return_value = [

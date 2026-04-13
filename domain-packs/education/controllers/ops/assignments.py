@@ -105,6 +105,7 @@ async def request_teacher_assignment(
         raise ctx.HTTPException(status_code=403, detail="Only students may request teacher assignment")
 
     teacher = await require_user_exists(ctx, teacher_id, "Teacher")
+    teacher_id = teacher["user_id"]  # normalise — input may be a username
     _teacher_roles = list((teacher.get("domain_roles") or {}).values())
     if "teacher" not in _teacher_roles:
         raise ctx.HTTPException(status_code=422, detail=f"{teacher_id} is not a teacher")
@@ -168,6 +169,7 @@ async def request_ta_assignment(
         raise ctx.HTTPException(status_code=403, detail="Only teaching assistants may request TA assignment")
 
     teacher = await require_user_exists(ctx, teacher_id, "Teacher")
+    teacher_id = teacher["user_id"]  # normalise — input may be a username
     _teacher_roles = list((teacher.get("domain_roles") or {}).values())
     if "teacher" not in _teacher_roles:
         raise ctx.HTTPException(status_code=422, detail=f"{teacher_id} is not a teacher")

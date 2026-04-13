@@ -66,8 +66,10 @@ async def assign_student(
     else:
         raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
 
-    await require_user_exists(ctx, student_id, "Student")
+    student_rec = await require_user_exists(ctx, student_id, "Student")
+    student_id = student_rec["user_id"]  # normalise — input may be a username
     teacher = await require_user_exists(ctx, teacher_id, "Teacher")
+    teacher_id = teacher["user_id"]  # normalise
 
     if caller_role == "domain_authority":
         _teacher_modules = list((teacher.get("domain_roles") or {}).keys())
@@ -132,7 +134,8 @@ async def remove_student(
     else:
         raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
 
-    await require_user_exists(ctx, student_id, "Student")
+    student_rec = await require_user_exists(ctx, student_id, "Student")
+    student_id = student_rec["user_id"]  # normalise — input may be a username
 
     # Update student profile
     _sprofile = await load_profile(ctx, student_id)

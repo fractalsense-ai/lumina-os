@@ -90,6 +90,9 @@ async def require_user_exists(
 
     Accepts either a user ID (UUID) or a username.  Tries ID lookup first,
     then falls back to username lookup so that ``/join TeacherName`` works.
+
+    The returned dict is guaranteed to contain ``"user_id"`` even when the
+    persistence layer returns auth-context style records keyed by ``"sub"``.
     """
     user = await ctx.run_in_threadpool(ctx.persistence.get_user, user_id)
     if user is None:
@@ -100,6 +103,9 @@ async def require_user_exists(
         raise ctx.HTTPException(
             status_code=404, detail=f"{label} not found: {user_id}",
         )
+    # Normalise: ensure "user_id" key exists (auth-context dicts use "sub")
+    if "user_id" not in user:
+        user["user_id"] = user.get("sub", user_id)
     return user
 
 
