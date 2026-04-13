@@ -23,7 +23,7 @@ import {
   type SessionSummary,
 } from '@/services/transcriptStore'
 import { parseSlashCommand, generateHelpText } from '@/services/slashCommands'
-import { fireChatHooks } from '@/plugins/PluginRegistry'
+import { fireChatHooks, registerPlugin } from '@/plugins/PluginRegistry'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -121,6 +121,33 @@ async function fetchDomainInfo(token?: string): Promise<DomainInfo | null> {
     return (await res.json()) as DomainInfo
   } catch {
     return null
+  }
+}
+
+const domainPluginModules = import.meta.glob<{ default: import('@/plugins/types').DomainPlugin }>(
+  '../../domain-packs/*/web/plugin.ts',
+)
+
+function domainKeyFromGlobPath(path: string): string | undefined {
+  const m = path.match(/domain-packs\/([^/]+)\/web\/plugin\.ts$/)
+  return m?.[1]
+}
+
+async function loadDomainPlugin(domainKey: string): Promise<void> {
+  // Always load the system plugin (framework-level panels for governance
+  // roles) plus the active domain's plugin.
+  const keysToLoad = domainKey === 'system' ? ['system'] : ['system', domainKey]
+  for (const key of keysToLoad) {
+    const entry = Object.entries(domainPluginModules).find(
+      ([p]) => domainKeyFromGlobPath(p) === key,
+    )
+    if (!entry) continue
+    try {
+      const mod = await entry[1]()
+      registerPlugin(mod.default)
+    } catch {
+      // Plugin loading is best-effort — domain still works without UI extensions
+    }
   }
 }
 
@@ -1162,13 +1189,16 @@ function App() {
   }, [])
 
   useEffect(() => {
-    fetchDomainInfo(auth?.token).then((info) => {
+    fetchDomainInfo(auth?.token).then(async (info) => {
       if (!info) return
       setManifest(info.ui_manifest)
       applyThemeOverrides(info.ui_manifest.theme)
       setRoleLayout(info.role_layout)
       setDomainId(info.domain_id)
       setDomainKey(info.domain_key)
+      if (info.domain_key) {
+        await loadDomainPlugin(info.domain_key)
+      }
     })
   }, [auth?.token])
 

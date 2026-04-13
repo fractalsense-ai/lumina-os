@@ -364,6 +364,50 @@ async def _resolve_empty_queue(
     }
 
 
+async def _resolve_escalation_queue(
+    user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
+) -> dict[str, Any]:
+    """Escalation queue — pending escalations scoped by caller's domain role.
+
+    Education-domain escalations route to teachers (via
+    ``receive_escalations`` in domain-physics), not to system-level roles.
+    This resolver delegates to the domain's own API route at
+    ``/api/escalations`` when available, but provides a direct persistence
+    fallback filtered by the caller's domain-role scope.
+    """
+    domain_id = _cfg.DOMAIN_REGISTRY.resolve_default_for_user(user_data)
+
+    # Determine which modules the caller can receive escalations for.
+    # Domain-role holders (teacher, domain_authority) see escalations for
+    # their assigned modules; system admins see everything.
+    domain_roles_map = user_data.get("domain_roles") or {}
+    governed = _resolve_da_governed(user_data)
+    system_admin = user_data.get("role") in ("root", "it_support", "qa", "auditor")
+
+    if not system_admin and not governed and not domain_roles_map:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    records = await run_in_threadpool(
+        _cfg.PERSISTENCE.query_escalations,
+        status="pending",
+        domain_id=domain_id if not system_admin else None,
+        limit=100,
+        offset=0,
+    )
+
+    # Scope by governed modules (DA) or assigned domain roles (teacher)
+    if governed is not None:
+        records = [r for r in records if r.get("domain_pack_id") in governed]
+    elif not system_admin:
+        records = [r for r in records if r.get("domain_pack_id") in domain_roles_map]
+
+    return {
+        "panel": pcfg.get("id", "escalation_queue"),
+        "escalations": records,
+        "count": len(records),
+    }
+
+
 async def _resolve_staff_directory(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
@@ -425,6 +469,7 @@ _DATA_RESOLVERS: dict[str, _Resolver] = {
     "module_directory": _resolve_module_directory,
     "notification_settings": _resolve_notification_settings,
     "empty_queue": _resolve_empty_queue,
+    "escalation_queue": _resolve_escalation_queue,
     "staff_directory": _resolve_staff_directory,
 }
 

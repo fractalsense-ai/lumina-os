@@ -1,11 +1,10 @@
 /**
  * Panel Registry — maps component name strings declared in domain-pack
  * role_layouts to generic React components.  The framework owns this
- * registry; domain packs choose from the generic palette by setting
- * `component` in their sidebar_panel declarations.
+ * registry; domain packs register their own panel components at load
+ * time via the PluginRegistry.
  *
- * If a domain pack references a component name that is not registered
- * here, the fallback is DataPanel (a generic endpoint-driven renderer).
+ * Resolution order: PluginRegistry → static REGISTRY → DataPanel fallback.
  */
 
 import type { ComponentType } from 'react'
