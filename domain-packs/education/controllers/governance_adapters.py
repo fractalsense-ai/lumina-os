@@ -84,6 +84,11 @@ _MODULE_ASSIGNMENT_RE = re.compile(
     r"|\b(?:module|modules)\b.*\b(?:assign|remove|give|revoke)\b",
     re.IGNORECASE,
 )
+_MULTI_MODULE_ASSIGNMENT_RE = re.compile(
+    r"\b(?:assign|add|give)\b.*\b(?:modules)\b.*\b(?:to|for)\b"
+    r"|\bassignmodules\b",
+    re.IGNORECASE,
+)
 
 
 def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None:
@@ -100,7 +105,8 @@ def _maybe_promote_query_type(evidence: dict[str, Any], input_text: str) -> None
             or _MODULE_LISTING_RE.search(input_text)
             or _ESCALATION_LISTING_RE.search(input_text)
             or _STUDENT_ASSIGNMENT_RE.search(input_text)
-            or _MODULE_ASSIGNMENT_RE.search(input_text)):
+            or _MODULE_ASSIGNMENT_RE.search(input_text)
+            or _MULTI_MODULE_ASSIGNMENT_RE.search(input_text)):
         evidence["query_type"] = "admin_command"
         evidence["off_task_ratio"] = 0.0
         log.info(
@@ -191,6 +197,31 @@ def _deterministic_command_fallback(
             return {"operation": "assign_student", "params": p}
         if any(w in tokens for w in ("module", "modules")):
             p = {}
+            # Detect multi-module: comma in raw text or "modules" plural or "classroom"
+            _is_multi = ("modules" in tokens
+                         or "," in input_text
+                         or "classroom" in tokens)
+            if _is_multi:
+                # Collect everything between verb..to/for as module_ids
+                mods: list[str] = []
+                capture = False
+                for t in tokens:
+                    if t in ("module", "modules"):
+                        capture = True
+                        continue
+                    if t in ("to", "for", "from"):
+                        capture = False
+                        continue
+                    if capture:
+                        # Split on commas within token
+                        mods.extend(part.strip() for part in t.split(",") if part.strip())
+                p["module_ids"] = ",".join(mods) if mods else ""
+                for i, t in enumerate(tokens):
+                    if t in ("to", "for") and i + 1 < len(tokens):
+                        p["target"] = tokens[i + 1]
+                if "classroom" in tokens:
+                    p["target"] = "classroom"
+                return {"operation": "assign_modules", "params": p}
             for i, t in enumerate(tokens):
                 if t in ("module",) and i + 1 < len(tokens) and tokens[i + 1] not in ("to", "from", "for"):
                     p["module_id"] = tokens[i + 1]

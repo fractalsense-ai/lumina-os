@@ -211,6 +211,7 @@ _EDUCATION_ONLY_OPS = frozenset({
     "assign_student",
     "remove_student",
     "assign_module",
+    "assign_modules",
     "remove_module",
     "switch_active_module",
     "request_teacher_assignment",

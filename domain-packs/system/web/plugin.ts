@@ -102,6 +102,10 @@ export const systemPlugin: DomainPlugin = {
     reg.addSlashCommands(SYSTEM_COMMANDS)
     reg.addDashboardTabs(SYSTEM_DASHBOARD_TABS)
     reg.addSidebarPanels(SYSTEM_SIDEBAR_PANELS)
+    reg.addRoleEquivalences({
+      system_admin: 'domain_authority',
+      system_operator: 'teacher',
+    })
   },
 }
 

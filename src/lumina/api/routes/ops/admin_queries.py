@@ -74,6 +74,13 @@ async def execute(
         if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, resolved, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         modules = ctx.domain_registry.list_modules_for_domain(resolved)
+        # Add short_name to each module for user-friendly display
+        for m in modules:
+            parts = m["module_id"].split("/")
+            m["short_name"] = parts[-2] if len(parts) >= 3 else m["module_id"]
+        # Non-elevated users see only learning modules (exclude local_only role modules)
+        if user_data["role"] not in ("root", "domain_authority"):
+            modules = [m for m in modules if not m.get("local_only")]
         return {"operation": operation, "domain_id": resolved, "modules": modules, "count": len(modules)}
 
     if operation == "list_domain_rbac_roles":

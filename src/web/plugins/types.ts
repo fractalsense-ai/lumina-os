@@ -74,6 +74,8 @@ export interface PluginRegistration {
   addDashboardTabs(tabs: DashboardTabDef[]): void
   addSidebarPanels(panels: SidebarPanelDef[]): void
   addChatHooks(hooks: ChatHookDef[]): void
+  /** Map domain-specific roles to framework governance roles for command visibility. */
+  addRoleEquivalences(equivalences: Record<string, string>): void
 }
 
 export interface DomainPlugin {

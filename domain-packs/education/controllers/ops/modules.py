@@ -8,9 +8,12 @@ import logging
 from typing import Any
 
 from ._helpers import (
+    extract_short_name,
+    list_learning_modules,
     load_profile,
     require_module_governance,
     require_user_exists,
+    resolve_module_shortname,
     save_profile,
     write_commitment,
 )
@@ -128,6 +131,9 @@ async def switch_active_module(
     if not module_id:
         raise ctx.HTTPException(status_code=422, detail="module_id is required")
 
+    # Resolve short names (e.g. "pre-algebra" → "domain/edu/pre-algebra/v1")
+    module_id = resolve_module_shortname(ctx, module_id)
+
     user_id = user_data["sub"]
 
     _profile = await load_profile(ctx, user_id)
@@ -174,4 +180,91 @@ async def switch_active_module(
         "module_id": module_id,
         "status": "switched",
         "message": f"Active module switched to {module_id}",
+    }
+
+
+# ── assign_modules (plural — multi-module, multi-target) ─────
+
+async def assign_modules(
+    operation: str,
+    params: dict[str, Any],
+    user_data: dict[str, Any],
+    ctx: Any,
+) -> dict[str, Any]:
+    """Assign one or more learning modules to a student or classroom.
+
+    Params
+    ------
+    module_ids : str
+        Comma-separated module short names or full ids.
+    target : str
+        A student user-id/username, or the literal ``"classroom"`` to
+        assign to every student on the teacher's roster.
+    """
+    raw_modules = str(params.get("module_ids", "")).strip()
+    target = str(params.get("target", "") or params.get("user_id", "")).strip()
+    if not raw_modules or not target:
+        raise ctx.HTTPException(
+            status_code=422,
+            detail="module_ids and target required (e.g. 'pre-algebra,algebra-intro student1' or 'pre-algebra classroom')",
+        )
+
+    # RBAC: teacher with assign_modules_to_students capability
+    caller_role = user_data["role"]
+    if caller_role in ("root", "domain_authority"):
+        if caller_role == "domain_authority":
+            # DA must govern the education domain
+            if not ctx.can_govern_domain(user_data, "education", registry=ctx.domain_registry):
+                raise ctx.HTTPException(status_code=403, detail="Not authorised for education domain")
+    elif caller_role == "user":
+        await require_module_governance(user_data, ctx)
+    else:
+        raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
+
+    # Resolve comma-separated module short names → full ids
+    names = [n.strip() for n in raw_modules.split(",") if n.strip()]
+    module_ids = [resolve_module_shortname(ctx, n) for n in names]
+
+    # Determine target user(s)
+    if target.lower() == "classroom":
+        # Resolve from teacher's educator_state.assigned_students
+        teacher_profile = await load_profile(ctx, user_data["sub"])
+        roster = (teacher_profile.get("educator_state") or {}).get("assigned_students") or []
+        if not roster:
+            raise ctx.HTTPException(
+                status_code=422,
+                detail="No students on your roster. Use /assign to add students first.",
+            )
+        target_ids = list(roster)
+    else:
+        user_rec = await require_user_exists(ctx, target, label="Target student")
+        target_ids = [user_rec["user_id"]]
+
+    # Assign each module to each target
+    results: list[dict[str, Any]] = []
+    for tid in target_ids:
+        await ctx.run_in_threadpool(
+            ctx.persistence.update_user_governed_modules, tid, add=module_ids,
+        )
+        record = write_commitment(
+            ctx,
+            actor_id=user_data["sub"],
+            actor_role=ctx.map_role_to_actor_role(caller_role),
+            commitment_type="module_assignment",
+            subject_id=tid,
+            summary=f"Assigned modules {', '.join(extract_short_name(m) for m in module_ids)} to {tid}",
+            metadata={"module_ids": module_ids, "assigned_by": user_data["sub"]},
+            references=[tid, *module_ids],
+        )
+        results.append({
+            "user_id": tid,
+            "module_ids": module_ids,
+            "record_id": record["record_id"],
+        })
+
+    return {
+        "operation": operation,
+        "status": "assigned",
+        "count": len(results),
+        "assignments": results,
     }

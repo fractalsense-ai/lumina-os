@@ -3,7 +3,7 @@
  *
  * Registers:
  *  - Vocabulary complexity chat hook (passive, client-side analysis)
- *  - Education-scoped slash commands (/teachers, /join, /students, /assign)
+ *  - Education-scoped slash commands (/teachers, /join, /students, /assign, /escalations)
  */
 
 import type { DomainPlugin, PluginRegistration, SlashCommandDef } from '@lumina/plugins'
@@ -48,6 +48,16 @@ const EDUCATION_COMMANDS: SlashCommandDef[] = [
     description: 'Assign a student to your roster',
     args: ['student_id'],
     allowedRoles: ['teacher', 'domain_authority'],
+    domainScope: 'education',
+    tier: 'user',
+  },
+  {
+    name: 'escalations',
+    operation: 'list_escalations',
+    description: 'List pending escalations',
+    args: [],
+    allowedRoles: ['teacher', 'domain_authority'],
+    aliases: ['list_escalations'],
     domainScope: 'education',
     tier: 'user',
   },

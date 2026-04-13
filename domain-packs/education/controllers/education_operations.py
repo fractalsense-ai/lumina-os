@@ -21,7 +21,7 @@ from .ops.assignments import (
     request_ta_assignment,
     request_teacher_assignment,
 )
-from .ops.modules import assign_module, remove_module, switch_active_module
+from .ops.modules import assign_module, assign_modules, remove_module, switch_active_module
 from .ops.roster import assign_student, remove_student
 
 _HANDLERS: dict[str, Any] = {
@@ -31,6 +31,7 @@ _HANDLERS: dict[str, Any] = {
     "request_teacher_assignment": request_teacher_assignment,
     "request_ta_assignment": request_ta_assignment,
     "assign_module": assign_module,
+    "assign_modules": assign_modules,
     "remove_module": remove_module,
     "switch_active_module": switch_active_module,
 }

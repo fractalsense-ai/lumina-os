@@ -118,6 +118,12 @@ operations:
       user_id: "string — target user identifier"
       module_id: "string — education module identifier (e.g. domain/edu/algebra-level-1/v1)"
 
+  - name: assign_modules
+    description: "Assign one or more curriculum modules to a student or to an entire classroom. Accepts comma-separated short names (e.g. 'pre-algebra,algebra-intro'). Use target 'classroom' to assign to all students on your roster."
+    params:
+      module_ids: "string — comma-separated module short names or full ids (e.g. 'pre-algebra,algebra-intro')"
+      target: "string — student user-id/username, or 'classroom' to assign to all rostered students"
+
   - name: remove_module
     description: "Remove a curriculum module from a user's access list. Domain authorities and teachers with the assign_modules_to_students capability can remove modules directly."
     params:

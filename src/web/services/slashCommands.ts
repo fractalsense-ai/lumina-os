@@ -10,7 +10,7 @@
  *   /api/admin/command  — admin tier  (root / IT support)
  */
 
-import { getPluginCommands } from '@/plugins/PluginRegistry'
+import { getPluginCommands, getPluginRoleEquivalences } from '@/plugins/PluginRegistry'
 
 export type CommandTier = 'user' | 'domain' | 'admin'
 
@@ -112,15 +112,6 @@ const COMMANDS: SlashCommandDef[] = [
     tier: 'user',
   },
 
-  {
-    name: 'escalations',
-    operation: 'list_escalations',
-    description: 'List pending escalations',
-    args: [],
-    allowedRoles: ['teacher', 'domain_authority'],
-    aliases: ['list_escalations'],
-    tier: 'user',
-  },
   {
     name: 'module_status',
     operation: 'module_status',
@@ -357,18 +348,12 @@ function buildMergedMap(): Map<string, SlashCommandDef> {
 }
 
 /**
- * Map non-education domain roles to their equivalent slash-command role.
- * This lets system-domain roles (system_admin, system_operator) see the
- * correct governance or operational commands.
- */
-const ROLE_EQUIVALENCE: Record<string, string> = {
-  system_admin: 'domain_authority',
-  system_operator: 'teacher',
-}
-
-/**
  * Get commands visible to a given effective domain role.
  * Empty allowedRoles means visible to everyone.
+ *
+ * Role equivalences are contributed by domain-pack plugins via
+ * addRoleEquivalences(), keeping domain-specific role knowledge
+ * out of the framework.
  *
  * @param effectiveRole  The domain-specific role (e.g. 'student', 'system_admin')
  * @param platformRole   Optional platform-level role from auth (e.g. 'root')
@@ -379,7 +364,8 @@ export function getCommandsForRole(effectiveRole: string, platformRole?: string,
   // Platform root sees every command
   if (platformRole === 'root') return all
 
-  const normalizedRole = ROLE_EQUIVALENCE[effectiveRole] ?? effectiveRole
+  const roleEquivalences = getPluginRoleEquivalences()
+  const normalizedRole = roleEquivalences[effectiveRole] ?? effectiveRole
   return all.filter(
     (cmd) =>
       (cmd.allowedRoles.length === 0 || cmd.allowedRoles.includes(normalizedRole)) &&

@@ -138,3 +138,63 @@ def write_commitment(
     )
     ctx.persistence.append_log_record("admin", record)
     return record
+
+
+# ── Module short-name resolution ──────────────────────────────
+
+def extract_short_name(module_id: str) -> str:
+    """Extract a human-friendly short name from a full module id.
+
+    ``domain/edu/pre-algebra/v1`` → ``pre-algebra``
+    """
+    parts = module_id.split("/")
+    if len(parts) >= 3:
+        return parts[-2]
+    return module_id
+
+
+def list_learning_modules(ctx: Any, domain: str = "education") -> list[dict[str, Any]]:
+    """Return non-role modules (``local_only`` is false) with short names.
+
+    Each dict contains ``module_id``, ``short_name``, and
+    ``domain_physics_path``.
+    """
+    all_mods = ctx.domain_registry.list_modules_for_domain(domain)
+    result: list[dict[str, Any]] = []
+    for m in all_mods:
+        if m.get("local_only"):
+            continue
+        result.append({
+            "module_id": m["module_id"],
+            "short_name": extract_short_name(m["module_id"]),
+            "domain_physics_path": m.get("domain_physics_path", ""),
+        })
+    return result
+
+
+def resolve_module_shortname(
+    ctx: Any,
+    name: str,
+    domain: str = "education",
+) -> str:
+    """Resolve a short name like ``pre-algebra`` to a full module id.
+
+    Accepts full paths as pass-through (``domain/edu/pre-algebra/v1``
+    is returned unchanged).  Raises 422 for unknown short names.
+    """
+    all_mods = ctx.domain_registry.list_modules_for_domain(domain)
+    valid_ids = {m["module_id"] for m in all_mods}
+
+    # Pass-through: already a full module id
+    if name in valid_ids:
+        return name
+
+    # Match by short name
+    for m in all_mods:
+        if extract_short_name(m["module_id"]) == name:
+            return m["module_id"]
+
+    raise ctx.HTTPException(
+        status_code=422,
+        detail=f"Unknown module '{name}'. Available: {sorted(extract_short_name(mid) for mid in valid_ids)}",
+    )

@@ -176,6 +176,7 @@ class DomainRegistry:
             modules.append({
                 "module_id": mod_id,
                 "domain_physics_path": mod_cfg.get("domain_physics_path", ""),
+                "local_only": bool(mod_cfg.get("local_only")),
             })
 
         # Also include the default domain_physics_path module (if not already listed)

@@ -52,12 +52,44 @@ const educationPlugin: DomainPlugin = {
         domainScope: 'education',
         tier: 'user',
       },
+      {
+        name: 'escalations',
+        operation: 'list_escalations',
+        description: 'List pending escalations',
+        args: [],
+        allowedRoles: ['teacher', 'domain_authority'],
+        aliases: ['list_escalations'],
+        domainScope: 'education',
+        tier: 'user',
+      },
     ])
   },
 }
 
-// Register education plugin for tests that depend on education commands
-beforeAll(() => { registerPlugin(educationPlugin) })
+// System plugin role equivalences and commands (mirroring domain-packs/system/web/plugin.ts)
+const systemPlugin: DomainPlugin = {
+  id: 'system-test',
+  register(reg) {
+    reg.addSlashCommands([
+      {
+        name: 'explain',
+        operation: 'explain_reasoning',
+        description: 'Explain reasoning for a log event',
+        args: ['event_id'],
+        allowedRoles: ['domain_authority', 'qa'],
+        aliases: ['explain_reasoning'],
+        tier: 'user',
+      },
+    ])
+    reg.addRoleEquivalences({
+      system_admin: 'domain_authority',
+      system_operator: 'teacher',
+    })
+  },
+}
+
+// Register plugins for tests that depend on domain commands & role equivalences
+beforeAll(() => { registerPlugin(educationPlugin); registerPlugin(systemPlugin) })
 afterAll(() => { _resetForTesting() })
 
 // ── parseSlashCommand — basic dispatch ───────────────────
@@ -347,9 +379,10 @@ describe('getCommandsForRole', () => {
     const names = cmds.map((c) => c.name)
     expect(names).toContain('help')
     expect(names).toContain('profile')
-    expect(names).toContain('explain')
     expect(names).toContain('module_status')
     expect(names).toContain('modules')
+    // /explain has restricted allowedRoles, so guest should NOT see it
+    expect(names).not.toContain('explain')
   })
 
   it('platformRole root sees ALL commands regardless of effectiveRole', () => {
@@ -363,7 +396,7 @@ describe('getCommandsForRole', () => {
     expect(names).toContain('help')
   })
 
-  it('system_admin maps to domain_authority via ROLE_EQUIVALENCE', () => {
+  it('system_admin maps to domain_authority via plugin role equivalences', () => {
     const cmds = getCommandsForRole('system_admin')
     const names = cmds.map((c) => c.name)
     expect(names).toContain('domains')
@@ -375,16 +408,17 @@ describe('getCommandsForRole', () => {
     expect(names).not.toContain('teachers')
     expect(names).not.toContain('students')
     expect(names).not.toContain('join')
+    expect(names).not.toContain('escalations')
     // /modules is system-wide (no domainScope), visible to all
     expect(names).toContain('modules')
   })
 
-  it('system_operator maps to teacher via ROLE_EQUIVALENCE', () => {
+  it('system_operator maps to teacher via plugin role equivalences', () => {
     const cmds = getCommandsForRole('system_operator')
     const names = cmds.map((c) => c.name)
-    expect(names).toContain('escalations')
+    // Without a domainKey, education-scoped commands (including escalations) are excluded
+    expect(names).not.toContain('escalations')
     expect(names).not.toContain('domains')
-    // Without a domainKey, education-scoped commands are excluded
     expect(names).not.toContain('teachers')
     // /switch is system-wide (no domainScope), visible to all
     expect(names).toContain('switch')
@@ -401,6 +435,7 @@ describe('getCommandsForRole — domain scoping', () => {
     expect(names).toContain('students')
     expect(names).toContain('modules')
     expect(names).toContain('assign')
+    expect(names).toContain('escalations')
     expect(names).toContain('switch')
     // /join is student-only, so domain_authority still doesn't see it
     expect(names).not.toContain('join')
@@ -426,9 +461,9 @@ describe('getCommandsForRole — domain scoping', () => {
     const cmds = getCommandsForRole('system_operator', undefined, 'system')
     const names = cmds.map((c) => c.name)
     expect(names).not.toContain('teachers')
+    expect(names).not.toContain('escalations')
     // /switch is system-wide, visible in all domains
     expect(names).toContain('switch')
-    expect(names).toContain('escalations')
   })
 
   it('student on education sees education-scoped student commands', () => {

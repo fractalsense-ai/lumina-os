@@ -23,6 +23,7 @@ const _commands: SlashCommandDef[] = []
 const _dashboardTabs: DashboardTabDef[] = []
 const _sidebarPanels = new Map<string, ComponentType<PanelComponentProps>>()
 const _chatHooks: ChatHookDef[] = []
+const _roleEquivalences: Record<string, string> = {}
 const _loadedPlugins = new Set<string>()
 
 // ── Registration API (handed to each plugin) ───────────────
@@ -42,6 +43,9 @@ function createRegistrationApi(): PluginRegistration {
     },
     addChatHooks(hooks) {
       _chatHooks.push(...hooks)
+    },
+    addRoleEquivalences(equivalences) {
+      Object.assign(_roleEquivalences, equivalences)
     },
   }
 }
@@ -77,6 +81,11 @@ export function getChatHooks(): ChatHookDef[] {
   return _chatHooks
 }
 
+/** All plugin-contributed role equivalences. */
+export function getPluginRoleEquivalences(): Readonly<Record<string, string>> {
+  return _roleEquivalences
+}
+
 /** Fire all onMessagesChanged hooks.  Individual errors are silently caught. */
 export async function fireChatHooks(ctx: ChatHookContext): Promise<void> {
   for (const hook of _chatHooks) {
@@ -94,5 +103,6 @@ export function _resetForTesting(): void {
   _dashboardTabs.length = 0
   _sidebarPanels.clear()
   _chatHooks.length = 0
+  for (const key of Object.keys(_roleEquivalences)) delete _roleEquivalences[key]
   _loadedPlugins.clear()
 }

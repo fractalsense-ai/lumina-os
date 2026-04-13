@@ -610,6 +610,11 @@ operation_handlers:
     callable: handle_operation
     hitl_exempt: true
     min_role: user
+  assign_modules:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
   remove_module:
     module_path: domain-packs/education/controllers/education_operations.py
     callable: handle_operation
@@ -748,4 +753,8 @@ ui:
     - name: assign
       operation: assign_student
       description: Assign a student to your roster
+      tier: user
+    - name: assignmodules
+      operation: assign_modules
+      description: Assign learning modules to a student or classroom
       tier: user
