@@ -94,3 +94,5 @@ tests/artifacts/full_suite_phase5_2026-03-31.txt
 
 tests/artifacts/phase7-full-suite-results.txt
 src/web/package-lock.json
+screenshots/
+

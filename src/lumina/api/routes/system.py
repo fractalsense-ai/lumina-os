@@ -140,7 +140,7 @@ async def domain_info(
     # ── Role-based module routing ──
     _role_mod: str | None = None
     if user is not None:
-        from lumina.api.config import _SYSTEM_ROLE_TO_DOMAIN_ROLE
+        from lumina.api.config import _SYSTEM_ROLE_TO_DOMAIN_ROLE, _resolve_user_profile_path
         _user_dr = user.get("domain_roles") or {}
         _eff_role = _user_dr.get(resolved)
         if not _eff_role:
@@ -157,6 +157,20 @@ async def domain_info(
         _role_mod = _r2m.get(_eff_role or "")
         if _role_mod and _role_mod in _mm:
             domain_physics_path = _mm[_role_mod]["domain_physics_path"]
+
+        # ── Profile-aware module override ──
+        # If the user already has a profile with a domain_id pointing to a
+        # specific module, honour that instead of the generic role default.
+        try:
+            _profile_path = _resolve_user_profile_path(str(user["sub"]), resolved)
+            if _profile_path.exists():
+                _prof = _cfg.PERSISTENCE.load_subject_profile(str(_profile_path))
+                _prof_domain_id = _prof.get("domain_id") or _prof.get("subject_domain_id")
+                if _prof_domain_id and _prof_domain_id in _mm:
+                    _role_mod = _prof_domain_id
+                    domain_physics_path = _mm[_prof_domain_id]["domain_physics_path"]
+        except Exception:
+            pass  # graceful fallback — role-based routing still applies
 
     domain = _cfg.PERSISTENCE.load_domain_physics(str(domain_physics_path))
     manifest = dict(runtime.get("ui_manifest") or {})

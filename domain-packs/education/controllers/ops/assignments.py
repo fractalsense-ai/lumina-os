@@ -115,13 +115,21 @@ async def request_teacher_assignment(
     _sprofile["assigned_teacher_id"] = teacher_id
     await save_profile(ctx, student_id, _sprofile)
 
-    # Update teacher profile
+    # Update teacher profile — add student and grant teacher domain_roles
+    # for the student's active module so escalations are routable.
     _tprofile = await load_profile(ctx, teacher_id)
     _edu_state = _tprofile.setdefault("educator_state", {})
     _assigned = list(_edu_state.get("assigned_students") or [])
     if student_id not in _assigned:
         _assigned.append(student_id)
     _edu_state["assigned_students"] = _assigned
+
+    _student_domain_id = _sprofile.get("domain_id") or _sprofile.get("subject_domain_id")
+    if _student_domain_id:
+        _t_domain_roles = _tprofile.setdefault("domain_roles", {})
+        if _student_domain_id not in _t_domain_roles:
+            _t_domain_roles[_student_domain_id] = "teacher"
+
     await save_profile(ctx, teacher_id, _tprofile)
 
     # Cascade to TAs

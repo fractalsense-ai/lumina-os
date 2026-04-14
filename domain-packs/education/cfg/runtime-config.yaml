@@ -48,6 +48,14 @@ runtime:
         subtitle: "Student Commons"
     domain/edu/pre-algebra/v1:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
+      default_task_spec:
+        task_id: pre-algebra-basics-001
+        nominal_difficulty: 0.15
+      adapters:
+        tools:
+          generate_problem:
+            module_path: domain-packs/education/modules/pre-algebra/problem_generator.py
+            callable: generate_problem
       ui_overrides:
         subtitle: "Pre-Algebra"
     domain/edu/algebra-intro/v1:

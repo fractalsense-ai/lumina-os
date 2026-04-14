@@ -254,7 +254,7 @@ def _build_domain_context(
         _sb_kwargs["mud_world_cfg"] = _world_sim.get("mud_world_builder") or None
     if "tiers" in _sb_sig.parameters:
         _tiers = domain.get("subsystem_configs", {}).get("equation_difficulty_tiers") or []
-        _ps_task = ps.get("task_spec") or runtime.get("default_task_spec") or {}
+        _ps_task = ps.get("task_spec") or _mod_entry.get("default_task_spec") or runtime.get("default_task_spec") or {}
         _sb_kwargs["tiers"] = _tiers
         _sb_kwargs["tier_progression"] = [str(t.get("tier_id", "")) for t in _tiers]
         _sb_kwargs["nominal_difficulty"] = float(_ps_task.get("nominal_difficulty", 0.5))
@@ -287,6 +287,11 @@ def _build_domain_context(
     )
 
     default_task_spec = dict(runtime["default_task_spec"])
+    # Prefer module-level default_task_spec declared in runtime-config.yaml
+    # (e.g. pre-algebra sets nominal_difficulty: 0.15).
+    _mod_task = _mod_entry.get("default_task_spec")
+    if isinstance(_mod_task, dict) and _mod_task.get("task_id"):
+        default_task_spec = dict(_mod_task)
     # Prefer module-specific task_spec from domain physics (e.g. governance modules
     # define their own under subsystem_configs.governance.default_task_spec).
     _gov_task = (domain.get("subsystem_configs") or {}).get("governance", {}).get("default_task_spec")
@@ -420,6 +425,33 @@ def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: 
 
     if container.contexts:
         for did, ctx in container.contexts.items():
+            # ── Flush final orchestrator state to the user profile ──
+            if container.user is not None and ctx.orchestrator.state is not None and ctx.subject_profile_path:
+                try:
+                    _runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(did)
+                    _mm = _runtime.get("module_map") or {}
+                    _mod = _mm.get(ctx.module_key) or {}
+                    _ps_fn = (
+                        _mod.get("profile_serializer_fn")
+                        or _runtime.get("profile_serializer_fn")
+                    )
+                    _profile_data = _cfg.PERSISTENCE.load_subject_profile(ctx.subject_profile_path)
+                    if _ps_fn is not None:
+                        _profile_data = _ps_fn(
+                            orch_state=ctx.orchestrator.state,
+                            profile_data=_profile_data,
+                            module_key=ctx.module_key,
+                        )
+                    else:
+                        import dataclasses
+                        if dataclasses.is_dataclass(ctx.orchestrator.state):
+                            _profile_data["session_state"] = dataclasses.asdict(ctx.orchestrator.state)
+                        elif isinstance(ctx.orchestrator.state, dict):
+                            _profile_data["session_state"] = dict(ctx.orchestrator.state)
+                    _cfg.PERSISTENCE.save_subject_profile(ctx.subject_profile_path, _profile_data)
+                except Exception:
+                    log.debug("Profile flush on close failed for %s/%s", session_id, did)
+
             record = build_commitment_record(
                 actor_id=actor_id,
                 actor_role=actor_role,
