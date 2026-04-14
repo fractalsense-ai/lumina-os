@@ -136,16 +136,17 @@ class TestDefaultCurrentProblemModuleDomain:
 
     def test_generator_receives_module_subsystem_configs(self) -> None:
         """When runtime["domain"] has the module's subsystem_configs, the
-        generator should receive the equation_difficulty_tiers."""
+        task initializer should receive them via the runtime dict."""
         captured: dict[str, Any] = {}
 
-        def fake_generate(difficulty: float, subsystem_configs: dict) -> dict:
+        def fake_initializer(task_spec: dict, runtime: dict, *, domain_id: str | None = None) -> dict:
+            difficulty = float(task_spec.get("nominal_difficulty", 0.5))
+            subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
             captured["difficulty"] = difficulty
             captured["subsystem_configs"] = subsystem_configs
             return {"problem_id": "p1", "tier": "tier_1", "expression": "2 + 3"}
 
         runtime = {
-            "tool_fns": {"generate_problem": fake_generate},
             "domain": {
                 "subsystem_configs": {
                     "equation_difficulty_tiers": _PRE_ALGEBRA_TIERS,
@@ -154,28 +155,27 @@ class TestDefaultCurrentProblemModuleDomain:
         }
         task_spec = {"nominal_difficulty": 0.5}
 
-        result = _default_current_problem(task_spec, runtime)
+        result = _default_current_problem(task_spec, runtime, task_initializer_fn=fake_initializer)
 
         assert result["problem_id"] == "p1"
         assert "equation_difficulty_tiers" in captured["subsystem_configs"]
         assert len(captured["subsystem_configs"]["equation_difficulty_tiers"]) == 3
 
     def test_generator_fails_without_tiers(self) -> None:
-        """When runtime["domain"] has no subsystem_configs (general-edu),
-        the generator fails and falls back to task_spec."""
+        """When the task initializer fails (general-edu, no tiers),
+        _default_current_problem falls back to task_spec."""
 
-        def failing_generate(difficulty: float, subsystem_configs: dict) -> dict:
-            tiers = subsystem_configs.get("equation_difficulty_tiers") or []
+        def failing_initializer(task_spec: dict, runtime: dict, *, domain_id: str | None = None) -> dict:
+            tiers = (runtime.get("domain") or {}).get("subsystem_configs", {}).get("equation_difficulty_tiers") or []
             # Simulate the real problem generator crashing on empty tiers
             return tiers[0]  # IndexError when tiers is empty
 
         runtime = {
-            "tool_fns": {"generate_problem": failing_generate},
             "domain": {"subsystem_configs": {}},  # no tiers — general-edu
         }
         task_spec = {"task_id": "fallback-task", "nominal_difficulty": 0.5}
 
-        result = _default_current_problem(task_spec, runtime)
+        result = _default_current_problem(task_spec, runtime, task_initializer_fn=failing_initializer)
 
         # Should fall back to task_spec default, not crash
         assert result["task_id"] == "fallback-task"
@@ -186,13 +186,13 @@ class TestDefaultCurrentProblemModuleDomain:
         domain onto runtime before calling _default_current_problem."""
         captured_configs: list[dict] = []
 
-        def capturing_generate(difficulty: float, subsystem_configs: dict) -> dict:
+        def capturing_initializer(task_spec: dict, runtime: dict, *, domain_id: str | None = None) -> dict:
+            subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
             captured_configs.append(subsystem_configs)
             return {"problem_id": "p2", "expression": "x + 1 = 5"}
 
         # Original runtime has general-education domain (no tiers)
         runtime = {
-            "tool_fns": {"generate_problem": capturing_generate},
             "domain": {"subsystem_configs": {}},
         }
         # Module-specific domain with tiers
@@ -207,7 +207,7 @@ class TestDefaultCurrentProblemModuleDomain:
         gen_runtime["domain"] = module_domain
 
         task_spec = {"nominal_difficulty": 0.5}
-        result = _default_current_problem(task_spec, gen_runtime)
+        result = _default_current_problem(task_spec, gen_runtime, task_initializer_fn=capturing_initializer)
 
         assert result["problem_id"] == "p2"
         assert captured_configs[0]["equation_difficulty_tiers"] == _PRE_ALGEBRA_TIERS

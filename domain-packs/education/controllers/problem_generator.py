@@ -92,3 +92,20 @@ def generate_problem(
         domain_id = "domain/edu/algebra-level-1/v1"
     mod = _load_generator(domain_id)
     return mod.generate_problem(difficulty, subsystem_configs)
+
+
+def initialize_task(
+    task_spec: dict[str, Any],
+    runtime: dict[str, Any],
+    *,
+    domain_id: str | None = None,
+) -> dict[str, Any]:
+    """Domain-level task initializer adapter.
+
+    Extracts education-specific parameters from the generic
+    ``(task_spec, runtime)`` contract and delegates to the
+    per-module ``generate_problem`` via the router.
+    """
+    difficulty = float(task_spec.get("nominal_difficulty", 0.5))
+    subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
+    return generate_problem(difficulty, subsystem_configs, domain_id=domain_id)

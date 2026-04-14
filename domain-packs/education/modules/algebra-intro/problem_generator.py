@@ -141,3 +141,15 @@ def generate_problem(
     problem["difficulty_tier"] = tier_id
     problem["status"] = "in_progress"
     return problem
+
+
+def initialize_task(
+    task_spec: dict[str, Any],
+    runtime: dict[str, Any],
+    *,
+    domain_id: str | None = None,
+) -> dict[str, Any]:
+    """Task initializer adapter — creates ``current_problem`` at session start."""
+    difficulty = float(task_spec.get("nominal_difficulty", 0.5))
+    subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
+    return generate_problem(difficulty, subsystem_configs)

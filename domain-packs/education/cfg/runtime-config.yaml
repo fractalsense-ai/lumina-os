@@ -52,10 +52,9 @@ runtime:
         task_id: pre-algebra-basics-001
         nominal_difficulty: 0.45
       adapters:
-        tools:
-          generate_problem:
-            module_path: domain-packs/education/modules/pre-algebra/problem_generator.py
-            callable: generate_problem
+        task_initializer:
+          module_path: domain-packs/education/modules/pre-algebra/problem_generator.py
+          callable: initialize_task
       ui_overrides:
         subtitle: "Pre-Algebra"
     domain/edu/algebra-intro/v1:
@@ -64,10 +63,9 @@ runtime:
         task_id: algebra-intro-basics-001
         nominal_difficulty: 0.45
       adapters:
-        tools:
-          generate_problem:
-            module_path: domain-packs/education/modules/algebra-intro/problem_generator.py
-            callable: generate_problem
+        task_initializer:
+          module_path: domain-packs/education/modules/algebra-intro/problem_generator.py
+          callable: initialize_task
       ui_overrides:
         subtitle: "Algebra — Introduction"
     domain/edu/algebra-1/v1:
@@ -76,10 +74,9 @@ runtime:
         task_id: algebra-1-basics-001
         nominal_difficulty: 0.45
       adapters:
-        tools:
-          generate_problem:
-            module_path: domain-packs/education/modules/algebra-1/problem_generator.py
-            callable: generate_problem
+        task_initializer:
+          module_path: domain-packs/education/modules/algebra-1/problem_generator.py
+          callable: initialize_task
       ui_overrides:
         subtitle: "Algebra Level 1 — Foundations"
     domain/edu/algebra-level-1/v1:
@@ -88,10 +85,9 @@ runtime:
         task_id: algebra-level-1-basics-001
         nominal_difficulty: 0.45
       adapters:
-        tools:
-          generate_problem:
-            module_path: domain-packs/education/modules/algebra-level-1/problem_generator.py
-            callable: generate_problem
+        task_initializer:
+          module_path: domain-packs/education/modules/algebra-level-1/problem_generator.py
+          callable: initialize_task
       ui_overrides:
         subtitle: "Algebra Level 1 — Foundations"
     domain/edu/domain-authority/v1:
@@ -689,6 +685,9 @@ adapters:
   slm_normalizer:
     module_path: domain-packs/education/controllers/slm_normalizer.py
     callable: normalize_slm_command
+  task_initializer:
+    module_path: domain-packs/education/controllers/problem_generator.py
+    callable: initialize_task
   tools:
     calculator:
       module_path: domain-packs/education/controllers/tool_adapters.py

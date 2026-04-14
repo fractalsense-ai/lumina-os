@@ -68,17 +68,19 @@ def _assert_system_physics_commitment() -> None:
 # Default problem generator
 # ─────────────────────────────────────────────────────────────
 
-def _default_current_problem(task_spec: dict[str, Any], runtime: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Create a session-scoped problem via the domain-registered generator."""
-    if runtime is not None:
-        gen_fn = (runtime.get("tool_fns") or {}).get("generate_problem")
-        if gen_fn is not None:
-            try:
-                difficulty = float(task_spec.get("nominal_difficulty", 0.5))
-                subsystem_configs = (runtime.get("domain") or {}).get("subsystem_configs") or {}
-                return gen_fn(difficulty, subsystem_configs)
-            except Exception:
-                log.warning("Problem generator unavailable; falling back to task_spec")
+def _default_current_problem(
+    task_spec: dict[str, Any],
+    runtime: dict[str, Any],
+    *,
+    domain_id: str | None = None,
+    task_initializer_fn: Any | None = None,
+) -> dict[str, Any]:
+    """Create a session-scoped problem via the task-initializer adapter hook."""
+    if task_initializer_fn is not None:
+        try:
+            return task_initializer_fn(task_spec, runtime, domain_id=domain_id)
+        except Exception:
+            log.warning("Task initializer unavailable; falling back to task_spec")
     current_problem = task_spec.get("current_problem")
     if isinstance(current_problem, dict):
         return dict(current_problem)
@@ -298,12 +300,21 @@ def _build_domain_context(
     if isinstance(_gov_task, dict) and _gov_task.get("task_id"):
         default_task_spec = dict(_gov_task)
     task_spec = dict(ps.get("task_spec") or default_task_spec)
-    # Overlay the module-specific domain physics so the problem generator
-    # reads subsystem_configs (e.g. equation_difficulty_tiers) from the
-    # active module rather than the top-level runtime domain.
-    _gen_runtime = dict(runtime)
-    _gen_runtime["domain"] = domain
-    current_problem = dict(ps.get("current_problem") or _default_current_problem(task_spec, _gen_runtime))
+    # Resolve task_initializer adapter: prefer per-module override, then
+    # domain-level adapter, then None (generic fallback in _default_current_problem).
+    _task_init_fn = _mod_entry.get("task_initializer_fn") or runtime.get("task_initializer_fn")
+    # Build a runtime view with the module-specific domain physics so the
+    # initializer reads subsystem_configs from the active module.
+    _init_runtime = dict(runtime)
+    _init_runtime["domain"] = domain
+    current_problem = dict(
+        ps.get("current_problem")
+        or _default_current_problem(
+            task_spec, _init_runtime,
+            domain_id=resolved_domain_id,
+            task_initializer_fn=_task_init_fn,
+        )
+    )
     turn_count = int(ps.get("turn_count") or 0)
     standing_order_attempts = ps.get("standing_order_attempts") or {}
     if not isinstance(standing_order_attempts, dict):

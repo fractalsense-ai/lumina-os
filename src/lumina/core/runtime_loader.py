@@ -295,6 +295,14 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             repo_root, _sn_cfg["module_path"], _sn_cfg["callable"],
         )
 
+    # Optional task initializer (creates current_problem at session start).
+    task_initializer_fn: Callable[..., Any] | None = None
+    _ti_cfg = adapters_cfg.get("task_initializer")
+    if _ti_cfg is not None:
+        task_initializer_fn = _load_callable(
+            repo_root, _ti_cfg["module_path"], _ti_cfg["callable"],
+        )
+
     tool_fns: dict[str, Callable[..., Any]] = {}
     tools_cfg = adapters_cfg.get("tools") or {}
     for tool_id, tool_cfg in tools_cfg.items():
@@ -399,6 +407,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "turn_0_presenter_fn": turn_0_presenter_fn,
         "escalation_context_fn": escalation_context_fn,
         "slm_normalizer_fn": slm_normalizer_fn,
+        "task_initializer_fn": task_initializer_fn,
         "tool_fns": tool_fns,
         "api_route_defs": api_route_defs,
         "world_sim": _world_sim_cfg,
@@ -469,7 +478,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                     except Exception as _e:
                         log.warning("Failed to load module NLP adapter %s: %s", _mod_id, _e)
                 # Per-module optional hook overrides (post_turn_processor, etc.)
-                for _hk in ("post_turn_processor", "post_turn_timer", "profile_serializer", "turn_0_presenter", "escalation_context"):
+                for _hk in ("post_turn_processor", "post_turn_timer", "profile_serializer", "turn_0_presenter", "escalation_context", "task_initializer"):
                     _hcfg = _mod_adapters.get(_hk)
                     if isinstance(_hcfg, dict) and _hcfg.get("module_path") and _hcfg.get("callable"):
                         try:
