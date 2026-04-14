@@ -311,7 +311,7 @@ def _build_domain_context(
         ps.get("current_problem")
         or _default_current_problem(
             task_spec, _init_runtime,
-            domain_id=resolved_domain_id,
+            domain_id=_resolved_module_key or resolved_domain_id,
             task_initializer_fn=_task_init_fn,
         )
     )
