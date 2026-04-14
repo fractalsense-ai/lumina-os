@@ -29,6 +29,7 @@ export interface StoredSession {
   metadata: TranscriptMetadata
   updatedAt: number
   label?: string
+  moduleId?: string
 }
 
 export interface SessionSummary {
@@ -37,6 +38,7 @@ export interface SessionSummary {
   updatedAt: number
   domainId: string
   label?: string
+  moduleId?: string
 }
 
 // ── Abstract interface ───────────────────────────────────────
@@ -113,6 +115,7 @@ export class IndexedDBTranscriptStore implements TranscriptStore {
             updatedAt: s.updatedAt,
             domainId: s.metadata.domain_id,
             label: s.label,
+            moduleId: s.moduleId,
           })),
         )
       }

@@ -293,7 +293,12 @@ def _build_domain_context(
     if isinstance(_gov_task, dict) and _gov_task.get("task_id"):
         default_task_spec = dict(_gov_task)
     task_spec = dict(ps.get("task_spec") or default_task_spec)
-    current_problem = dict(ps.get("current_problem") or _default_current_problem(task_spec, runtime))
+    # Overlay the module-specific domain physics so the problem generator
+    # reads subsystem_configs (e.g. equation_difficulty_tiers) from the
+    # active module rather than the top-level runtime domain.
+    _gen_runtime = dict(runtime)
+    _gen_runtime["domain"] = domain
+    current_problem = dict(ps.get("current_problem") or _default_current_problem(task_spec, _gen_runtime))
     turn_count = int(ps.get("turn_count") or 0)
     standing_order_attempts = ps.get("standing_order_attempts") or {}
     if not isinstance(standing_order_attempts, dict):

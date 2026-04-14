@@ -673,6 +673,7 @@ function ChatInterface({
   const transcriptRef = useRef<TranscriptTurn[]>([])
   const turnCounterRef = useRef<number>(0)
   const sessionLabelRef = useRef<string>('')
+  const activeModuleIdRef = useRef<string>('')
 
   // ── Session management helpers ───────────────────────────
   const resetChatState = () => {
@@ -684,6 +685,7 @@ function ChatInterface({
     transcriptRef.current = []
     turnCounterRef.current = 0
     sessionLabelRef.current = ''
+    activeModuleIdRef.current = ''
   }
 
   const saveCurrentSession = async () => {
@@ -696,6 +698,7 @@ function ChatInterface({
         metadata: meta,
         updatedAt: Date.now(),
         label: sessionLabelRef.current || undefined,
+        moduleId: activeModuleIdRef.current || undefined,
       }).catch(() => {})
     }
   }
@@ -705,6 +708,9 @@ function ChatInterface({
     resetChatState()
     const newId = `${auth.userId}_${Date.now()}`
     setSessionId(newId)
+    // Label the new session with the current module subtitle
+    sessionLabelRef.current = manifest.subtitle ?? ''
+    activeModuleIdRef.current = ''
     // Prune oldest sessions beyond cap
     const MAX_SESSIONS = 50
     const all = await transcriptStoreRef.current.listSessions()
@@ -802,6 +808,7 @@ function ChatInterface({
           transcriptRef.current = stored.messages
           turnCounterRef.current = stored.messages.length
           sessionLabelRef.current = stored.label ?? ''
+          activeModuleIdRef.current = stored.moduleId ?? ''
         } else {
           // Server rejected the seal — wipe stale local data
           await store.deleteSession(sessionId)
@@ -835,6 +842,7 @@ function ChatInterface({
           metadata: meta,
           updatedAt: Date.now(),
           label: sessionLabelRef.current || undefined,
+          moduleId: activeModuleIdRef.current || undefined,
         }).catch(() => {})
       }
     }
@@ -902,6 +910,27 @@ function ChatInterface({
           ),
         }
         setMessages((prev) => [...prev, cmdMessage])
+
+        // Module switch: update manifest subtitle and start a new session
+        if (slashCmd.operation === 'switch_active_module' && cmdResponse.hitl_exempt) {
+          const uiOverrides = (resultData as Record<string, unknown>).ui_overrides as Record<string, unknown> | undefined
+          if (uiOverrides) {
+            setManifest((prev) => ({ ...prev, ...uiOverrides }))
+          }
+          const switchedModuleId = (resultData as Record<string, unknown>).module_id as string | undefined
+          // Save current session, then open a fresh one for the new module
+          await saveCurrentSession()
+          resetChatState()
+          const newId = `${auth.userId}_${Date.now()}`
+          setSessionId(newId)
+          // Label the new session with the module subtitle
+          sessionLabelRef.current = (uiOverrides?.subtitle as string) ?? manifest.subtitle ?? ''
+          if (switchedModuleId) {
+            activeModuleIdRef.current = switchedModuleId
+          }
+          setSessionRefreshKey((k) => k + 1)
+        }
+
         setIsLoading(false)
         return
       }
@@ -964,6 +993,7 @@ function ChatInterface({
             metadata: apiResponse.transcript_seal_metadata!,
             updatedAt: Date.now(),
             label: sessionLabelRef.current || undefined,
+            moduleId: activeModuleIdRef.current || undefined,
           }).then(() => {
             setSessionRefreshKey((k) => k + 1)
           }).catch(() => {})
@@ -1019,6 +1049,7 @@ function ChatInterface({
           metadata: meta,
           updatedAt: Date.now(),
           label: sessionLabelRef.current || undefined,
+          moduleId: activeModuleIdRef.current || undefined,
         })
       } catch { /* best-effort — proceed to logout */ }
     }

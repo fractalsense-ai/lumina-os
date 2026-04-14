@@ -174,12 +174,22 @@ async def switch_active_module(
 
     log.info("User %s switched active module to %s", user_id, module_id)
 
+    # Include ui_overrides so the frontend can update the header/subtitle
+    _ui_overrides: dict[str, Any] = {}
+    try:
+        _rt = ctx.domain_registry.get_runtime_context("education")
+        _mod_entry = (_rt.get("module_map") or {}).get(module_id) or {}
+        _ui_overrides = _mod_entry.get("ui_overrides") or {}
+    except Exception:
+        pass
+
     return {
         "operation": operation,
         "user_id": user_id,
         "module_id": module_id,
         "status": "switched",
         "message": f"Active module switched to {module_id}",
+        "ui_overrides": _ui_overrides,
     }
 
 

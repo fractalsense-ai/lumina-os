@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Trash, ChatCircle } from '@phosphor-icons/react'
+import { Plus, Trash, ChatCircle, Lock } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { SessionSummary, TranscriptStore } from '@/services/transcriptStore'
@@ -98,18 +98,26 @@ export function SessionPanel({
                     {s.turnCount} turn{s.turnCount !== 1 ? 's' : ''} · {timeAgo(s.updatedAt)}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive flex-shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDelete(s.sessionId)
-                  }}
-                  title="Delete conversation"
-                >
-                  <Trash size={14} />
-                </Button>
+                {s.moduleId && s.moduleId !== 'domain/edu/general-education/v1' ? (
+                  <Lock
+                    size={14}
+                    className="flex-shrink-0 text-muted-foreground"
+                    title="Learning module — deletion requires teacher approval"
+                  />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(s.sessionId)
+                    }}
+                    title="Delete conversation"
+                  >
+                    <Trash size={14} />
+                  </Button>
+                )}
               </div>
             )
           })}
