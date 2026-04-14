@@ -112,5 +112,124 @@
       "description": "All student-role actors must accept the magic-circle consent boundary before interaction.",
       "auto_execute": true
     }
-  ]
+  ],
+
+  "domain_roles": {
+    "schema_version": "1.0",
+    "roles": [
+      {
+        "role_id": "domain_authority",
+        "role_name": "Domain Authority",
+        "hierarchy_level": 0,
+        "description": "Domain-level administrator with full oversight of the education domain. Inherits all teacher capabilities and adds domain-wide management: teacher roster, module assignments, standing-order modifications, and logic-scrape triggers.",
+        "maps_to_system_role": "domain_authority",
+        "default_access": "rwx",
+        "may_assign_domain_roles": true,
+        "max_assignable_level": 3,
+        "scoped_capabilities": {
+          "receive_escalations": true,
+          "modify_standing_orders": true,
+          "view_all_student_progress": true,
+          "trigger_logic_scrape": true,
+          "manage_teachers": true,
+          "assign_modules": true
+        }
+      },
+      {
+        "role_id": "teacher",
+        "role_name": "Teacher",
+        "hierarchy_level": 1,
+        "description": "Certified instructors who deliver lessons, monitor student progress, and receive escalation packets.",
+        "maps_to_system_role": "user",
+        "default_access": "rwx",
+        "may_assign_domain_roles": true,
+        "max_assignable_level": 2,
+        "scoped_capabilities": {
+          "receive_escalations": true,
+          "modify_standing_orders": false,
+          "view_all_student_progress": true,
+          "trigger_logic_scrape": false
+        }
+      },
+      {
+        "role_id": "teaching_assistant",
+        "role_name": "Teaching Assistant / Paraprofessional",
+        "hierarchy_level": 2,
+        "description": "Support staff who help students with guided practice. Can view progress and issue hints but cannot modify domain physics or receive escalations.",
+        "maps_to_system_role": "user",
+        "default_access": "rx",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "receive_escalations": false,
+          "view_student_progress": true,
+          "issue_hints": true,
+          "view_log_records": true,
+          "modify_domain_physics": false
+        }
+      },
+      {
+        "role_id": "student",
+        "role_name": "Student",
+        "hierarchy_level": 3,
+        "description": "Learners enrolled in the education domain.",
+        "maps_to_system_role": "user",
+        "default_access": "x",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "view_own_progress": true,
+          "view_other_progress": false,
+          "query_glossary": true
+        }
+      },
+      {
+        "role_id": "parent",
+        "role_name": "Parent / Guardian",
+        "hierarchy_level": 2,
+        "description": "Parents or guardians who can view their assigned child's progress and receive escalation notifications.",
+        "maps_to_system_role": "user",
+        "default_access": "r",
+        "may_assign_domain_roles": false,
+        "scoped_capabilities": {
+          "view_assigned_child_progress": true,
+          "receive_escalation_notifications": true,
+          "query_glossary": true,
+          "view_other_progress": false,
+          "modify_domain_physics": false
+        }
+      }
+    ],
+    "role_acl": [
+      {
+        "domain_role": "teaching_assistant",
+        "access": "rx",
+        "scope": "session_monitoring"
+      },
+      {
+        "domain_role": "teaching_assistant",
+        "access": "r",
+        "scope": "log_records_own_students"
+      }
+    ]
+  },
+
+  "groups": {
+    "educators": {
+      "description": "Teaching staff with group-level permissions on education modules.",
+      "members": {
+        "domain_roles": ["domain_authority", "teacher", "teaching_assistant"]
+      }
+    },
+    "learners": {
+      "description": "Students enrolled in the domain.",
+      "members": {
+        "domain_roles": ["student"]
+      }
+    },
+    "guardians": {
+      "description": "Parents and guardians with view access to their assigned child's progress.",
+      "members": {
+        "domain_roles": ["parent"]
+      }
+    }
+  }
 }
