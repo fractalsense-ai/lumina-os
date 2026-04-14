@@ -7,7 +7,7 @@
     "pseudonymous_id": "da_prealgebra_lead_001"
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
-  "description": "Pre-Algebra for grades 6\u20137. Covers variables and expressions, order of operations, single-variable linear equations, multi-step linear equations, and linear inequalities. Students work through 5 gated artifacts activating Laws 1 (Balance Principle) and 2 (Inverse Operations) of the Algebra diagnostic framework. Prerequisite gateway to Algebra Intro (grade 8).\n",
+  "description": "Pre-Algebra for grades 6-7. Covers number sense and integers, fractions and decimals, ratios and proportions, expressions and evaluation, and introduction to equations. Students work through 5 gated artifacts activating Laws 1 (Balance Principle) and 2 (Inverse Operations) of the Algebra diagnostic framework. Prerequisite gateway to Algebra Intro (grade 8).\n",
   "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
@@ -33,15 +33,8 @@
       "standing_order_on_violation": "request_verification_retry"
     },
     {
-      "id": "inequality_direction_preserved",
-      "description": "When multiplying or dividing both sides of an inequality by a negative number, the inequality sign must flip direction. This is the critical direction-flip rule and the primary advanced diagnostic signal in this module.\n",
-      "severity": "critical",
-      "check": "inequality_direction_correct",
-      "standing_order_on_violation": "request_inequality_direction_correction"
-    },
-    {
       "id": "reversibility_order_correct",
-      "description": "Law 2 (Inverse Operations): to undo a multi-step expression the student must reverse the order of operations \u2014 PEMDAS in reverse. Attempting to divide by a coefficient before eliminating an added constant is the canonical failure signal. NOTE: this invariant requires evidence field 'reversibility_order_correct', currently estimated by the LLM interpreter; deterministic tool_adapter support is planned for module v0.2.\n",
+      "description": "Law 2 (Inverse Operations): to undo a multi-step expression the student must reverse the order of operations — PEMDAS in reverse. Attempting to divide by a coefficient before eliminating an added constant is the canonical failure signal. NOTE: this invariant requires evidence field 'reversibility_order_correct', currently estimated by the LLM interpreter; deterministic tool_adapter support is planned for module v0.2.\n",
       "severity": "warning",
       "check": "reversibility_order_correct",
       "standing_order_on_violation": "hint_reverse_order_of_operations"
@@ -102,14 +95,6 @@
       "max_attempts": 2,
       "escalation_on_exhaust": true,
       "description": "Ask the student to substitute their answer back into the original equation or inequality and confirm both sides balance.\n"
-    },
-    {
-      "id": "request_inequality_direction_correction",
-      "action": "request_inequality_direction_correction",
-      "trigger_condition": "inequality_direction_preserved",
-      "max_attempts": 2,
-      "escalation_on_exhaust": true,
-      "description": "Prompt the student to re-examine the step where they divided or multiplied by a negative number and ask which direction the inequality sign should point. Do not state the flip rule directly on the first prompt.\n"
     },
     {
       "id": "hint_reverse_order_of_operations",
@@ -180,61 +165,72 @@
   ],
   "artifacts": [
     {
-      "id": "variables_and_expressions",
-      "name": "Variables & Expressions \u2014 Introduction",
-      "unit": "1 \u2014 Foundations",
-      "description": "The student can evaluate algebraic expressions by substituting known values for variables and applying arithmetic operations in the correct order. Foundation for understanding that variables are placeholders.\n",
-      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
+      "id": "number_sense_and_integers",
+      "name": "Number Sense & Integer Operations",
+      "unit": "1 — Number Foundations",
+      "description": "The student can perform addition, subtraction, multiplication, and division with positive and negative integers, understand absolute value, and apply the correct sign rules. Foundation for all subsequent arithmetic.\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills",
       "mastery_threshold": 0.8,
       "skills_required": [
         "equivalence_preserved",
         "show_work_minimum"
       ],
-      "boss_challenge": {
-        "id": "boss_variables_expressions_v1",
-        "task_description": "Evaluate 3(x + 4y) \u2212 2z given x = 2, y = 1, z = 3. Show each substitution step and every arithmetic operation separately.\n",
-        "sensor_purpose": "Tests whether the student treats the expression as a balanced structure (Law 1 introduction). Distributing 3 across (x + 4y) before substituting is the canonical shortcut error revealing incomplete structural understanding.\n",
-        "grading": [
-          { "check": "correct_final_value", "weight": 0.5 },
-          { "check": "substitution_shown", "weight": 0.3 },
-          { "check": "step_count >= 2", "weight": 0.2 }
-        ],
-        "pass_threshold": 0.8,
-        "hints_allowed": false,
-        "max_attempts_per_session": 1
-      }
+      "tool_references": [
+        "generate_problem"
+      ]
     },
     {
-      "id": "order_of_operations",
-      "name": "Order of Operations \u2014 PEMDAS",
-      "unit": "1 \u2014 Foundations",
-      "description": "The student can evaluate complex arithmetic and algebraic expressions by applying PEMDAS correctly. This is the prerequisite for Law 2 \u2014 students must know the order before they can reverse it.\n",
-      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
+      "id": "fractions_and_decimals",
+      "name": "Fractions & Decimal Operations",
+      "unit": "1 — Number Foundations",
+      "description": "The student can add, subtract, multiply, and divide fractions and decimals, convert between fraction and decimal forms, and simplify fractions to lowest terms.\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills",
+      "mastery_threshold": 0.8,
+      "skills_required": [
+        "equivalence_preserved",
+        "show_work_minimum"
+      ],
+      "tool_references": [
+        "generate_problem"
+      ]
+    },
+    {
+      "id": "ratios_and_proportions",
+      "name": "Ratios & Proportions",
+      "unit": "2 — Proportional Reasoning",
+      "description": "The student can set up and solve proportions using cross-multiplication, express ratios in simplest form, and apply proportional reasoning to unit rates and real-world contexts.\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills",
+      "mastery_threshold": 0.8,
+      "skills_required": [
+        "equivalence_preserved",
+        "solution_verifies",
+        "show_work_minimum"
+      ],
+      "tool_references": [
+        "generate_problem"
+      ]
+    },
+    {
+      "id": "expressions_and_evaluation",
+      "name": "Expressions & Order of Operations",
+      "unit": "3 — Algebraic Thinking",
+      "description": "The student can evaluate algebraic expressions by substituting values for variables and applying PEMDAS correctly. Foundation for understanding variables as placeholders and prerequisite for Law 2 (students must know the order before they can reverse it).\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills",
       "mastery_threshold": 0.8,
       "skills_required": [
         "reversibility_order_correct",
         "show_work_minimum"
       ],
-      "boss_challenge": {
-        "id": "boss_order_of_operations_v1",
-        "task_description": "Simplify: 4 + 3 \u00d7 (8 \u2212 2)\u00b2 \u00f7 9. Show each operation on a separate line in the order you perform it.\n",
-        "sensor_purpose": "Forces exponents before multiplication \u2014 the exact order that must later be reversed when isolating variables (Law 2 foundation). A student who adds before computing the exponent has not internalized the order they must undo.\n",
-        "grading": [
-          { "check": "correct_final_value", "weight": 0.5 },
-          { "check": "exponents_before_multiply", "weight": 0.3 },
-          { "check": "step_count >= 3", "weight": 0.2 }
-        ],
-        "pass_threshold": 0.8,
-        "hints_allowed": false,
-        "max_attempts_per_session": 1
-      }
+      "tool_references": [
+        "generate_problem"
+      ]
     },
     {
-      "id": "single_step_equations",
-      "name": "Single-Step Linear Equations",
-      "unit": "2 \u2014 Linear Equations & Inequalities",
-      "description": "The student can solve single-step equations (x + a = b, ax = b) using one inverse operation applied to both sides, showing the work, and verifying by substitution.\n",
-      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
+      "id": "intro_to_equations",
+      "name": "Introduction to Equations",
+      "unit": "3 — Algebraic Thinking",
+      "description": "The student can solve single-step equations (x + a = b, ax = b) using one inverse operation applied to both sides, showing the work, and verifying by substitution. Entry point for Laws 1 and 2.\n",
+      "unlock_condition": "mastery >= 0.8 on all required skills",
       "mastery_threshold": 0.8,
       "skills_required": [
         "equivalence_preserved",
@@ -242,76 +238,9 @@
         "solution_verifies",
         "show_work_minimum"
       ],
-      "boss_challenge": {
-        "id": "boss_single_step_equations_v1",
-        "task_description": "Solve 7x = 84. Show the inverse operation applied to both sides, state your answer, and verify by substituting back into the original equation.\n",
-        "sensor_purpose": "Simultaneously tests Law 1 (both sides get the same division) and Law 2 entry level (identifying multiplication as the operation to undo). Writing only 'x = 12' without showing the division step passes arithmetic but not algebraic procedure.\n",
-        "grading": [
-          { "check": "equivalence_preserved", "weight": 0.4 },
-          { "check": "verify_solution_substitution", "weight": 0.4 },
-          { "check": "step_count >= 2", "weight": 0.2 }
-        ],
-        "pass_threshold": 0.8,
-        "hints_allowed": false,
-        "max_attempts_per_session": 1
-      }
-    },
-    {
-      "id": "multi_step_linear_equations",
-      "name": "Multi-Step Linear Equations",
-      "unit": "2 \u2014 Linear Equations & Inequalities",
-      "description": "The student can solve two-step equations (ax + b = c, ax \u2212 b = c) by applying inverse operations in the correct reversed-PEMDAS order, showing each step on both sides, and verifying. Primary Law 2 diagnostic artifact.\n",
-      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
-      "mastery_threshold": 0.8,
-      "skills_required": [
-        "equivalence_preserved",
-        "reversibility_order_correct",
-        "solution_verifies",
-        "show_work_minimum"
-      ],
-      "boss_challenge": {
-        "id": "boss_multi_step_linear_v1",
-        "task_description": "Solve 3x \u2212 7 = 14. Show each inverse operation applied to both sides in the correct order, state your answer, and verify by substitution.\n",
-        "sensor_purpose": "The canonical Law 2 diagnostic: does the student add 7 first (correct \u2014 undoing subtraction before multiplication) or divide by 3 first (reversed-order failure)? Their work-steps reveal this without any explicit question about the law.\n",
-        "grading": [
-          { "check": "equivalence_preserved", "weight": 0.35 },
-          { "check": "reversibility_order_correct", "weight": 0.30 },
-          { "check": "verify_solution_substitution", "weight": 0.25 },
-          { "check": "step_count >= 3", "weight": 0.10 }
-        ],
-        "pass_threshold": 0.8,
-        "hints_allowed": false,
-        "max_attempts_per_session": 1
-      }
-    },
-    {
-      "id": "linear_inequalities",
-      "name": "Linear Inequalities & the Direction-Flip Rule",
-      "unit": "2 \u2014 Linear Equations & Inequalities",
-      "description": "The student can solve linear inequalities including cases requiring the direction-flip rule when dividing by a negative number, state the solution as an inequality, and describe the solution set on a number line.\n",
-      "unlock_condition": "mastery >= 0.8 on all required skills, confirmed by boss challenge",
-      "mastery_threshold": 0.8,
-      "skills_required": [
-        "equivalence_preserved",
-        "reversibility_order_correct",
-        "inequality_direction_preserved",
-        "solution_verifies",
-        "show_work_minimum"
-      ],
-      "boss_challenge": {
-        "id": "boss_linear_inequalities_v1",
-        "task_description": "Solve \u22124x + 3 > \u22129. Show each step applied to both sides, flip the inequality sign at the correct moment, state your final answer as an inequality, and describe whether you shade left or right on the number line.\n",
-        "sensor_purpose": "The negative coefficient on x forces the direction-flip signal. A student who writes x > 3 instead of x < 3 after dividing by \u22124 has produced the unambiguous Law 2 direction-flip failure. The number line question confirms they understand the solution is a set, not a single value.\n",
-        "grading": [
-          { "check": "equivalence_preserved", "weight": 0.25 },
-          { "check": "inequality_direction_correct", "weight": 0.40 },
-          { "check": "verify_inequality_solution", "weight": 0.25 },
-          { "check": "step_count >= 3", "weight": 0.10 }
-        ],
-        "pass_threshold": 0.8,
-        "hints_allowed": false,
-        "max_attempts_per_session": 1
-      }
+      "tool_references": [
+        "generate_problem"
+      ]
     }
   ],
   "subsystem_configs": {
@@ -326,30 +255,34 @@
     "fluency_monitor": {
       "target_consecutive_successes": 3,
       "time_threshold_seconds": 90,
-      "tier_progression": ["tier_1", "tier_2", "tier_3"]
+      "tier_progression": [
+        "tier_1",
+        "tier_2",
+        "tier_3"
+      ]
     },
     "equation_difficulty_tiers": [
       {
         "tier_id": "tier_1",
-        "label": "Entry \u2014 Single Operation",
-        "equation_type": "single_operation",
-        "equation_template": "x + a = b  or  evaluate f(x) given x",
+        "label": "Entry — Integer & Fraction Arithmetic",
+        "equation_type": "integer_and_fraction_ops",
+        "equation_template": "a + b, a - b, a * b, a / b with integers and fractions",
         "min_difficulty": 0.0,
         "max_difficulty": 0.35
       },
       {
         "tier_id": "tier_2",
-        "label": "Intermediate \u2014 Single-Step Equations",
-        "equation_type": "single_step_equations",
-        "equation_template": "ax = b  or  x + a = b with multi-digit numbers",
+        "label": "Intermediate — Ratios & Expressions",
+        "equation_type": "ratios_and_expressions",
+        "equation_template": "a/b = c/d cross-multiply  or  evaluate expression given variable values",
         "min_difficulty": 0.35,
         "max_difficulty": 0.65
       },
       {
         "tier_id": "tier_3",
-        "label": "Advanced \u2014 Multi-Step & Inequalities",
-        "equation_type": "multi_step_and_inequalities",
-        "equation_template": "ax + b = c  or  ax + b < c  or  ax + b \u2265 c",
+        "label": "Advanced — Single-Step Equations",
+        "equation_type": "single_step_equations",
+        "equation_template": "x + a = b  or  ax = b with verification",
         "min_difficulty": 0.65,
         "max_difficulty": 1.0
       }
@@ -357,67 +290,189 @@
   },
   "glossary": [
     {
+      "term": "integer",
+      "definition": "A whole number that can be positive, negative, or zero. No fractions or decimals.",
+      "aliases": [
+        "integers",
+        "whole number",
+        "signed number"
+      ],
+      "related_terms": [
+        "absolute value",
+        "negative number",
+        "number line"
+      ]
+    },
+    {
+      "term": "absolute value",
+      "definition": "The distance of a number from zero on the number line, always non-negative. Written |a|.",
+      "aliases": [
+        "abs",
+        "magnitude",
+        "distance from zero"
+      ],
+      "related_terms": [
+        "integer",
+        "number line"
+      ]
+    },
+    {
+      "term": "fraction",
+      "definition": "A number expressed as a numerator divided by a denominator (a/b where b is not zero).",
+      "aliases": [
+        "fractions",
+        "rational number"
+      ],
+      "related_terms": [
+        "numerator",
+        "denominator",
+        "decimal",
+        "simplify"
+      ]
+    },
+    {
+      "term": "decimal",
+      "definition": "A number written using a decimal point to represent parts less than one (tenths, hundredths, etc.).",
+      "aliases": [
+        "decimals",
+        "decimal number"
+      ],
+      "related_terms": [
+        "fraction",
+        "place value",
+        "percent"
+      ]
+    },
+    {
+      "term": "ratio",
+      "definition": "A comparison of two quantities by division, often written as a:b or a/b.",
+      "aliases": [
+        "ratios",
+        "rate"
+      ],
+      "related_terms": [
+        "proportion",
+        "unit rate",
+        "fraction"
+      ]
+    },
+    {
+      "term": "proportion",
+      "definition": "An equation stating that two ratios are equal. Solved by cross-multiplication.",
+      "aliases": [
+        "proportions",
+        "equal ratios"
+      ],
+      "related_terms": [
+        "ratio",
+        "cross-multiply",
+        "unit rate"
+      ]
+    },
+    {
+      "term": "unit rate",
+      "definition": "A rate with a denominator of 1, expressing how much of one quantity per single unit of another.",
+      "aliases": [
+        "unit rates",
+        "rate per unit"
+      ],
+      "related_terms": [
+        "ratio",
+        "proportion"
+      ]
+    },
+    {
       "term": "variable",
       "definition": "A letter (like x or y) that represents an unknown number you are trying to find.",
-      "aliases": ["variables", "unknown", "unknowns", "the letter"],
-      "related_terms": ["expression", "coefficient", "constant"],
-      "example_in_context": "In 3x + 4 = 10, the variable is x."
+      "aliases": [
+        "variables",
+        "unknown",
+        "unknowns"
+      ],
+      "related_terms": [
+        "expression",
+        "coefficient",
+        "constant"
+      ]
     },
     {
       "term": "expression",
-      "definition": "A combination of numbers, variables, and operations that does NOT have an equals sign. It has a value but is not a complete statement.",
-      "aliases": ["expressions", "algebraic expression", "math expression"],
-      "related_terms": ["equation", "variable", "term"],
-      "example_in_context": "3x + 4 is an expression. 3x + 4 = 10 is an equation."
+      "definition": "A combination of numbers, variables, and operations that does NOT have an equals sign.",
+      "aliases": [
+        "expressions",
+        "algebraic expression"
+      ],
+      "related_terms": [
+        "equation",
+        "variable",
+        "term"
+      ]
     },
     {
       "term": "order of operations",
-      "definition": "The rule that dictates the sequence for evaluating an expression: Parentheses, Exponents, Multiplication and Division (left to right), Addition and Subtraction (left to right). PEMDAS.",
-      "aliases": ["PEMDAS", "BODMAS", "order of ops"],
-      "related_terms": ["expression", "inverse operation"],
-      "example_in_context": "In 3 + 4 \u00d7 2, you multiply first: 3 + 8 = 11, not 7 \u00d7 2 = 14."
+      "definition": "The rule for evaluating expressions: Parentheses, Exponents, Multiplication/Division (left to right), Addition/Subtraction (left to right). PEMDAS.",
+      "aliases": [
+        "PEMDAS",
+        "BODMAS",
+        "order of ops"
+      ],
+      "related_terms": [
+        "expression",
+        "inverse operation"
+      ]
+    },
+    {
+      "term": "equation",
+      "definition": "A mathematical statement that two expressions are equal, connected by an equals sign (=).",
+      "aliases": [
+        "equations"
+      ],
+      "related_terms": [
+        "expression",
+        "variable",
+        "solution"
+      ]
     },
     {
       "term": "inverse operation",
-      "definition": "The opposite operation that undoes another. Addition and subtraction are inverses. Multiplication and division are inverses. To isolate x, apply inverse operations in the reverse order they were applied.",
-      "aliases": ["inverse operations", "opposite operation", "undo operation"],
-      "related_terms": ["order of operations", "isolate", "equation"],
-      "example_in_context": "To undo +7 in x + 7 = 15, subtract 7 from both sides."
-    },
-    {
-      "term": "isolate",
-      "definition": "To get the variable alone on one side of the equation by performing inverse operations on both sides.",
-      "aliases": ["isolating the variable", "get x alone", "solve for x"],
-      "related_terms": ["inverse operation", "equation", "variable"],
-      "example_in_context": "To isolate x in 2x + 5 = 17: subtract 5, then divide by 2."
-    },
-    {
-      "term": "inequality",
-      "definition": "A mathematical statement that two expressions are not equal, using <, >, \u2264, or \u2265. The solution is usually a range of values, not a single number.",
-      "aliases": ["inequalities", "inequality statement", "inequality sign"],
-      "related_terms": ["equation", "solution set", "number line"],
-      "example_in_context": "x > 3 means x can be any number strictly greater than 3."
-    },
-    {
-      "term": "inequality direction flip",
-      "definition": "When both sides of an inequality are multiplied or divided by a negative number, the inequality sign must reverse direction.",
-      "aliases": ["flip the sign", "reverse the inequality", "flip rule"],
-      "related_terms": ["inequality", "inverse operation"],
-      "example_in_context": "\u22122x < 8 becomes x > \u22124 when dividing both sides by \u22122 (sign flips)."
+      "definition": "The opposite operation that undoes another. Addition/subtraction are inverses; multiplication/division are inverses.",
+      "aliases": [
+        "inverse operations",
+        "opposite operation",
+        "undo operation"
+      ],
+      "related_terms": [
+        "order of operations",
+        "isolate",
+        "equation"
+      ]
     },
     {
       "term": "coefficient",
       "definition": "The number multiplied directly by a variable. When no number is written, the coefficient is 1.",
-      "aliases": ["coefficients", "the number in front of x"],
-      "related_terms": ["variable", "constant", "term"],
-      "example_in_context": "In 4x = 28, the coefficient of x is 4."
+      "aliases": [
+        "coefficients",
+        "the number in front of x"
+      ],
+      "related_terms": [
+        "variable",
+        "constant",
+        "term"
+      ]
     },
     {
       "term": "constant",
       "definition": "A number on its own that does not change and is not attached to a variable.",
-      "aliases": ["constants", "plain number", "fixed number"],
-      "related_terms": ["variable", "coefficient", "expression"],
-      "example_in_context": "In 3x + 7 = 19, the numbers 7 and 19 are constants."
+      "aliases": [
+        "constants",
+        "plain number",
+        "fixed number"
+      ],
+      "related_terms": [
+        "variable",
+        "coefficient",
+        "expression"
+      ]
     }
   ],
   "permissions": {
@@ -425,9 +480,20 @@
     "owner": "da_prealgebra_lead_001",
     "group": "educators",
     "acl": [
-      { "role": "qa", "access": "rx", "scope": "evaluation_only" },
-      { "role": "auditor", "access": "rx", "scope": "log_records_only" },
-      { "domain_role": "student", "access": "x" }
+      {
+        "role": "qa",
+        "access": "rx",
+        "scope": "evaluation_only"
+      },
+      {
+        "role": "auditor",
+        "access": "rx",
+        "scope": "log_records_only"
+      },
+      {
+        "domain_role": "student",
+        "access": "x"
+      }
     ]
   },
   "execution_policy": {
@@ -440,14 +506,20 @@
       "id": "student",
       "label": "Student",
       "description": "Learner working through pre-algebra artifacts, producing evidence via problem-solving steps.",
-      "evidence_sources": ["adapter/edu/algebra-checker/v1"],
-      "groups": ["learners"]
+      "evidence_sources": [
+        "adapter/edu/algebra-checker/v1"
+      ],
+      "groups": [
+        "learners"
+      ]
     }
   ],
   "actor_groups": {
     "learners": {
       "description": "Actors who produce evidence by working through domain artifacts and problem-solving steps.",
-      "members": ["student"]
+      "members": [
+        "student"
+      ]
     }
   },
   "group_libraries": [
@@ -455,12 +527,32 @@
       "id": "turn_interpretation",
       "path": "domain-lib/reference/turn-interpretation-spec-v1.md",
       "description": "Turn interpretation output schema — defines the JSON structure the SLM must emit when classifying student intent.",
-      "shared_with_modules": ["pre-algebra"]
+      "shared_with_modules": [
+        "pre-algebra"
+      ]
     }
   ],
   "module_state_schema": {
-    "mastery_dimensions": ["equivalence_preserved", "no_illegal_operations", "solution_verifies", "show_work_minimum"],
-    "tracked_subsystems": ["affect", "mastery", "challenge_band", "recent_window", "fluency", "challenge", "uncertainty"],
+    "mastery_dimensions": [
+      "equivalence_preserved",
+      "no_illegal_operations",
+      "solution_verifies",
+      "show_work_minimum"
+    ],
+    "tracked_subsystems": [
+      "affect",
+      "mastery",
+      "challenge_band",
+      "recent_window",
+      "fluency",
+      "challenge",
+      "uncertainty"
+    ],
     "custom_fields": {}
+  },
+  "evidence_schema": {
+    "path": "evidence-schema.json",
+    "version": "1.0",
+    "notes": "Evidence fields for pre-algebra: correctness (bool), substitution_check (bool), step_count (int), equivalence_preserved (bool), illegal_operations (list), reversibility_order_correct (bool, LLM-estimated, tool_adapter support planned for v0.2), off_task_ratio (float), frustration_marker_count (int), hint_used (bool).\n"
   }
 }

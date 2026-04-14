@@ -50,7 +50,7 @@ runtime:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
       default_task_spec:
         task_id: pre-algebra-basics-001
-        nominal_difficulty: 0.15
+        nominal_difficulty: 0.45
       adapters:
         tools:
           generate_problem:
@@ -60,14 +60,38 @@ runtime:
         subtitle: "Pre-Algebra"
     domain/edu/algebra-intro/v1:
       domain_physics_path: domain-packs/education/modules/algebra-intro/domain-physics.json
+      default_task_spec:
+        task_id: algebra-intro-basics-001
+        nominal_difficulty: 0.45
+      adapters:
+        tools:
+          generate_problem:
+            module_path: domain-packs/education/modules/algebra-intro/problem_generator.py
+            callable: generate_problem
       ui_overrides:
         subtitle: "Algebra — Introduction"
     domain/edu/algebra-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-1/domain-physics.json
+      default_task_spec:
+        task_id: algebra-1-basics-001
+        nominal_difficulty: 0.45
+      adapters:
+        tools:
+          generate_problem:
+            module_path: domain-packs/education/modules/algebra-1/problem_generator.py
+            callable: generate_problem
       ui_overrides:
         subtitle: "Algebra Level 1 — Foundations"
     domain/edu/algebra-level-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
+      default_task_spec:
+        task_id: algebra-level-1-basics-001
+        nominal_difficulty: 0.45
+      adapters:
+        tools:
+          generate_problem:
+            module_path: domain-packs/education/modules/algebra-level-1/problem_generator.py
+            callable: generate_problem
       ui_overrides:
         subtitle: "Algebra Level 1 — Foundations"
     domain/edu/domain-authority/v1:

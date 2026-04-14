@@ -128,9 +128,9 @@ class TestDomainInfoProfileAware:
 # ═══════════════════════════════════════════════════════════════
 
 _PA_TIERS = [
-    {"tier_id": "tier_1", "equation_type": "single_operation", "min_difficulty": 0.0, "max_difficulty": 0.35},
-    {"tier_id": "tier_2", "equation_type": "single_step_equations", "min_difficulty": 0.35, "max_difficulty": 0.65},
-    {"tier_id": "tier_3", "equation_type": "multi_step_and_inequalities", "min_difficulty": 0.65, "max_difficulty": 1.0},
+    {"tier_id": "tier_1", "equation_type": "integer_and_fraction_ops", "min_difficulty": 0.0, "max_difficulty": 0.35},
+    {"tier_id": "tier_2", "equation_type": "ratios_and_expressions", "min_difficulty": 0.35, "max_difficulty": 0.65},
+    {"tier_id": "tier_3", "equation_type": "single_step_equations", "min_difficulty": 0.65, "max_difficulty": 1.0},
 ]
 
 
@@ -147,29 +147,28 @@ def _load_pa_generator():
 class TestPreAlgebraGenerator:
     """Pre-algebra generator produces valid problems for each tier."""
 
-    def test_tier1_single_operation(self) -> None:
+    def test_tier1_integer_and_fraction_ops(self) -> None:
         gen = _load_pa_generator()
         subsys = {"equation_difficulty_tiers": _PA_TIERS}
         problem = gen.generate_problem(0.1, subsys)
-        assert problem["equation_type"] == "single_operation"
+        assert problem["equation_type"] == "integer_and_fraction_ops"
         assert problem["difficulty_tier"] == "tier_1"
         assert problem["status"] == "in_progress"
-        assert "x" in problem["equation"]
-        # Verify answer is formatted correctly
-        assert problem["expected_answer"].startswith("x = ")
+        # Tier 1 produces arithmetic (no variable)
+        assert problem["expected_answer"]
 
-    def test_tier2_single_step_equations(self) -> None:
+    def test_tier2_ratios_and_expressions(self) -> None:
         gen = _load_pa_generator()
         subsys = {"equation_difficulty_tiers": _PA_TIERS}
         problem = gen.generate_problem(0.5, subsys)
-        assert problem["equation_type"] == "single_step_equations"
+        assert problem["equation_type"] == "ratios_and_expressions"
         assert problem["difficulty_tier"] == "tier_2"
 
-    def test_tier3_multi_step_and_inequalities(self) -> None:
+    def test_tier3_single_step_equations(self) -> None:
         gen = _load_pa_generator()
         subsys = {"equation_difficulty_tiers": _PA_TIERS}
         problem = gen.generate_problem(0.8, subsys)
-        assert problem["equation_type"] == "multi_step_and_inequalities"
+        assert problem["equation_type"] == "single_step_equations"
         assert problem["difficulty_tier"] == "tier_3"
 
     def test_low_difficulty_maps_to_tier1(self) -> None:
@@ -178,7 +177,7 @@ class TestPreAlgebraGenerator:
         subsys = {"equation_difficulty_tiers": _PA_TIERS}
         problem = gen.generate_problem(0.15, subsys)
         assert problem["difficulty_tier"] == "tier_1"
-        assert problem["equation_type"] == "single_operation"
+        assert problem["equation_type"] == "integer_and_fraction_ops"
 
     def test_generator_keys_match_tier_equation_types(self) -> None:
         """All equation_type values in tiers must exist in _GENERATORS."""
@@ -206,7 +205,7 @@ class TestModuleLevelDefaultTaskSpec:
         pa_entry = cfg["runtime"]["module_map"]["domain/edu/pre-algebra/v1"]
         task_spec = pa_entry.get("default_task_spec")
         assert task_spec is not None
-        assert task_spec["nominal_difficulty"] == 0.15
+        assert task_spec["nominal_difficulty"] == 0.45
         assert task_spec["task_id"] == "pre-algebra-basics-001"
 
 

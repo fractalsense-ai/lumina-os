@@ -50,6 +50,11 @@ def _mock_cfg(users: list[dict[str, Any]] | None = None) -> MagicMock:
             })
     cfg.DOMAIN_REGISTRY.list_modules_for_domain.return_value = edu_modules
     cfg.DOMAIN_REGISTRY._repo_root = str(_REPO_ROOT)
+    cfg.DOMAIN_REGISTRY._domains = {
+        "education": {
+            "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+        },
+    }
 
     return cfg
 

@@ -7,7 +7,7 @@
     "pseudonymous_id": "da_algebra_lead_001"
   },
   "meta_authority_id": "domain/edu/curriculum/v1",
-  "description": "Algebra Level 1 \u2014 legacy deployed module covering single-variable linear equations (Artifacts 3\u20134 of the Pre-Algebra curriculum: single_step_equations and multi_step_linear_equations), equivalence preservation, and solution verification. Active for current users. The new pre-algebra module (domain/edu/pre-algebra/v1) extends this with variables/expressions, order of operations, and linear inequalities.\n",
+  "description": "Algebra Level 1 — legacy deployed module covering single-variable linear equations (Artifacts 3–4 of the Pre-Algebra curriculum: single_step_equations and multi_step_linear_equations), equivalence preservation, and solution verification. Active for current users. The new pre-algebra module (domain/edu/pre-algebra/v1) extends this with variables/expressions, order of operations, and linear inequalities.\n",
   "department": "Mathematics",
   "lumina_core_version": "1.0.0",
   "invariants": [
@@ -183,12 +183,16 @@
     "fluency_monitor": {
       "target_consecutive_successes": 3,
       "time_threshold_seconds": 120,
-      "tier_progression": ["tier_1", "tier_2", "tier_3"]
+      "tier_progression": [
+        "tier_1",
+        "tier_2",
+        "tier_3"
+      ]
     },
     "equation_difficulty_tiers": [
       {
         "tier_id": "tier_1",
-        "label": "Entry \u2014 Single-Step Isolation",
+        "label": "Entry — Single-Step Isolation",
         "equation_type": "single_step_isolation",
         "equation_template": "x + a = b",
         "min_difficulty": 0.0,
@@ -196,7 +200,7 @@
       },
       {
         "tier_id": "tier_2",
-        "label": "Intermediate \u2014 Variable Consolidation",
+        "label": "Intermediate — Variable Consolidation",
         "equation_type": "variable_consolidation",
         "equation_template": "ax = b",
         "min_difficulty": 0.35,
@@ -204,7 +208,7 @@
       },
       {
         "tier_id": "tier_3",
-        "label": "Advanced \u2014 Multi-Step Linear",
+        "label": "Advanced — Multi-Step Linear",
         "equation_type": "multi_step_linear",
         "equation_template": "ax + b = c  or  ax - b = c",
         "min_difficulty": 0.65,
@@ -220,86 +224,170 @@
     {
       "term": "variable",
       "definition": "A letter (usually x, y, or z) that stands for an unknown number you are trying to find.",
-      "aliases": ["variables", "unknown", "unknowns", "the letter"],
-      "related_terms": ["constant", "coefficient", "expression"],
-      "example_in_context": "In the equation x + 7 = 15, the variable is x."
+      "aliases": [
+        "variables",
+        "unknown",
+        "unknowns",
+        "the letter"
+      ],
+      "related_terms": [
+        "constant",
+        "coefficient",
+        "expression"
+      ]
     },
     {
       "term": "coefficient",
       "definition": "The number multiplied by a variable. When no number is written, the coefficient is 1.",
-      "aliases": ["coefficients", "the number in front of x", "number before the variable"],
-      "related_terms": ["variable", "constant", "term"],
-      "example_in_context": "In 4x = 28, the coefficient of x is 4."
+      "aliases": [
+        "coefficients",
+        "the number in front of x",
+        "number before the variable"
+      ],
+      "related_terms": [
+        "variable",
+        "constant",
+        "term"
+      ]
     },
     {
       "term": "constant",
       "definition": "A number on its own that does not change and is not attached to a variable.",
-      "aliases": ["constants", "plain number", "fixed number"],
-      "related_terms": ["variable", "coefficient", "expression"],
-      "example_in_context": "In x + 7 = 15, the numbers 7 and 15 are constants."
+      "aliases": [
+        "constants",
+        "plain number",
+        "fixed number"
+      ],
+      "related_terms": [
+        "variable",
+        "coefficient",
+        "expression"
+      ]
     },
     {
       "term": "equation",
       "definition": "A mathematical statement that two expressions are equal, connected by an equals sign (=).",
-      "aliases": ["equations"],
-      "related_terms": ["expression", "variable", "solution"],
-      "example_in_context": "x + 7 = 15 is an equation because the left side equals the right side."
+      "aliases": [
+        "equations"
+      ],
+      "related_terms": [
+        "expression",
+        "variable",
+        "solution"
+      ]
     },
     {
       "term": "expression",
       "definition": "A combination of numbers, variables, and operations (like + or -) that represents a value. An expression does NOT have an equals sign.",
-      "aliases": ["expressions", "math expression"],
-      "related_terms": ["equation", "variable", "term"],
-      "example_in_context": "In the equation x + 7 = 15, the part 'x + 7' is an expression."
+      "aliases": [
+        "expressions",
+        "math expression"
+      ],
+      "related_terms": [
+        "equation",
+        "variable",
+        "term"
+      ]
     },
     {
       "term": "isolate",
       "definition": "To get the variable by itself on one side of the equation by performing operations on both sides.",
-      "aliases": ["isolating", "get x by itself", "get the variable alone"],
-      "related_terms": ["inverse operation", "variable", "equation"],
-      "example_in_context": "To isolate x in x + 7 = 15, subtract 7 from both sides to get x = 8."
+      "aliases": [
+        "isolating",
+        "get x by itself",
+        "get the variable alone"
+      ],
+      "related_terms": [
+        "inverse operation",
+        "variable",
+        "equation"
+      ]
     },
     {
       "term": "inverse operation",
       "definition": "The opposite operation that undoes another operation. Addition and subtraction are inverses; multiplication and division are inverses.",
-      "aliases": ["inverse operations", "opposite operation", "undo operation", "reverse operation"],
-      "related_terms": ["isolate", "equation", "variable"],
-      "example_in_context": "To undo '+ 7' in x + 7 = 15, use the inverse operation '- 7'."
+      "aliases": [
+        "inverse operations",
+        "opposite operation",
+        "undo operation",
+        "reverse operation"
+      ],
+      "related_terms": [
+        "isolate",
+        "equation",
+        "variable"
+      ]
     },
     {
       "term": "substitution",
       "definition": "Replacing the variable with a number to check whether the equation is true.",
-      "aliases": ["substitute", "substituting", "plug in", "plugging in"],
-      "related_terms": ["solution", "equation", "variable"],
-      "example_in_context": "Substitute x = 8 into x + 7 = 15: 8 + 7 = 15. It checks out!"
+      "aliases": [
+        "substitute",
+        "substituting",
+        "plug in",
+        "plugging in"
+      ],
+      "related_terms": [
+        "solution",
+        "equation",
+        "variable"
+      ]
     },
     {
       "term": "linear equation",
       "definition": "An equation where the variable has no exponent (or an exponent of 1). Its graph is a straight line.",
-      "aliases": ["linear equations", "linear", "first-degree equation"],
-      "related_terms": ["equation", "variable", "coefficient"],
-      "example_in_context": "3x + 5 = 11 is a linear equation because x is raised to the first power."
+      "aliases": [
+        "linear equations",
+        "linear",
+        "first-degree equation"
+      ],
+      "related_terms": [
+        "equation",
+        "variable",
+        "coefficient"
+      ]
     },
     {
       "term": "solution",
       "definition": "The value of the variable that makes the equation true.",
-      "aliases": ["solutions", "answer", "root"],
-      "related_terms": ["equation", "variable", "substitution"],
-      "example_in_context": "The solution to x + 7 = 15 is x = 8 because 8 + 7 = 15."
+      "aliases": [
+        "solutions",
+        "answer",
+        "root"
+      ],
+      "related_terms": [
+        "equation",
+        "variable",
+        "substitution"
+      ]
     },
     {
       "term": "term",
       "definition": "A single number, a single variable, or a number multiplied by a variable. Terms are separated by + or - signs.",
-      "aliases": ["terms"],
-      "related_terms": ["coefficient", "variable", "constant", "expression"],
-      "example_in_context": "In 3x + 5 = 11, the terms are 3x, 5, and 11."
+      "aliases": [
+        "terms"
+      ],
+      "related_terms": [
+        "coefficient",
+        "variable",
+        "constant",
+        "expression"
+      ]
     },
     {
       "term": "like terms",
       "definition": "Terms that have the same variable raised to the same power. Like terms can be combined by adding or subtracting their coefficients.",
-      "aliases": ["combining like terms", "combine like terms", "similar terms"],
-      "related_terms": ["term", "coefficient", "variable", "expression"],
-      "example_in_context": "In 2x + 3x = 10, the terms 2x and 3x are like terms. Combine them: 5x = 10."
+      "aliases": [
+        "combining like terms",
+        "combine like terms",
+        "similar terms"
+      ],
+      "related_terms": [
+        "term",
+        "coefficient",
+        "variable",
+        "expression"
+      ]
     }
   ],
   "tool_adapters": [
@@ -315,131 +403,25 @@
       "general_math"
     ]
   },
-  "domain_roles": {
-    "schema_version": "1.0",
-    "roles": [
-      {
-        "role_id": "domain_authority",
-        "role_name": "Domain Authority",
-        "hierarchy_level": 0,
-        "description": "Domain-level administrator with full oversight of the education domain. Inherits all teacher capabilities and adds domain-wide management: teacher roster, module assignments, standing-order modifications, and logic-scrape triggers.",
-        "maps_to_system_role": "domain_authority",
-        "default_access": "rwx",
-        "may_assign_domain_roles": true,
-        "max_assignable_level": 3,
-        "scoped_capabilities": {
-          "receive_escalations": true,
-          "modify_standing_orders": true,
-          "view_all_student_progress": true,
-          "trigger_logic_scrape": true,
-          "manage_teachers": true,
-          "assign_modules": true
-        }
-      },
-      {
-        "role_id": "teacher",
-        "role_name": "Teacher",
-        "hierarchy_level": 1,
-        "description": "Certified instructors who deliver lessons, monitor student progress, and receive escalation packets.",
-        "maps_to_system_role": "user",
-        "default_access": "rwx",
-        "may_assign_domain_roles": true,
-        "max_assignable_level": 2,
-        "scoped_capabilities": {
-          "receive_escalations": true,
-          "modify_standing_orders": false,
-          "view_all_student_progress": true,
-          "trigger_logic_scrape": false
-        }
-      },
-      {
-        "role_id": "teaching_assistant",
-        "role_name": "Teaching Assistant / Paraprofessional",
-        "hierarchy_level": 2,
-        "description": "Support staff who help students with guided practice. Can view progress and issue hints but cannot modify domain physics or receive escalations.",
-        "maps_to_system_role": "user",
-        "default_access": "rx",
-        "may_assign_domain_roles": false,
-        "scoped_capabilities": {
-          "receive_escalations": false,
-          "view_student_progress": true,
-          "issue_hints": true,
-          "view_log_records": true,
-          "modify_domain_physics": false
-        }
-      },
-      {
-        "role_id": "student",
-        "role_name": "Student",
-        "hierarchy_level": 3,
-        "description": "Learners who participate in algebra sessions.",
-        "maps_to_system_role": "user",
-        "default_access": "x",
-        "may_assign_domain_roles": false,
-        "scoped_capabilities": {
-          "view_own_progress": true,
-          "view_other_progress": false,
-          "query_glossary": true
-        }
-      },
-      {
-        "role_id": "parent",
-        "role_name": "Parent / Guardian",
-        "hierarchy_level": 2,
-        "description": "Parents or guardians who can view their assigned child's progress and receive escalation notifications.",
-        "maps_to_system_role": "user",
-        "default_access": "r",
-        "may_assign_domain_roles": false,
-        "scoped_capabilities": {
-          "view_assigned_child_progress": true,
-          "receive_escalation_notifications": true,
-          "query_glossary": true,
-          "view_other_progress": false,
-          "modify_domain_physics": false
-        }
-      }
-    ],
-    "role_acl": [
-      {
-        "domain_role": "teaching_assistant",
-        "access": "rx",
-        "scope": "session_monitoring"
-      },
-      {
-        "domain_role": "teaching_assistant",
-        "access": "r",
-        "scope": "log_records_own_students"
-      }
-    ]
-  },
-  "groups": {
-    "educators": {
-      "description": "Teaching staff with group-level permissions on education modules.",
-      "members": {
-        "domain_roles": ["domain_authority", "teacher", "teaching_assistant"]
-      }
-    },
-    "learners": {
-      "description": "Students enrolled in the module.",
-      "members": {
-        "domain_roles": ["student"]
-      }
-    },
-    "guardians": {
-      "description": "Parents and guardians with view access to their assigned child's progress.",
-      "members": {
-        "domain_roles": ["parent"]
-      }
-    }
-  },
   "permissions": {
     "mode": "750",
     "owner": "da_algebra_lead_001",
     "group": "educators",
     "acl": [
-      { "role": "qa", "access": "rx", "scope": "evaluation_only" },
-      { "role": "auditor", "access": "rx", "scope": "log_records_only" },
-      { "domain_role": "student", "access": "x" }
+      {
+        "role": "qa",
+        "access": "rx",
+        "scope": "evaluation_only"
+      },
+      {
+        "role": "auditor",
+        "access": "rx",
+        "scope": "log_records_only"
+      },
+      {
+        "domain_role": "student",
+        "access": "x"
+      }
     ]
   },
   "execution_policy": {
@@ -452,32 +434,48 @@
         "equivalence_preserved": {
           "standing_order_id": "request_more_steps",
           "tool_adapter_id": "adapter/edu/algebra-parser/v1",
-          "library_deps": ["education/turn_interpretation"]
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         },
         "solution_verifies": {
           "standing_order_id": "request_verification_retry",
           "tool_adapter_id": "adapter/edu/substitution-checker/v1",
-          "library_deps": ["education/turn_interpretation"]
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         },
         "no_illegal_operations": {
           "standing_order_id": "request_more_steps",
           "tool_adapter_id": "adapter/edu/algebra-parser/v1",
-          "library_deps": ["education/turn_interpretation"]
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         },
         "show_work_minimum": {
           "standing_order_id": "request_more_steps",
           "tool_adapter_id": "adapter/edu/algebra-parser/v1",
-          "library_deps": ["education/turn_interpretation"]
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         }
       },
       "standing_order_tools": {
         "request_more_steps": {
-          "tool_chain": ["adapter/edu/algebra-parser/v1"],
-          "library_deps": ["education/turn_interpretation"]
+          "tool_chain": [
+            "adapter/edu/algebra-parser/v1"
+          ],
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         },
         "request_verification_retry": {
-          "tool_chain": ["adapter/edu/substitution-checker/v1"],
-          "library_deps": ["education/turn_interpretation"]
+          "tool_chain": [
+            "adapter/edu/substitution-checker/v1"
+          ],
+          "library_deps": [
+            "education/turn_interpretation"
+          ]
         }
       }
     }
@@ -487,14 +485,20 @@
       "id": "student",
       "label": "Student",
       "description": "Learner working through algebra level 1 artifacts, producing evidence via problem-solving steps.",
-      "evidence_sources": ["adapter/edu/substitution-checker/v1"],
-      "groups": ["learners"]
+      "evidence_sources": [
+        "adapter/edu/substitution-checker/v1"
+      ],
+      "groups": [
+        "learners"
+      ]
     }
   ],
   "actor_groups": {
     "learners": {
       "description": "Actors who produce evidence by working through domain artifacts and problem-solving steps.",
-      "members": ["student"]
+      "members": [
+        "student"
+      ]
     }
   },
   "group_libraries": [
@@ -502,12 +506,27 @@
       "id": "turn_interpretation",
       "path": "domain-lib/reference/turn-interpretation-spec-v1.md",
       "description": "Turn interpretation output schema — defines the JSON structure the SLM must emit when classifying student intent.",
-      "shared_with_modules": ["algebra-level-1"]
+      "shared_with_modules": [
+        "algebra-level-1"
+      ]
     }
   ],
   "module_state_schema": {
-    "mastery_dimensions": ["equivalence_preserved", "no_illegal_operations", "solution_verifies", "show_work_minimum"],
-    "tracked_subsystems": ["affect", "mastery", "challenge_band", "recent_window", "fluency", "challenge", "uncertainty"],
+    "mastery_dimensions": [
+      "equivalence_preserved",
+      "no_illegal_operations",
+      "solution_verifies",
+      "show_work_minimum"
+    ],
+    "tracked_subsystems": [
+      "affect",
+      "mastery",
+      "challenge_band",
+      "recent_window",
+      "fluency",
+      "challenge",
+      "uncertainty"
+    ],
     "custom_fields": {}
   }
 }

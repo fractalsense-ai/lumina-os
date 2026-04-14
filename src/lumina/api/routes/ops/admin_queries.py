@@ -91,33 +91,54 @@ async def execute(
             resolved = ctx.domain_registry.resolve_domain_id(domain_id)
         except DomainNotFoundError as exc:
             raise ctx.HTTPException(status_code=400, detail=str(exc))
-        # Collect domain_roles from the actual domain_roles.roles block
-        modules = ctx.domain_registry.list_modules_for_domain(resolved)
+
+        # Helper to extract domain_roles from a physics JSON file
+        def _extract_roles(dp_full: Path) -> list[dict[str, Any]]:
+            dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
+            dr_block = dp_data.get("domain_roles", {})
+            return [
+                {
+                    "role_id": r.get("role_id"),
+                    "role_name": r.get("role_name"),
+                    "hierarchy_level": r.get("hierarchy_level"),
+                    "maps_to_system_role": r.get("maps_to_system_role"),
+                    "default_access": r.get("default_access"),
+                    "scoped_capabilities": r.get("scoped_capabilities", {}),
+                }
+                for r in dr_block.get("roles", [])
+                if isinstance(r, dict)
+            ]
+
         domain_roles: dict[str, Any] = {}
+
+        # First: check the domain-level domain-physics.json
+        try:
+            entry = ctx.domain_registry._domains.get(resolved, {})
+            cfg_path = Path(ctx.domain_registry._repo_root) / entry.get("runtime_config_path", "")
+            raw = load_yaml(str(cfg_path))
+            runtime_block = raw.get("runtime") or raw
+            domain_dp_path = runtime_block.get("domain_physics_path", "")
+            if domain_dp_path:
+                dp_full = Path(ctx.domain_registry._repo_root) / domain_dp_path
+                domain_pack_physics = dp_full.parent.parent.parent / "domain-physics.json"
+                if domain_pack_physics.exists():
+                    roles = _extract_roles(domain_pack_physics)
+                    if roles:
+                        domain_roles["_domain"] = {"roles": roles}
+        except Exception:
+            ctx.log.debug("Could not read domain-level physics for %s", resolved)
+
+        # Then: collect from per-module physics files
+        modules = ctx.domain_registry.list_modules_for_domain(resolved)
         for mod in modules:
             dp_path = mod.get("domain_physics_path", "")
             if not dp_path:
                 continue
             try:
                 dp_full = Path(ctx.domain_registry._repo_root) / dp_path
-                dp_data = json.loads(dp_full.read_text(encoding="utf-8"))
-                dr_block = dp_data.get("domain_roles", {})
-                roles_list = dr_block.get("roles", [])
-                if roles_list:
-                    domain_roles[mod["module_id"]] = {
-                        "roles": [
-                            {
-                                "role_id": r.get("role_id"),
-                                "role_name": r.get("role_name"),
-                                "hierarchy_level": r.get("hierarchy_level"),
-                                "maps_to_system_role": r.get("maps_to_system_role"),
-                                "default_access": r.get("default_access"),
-                                "scoped_capabilities": r.get("scoped_capabilities", {}),
-                            }
-                            for r in roles_list
-                            if isinstance(r, dict)
-                        ],
-                    }
+                roles = _extract_roles(dp_full)
+                if roles:
+                    domain_roles[mod["module_id"]] = {"roles": roles}
             except Exception:
                 ctx.log.debug("Could not read domain physics for %s", mod.get("module_id"))
         return {"operation": operation, "domain_id": resolved, "domain_roles": domain_roles}

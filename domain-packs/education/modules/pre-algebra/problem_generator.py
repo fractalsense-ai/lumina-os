@@ -4,11 +4,11 @@ Produces randomised problems whose generator keys match the
 ``equation_difficulty_tiers`` declared in the pre-algebra
 domain-physics:
 
-  tier_1 → single_operation        (x + a = b, or evaluate f(x))
-  tier_2 → single_step_equations   (ax = b, multi-digit x + a = b)
-  tier_3 → multi_step_and_inequalities  (ax ± b = c, ax ± b < c)
+  tier_1 → integer_and_fraction_ops  (integer arithmetic, fraction ops)
+  tier_2 → ratios_and_expressions    (proportions, evaluate expressions)
+  tier_3 → single_step_equations     (x + a = b, ax = b)
 
-All answers are guaranteed positive integers.
+All answers are guaranteed positive integers or simple fractions.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import random
 from typing import Any
 
 
-# ── Tier Selection (same logic as the shared domain-lib generator) ─
+# ── Tier Selection ────────────────────────────────────────────
 
 
 def select_tier(
@@ -37,53 +37,105 @@ def select_tier(
 # ── Generators (keyed to pre-algebra tier equation_types) ─────
 
 
-def _generate_single_operation() -> dict[str, Any]:
-    """Tier 1: basic single-operation arithmetic.
+def _generate_integer_and_fraction_ops() -> dict[str, Any]:
+    """Tier 1: integer arithmetic and basic fraction operations.
 
-    Forms: x + a = b, x - a = c, a + x = b
-    Constraints: operands in [1..20], answer always positive.
+    Forms: a + b, a - b, a * b, a / b with integers;
+           simple fraction addition/subtraction.
     """
-    form = random.choice(["add", "sub", "add_rev"])
-    if form == "add":
+    form = random.choice(["int_add", "int_sub", "int_mul", "int_neg", "frac_add"])
+    if form == "int_add":
+        a = random.randint(-20, 20)
+        b = random.randint(1, 20)
+        answer = a + b
+        equation = f"{a} + {b}"
+        expected = str(answer)
+    elif form == "int_sub":
+        a = random.randint(-15, 25)
+        b = random.randint(1, 20)
+        answer = a - b
+        equation = f"{a} - {b}"
+        expected = str(answer)
+    elif form == "int_mul":
+        a = random.randint(-10, 10)
+        b = random.randint(2, 10)
+        answer = a * b
+        equation = f"{a} × {b}"
+        expected = str(answer)
+    elif form == "int_neg":
         a = random.randint(1, 20)
-        answer = random.randint(1, 20)
-        equation = f"x + {a} = {answer + a}"
-    elif form == "sub":
-        # x - a = c  →  x = c + a.  Pick c positive so answer > a.
-        a = random.randint(1, 15)
-        c = random.randint(1, 15)
-        answer = c + a
-        equation = f"x - {a} = {c}"
+        equation = f"|–{a}|"
+        answer = a
+        expected = str(answer)
     else:
-        a = random.randint(1, 20)
-        answer = random.randint(1, 20)
-        equation = f"{a} + x = {a + answer}"
+        # Simple fraction addition with same denominator
+        d = random.choice([2, 3, 4, 5, 6, 8])
+        n1 = random.randint(1, d - 1)
+        n2 = random.randint(1, d - 1)
+        answer_n = n1 + n2
+        equation = f"{n1}/{d} + {n2}/{d}"
+        expected = f"{answer_n}/{d}"
+    return {
+        "equation": equation,
+        "target_variable": None,
+        "expected_answer": expected,
+        "min_steps": 1,
+    }
+
+
+def _generate_ratios_and_expressions() -> dict[str, Any]:
+    """Tier 2: proportions and expression evaluation.
+
+    Forms: a/b = x/d (solve for x), or evaluate expression given x.
+    """
+    if random.choice([True, False]):
+        # Proportion: a/b = x/d
+        a = random.randint(1, 10)
+        b = random.randint(2, 8)
+        d = random.randint(2, 12)
+        answer = a * d // b if (a * d) % b == 0 else a * d / b
+        # Ensure clean integer answer
+        mult = random.randint(2, 5)
+        a = random.randint(1, 8)
+        b = random.randint(2, 6)
+        d = b * mult
+        answer = a * mult
+        equation = f"{a}/{b} = x/{d}"
+        expected = f"x = {answer}"
+    else:
+        # Evaluate expression: given x = val, find result
+        val = random.randint(2, 8)
+        coeff = random.randint(2, 6)
+        const = random.randint(1, 10)
+        answer = coeff * val + const
+        equation = f"Evaluate {coeff}x + {const} when x = {val}"
+        expected = str(answer)
     return {
         "equation": equation,
         "target_variable": "x",
-        "expected_answer": f"x = {answer}",
+        "expected_answer": expected,
         "min_steps": 1,
     }
 
 
 def _generate_single_step_equations() -> dict[str, Any]:
-    """Tier 2: single-step equations with multiplication or larger numbers.
+    """Tier 3: single-step equations.
 
-    Forms: ax = b  (a in [2..12], answer in [1..15])
-           x + a = b  with multi-digit numbers (a in [10..50])
+    Forms: x + a = b, ax = b
+    Constraints: answer always a positive integer.
     """
     if random.choice([True, False]):
+        # x + a = b
+        a = random.randint(1, 20)
+        answer = random.randint(1, 20)
+        b = answer + a
+        equation = f"x + {a} = {b}"
+    else:
         # ax = b
         a = random.randint(2, 12)
         answer = random.randint(1, 15)
         b = a * answer
         equation = f"{a}x = {b}"
-    else:
-        # x + a = b with larger numbers
-        a = random.randint(10, 50)
-        answer = random.randint(10, 50)
-        b = answer + a
-        equation = f"x + {a} = {b}"
     return {
         "equation": equation,
         "target_variable": "x",
@@ -92,51 +144,10 @@ def _generate_single_step_equations() -> dict[str, Any]:
     }
 
 
-def _generate_multi_step_and_inequalities() -> dict[str, Any]:
-    """Tier 3: two-step linear equations and inequalities.
-
-    Forms: ax + b = c, ax - b = c, ax + b < c, ax + b >= c
-    Constraints: a in [2..8], b in [1..15], answer in [1..12]
-    """
-    a = random.randint(2, 8)
-    b = random.randint(1, 15)
-    answer = random.randint(1, 12)
-    is_inequality = random.choice([True, False])
-
-    if random.choice([True, False]):
-        c = a * answer + b
-        lhs = f"{a}x + {b}"
-    else:
-        c = a * answer - b
-        lhs = f"{a}x - {b}"
-
-    if is_inequality:
-        op = random.choice(["<", ">", "\u2264", "\u2265"])
-        equation = f"{lhs} {op} {c}"
-        expected = f"x {_flip_op(op) if False else op} {answer}"
-        # For the student, the answer is the boundary value
-        # (the direction stays the same when dividing by positive a)
-        expected = f"x {op} {answer}"
-    else:
-        equation = f"{lhs} = {c}"
-        expected = f"x = {answer}"
-
-    return {
-        "equation": equation,
-        "target_variable": "x",
-        "expected_answer": expected,
-        "min_steps": 2,
-    }
-
-
-def _flip_op(op: str) -> str:
-    return {"<": ">", ">": "<", "\u2264": "\u2265", "\u2265": "\u2264"}.get(op, op)
-
-
 _GENERATORS: dict[str, Any] = {
-    "single_operation": _generate_single_operation,
+    "integer_and_fraction_ops": _generate_integer_and_fraction_ops,
+    "ratios_and_expressions": _generate_ratios_and_expressions,
     "single_step_equations": _generate_single_step_equations,
-    "multi_step_and_inequalities": _generate_multi_step_and_inequalities,
 }
 
 
@@ -150,10 +161,10 @@ def generate_problem(
     """Generate a pre-algebra problem appropriate for *difficulty*."""
     tiers: list[dict[str, Any]] = subsystem_configs.get("equation_difficulty_tiers") or []
     tier = select_tier(difficulty, tiers)
-    equation_type = str(tier.get("equation_type", "single_operation"))
+    equation_type = str(tier.get("equation_type", "integer_and_fraction_ops"))
     tier_id = str(tier.get("tier_id", "tier_1"))
 
-    generator = _GENERATORS.get(equation_type, _generate_single_operation)
+    generator = _GENERATORS.get(equation_type, _generate_integer_and_fraction_ops)
     problem = generator()
 
     problem["equation_type"] = equation_type

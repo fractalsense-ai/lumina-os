@@ -62,6 +62,7 @@ async def execute(
         if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         # Validate role_id against the module's actual domain_roles block
+        # and the domain-level domain_roles
         try:
             _mod_domain = ctx.domain_registry.resolve_domain_id(module_id)
             _mod_runtime = ctx.domain_registry.get_runtime_context(_mod_domain)
@@ -75,6 +76,15 @@ async def execute(
                 r.get("role_id") for r in (_dp_data.get("domain_roles", {}).get("roles") or [])
                 if isinstance(r, dict) and r.get("role_id")
             ]
+            # Also check domain-level physics (roles may be consolidated there)
+            if not _valid_roles:
+                _domain_pack_physics = _dp_path.parent.parent.parent / "domain-physics.json"
+                if _domain_pack_physics.exists():
+                    _domain_data = json.loads(_domain_pack_physics.read_text(encoding="utf-8"))
+                    _valid_roles = [
+                        r.get("role_id") for r in (_domain_data.get("domain_roles", {}).get("roles") or [])
+                        if isinstance(r, dict) and r.get("role_id")
+                    ]
             if _valid_roles and domain_role not in _valid_roles:
                 raise ctx.HTTPException(
                     status_code=422,

@@ -173,6 +173,25 @@ def _get_domain_role_aliases() -> dict[str, str]:
             dom_id = dom.get("domain_id", "")
             if not dom_id:
                 continue
+            # Check domain-pack-level physics first (consolidated roles)
+            try:
+                _entry = _cfg.DOMAIN_REGISTRY._domains.get(dom_id, {})
+                _cfg_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _entry.get("runtime_config_path", "")
+                _raw = load_yaml(str(_cfg_path))
+                _rt = _raw.get("runtime") or _raw
+                _default_dp = _rt.get("domain_physics_path", "")
+                if _default_dp:
+                    _dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _default_dp
+                    _pack_physics = _dp_full.parent.parent.parent / "domain-physics.json"
+                    if _pack_physics.exists():
+                        _dp_data = json.loads(_pack_physics.read_text(encoding="utf-8"))
+                        for role in _dp_data.get("domain_roles", {}).get("roles", []):
+                            if isinstance(role, dict) and role.get("role_id"):
+                                aliases[role["role_id"]] = role.get(
+                                    "maps_to_system_role", "user"
+                                )
+            except Exception:
+                pass
             modules = _cfg.DOMAIN_REGISTRY.list_modules_for_domain(dom_id)
             for mod in modules:
                 dp_path = mod.get("domain_physics_path", "")
@@ -209,6 +228,25 @@ def _get_domain_role_level(domain_id: str, role_id: str) -> int | None:
         resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
     except Exception:
         return None
+    # Check domain-pack-level physics first (consolidated roles)
+    try:
+        _entry = _cfg.DOMAIN_REGISTRY._domains.get(resolved, {})
+        _cfg_path = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _entry.get("runtime_config_path", "")
+        _raw = load_yaml(str(_cfg_path))
+        _rt = _raw.get("runtime") or _raw
+        _default_dp = _rt.get("domain_physics_path", "")
+        if _default_dp:
+            _dp_full = Path(_cfg.DOMAIN_REGISTRY._repo_root) / _default_dp
+            _pack_physics = _dp_full.parent.parent.parent / "domain-physics.json"
+            if _pack_physics.exists():
+                _dp_data = json.loads(_pack_physics.read_text(encoding="utf-8"))
+                for role in _dp_data.get("domain_roles", {}).get("roles", []):
+                    if isinstance(role, dict) and role.get("role_id") == role_id:
+                        lvl = role.get("hierarchy_level")
+                        if lvl is not None:
+                            return int(lvl)
+    except Exception:
+        pass
     for mod in _cfg.DOMAIN_REGISTRY.list_modules_for_domain(resolved):
         dp_path = mod.get("domain_physics_path", "")
         if not dp_path:
