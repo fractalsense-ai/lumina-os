@@ -62,11 +62,13 @@ def freeform_build_initial_state(
     minimal state for journaling / reflection tracking.  Shape matches
     ``module_state_schema.custom_fields`` in general-education physics.
     """
-    # Module-keyed state takes priority over flat learning_state
-    _modules = profile.get("modules")
-    _module_state = (_modules if isinstance(_modules, dict) else {}).get(
-        profile.get("domain_id", ""), {}
-    )
+    # Prefer DB-backed module_state when provided; fall back to profile for compat.
+    _module_state = kwargs.get("module_state")
+    if not isinstance(_module_state, dict) or not _module_state:
+        _modules = profile.get("modules")
+        _module_state = (_modules if isinstance(_modules, dict) else {}).get(
+            profile.get("domain_id", ""), {}
+        )
     return {
         "turn_count": 0,
         "journaling_entry_count": int(

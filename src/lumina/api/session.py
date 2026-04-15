@@ -264,15 +264,13 @@ def _build_domain_context(
         _sb_kwargs["tier_progression"] = [str(t.get("tier_id", "")) for t in _tiers]
         _sb_kwargs["nominal_difficulty"] = float(_ps_task.get("nominal_difficulty", 0.5))
 
-    # ── Module-keyed state hydration (two-tier model) ─────────
-    # If the profile has module-specific state under modules[module_key],
-    # surface it as learning_state so the state builder reads from the
-    # module-specific snapshot instead of the flat default.
-    _prof_modules = profile.get("modules")
-    _mk_state = (_prof_modules if isinstance(_prof_modules, dict) else {}).get(_resolved_module_key or "")
-    if isinstance(_mk_state, dict) and _mk_state:
-        profile = dict(profile)  # shallow copy — don't mutate cached profile
-        profile["learning_state"] = _mk_state
+    # ── Per-actor per-module state hydration (from DB) ────────
+    # Load opaque module state from the persistence layer and pass it to the
+    # domain's state_builder if it accepts the kwarg.  The framework never
+    # interprets the contents — the domain hook decides how to use it.
+    _user_id = str(user["sub"]) if user is not None else None
+    if "module_state" in _sb_sig.parameters and _user_id and _resolved_module_key:
+        _sb_kwargs["module_state"] = _cfg.PERSISTENCE.load_module_state(_user_id, _resolved_module_key)
 
     initial_state = state_builder(profile, **_sb_kwargs)
 
@@ -452,11 +450,17 @@ def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: 
                     )
                     _profile_data = _cfg.PERSISTENCE.load_subject_profile(ctx.subject_profile_path)
                     if _ps_fn is not None:
-                        _profile_data = _ps_fn(
-                            orch_state=ctx.orchestrator.state,
-                            profile_data=_profile_data,
-                            module_key=ctx.module_key,
-                        )
+                        _ps_sig = inspect.signature(_ps_fn)
+                        _ps_kwargs: dict[str, Any] = {
+                            "orch_state": ctx.orchestrator.state,
+                            "profile_data": _profile_data,
+                            "module_key": ctx.module_key,
+                        }
+                        if "persistence" in _ps_sig.parameters:
+                            _ps_kwargs["persistence"] = _cfg.PERSISTENCE
+                        if "user_id" in _ps_sig.parameters:
+                            _ps_kwargs["user_id"] = str(container.user["sub"]) if container.user else None
+                        _profile_data = _ps_fn(**_ps_kwargs)
                     else:
                         import dataclasses
                         if dataclasses.is_dataclass(ctx.orchestrator.state):

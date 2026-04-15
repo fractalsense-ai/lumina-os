@@ -22,11 +22,16 @@ def education_serialize_profile(
     orch_state: Any,
     profile_data: dict[str, Any],
     module_key: str | None,
+    persistence: Any | None = None,
+    user_id: str | None = None,
 ) -> dict[str, Any]:
     """Serialize education-specific orchestrator state into the profile dict.
 
     Handles both dataclass-based state (learning modules with fluency)
     and plain-dict state (governance/freeform modules).
+
+    When *persistence* and *user_id* are provided, module state is written to
+    the database instead of embedding it in the profile YAML.
 
     Returns the mutated profile_data dict.
     """
@@ -38,8 +43,10 @@ def education_serialize_profile(
                 "consecutive_correct": orch_state.fluency.consecutive_correct,
             }
         profile_data["learning_state"] = _ls_dict
-        # Module-keyed state (two-tier model)
-        if module_key:
+        # Persist module state to DB when available; otherwise fall back to YAML.
+        if persistence is not None and user_id and module_key:
+            persistence.save_module_state(user_id, module_key, _ls_dict)
+        elif module_key:
             if not isinstance(profile_data.get("modules"), dict):
                 profile_data["modules"] = {}
             profile_data["modules"][module_key] = _ls_dict
@@ -50,8 +57,10 @@ def education_serialize_profile(
             "turn_count": int(_sd.get("turn_count", 0)),
             "operator_id": str(_sd.get("operator_id", "")),
         }
-        # Module-keyed state (two-tier model)
-        if module_key:
+        # Persist module state to DB when available; otherwise fall back to YAML.
+        if persistence is not None and user_id and module_key:
+            persistence.save_module_state(user_id, module_key, _state_snapshot)
+        elif module_key:
             if not isinstance(profile_data.get("modules"), dict):
                 profile_data["modules"] = {}
             profile_data["modules"][module_key] = _state_snapshot

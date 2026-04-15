@@ -12,9 +12,6 @@
 preferences:
   explanation_style: technical
 
-# Module-keyed state (shape declared by each module's module_state_schema)
-modules: {}
-
 educator_state:
   assigned_students: []
   assigned_rooms: []

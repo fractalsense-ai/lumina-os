@@ -74,10 +74,18 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             created_at_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
             updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+        class ActorModuleState(Base):
+            __tablename__ = "actor_module_states"
+            user_id = Column(String(128), primary_key=True)
+            module_key = Column(String(256), primary_key=True)
+            state_json = Column(Text, nullable=False)
+            updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
         self._Base = Base
         self._SystemLogRecord = SystemLogRecord
         self._SessionState = SessionState
         self._User = User
+        self._ActorModuleState = ActorModuleState
         self._engine = create_async_engine(self.database_url, echo=False)
 
     async def _create_tables(self) -> None:
@@ -825,3 +833,71 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         if not isinstance(consent, dict):
             return None
         return {"accepted": consent.get("accepted", False), "timestamp": consent.get("timestamp")}
+
+    # ── Module state persistence ──────────────────────────────
+
+    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        return asyncio.run(self._load_module_state_async(user_id, module_key))
+
+    async def _load_module_state_async(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._ActorModuleState.state_json).where(
+                    self._ActorModuleState.user_id == user_id,
+                    self._ActorModuleState.module_key == module_key,
+                )
+            )
+            payload = result.scalar_one_or_none()
+        if payload is None:
+            return None
+        data = json.loads(payload)
+        return data if isinstance(data, dict) else None
+
+    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        asyncio.run(self._save_module_state_async(user_id, module_key, state))
+
+    async def _save_module_state_async(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        payload = json.dumps(state, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        stmt = sqlite_insert(self._ActorModuleState).values(
+            user_id=user_id, module_key=module_key, state_json=payload,
+        )
+        upsert_stmt = stmt.on_conflict_do_update(
+            index_elements=[self._ActorModuleState.user_id, self._ActorModuleState.module_key],
+            set_={"state_json": payload},
+        )
+        async with self._engine.begin() as conn:
+            await conn.execute(upsert_stmt)
+
+    def list_module_states(self, user_id: str) -> list[str]:
+        return asyncio.run(self._list_module_states_async(user_id))
+
+    async def _list_module_states_async(self, user_id: str) -> list[str]:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._ActorModuleState.module_key).where(
+                    self._ActorModuleState.user_id == user_id,
+                ).order_by(self._ActorModuleState.module_key)
+            )
+            values = result.scalars().all()
+        return [str(v) for v in values]
+
+    def delete_module_state(self, user_id: str, module_key: str) -> bool:
+        return asyncio.run(self._delete_module_state_async(user_id, module_key))
+
+    async def _delete_module_state_async(self, user_id: str, module_key: str) -> bool:
+        from sqlalchemy import delete
+
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                delete(self._ActorModuleState).where(
+                    self._ActorModuleState.user_id == user_id,
+                    self._ActorModuleState.module_key == module_key,
+                )
+            )
+        return result.rowcount > 0

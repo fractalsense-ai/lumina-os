@@ -452,11 +452,17 @@ def process_message(
                         or runtime.get("profile_serializer_fn")
                     )
                     if _ps_fn is not None:
-                        profile_data = _ps_fn(
-                            orch_state=orch.state,
-                            profile_data=profile_data,
-                            module_key=_mod_key,
-                        )
+                        _ps_sig = inspect.signature(_ps_fn)
+                        _ps_kwargs: dict[str, Any] = {
+                            "orch_state": orch.state,
+                            "profile_data": profile_data,
+                            "module_key": _mod_key,
+                        }
+                        if "persistence" in _ps_sig.parameters:
+                            _ps_kwargs["persistence"] = _cfg.PERSISTENCE
+                        if "user_id" in _ps_sig.parameters:
+                            _ps_kwargs["user_id"] = str(container.user["sub"]) if container.user else None
+                        profile_data = _ps_fn(**_ps_kwargs)
                     else:
                         import dataclasses
                         if dataclasses.is_dataclass(orch.state):

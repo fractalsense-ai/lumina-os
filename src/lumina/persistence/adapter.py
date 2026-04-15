@@ -217,6 +217,24 @@ class PersistenceAdapter(ABC):
     def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
         """Return ``{accepted: bool, timestamp: float}`` or None if no record."""
 
+    # ── Module state persistence (domain-agnostic) ────────────
+
+    @abstractmethod
+    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        """Load opaque per-actor per-module state blob, or None if not found."""
+
+    @abstractmethod
+    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        """Persist opaque per-actor per-module state blob (upsert)."""
+
+    @abstractmethod
+    def list_module_states(self, user_id: str) -> list[str]:
+        """Return module_key values for which state exists for this user."""
+
+    @abstractmethod
+    def delete_module_state(self, user_id: str, module_key: str) -> bool:
+        """Delete a module state entry. Returns True if it existed."""
+
 
 class NullPersistenceAdapter(PersistenceAdapter):
     """No-op adapter mainly used for tests; keeps session state in-memory only."""
@@ -483,3 +501,29 @@ class NullPersistenceAdapter(PersistenceAdapter):
         if "consent_accepted" not in u:
             return None
         return {"accepted": u["consent_accepted"], "timestamp": u.get("consent_timestamp")}
+
+    # ── Module state (in-memory) ──────────────────────────────
+
+    def __init_module_states(self) -> None:
+        if not hasattr(self, "_module_states"):
+            self._module_states: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        self.__init_module_states()
+        return self._module_states.get(user_id, {}).get(module_key)
+
+    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        self.__init_module_states()
+        self._module_states.setdefault(user_id, {})[module_key] = dict(state)
+
+    def list_module_states(self, user_id: str) -> list[str]:
+        self.__init_module_states()
+        return list(self._module_states.get(user_id, {}).keys())
+
+    def delete_module_state(self, user_id: str, module_key: str) -> bool:
+        self.__init_module_states()
+        bucket = self._module_states.get(user_id, {})
+        if module_key in bucket:
+            del bucket[module_key]
+            return True
+        return False

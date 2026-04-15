@@ -596,3 +596,42 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
         if "consent_accepted" not in u:
             return None
         return {"accepted": u["consent_accepted"], "timestamp": u.get("consent_timestamp")}
+
+    # ── Module state persistence (file-backed) ────────────────
+
+    def _module_state_path(self, user_id: str, module_key: str) -> Path:
+        safe_key = module_key.replace("/", "__")
+        return self.log_dir / "module-states" / user_id / f"{safe_key}.json"
+
+    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        path = self._module_state_path(user_id, module_key)
+        if not path.exists():
+            return None
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else None
+
+    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        path = self._module_state_path(user_id, module_key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(state, fh, indent=2, sort_keys=True, ensure_ascii=False)
+        tmp.replace(path)
+
+    def list_module_states(self, user_id: str) -> list[str]:
+        user_dir = self.log_dir / "module-states" / user_id
+        if not user_dir.is_dir():
+            return []
+        keys: list[str] = []
+        for p in sorted(user_dir.glob("*.json")):
+            key = p.stem.replace("__", "/")
+            keys.append(key)
+        return keys
+
+    def delete_module_state(self, user_id: str, module_key: str) -> bool:
+        path = self._module_state_path(user_id, module_key)
+        if path.exists():
+            path.unlink()
+            return True
+        return False
