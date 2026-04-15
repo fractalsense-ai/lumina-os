@@ -65,28 +65,31 @@ def _assert_system_physics_commitment() -> None:
 
 
 # ─────────────────────────────────────────────────────────────
-# Default problem generator
+# Default task generator
 # ─────────────────────────────────────────────────────────────
 
-def _default_current_problem(
+def _default_current_task(
     task_spec: dict[str, Any],
     runtime: dict[str, Any],
     *,
     domain_id: str | None = None,
     task_initializer_fn: Any | None = None,
 ) -> dict[str, Any]:
-    """Create a session-scoped problem via the task-initializer adapter hook."""
+    """Create a session-scoped task via the task-initializer adapter hook."""
     if task_initializer_fn is not None:
         try:
             return task_initializer_fn(task_spec, runtime, domain_id=domain_id)
         except Exception:
             log.warning("Task initializer unavailable; falling back to task_spec")
-    current_problem = task_spec.get("current_problem")
-    if isinstance(current_problem, dict):
-        return dict(current_problem)
+    current_task = task_spec.get("current_task") or task_spec.get("current_problem")
+    if isinstance(current_task, dict):
+        result = dict(current_task)
+        result.setdefault("completed", False)
+        return result
     return {
         "task_id": str(task_spec.get("task_id", "task")),
         "status": "in_progress",
+        "completed": False,
     }
 
 
@@ -100,11 +103,11 @@ class DomainContext:
     __slots__ = (
         "orchestrator",
         "task_spec",
-        "current_problem",
+        "current_task",
         "turn_count",
         "domain_id",
         "module_key",
-        "problem_presented_at",
+        "task_presented_at",
         "subject_profile_path",
     )
 
@@ -112,41 +115,41 @@ class DomainContext:
         self,
         orchestrator: Any,
         task_spec: dict[str, Any],
-        current_problem: dict[str, Any],
+        current_task: dict[str, Any],
         turn_count: int,
         domain_id: str,
-        problem_presented_at: float,
+        task_presented_at: float,
         subject_profile_path: str = "",
         module_key: str = "",
     ) -> None:
         self.orchestrator = orchestrator
         self.task_spec = task_spec
-        self.current_problem = current_problem
+        self.current_task = current_task
         self.turn_count = turn_count
         self.domain_id = domain_id
         self.module_key = module_key
-        self.problem_presented_at = problem_presented_at
+        self.task_presented_at = task_presented_at
         self.subject_profile_path = subject_profile_path
 
     def to_session_dict(self) -> dict[str, Any]:
         return {
             "orchestrator": self.orchestrator,
             "task_spec": self.task_spec,
-            "current_problem": self.current_problem,
+            "current_task": self.current_task,
             "turn_count": self.turn_count,
             "domain_id": self.domain_id,
             "module_key": self.module_key,
-            "problem_presented_at": self.problem_presented_at,
+            "task_presented_at": self.task_presented_at,
         }
 
     def sync_from_dict(self, d: dict[str, Any]) -> None:
         self.task_spec = d["task_spec"]
-        self.current_problem = d["current_problem"]
+        self.current_task = d["current_task"]
         self.turn_count = d["turn_count"]
         if "module_key" in d:
             self.module_key = d["module_key"]
-        if "problem_presented_at" in d:
-            self.problem_presented_at = d["problem_presented_at"]
+        if "task_presented_at" in d:
+            self.task_presented_at = d["task_presented_at"]
 
 
 from lumina.session.ring_buffer import ConversationRingBuffer
@@ -301,20 +304,21 @@ def _build_domain_context(
         default_task_spec = dict(_gov_task)
     task_spec = dict(ps.get("task_spec") or default_task_spec)
     # Resolve task_initializer adapter: prefer per-module override, then
-    # domain-level adapter, then None (generic fallback in _default_current_problem).
+    # domain-level adapter, then None (generic fallback in _default_current_task).
     _task_init_fn = _mod_entry.get("task_initializer_fn") or runtime.get("task_initializer_fn")
     # Build a runtime view with the module-specific domain physics so the
     # initializer reads subsystem_configs from the active module.
     _init_runtime = dict(runtime)
     _init_runtime["domain"] = domain
-    current_problem = dict(
-        ps.get("current_problem")
-        or _default_current_problem(
+    current_task = dict(
+        ps.get("current_task") or ps.get("current_problem")  # backward compat
+        or _default_current_task(
             task_spec, _init_runtime,
             domain_id=_resolved_module_key or resolved_domain_id,
             task_initializer_fn=_task_init_fn,
         )
     )
+    current_task.setdefault("completed", False)
     turn_count = int(ps.get("turn_count") or 0)
     standing_order_attempts = ps.get("standing_order_attempts") or {}
     if not isinstance(standing_order_attempts, dict):
@@ -324,10 +328,10 @@ def _build_domain_context(
     return DomainContext(
         orchestrator=orch,
         task_spec=task_spec,
-        current_problem=current_problem,
+        current_task=current_task,
         turn_count=turn_count,
         domain_id=resolved_domain_id,
-        problem_presented_at=time.time(),
+        task_presented_at=time.time(),
         subject_profile_path=str(subject_profile_path),
         module_key=_resolved_module_key or "",
     )
@@ -339,7 +343,7 @@ def _persist_session_container(session_id: str, container: SessionContainer) -> 
     for did, ctx in container.contexts.items():
         contexts_state[did] = {
             "task_spec": ctx.task_spec,
-            "current_problem": ctx.current_problem,
+            "current_task": ctx.current_task,
             "turn_count": ctx.turn_count,
             "standing_order_attempts": ctx.orchestrator.get_standing_order_attempts(),
             "domain_id": did,

@@ -357,7 +357,7 @@ def test_domain_step_preserves_mud_world_state():
 _MINIMAL_TASK_CONTEXT: dict[str, Any] = {
     "task_id": "algebra-test-001",
     "skills_required": ["solve_one_variable"],
-    "current_problem": {
+    "current_task": {
         "equation": "3x + 5 = 17",
         "target_variable": "x",
         "expected_answer": "x = 4",

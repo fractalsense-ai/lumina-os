@@ -258,7 +258,7 @@ def nlp_preprocess(input_text: str, task_context: dict[str, Any]) -> dict[str, A
     dict
         Partial evidence dict with ``_nlp_anchors`` metadata list.
     """
-    current_problem = task_context.get("current_problem") or {}
+    current_problem = task_context.get("current_task") or {}
     expected_answer = current_problem.get("expected_answer")
 
     answer_result = extract_answer_match(input_text, expected_answer)

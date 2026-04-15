@@ -208,7 +208,7 @@ class TestExtractOffTaskRatioFractionNotation:
 class TestNlpPreprocess:
     def test_correct_answer_full_pipeline(self):
         task_context = {
-            "current_problem": {
+            "current_task": {
                 "equation": "2x + 3 = 11",
                 "expected_answer": "4",
             }
@@ -221,13 +221,13 @@ class TestNlpPreprocess:
         assert any(a["field"] == "correctness" for a in result["_nlp_anchors"])
 
     def test_frustrated_message(self):
-        task_context = {"current_problem": {"equation": "x + 5 = 12", "expected_answer": "7"}}
+        task_context = {"current_task": {"equation": "x + 5 = 12", "expected_answer": "7"}}
         result = nlp_preprocess("UGH I DON'T GET IT!!!", task_context)
         assert result["frustration_marker_count"] >= 2
         assert any(a["field"] == "frustration_marker_count" for a in result["_nlp_anchors"])
 
     def test_hint_request(self):
-        task_context = {"current_problem": {"equation": "x + 1 = 5", "expected_answer": "4"}}
+        task_context = {"current_task": {"equation": "x + 1 = 5", "expected_answer": "4"}}
         result = nlp_preprocess("can I get a hint please", task_context)
         assert result["hint_used"] is True
 
@@ -237,6 +237,6 @@ class TestNlpPreprocess:
         assert "off_task_ratio" in result
 
     def test_off_task_message(self):
-        task_context = {"current_problem": {"equation": "x + 1 = 3", "expected_answer": "2"}}
+        task_context = {"current_task": {"equation": "x + 1 = 3", "expected_answer": "2"}}
         result = nlp_preprocess("I like pizza and video games", task_context)
         assert result["off_task_ratio"] > 0.5

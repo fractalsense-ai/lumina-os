@@ -753,10 +753,10 @@ class TestProcessingLocalOnlyNlpWiring:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "sys", "nominal_difficulty": 0.0, "skills_required": []},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 0,
             "domain_id": "system",
-            "problem_presented_at": None,
+            "task_presented_at": None,
         }
 
     def _make_runtime(self, *, interpreter_fn, nlp_fn=None) -> dict[str, Any]:
@@ -883,10 +883,10 @@ class TestPhysicsContextLocalOnly:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "sys", "nominal_difficulty": 0.0, "skills_required": []},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 0,
             "domain_id": "system",
-            "problem_presented_at": None,
+            "task_presented_at": None,
         }
 
     def _make_runtime(self, *, interpreter_fn) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 """Tests for module-switch UX fixes:
 
-1. _default_current_problem receives module-specific domain physics
+1. _default_current_task receives module-specific domain physics
 2. switch_active_module returns ui_overrides from runtime config
 """
 
@@ -19,9 +19,9 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-# ── Load session module for _default_current_problem ──────────
+# ── Load session module for _default_current_task ──────────
 
-from lumina.api.session import _default_current_problem
+from lumina.api.session import _default_current_task
 
 
 # ── Load education handlers via importlib ─────────────────────
@@ -126,7 +126,7 @@ def _student_user(sub: str = "student1") -> dict[str, Any]:
 
 
 # ═════════════════════════════════════════════════════════════
-# Phase 1: _default_current_problem uses module domain physics
+# Phase 1: _default_current_task uses module domain physics
 # ═════════════════════════════════════════════════════════════
 
 @pytest.mark.unit
@@ -155,7 +155,7 @@ class TestDefaultCurrentProblemModuleDomain:
         }
         task_spec = {"nominal_difficulty": 0.5}
 
-        result = _default_current_problem(task_spec, runtime, task_initializer_fn=fake_initializer)
+        result = _default_current_task(task_spec, runtime, task_initializer_fn=fake_initializer)
 
         assert result["problem_id"] == "p1"
         assert "equation_difficulty_tiers" in captured["subsystem_configs"]
@@ -163,7 +163,7 @@ class TestDefaultCurrentProblemModuleDomain:
 
     def test_generator_fails_without_tiers(self) -> None:
         """When the task initializer fails (general-edu, no tiers),
-        _default_current_problem falls back to task_spec."""
+        _default_current_task falls back to task_spec."""
 
         def failing_initializer(task_spec: dict, runtime: dict, *, domain_id: str | None = None) -> dict:
             tiers = (runtime.get("domain") or {}).get("subsystem_configs", {}).get("equation_difficulty_tiers") or []
@@ -175,7 +175,7 @@ class TestDefaultCurrentProblemModuleDomain:
         }
         task_spec = {"task_id": "fallback-task", "nominal_difficulty": 0.5}
 
-        result = _default_current_problem(task_spec, runtime, task_initializer_fn=failing_initializer)
+        result = _default_current_task(task_spec, runtime, task_initializer_fn=failing_initializer)
 
         # Should fall back to task_spec default, not crash
         assert result["task_id"] == "fallback-task"
@@ -183,7 +183,7 @@ class TestDefaultCurrentProblemModuleDomain:
 
     def test_overlayed_runtime_gets_module_tiers(self) -> None:
         """Simulates the fix in _build_domain_context: overlaying module
-        domain onto runtime before calling _default_current_problem."""
+        domain onto runtime before calling _default_current_task."""
         captured_configs: list[dict] = []
 
         def capturing_initializer(task_spec: dict, runtime: dict, *, domain_id: str | None = None) -> dict:
@@ -207,7 +207,7 @@ class TestDefaultCurrentProblemModuleDomain:
         gen_runtime["domain"] = module_domain
 
         task_spec = {"nominal_difficulty": 0.5}
-        result = _default_current_problem(task_spec, gen_runtime, task_initializer_fn=capturing_initializer)
+        result = _default_current_task(task_spec, gen_runtime, task_initializer_fn=capturing_initializer)
 
         assert result["problem_id"] == "p2"
         assert captured_configs[0]["equation_difficulty_tiers"] == _PRE_ALGEBRA_TIERS

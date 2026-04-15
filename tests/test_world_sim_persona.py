@@ -151,7 +151,7 @@ def test_select_theme_second_preference_match():
 _MINIMAL_TASK_CONTEXT: dict[str, Any] = {
     "task_id": "algebra-test-001",
     "skills_required": ["solve_one_variable"],
-    "current_problem": {
+    "current_task": {
         "equation": "x + 3 = 7",
         "target_variable": "x",
         "expected_answer": "x = 4",

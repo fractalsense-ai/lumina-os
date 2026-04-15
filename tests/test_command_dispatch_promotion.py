@@ -193,7 +193,7 @@ class TestNLPPreprocessGovernanceIntegration:
     """nlp_preprocess emits governance anchors alongside learning extractors."""
 
     def _preprocess(self, text: str) -> dict[str, Any]:
-        return _nlp_preprocess(text, {"current_problem": {}})
+        return _nlp_preprocess(text, {"current_task": {}})
 
     def test_governance_anchor_emitted(self) -> None:
         result = self._preprocess("what commands do I have?")

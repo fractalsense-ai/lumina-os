@@ -171,7 +171,7 @@ def process_message(
         return _gate
 
     # ── Capture actor response latency at request arrival ─────
-    _presented_at = session.get("problem_presented_at")
+    _presented_at = session.get("task_presented_at")
     _actor_elapsed: float | None = (
         time.time() - _presented_at if _presented_at is not None else None
     )
@@ -179,10 +179,10 @@ def process_message(
     # ── Resolve domain + runtime context ──────────────────────
     orch: PPAOrchestrator = session["orchestrator"]
     task_spec: dict[str, Any] = session["task_spec"]
-    current_problem: dict[str, Any] = session["current_problem"]
-    # Snapshot the problem the actor is currently working on so LLM
-    # feedback references the correct problem even after advancement.
-    _answered_problem: dict[str, Any] = dict(current_problem)
+    current_task: dict[str, Any] = session["current_task"]
+    # Snapshot the task the actor is currently working on so LLM
+    # feedback references the correct task even after advancement.
+    _answered_task: dict[str, Any] = dict(current_task)
 
     resolved_domain_id = session["domain_id"]
     runtime = _cfg.DOMAIN_REGISTRY.get_runtime_context(resolved_domain_id)
@@ -225,23 +225,29 @@ def process_message(
         runtime["nlp_pre_interpreter_fn"] = _active_mod["nlp_pre_interpreter_fn"]
 
     # ── Pre-turn resume hook (domain-driven) ────────────────────
-    # When a domain marks current_problem as solved and the user returns,
+    # When a domain marks current_task as completed and the user returns,
     # the domain's pre_turn_resume_fn decides whether/how to replace it.
-    _new_problem_on_resume = False
+    _new_task_on_resume = False
     _ptr_fn = _active_mod.get("pre_turn_resume_fn") or runtime.get("pre_turn_resume_fn")
-    if _ptr_fn is not None and current_problem.get("solved") is True:
-        _ptr_result = _ptr_fn(
-            session=session,
-            task_spec=task_spec,
-            current_problem=current_problem,
-            runtime=runtime,
-            orchestrator=orch,
-        )
-        if _ptr_result.get("replaced"):
-            current_problem = _ptr_result["current_problem"]
-            session["current_problem"] = current_problem
-            _new_problem_on_resume = True
-            vlog.debug("[RESUME] Domain hook replaced solved problem")
+    if current_task.get("completed") is True:
+        if _ptr_fn is not None:
+            _ptr_result = _ptr_fn(
+                session=session,
+                task_spec=task_spec,
+                current_task=current_task,
+                runtime=runtime,
+                orchestrator=orch,
+            )
+            if _ptr_result.get("replaced"):
+                current_task = _ptr_result["current_task"]
+                session["current_task"] = current_task
+                _new_task_on_resume = True
+                vlog.debug("[RESUME] Domain hook replaced completed task")
+        else:
+            log.warning(
+                "Task marked completed but no pre_turn_resume_fn registered for domain %s",
+                resolved_domain_id,
+            )
 
     # ── Consent gate ──────────────────────────────────────────
     _gate = check_consent_gate(
@@ -255,7 +261,7 @@ def process_message(
     domain_physics = getattr(orch, "domain", None) or runtime.get("domain") or {}
 
     _glossary_result = check_glossary(
-        session_id, session, input_text, current_problem, task_spec,
+        session_id, session, input_text, current_task, task_spec,
         domain_physics, runtime, resolved_domain_id,
         deterministic_response, system_prompt,
         detect_glossary_query_fn=detect_glossary_query,
@@ -268,10 +274,10 @@ def process_message(
         return _glossary_result
 
     task_context = dict(task_spec)
-    task_context["current_problem"] = current_problem
+    task_context["current_task"] = current_task
 
     _t0_result = check_turn_0(
-        session_id, session, input_text, current_problem, task_spec,
+        session_id, session, input_text, current_task, task_spec,
         domain_physics, runtime, resolved_domain_id, system_prompt,
         holodeck, deterministic_response, _active_mod,
         _session_containers, user,
@@ -406,7 +412,7 @@ def process_message(
     vlog.debug("[ORCH] action=%s prompt_type=%s", resolved_action, prompt_contract.get("prompt_type"))
 
     # ── Post-turn processing (domain-hook driven) ──────────────
-    _new_problem_presented = _new_problem_on_resume
+    _new_task_presented = _new_task_on_resume
     _ptp_fn = _active_mod.get("post_turn_processor_fn") or runtime.get("post_turn_processor_fn")
     vlog.debug("[POST] Post-turn processing (hook=%s)", _ptp_fn is not None)
     if _ptp_fn is not None:
@@ -416,15 +422,15 @@ def process_message(
             resolved_action=resolved_action,
             session=session,
             task_spec=task_spec,
-            current_problem=current_problem,
+            current_task=current_task,
             runtime=runtime,
             orchestrator=orch,
         )
         resolved_action = _ptp_result.get("resolved_action", resolved_action)
-        current_problem = _ptp_result.get("current_problem", current_problem)
-        _new_problem_presented = _ptp_result.get("new_problem_presented", False) or _new_problem_presented
+        current_task = _ptp_result.get("current_task", current_task)
+        _new_task_presented = _ptp_result.get("new_task_presented", False) or _new_task_presented
 
-    session["current_problem"] = current_problem
+    session["current_task"] = current_task
     session["turn_count"] += 1
 
     # ── Sync session + auto-save profile ──────────────────────
@@ -465,7 +471,7 @@ def process_message(
             session_id,
             {
                 "task_spec": task_spec,
-                "current_problem": current_problem,
+                "current_task": current_task,
                 "turn_count": session["turn_count"],
                 "last_action": resolved_action,
                 "standing_order_attempts": orch.get_standing_order_attempts(),
@@ -506,8 +512,8 @@ def process_message(
     # ── Layer 6: LLM payload + invocation ─────────────────────
     vlog.debug("[LLM] Assembling LLM payload (tool_results=%d)", len(tool_results))
     llm_payload = assemble_llm_payload(
-        prompt_contract, input_text, _answered_problem, current_problem,
-        _new_problem_presented, turn_data, tool_results,
+        prompt_contract, input_text, _answered_task, current_task,
+        _new_task_presented, turn_data, tool_results,
         session_id, _session_containers,
     )
 
@@ -552,7 +558,7 @@ def process_message(
             session=session,
             session_id=session_id,
             resolved_action=resolved_action,
-            new_problem_presented=_new_problem_presented,
+            new_task_presented=_new_task_presented,
             session_containers=_session_containers,
         )
 

@@ -359,10 +359,10 @@ class TestSessionCloseStateFlush:
         ctx = DomainContext(
             orchestrator=orch,
             task_spec={"task_id": "t1"},
-            current_problem={},
+            current_task={},
             turn_count=5,
             domain_id="education",
-            problem_presented_at=0.0,
+            task_presented_at=0.0,
             subject_profile_path="/fake/profile.yaml",
             module_key="domain/edu/pre-algebra/v1",
         )
@@ -407,10 +407,10 @@ class TestSessionCloseStateFlush:
         ctx = DomainContext(
             orchestrator=orch,
             task_spec={},
-            current_problem={},
+            current_task={},
             turn_count=1,
             domain_id="education",
-            problem_presented_at=0.0,
+            task_presented_at=0.0,
             subject_profile_path="/fake/profile.yaml",
             module_key="domain/edu/pre-algebra/v1",
         )

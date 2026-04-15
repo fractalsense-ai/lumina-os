@@ -36,10 +36,10 @@ class TestDomainContextModuleKey:
         return DomainContext(
             orchestrator=MagicMock(),
             task_spec={"task_id": "test"},
-            current_problem={},
+            current_task={},
             turn_count=0,
             domain_id="education",
-            problem_presented_at=time.time(),
+            task_presented_at=time.time(),
             module_key=module_key,
         )
 
@@ -61,7 +61,7 @@ class TestDomainContextModuleKey:
         ctx = self._make_ctx("")
         ctx.sync_from_dict({
             "task_spec": {"task_id": "t"},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 5,
             "module_key": "domain/edu/algebra-level-1/v1",
         })
@@ -71,7 +71,7 @@ class TestDomainContextModuleKey:
         ctx = self._make_ctx("domain/edu/teacher/v1")
         ctx.sync_from_dict({
             "task_spec": {"task_id": "t"},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 3,
         })
         assert ctx.module_key == "domain/edu/teacher/v1"
@@ -96,11 +96,11 @@ class TestProcessingModuleKeyLookup:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "governance"},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 0,
             "domain_id": "education",
             "module_key": module_key,
-            "problem_presented_at": time.time(),
+            "task_presented_at": time.time(),
         }
 
     def _make_runtime(self, module_map: dict | None = None) -> dict[str, Any]:
@@ -216,11 +216,11 @@ class TestPerModuleLocalOnly:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "governance"},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 0,
             "domain_id": "education",
             "module_key": module_key,
-            "problem_presented_at": time.time(),
+            "task_presented_at": time.time(),
         }
 
     def _make_runtime(self, module_map: dict | None = None) -> dict[str, Any]:
@@ -425,10 +425,10 @@ class TestModuleKeyPersistence:
         ctx = DomainContext(
             orchestrator=MagicMock(**{"get_standing_order_attempts.return_value": {}}),
             task_spec={"task_id": "t"},
-            current_problem={},
+            current_task={},
             turn_count=0,
             domain_id="education",
-            problem_presented_at=time.time(),
+            task_presented_at=time.time(),
             module_key="domain/edu/domain-authority/v1",
         )
         container = SessionContainer(active_domain_id="education")
@@ -439,7 +439,7 @@ class TestModuleKeyPersistence:
         for did, c in container.contexts.items():
             contexts_state[did] = {
                 "task_spec": c.task_spec,
-                "current_problem": c.current_problem,
+                "current_task": c.current_task,
                 "turn_count": c.turn_count,
                 "domain_id": did,
                 "module_key": c.module_key,

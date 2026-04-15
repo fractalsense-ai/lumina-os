@@ -22,9 +22,9 @@ log = logging.getLogger("lumina-api")
 def assemble_llm_payload(
     prompt_contract: dict[str, Any],
     input_text: str,
-    answered_problem: dict[str, Any],
-    current_problem: dict[str, Any],
-    new_problem_presented: bool,
+    answered_task: dict[str, Any],
+    current_task: dict[str, Any],
+    new_task_presented: bool,
     turn_data: dict[str, Any],
     tool_results: dict[str, Any] | None,
     session_id: str,
@@ -41,9 +41,9 @@ def assemble_llm_payload(
     _is_governance = _prompt_type.startswith("governance_")
 
     if not _is_governance:
-        llm_payload["current_problem"] = answered_problem
-        if new_problem_presented:
-            llm_payload["next_problem"] = current_problem
+        llm_payload["current_problem"] = answered_task
+        if new_task_presented:
+            llm_payload["next_problem"] = current_task
 
     llm_payload["actor_message"] = input_text
 

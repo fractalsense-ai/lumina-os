@@ -28,7 +28,7 @@ def check_glossary(
     session_id: str,
     session: dict[str, Any],
     input_text: str,
-    current_problem: dict[str, Any],
+    current_task: dict[str, Any],
     task_spec: dict[str, Any],
     domain_physics: dict[str, Any],
     runtime: dict[str, Any],
@@ -70,7 +70,7 @@ def check_glossary(
         },
     }
     llm_payload = dict(prompt_contract)
-    llm_payload["current_problem"] = current_problem
+    llm_payload["current_problem"] = current_task
 
     if deterministic_response:
         template = runtime.get("deterministic_templates", {}).get("definition_lookup")
@@ -112,7 +112,7 @@ def check_turn_0(
     session_id: str,
     session: dict[str, Any],
     input_text: str,
-    current_problem: dict[str, Any],
+    current_task: dict[str, Any],
     task_spec: dict[str, Any],
     domain_physics: dict[str, Any],
     runtime: dict[str, Any],
@@ -139,7 +139,7 @@ def check_turn_0(
 
     has_equation = t0_fn(
         session=session,
-        current_problem=current_problem,
+        current_task=current_task,
         holodeck=holodeck,
         deterministic_response=deterministic_response,
     )
@@ -151,7 +151,7 @@ def check_turn_0(
         "domain_pack_id": str(domain_physics.get("id", "")),
         "domain_pack_version": str(domain_physics.get("version", "")),
         "task_id": str(task_spec.get("task_id", "")),
-        "current_problem": current_problem,
+        "current_problem": current_task,
         "actor_message": input_text,
     }
     payload_json = json.dumps(contract, indent=2, ensure_ascii=False)
@@ -165,7 +165,7 @@ def check_turn_0(
 
     response = strip_latex_delimiters(response)
     session["turn_count"] += 1
-    session["problem_presented_at"] = time.time()
+    session["task_presented_at"] = time.time()
 
     container = session_containers.get(session_id)
     if container is not None and hasattr(container, "ring_buffer"):

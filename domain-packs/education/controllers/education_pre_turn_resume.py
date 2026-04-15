@@ -19,7 +19,7 @@ def education_pre_turn_resume(
     *,
     session: dict[str, Any],
     task_spec: dict[str, Any],
-    current_problem: dict[str, Any],
+    current_task: dict[str, Any],
     runtime: dict[str, Any],
     orchestrator: Any,
 ) -> dict[str, Any]:
@@ -27,7 +27,7 @@ def education_pre_turn_resume(
 
     Returns a dict with:
         replaced: bool — True when a new problem was generated
-        current_problem: dict — the (possibly new) current problem
+        current_task: dict — the (possibly new) current task
     """
     module_physics = getattr(orchestrator, "domain", None) or {}
     subsystem_configs = module_physics.get("subsystem_configs") or {}
@@ -36,14 +36,15 @@ def education_pre_turn_resume(
 
     if not (isinstance(tiers, list) and tiers and gen_fn is not None):
         log.warning("Cannot replace solved problem on resume: missing tiers or generate_problem")
-        return {"replaced": False, "current_problem": current_problem}
+        return {"replaced": False, "current_task": current_task}
 
     try:
         diff = float(task_spec.get("nominal_difficulty", 0.5))
         module_key = session.get("module_key")
         new_problem = gen_fn(diff, subsystem_configs, domain_id=module_key)
         new_problem["solved"] = False
-        return {"replaced": True, "current_problem": new_problem}
+        new_problem["completed"] = False
+        return {"replaced": True, "current_task": new_problem}
     except Exception:
         log.warning("Problem generation on resume failed", exc_info=True)
-        return {"replaced": False, "current_problem": current_problem}
+        return {"replaced": False, "current_task": current_task}

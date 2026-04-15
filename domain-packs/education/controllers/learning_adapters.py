@@ -210,7 +210,7 @@ def interpret_turn_input(
         context_hint = f"\nCurrent task: {task_context.get('task_id', 'unknown')}"
         if task_context.get("skills_required"):
             context_hint += f"\nSkills: {', '.join(task_context['skills_required'])}"
-    current_problem = task_context.get("current_problem")
+    current_problem = task_context.get("current_task")
     if isinstance(current_problem, dict):
         equation = current_problem.get("equation")
         target_variable = current_problem.get("target_variable")

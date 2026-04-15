@@ -246,7 +246,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             nlp_cfg["callable"],
         )
 
-    # Optional pre-turn resume hook (called when current_problem is already
+    # Optional pre-turn resume hook (called when current_task is already
     # solved at session resume — lets the domain generate a replacement).
     pre_turn_resume_fn: Callable[..., Any] | None = None
     _ptr_cfg = adapters_cfg.get("pre_turn_resume")
@@ -304,7 +304,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             repo_root, _sn_cfg["module_path"], _sn_cfg["callable"],
         )
 
-    # Optional task initializer (creates current_problem at session start).
+    # Optional task initializer (creates current_task at session start).
     task_initializer_fn: Callable[..., Any] | None = None
     _ti_cfg = adapters_cfg.get("task_initializer")
     if _ti_cfg is not None:

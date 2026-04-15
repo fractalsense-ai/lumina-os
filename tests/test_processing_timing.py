@@ -3,9 +3,9 @@
 Verifies that:
 1. response_latency_sec is set from the pre-SLM request-arrival snapshot
    (i.e. it does NOT grow by however long the inbound SLM call took).
-2. problem_presented_at is reset to a time AFTER the outgoing LLM response
+2. task_presented_at is reset to a time AFTER the outgoing LLM response
    is built, not before.
-3. task_presentation turns also reset problem_presented_at.
+3. task_presentation turns also reset task_presented_at.
 4. The education domain adapter (runtime_adapters.domain_step) maps
    response_latency_sec → solve_elapsed_sec before passing evidence to the
    fluency monitor so the time-threshold gate works correctly.
@@ -143,10 +143,10 @@ class TestProcessingTimingCapture:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "t1", "nominal_difficulty": 0.2, "skills_required": []},
-            "current_problem": {},
+            "current_task": {},
             "turn_count": 0,
             "domain_id": "education",
-            "problem_presented_at": presented_at,
+            "task_presented_at": presented_at,
         }
 
     def _make_runtime(self) -> dict[str, Any]:
@@ -220,8 +220,8 @@ class TestProcessingTimingCapture:
             f"Expected {STUDENT_ELAPSED}, got {turn_data_passed['response_latency_sec']}"
         )
 
-    def test_problem_presented_at_updated_after_llm_on_task_presentation(self):
-        """problem_presented_at must be set after call_llm completes."""
+    def test_task_presented_at_updated_after_llm_on_task_presentation(self):
+        """task_presented_at must be set after call_llm completes."""
         T_PRESENTED = 1_000_000.0
         T_ARRIVED = T_PRESENTED + 5.0
         T_AFTER_LLM = T_ARRIVED + 3.0  # after LLM response is built
@@ -269,10 +269,10 @@ class TestProcessingTimingCapture:
             proc.process_message("sess-2", "let's go")
 
         # presented_at must be T_AFTER_LLM (after the response was built)
-        assert abs(session["problem_presented_at"] - T_AFTER_LLM) < 0.01, (
-            f"Expected {T_AFTER_LLM}, got {session['problem_presented_at']}"
+        assert abs(session["task_presented_at"] - T_AFTER_LLM) < 0.01, (
+            f"Expected {T_AFTER_LLM}, got {session['task_presented_at']}"
         )
-        assert session["problem_presented_at"] > T_ARRIVED
+        assert session["task_presented_at"] > T_ARRIVED
 
 
 # ===========================================================================
@@ -376,11 +376,11 @@ class TestTaskCompletePayloadSeparation:
         return {
             "orchestrator": mock_orch,
             "task_spec": {"task_id": "t1", "nominal_difficulty": 0.5, "skills_required": []},
-            "current_problem": dict(self._OLD_PROBLEM),
+            "current_task": dict(self._OLD_PROBLEM),
             "turn_count": 1,
             "domain_id": "education",
             "module_key": "domain/edu/pre-algebra/v1",
-            "problem_presented_at": 1_000_000.0,
+            "task_presented_at": 1_000_000.0,
         }
 
     def _make_runtime_with_generator(self, new_problem: dict[str, Any]) -> dict[str, Any]:
@@ -526,7 +526,8 @@ class TestTaskCompletePayloadSeparation:
         _RESUME_NEW = {"equation": "9x = 81", "target_variable": "x", "expected_answer": "x = 9"}
         session = self._make_session()
         # Simulate returning to a session where the problem was already solved
-        session["current_problem"]["solved"] = True
+        session["current_task"]["solved"] = True
+        session["current_task"]["completed"] = True
         session["turn_count"] = 5  # not turn 0
 
         runtime = self._make_runtime_with_generator(_RESUME_NEW)
@@ -546,6 +547,6 @@ class TestTaskCompletePayloadSeparation:
             "Resumed next_problem must have solved=False to prevent re-generation loop"
         )
         # The session's current_problem should be updated (not still the solved one)
-        assert session["current_problem"].get("solved") is not True, (
-            "Session current_problem must no longer be marked as solved after resume replacement"
+        assert session["current_task"].get("solved") is not True, (
+            "Session current_task must no longer be marked as solved after resume replacement"
         )
