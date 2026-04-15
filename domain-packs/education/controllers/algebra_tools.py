@@ -38,6 +38,64 @@ _LINEAR_TERM_RE = re.compile(
 )
 
 
+def _eval_side(side: str, variable: str = "x") -> tuple[float, float] | None:
+    """Return (coefficient_of_variable, constant) for one side of an equation."""
+    coeff = 0.0
+    const = 0.0
+    # Normalise implicit leading +
+    s = side.replace(" ", "")
+    if s and s[0] not in "+-":
+        s = "+" + s
+
+    pos = 0
+    while pos < len(s):
+        # Find next term boundary
+        sign_char = s[pos]
+        if sign_char not in "+-":
+            return None
+        sign = 1.0 if sign_char == "+" else -1.0
+        pos += 1
+
+        # Collect digits / decimal / variable
+        num_str = ""
+        found_var = False
+        denominator = 1.0
+        while pos < len(s) and s[pos] not in "+-":
+            ch = s[pos]
+            if ch == variable:
+                found_var = True
+            elif ch.isdigit() or ch == ".":
+                num_str += ch
+            elif ch == "/":
+                # Fraction: consume denominator digits
+                pos += 1
+                denom_str = ""
+                while pos < len(s) and (s[pos].isdigit() or s[pos] == "."):
+                    denom_str += s[pos]
+                    pos += 1
+                if not denom_str:
+                    return None
+                denom_val = float(denom_str)
+                if abs(denom_val) < 1e-12:
+                    return None  # division by zero
+                denominator = denom_val
+                continue
+            else:
+                # Unknown character — skip whitespace, fail on others
+                if not ch.isspace():
+                    return None
+            pos += 1
+
+        magnitude = float(num_str) if num_str else (1.0 if found_var else 0.0)
+        magnitude /= denominator
+        if found_var:
+            coeff += sign * magnitude
+        else:
+            const += sign * magnitude
+
+    return coeff, const
+
+
 def _parse_linear_equation(
     equation_str: str, variable: str = "x"
 ) -> tuple[float, float, float] | None:
@@ -48,65 +106,8 @@ def _parse_linear_equation(
     lhs_str = m.group("lhs").strip()
     rhs_str = m.group("rhs").strip()
 
-    def _eval_side(side: str) -> tuple[float, float] | None:
-        """Return (coefficient_of_variable, constant) for one side."""
-        coeff = 0.0
-        const = 0.0
-        # Normalise implicit leading +
-        s = side.replace(" ", "")
-        if s and s[0] not in "+-":
-            s = "+" + s
-
-        pos = 0
-        while pos < len(s):
-            # Find next term boundary
-            sign_char = s[pos]
-            if sign_char not in "+-":
-                return None
-            sign = 1.0 if sign_char == "+" else -1.0
-            pos += 1
-
-            # Collect digits / decimal / variable
-            num_str = ""
-            found_var = False
-            denominator = 1.0
-            while pos < len(s) and s[pos] not in "+-":
-                ch = s[pos]
-                if ch == variable:
-                    found_var = True
-                elif ch.isdigit() or ch == ".":
-                    num_str += ch
-                elif ch == "/":
-                    # Fraction: consume denominator digits
-                    pos += 1
-                    denom_str = ""
-                    while pos < len(s) and (s[pos].isdigit() or s[pos] == "."):
-                        denom_str += s[pos]
-                        pos += 1
-                    if not denom_str:
-                        return None
-                    denom_val = float(denom_str)
-                    if abs(denom_val) < 1e-12:
-                        return None  # division by zero
-                    denominator = denom_val
-                    continue
-                else:
-                    # Unknown character — skip whitespace, fail on others
-                    if not ch.isspace():
-                        return None
-                pos += 1
-
-            magnitude = float(num_str) if num_str else (1.0 if found_var else 0.0)
-            magnitude /= denominator
-            if found_var:
-                coeff += sign * magnitude
-            else:
-                const += sign * magnitude
-
-        return coeff, const
-
-    lhs_parsed = _eval_side(lhs_str)
-    rhs_parsed = _eval_side(rhs_str)
+    lhs_parsed = _eval_side(lhs_str, variable)
+    rhs_parsed = _eval_side(rhs_str, variable)
     if lhs_parsed is None or rhs_parsed is None:
         return None
 
@@ -191,13 +192,27 @@ def _detect_step_order(
       2. Divide coefficient              → x  = (c-b)/a
 
     If the student divides the coefficient first (producing a fractional intermediate)
-    the ordering is wrong. Returns None for single-step equations (no constant term).
+    the ordering is wrong. Returns None for single-step equations (no constant term
+    on the variable side of the original equation).
     """
-    parsed = _parse_linear_equation(equation, variable)
-    if parsed is None:
+    # Parse the original equation's sides independently to check whether
+    # the variable side has a constant term (i.e. a genuine two-step problem).
+    eq_m = _EQ_RE.match(equation.strip())
+    if eq_m is None:
         return None
-    a, b, _ = parsed
-    if abs(b) < 1e-12:
+    eq_lhs = _eval_side(eq_m.group("lhs").strip(), variable)
+    eq_rhs = _eval_side(eq_m.group("rhs").strip(), variable)
+    if eq_lhs is None or eq_rhs is None:
+        return None
+    # Identify original variable side
+    if abs(eq_lhs[0]) > 1e-12:
+        orig_var_const = eq_lhs[1]
+    elif abs(eq_rhs[0]) > 1e-12:
+        orig_var_const = eq_rhs[1]
+    else:
+        return None
+    # If the variable side already has no constant, it's a single-step equation
+    if abs(orig_var_const) < 1e-12:
         return None
 
     raw_steps = _detect_steps(student_work)
@@ -206,13 +221,27 @@ def _detect_step_order(
     for step_text in all_steps:
         if not _step_has_equation(step_text):
             continue
-        step_parsed = _parse_linear_equation(step_text, variable)
-        if step_parsed is None:
+        m = _EQ_RE.match(step_text.strip())
+        if m is None:
             continue
-        s_a, s_b, _ = step_parsed
-        if abs(s_b) < 1e-12 and abs(s_a) > 1e-12:
+        lhs_parsed = _eval_side(m.group("lhs").strip(), variable)
+        rhs_parsed = _eval_side(m.group("rhs").strip(), variable)
+        if lhs_parsed is None or rhs_parsed is None:
+            continue
+        # Identify the variable-bearing side
+        if abs(lhs_parsed[0]) > 1e-12:
+            var_coeff, var_const = lhs_parsed
+        elif abs(rhs_parsed[0]) > 1e-12:
+            var_coeff, var_const = rhs_parsed
+        else:
+            continue
+        const_removed = abs(var_const) < 1e-12
+        coeff_removed = abs(abs(var_coeff) - 1.0) < 1e-9
+        if const_removed and not coeff_removed:
+            # Constant removed first, coefficient still present → correct order
             return True
-        if abs(abs(s_a) - 1.0) < 1e-9:
+        if coeff_removed and not const_removed:
+            # Coefficient divided out while constant still on variable side → wrong
             return False
     return None
 
