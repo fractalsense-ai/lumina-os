@@ -82,10 +82,21 @@ def build_initial_learning_state(
     nominal_difficulty: float = 0.5,
     mud_world_cfg: dict[str, Any] | None = None,
     module_state: dict[str, Any] | None = None,
+    initial_module_state: dict[str, Any] | None = None,
 ) -> Any:
-    """Build the education domain-lib state from profile learning_state."""
-    # Prefer DB-backed module_state when provided; fall back to profile for compat.
-    learning_state = module_state or profile.get("learning_state") or {}
+    """Build the education domain-lib state from profile learning_state.
+
+    Three-tier state priority:
+      1. DB-backed ``module_state`` (returning student)
+      2. ``initial_module_state`` from runtime-config (first time in module)
+      3. ``profile["learning_state"]`` (backward-compat fallback)
+    """
+    if module_state:
+        learning_state = module_state
+    elif initial_module_state:
+        learning_state = dict(initial_module_state)
+    else:
+        learning_state = profile.get("learning_state") or {}
     affect = learning_state.get("affect") or {}
     mastery_raw = learning_state.get("mastery") or {}
     challenge_band_raw = learning_state.get("challenge_band") or {}

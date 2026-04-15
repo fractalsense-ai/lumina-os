@@ -17,40 +17,24 @@ preferences:
 assigned_ta_ids: []
 assigned_guardian_ids: []
 
-# ── Per-module mastery (populated as student enters modules) ─
-module_mastery: {}
-
+# ── Domain-wide learning posture ────────────────────────────
+# Module-specific state (mastery, challenge_band, recent_window, fluency)
+# is initialized per-module from runtime-config initial_module_state and
+# persisted to the actor_module_states table — NOT on the profile.
 learning_state:
-  affect:
+  # ── SVA Affect Baseline (floating, evolves across modules) ──
+  # Exponential moving average of per-turn affect readings.  Tells
+  # teachers whether the learner CAN learn right now.
+  affect_baseline:
     salience: 0.5
     valence: 0.0
     arousal: 0.5
+    sample_count: 0
+    per_module: {}                     # Latest affect snapshot per module with delta_from_baseline
 
-  mastery:
-    equivalence_preserved: 0.0
-    no_illegal_operations: 0.0
-    solution_verifies: 0.0
-    show_work_minimum: 0.0
-
-  challenge_band:
-    min_challenge: 0.3
-    max_challenge: 0.7
-
-  recent_window:
-    window_turns: 10
-    attempts: 0
-    consecutive_incorrect: 0
-    hint_count: 0
-    outside_pct: 0.0
-    consecutive_outside: 0
-    outside_flags: []
-
+  # Domain-wide posture defaults (seeds for first module entry)
   challenge: 0.3
   uncertainty: 0.8
-
-  fluency:
-    current_tier: tier_1
-    consecutive_correct: 0
 
   # ── Vocabulary Growth Tracking ────────────────────────────
   # Passive vocabulary complexity monitoring. Only structured metrics

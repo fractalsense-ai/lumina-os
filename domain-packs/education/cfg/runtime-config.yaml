@@ -27,6 +27,19 @@ runtime:
       domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json
       domain_system_prompt_path: domain-packs/education/prompts/student-commons-persona-v1.md
       turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
+      initial_module_state:
+        journaling_entry_count: 0
+        last_reflection_utc: null
+        vocabulary_tracking:
+          baseline_complexity: null
+          current_complexity: null
+          growth_delta: 0.0
+          domain_vocabulary: {}
+          measurement_window_turns: 20
+          baseline_sessions_remaining: 3
+          baseline_samples: []
+          last_measured_utc: null
+          session_history: []
       turn_input_defaults:
         intent_type: "journaling"
         off_task_ratio: 0.0
@@ -48,6 +61,26 @@ runtime:
         subtitle: "Student Commons"
     domain/edu/pre-algebra/v1:
       domain_physics_path: domain-packs/education/modules/pre-algebra/domain-physics.json
+      initial_module_state:
+        affect: { salience: 0.5, valence: 0.0, arousal: 0.5 }
+        mastery:
+          equivalence_preserved: 0.0
+          no_illegal_operations: 0.0
+          solution_verifies: 0.0
+          show_work_minimum: 0.0
+        challenge_band: { min_challenge: 0.3, max_challenge: 0.7 }
+        recent_window:
+          window_turns: 10
+          attempts: 0
+          consecutive_incorrect: 0
+          hint_count: 0
+          outside_pct: 0.0
+          consecutive_outside: 0
+          outside_flags: []
+          hint_flags: []
+        challenge: 0.3
+        uncertainty: 0.8
+        fluency: { current_tier: tier_1, consecutive_correct: 0 }
       default_task_spec:
         task_id: pre-algebra-basics-001
         nominal_difficulty: 0.45
@@ -59,6 +92,26 @@ runtime:
         subtitle: "Pre-Algebra"
     domain/edu/algebra-intro/v1:
       domain_physics_path: domain-packs/education/modules/algebra-intro/domain-physics.json
+      initial_module_state:
+        affect: { salience: 0.5, valence: 0.0, arousal: 0.5 }
+        mastery:
+          equivalence_preserved: 0.0
+          no_illegal_operations: 0.0
+          solution_verifies: 0.0
+          show_work_minimum: 0.0
+        challenge_band: { min_challenge: 0.3, max_challenge: 0.7 }
+        recent_window:
+          window_turns: 10
+          attempts: 0
+          consecutive_incorrect: 0
+          hint_count: 0
+          outside_pct: 0.0
+          consecutive_outside: 0
+          outside_flags: []
+          hint_flags: []
+        challenge: 0.3
+        uncertainty: 0.8
+        fluency: { current_tier: tier_1, consecutive_correct: 0 }
       default_task_spec:
         task_id: algebra-intro-basics-001
         nominal_difficulty: 0.45
@@ -70,6 +123,26 @@ runtime:
         subtitle: "Algebra — Introduction"
     domain/edu/algebra-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-1/domain-physics.json
+      initial_module_state:
+        affect: { salience: 0.5, valence: 0.0, arousal: 0.5 }
+        mastery:
+          equivalence_preserved: 0.0
+          no_illegal_operations: 0.0
+          solution_verifies: 0.0
+          show_work_minimum: 0.0
+        challenge_band: { min_challenge: 0.3, max_challenge: 0.7 }
+        recent_window:
+          window_turns: 10
+          attempts: 0
+          consecutive_incorrect: 0
+          hint_count: 0
+          outside_pct: 0.0
+          consecutive_outside: 0
+          outside_flags: []
+          hint_flags: []
+        challenge: 0.3
+        uncertainty: 0.8
+        fluency: { current_tier: tier_1, consecutive_correct: 0 }
       default_task_spec:
         task_id: algebra-1-basics-001
         nominal_difficulty: 0.45
@@ -81,6 +154,26 @@ runtime:
         subtitle: "Algebra Level 1 — Foundations"
     domain/edu/algebra-level-1/v1:
       domain_physics_path: domain-packs/education/modules/algebra-level-1/domain-physics.json
+      initial_module_state:
+        affect: { salience: 0.5, valence: 0.0, arousal: 0.5 }
+        mastery:
+          equivalence_preserved: 0.0
+          no_illegal_operations: 0.0
+          solution_verifies: 0.0
+          show_work_minimum: 0.0
+        challenge_band: { min_challenge: 0.3, max_challenge: 0.7 }
+        recent_window:
+          window_turns: 10
+          attempts: 0
+          consecutive_incorrect: 0
+          hint_count: 0
+          outside_pct: 0.0
+          consecutive_outside: 0
+          outside_flags: []
+          hint_flags: []
+        challenge: 0.3
+        uncertainty: 0.8
+        fluency: { current_tier: tier_1, consecutive_correct: 0 }
       default_task_spec:
         task_id: algebra-level-1-basics-001
         nominal_difficulty: 0.45

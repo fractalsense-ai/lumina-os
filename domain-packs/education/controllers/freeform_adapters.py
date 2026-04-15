@@ -61,21 +61,29 @@ def freeform_build_initial_state(
     No learning curves, affect tracking, ZPD, fluency, or mastery — just
     minimal state for journaling / reflection tracking.  Shape matches
     ``module_state_schema.custom_fields`` in general-education physics.
+
+    Three-tier state priority:
+      1. DB-backed ``module_state`` (returning student)
+      2. ``initial_module_state`` from runtime-config (first time in module)
+      3. Profile / empty fallback (backward-compat)
     """
-    # Prefer DB-backed module_state when provided; fall back to profile for compat.
     _module_state = kwargs.get("module_state")
-    if not isinstance(_module_state, dict) or not _module_state:
+    if isinstance(_module_state, dict) and _module_state:
+        _src = _module_state
+    elif isinstance(kwargs.get("initial_module_state"), dict) and kwargs.get("initial_module_state"):
+        _src = dict(kwargs["initial_module_state"])
+    else:
         _modules = profile.get("modules")
-        _module_state = (_modules if isinstance(_modules, dict) else {}).get(
+        _src = (_modules if isinstance(_modules, dict) else {}).get(
             profile.get("domain_id", ""), {}
         )
     return {
         "turn_count": 0,
         "journaling_entry_count": int(
-            _module_state.get("journaling_entry_count", 0)
+            _src.get("journaling_entry_count", 0)
         ),
-        "last_reflection_utc": _module_state.get("last_reflection_utc"),
-        "vocabulary_tracking": _module_state.get(
+        "last_reflection_utc": _src.get("last_reflection_utc"),
+        "vocabulary_tracking": _src.get(
             "vocabulary_tracking",
             _build_default_vocab_state(),
         ),
