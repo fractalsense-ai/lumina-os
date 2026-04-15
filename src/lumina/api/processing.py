@@ -224,6 +224,25 @@ def process_message(
         runtime = dict(runtime)
         runtime["nlp_pre_interpreter_fn"] = _active_mod["nlp_pre_interpreter_fn"]
 
+    # ── Pre-turn resume hook (domain-driven) ────────────────────
+    # When a domain marks current_problem as solved and the user returns,
+    # the domain's pre_turn_resume_fn decides whether/how to replace it.
+    _new_problem_on_resume = False
+    _ptr_fn = _active_mod.get("pre_turn_resume_fn") or runtime.get("pre_turn_resume_fn")
+    if _ptr_fn is not None and current_problem.get("solved") is True:
+        _ptr_result = _ptr_fn(
+            session=session,
+            task_spec=task_spec,
+            current_problem=current_problem,
+            runtime=runtime,
+            orchestrator=orch,
+        )
+        if _ptr_result.get("replaced"):
+            current_problem = _ptr_result["current_problem"]
+            session["current_problem"] = current_problem
+            _new_problem_on_resume = True
+            vlog.debug("[RESUME] Domain hook replaced solved problem")
+
     # ── Consent gate ──────────────────────────────────────────
     _gate = check_consent_gate(
         session_id, user, domain_id, session, runtime,
@@ -387,7 +406,7 @@ def process_message(
     vlog.debug("[ORCH] action=%s prompt_type=%s", resolved_action, prompt_contract.get("prompt_type"))
 
     # ── Post-turn processing (domain-hook driven) ──────────────
-    _new_problem_presented = False
+    _new_problem_presented = _new_problem_on_resume
     _ptp_fn = _active_mod.get("post_turn_processor_fn") or runtime.get("post_turn_processor_fn")
     vlog.debug("[POST] Post-turn processing (hook=%s)", _ptp_fn is not None)
     if _ptp_fn is not None:
@@ -403,7 +422,7 @@ def process_message(
         )
         resolved_action = _ptp_result.get("resolved_action", resolved_action)
         current_problem = _ptp_result.get("current_problem", current_problem)
-        _new_problem_presented = _ptp_result.get("new_problem_presented", False)
+        _new_problem_presented = _ptp_result.get("new_problem_presented", False) or _new_problem_presented
 
     session["current_problem"] = current_problem
     session["turn_count"] += 1

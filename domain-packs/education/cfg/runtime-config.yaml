@@ -669,6 +669,9 @@ adapters:
   nlp_pre_interpreter:
     module_path: domain-packs/education/controllers/nlp_pre_interpreter.py
     callable: nlp_preprocess
+  pre_turn_resume:
+    module_path: domain-packs/education/controllers/education_pre_turn_resume.py
+    callable: education_pre_turn_resume
   post_turn_processor:
     module_path: domain-packs/education/controllers/education_post_turn.py
     callable: education_post_turn

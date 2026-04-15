@@ -58,6 +58,21 @@ _adapters = _load_runtime_adapters()
 _post_turn_mod = _load_post_turn_module()
 _reset_timer = _post_turn_mod.education_reset_timer
 _education_post_turn = _post_turn_mod.education_post_turn
+
+
+def _load_pre_turn_resume_module():
+    spec = importlib.util.spec_from_file_location(
+        "edu_pre_turn_resume_timing_test",
+        str(_EDU_CONTROLLERS / "education_pre_turn_resume.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+_pre_turn_resume_mod = _load_pre_turn_resume_module()
+_education_pre_turn_resume = _pre_turn_resume_mod.education_pre_turn_resume
+
 domain_step = _adapters.domain_step
 FluencyState = _adapters.FluencyState
 LearningState = _adapters.LearningState
@@ -395,6 +410,7 @@ class TestTaskCompletePayloadSeparation:
             "local_only": False,
             "post_turn_processor_fn": _education_post_turn,
             "post_turn_timer_fn": _reset_timer,
+            "pre_turn_resume_fn": _education_pre_turn_resume,
         }
 
     def _make_runtime_no_generator(self) -> dict[str, Any]:
@@ -459,9 +475,12 @@ class TestTaskCompletePayloadSeparation:
 
         payload = self._call_process_message(session, runtime, problem_solved=True)
 
-        assert payload.get("current_problem") == self._OLD_PROBLEM, (
-            f"LLM payload current_problem should be the answered problem ({self._OLD_PROBLEM}), "
-            f"but got: {payload.get('current_problem')}"
+        # The answered problem may acquire extra keys (e.g. solved) but must
+        # retain the original equation fields.
+        cp = payload.get("current_problem", {})
+        assert cp.get("equation") == self._OLD_PROBLEM["equation"], (
+            f"LLM payload current_problem should reference the answered equation, "
+            f"but got: {cp}"
         )
 
     @pytest.mark.unit
@@ -476,9 +495,13 @@ class TestTaskCompletePayloadSeparation:
         assert "next_problem" in payload, (
             "next_problem must be present in LLM payload when a new problem was generated"
         )
-        assert payload["next_problem"] == self._NEW_PROBLEM, (
-            f"next_problem should be the newly generated problem ({self._NEW_PROBLEM}), "
-            f"but got: {payload.get('next_problem')}"
+        np = payload["next_problem"]
+        assert np.get("equation") == self._NEW_PROBLEM["equation"], (
+            f"next_problem should contain the newly generated equation, "
+            f"but got: {np}"
+        )
+        assert np.get("solved") is False, (
+            "next_problem must have solved=False to prevent re-generation loop"
         )
 
     @pytest.mark.unit
@@ -493,4 +516,36 @@ class TestTaskCompletePayloadSeparation:
         assert "next_problem" not in payload, (
             f"next_problem should not be present when there was no problem advancement, "
             f"but payload keys are: {list(payload.keys())}"
+        )
+
+    @pytest.mark.unit
+    def test_solved_problem_replaced_on_resume(self):
+        """When a user resumes a session whose current_problem has solved=True,
+        processing should generate a new problem before the turn runs, so the
+        LLM introduces the new problem instead of re-showing the solved one."""
+        _RESUME_NEW = {"equation": "9x = 81", "target_variable": "x", "expected_answer": "x = 9"}
+        session = self._make_session()
+        # Simulate returning to a session where the problem was already solved
+        session["current_problem"]["solved"] = True
+        session["turn_count"] = 5  # not turn 0
+
+        runtime = self._make_runtime_with_generator(_RESUME_NEW)
+
+        payload = self._call_process_message(session, runtime, problem_solved=False)
+
+        # The LLM payload should show the old solved problem as current_problem
+        # (for context) and the freshly generated one as next_problem.
+        assert "next_problem" in payload, (
+            "next_problem must be present when a solved problem is replaced on resume"
+        )
+        np = payload["next_problem"]
+        assert np.get("equation") == _RESUME_NEW["equation"], (
+            f"next_problem should be the newly generated equation on resume, got: {np}"
+        )
+        assert np.get("solved") is False, (
+            "Resumed next_problem must have solved=False to prevent re-generation loop"
+        )
+        # The session's current_problem should be updated (not still the solved one)
+        assert session["current_problem"].get("solved") is not True, (
+            "Session current_problem must no longer be marked as solved after resume replacement"
         )

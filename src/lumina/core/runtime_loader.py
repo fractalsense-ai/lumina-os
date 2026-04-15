@@ -246,6 +246,15 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             nlp_cfg["callable"],
         )
 
+    # Optional pre-turn resume hook (called when current_problem is already
+    # solved at session resume — lets the domain generate a replacement).
+    pre_turn_resume_fn: Callable[..., Any] | None = None
+    _ptr_cfg = adapters_cfg.get("pre_turn_resume")
+    if _ptr_cfg is not None:
+        pre_turn_resume_fn = _load_callable(
+            repo_root, _ptr_cfg["module_path"], _ptr_cfg["callable"],
+        )
+
     # Optional post-turn processor adapter (education domain uses this for
     # fluency-gated advancement, problem_solved override, etc.)
     post_turn_processor_fn: Callable[..., Any] | None = None
@@ -401,6 +410,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "domain_step_fn": domain_step_fn,
         "turn_interpreter_fn": turn_interpreter_fn,
         "nlp_pre_interpreter_fn": nlp_pre_interpreter_fn,
+        "pre_turn_resume_fn": pre_turn_resume_fn,
         "post_turn_processor_fn": post_turn_processor_fn,
         "post_turn_timer_fn": post_turn_timer_fn,
         "profile_serializer_fn": profile_serializer_fn,
