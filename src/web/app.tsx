@@ -9,6 +9,7 @@ import { DashboardPage } from '@/components/dashboard/DashboardPage'
 import { ActionCard, type ActionCardData } from '@/components/ActionCard'
 import { QueryResultCard, type QueryResultData } from '@/components/QueryResultCard'
 import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
+import { MathText } from '@/components/MathText'
 import { useEventStream } from '@/hooks/useEventStream'
 import { SetupPasswordPage } from '@/components/SetupPasswordPage'
 import { RoleSidebar } from '@/components/sidebar/RoleSidebar'
@@ -463,7 +464,7 @@ function ChatMessage({ message, token, userRole }: { message: Message; token?: s
             : 'bg-card border border-border text-card-foreground rounded-tl-sm'
         }`}>
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-            {message.content}
+            <MathText text={message.content} />
           </p>
         </div>
       </motion.div>

@@ -454,10 +454,12 @@ runtime:
   tool_call_policies:
     request_verification_retry:
       -
-        tool_id: substitution_checker
+        tool_id: algebra_parser
         payload:
-          left_value: "{turn_data.left_value}"
-          right_value: "{turn_data.right_value}"
+          call_type: "verify_solution_substitution"
+          equation: "{task_spec.current_problem.equation}"
+          target_variable: "{task_spec.current_problem.target_variable}"
+          expected_answer: "{task_spec.current_problem.expected_answer}"
     tool_request:
       -
         tool_id: calculator

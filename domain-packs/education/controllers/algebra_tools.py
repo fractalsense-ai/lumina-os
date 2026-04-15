@@ -69,12 +69,27 @@ def _parse_linear_equation(
             # Collect digits / decimal / variable
             num_str = ""
             found_var = False
+            denominator = 1.0
             while pos < len(s) and s[pos] not in "+-":
                 ch = s[pos]
                 if ch == variable:
                     found_var = True
                 elif ch.isdigit() or ch == ".":
                     num_str += ch
+                elif ch == "/":
+                    # Fraction: consume denominator digits
+                    pos += 1
+                    denom_str = ""
+                    while pos < len(s) and (s[pos].isdigit() or s[pos] == "."):
+                        denom_str += s[pos]
+                        pos += 1
+                    if not denom_str:
+                        return None
+                    denom_val = float(denom_str)
+                    if abs(denom_val) < 1e-12:
+                        return None  # division by zero
+                    denominator = denom_val
+                    continue
                 else:
                     # Unknown character — skip whitespace, fail on others
                     if not ch.isspace():
@@ -82,6 +97,7 @@ def _parse_linear_equation(
                 pos += 1
 
             magnitude = float(num_str) if num_str else (1.0 if found_var else 0.0)
+            magnitude /= denominator
             if found_var:
                 coeff += sign * magnitude
             else:
@@ -95,9 +111,10 @@ def _parse_linear_equation(
         return None
 
     # Move everything to the left:  (a_l - a_r)x + (b_l - b_r) = 0
-    # Rewrite as  a_net * x + b_net = 0  →  a_net * x = -b_net  →  rhs_effective = rhs const
-    # Keep original form:  lhs_a * x + lhs_b = rhs_b  (assuming rhs has no variable)
-    return lhs_parsed[0], lhs_parsed[1], rhs_parsed[1]
+    # Rewrite as  a_net * x = -(b_net)  in (a, b, c) form with c = 0.
+    a_net = lhs_parsed[0] - rhs_parsed[0]
+    b_net = lhs_parsed[1] - rhs_parsed[1]
+    return a_net, b_net, 0.0
 
 
 def _solve_linear(a: float, b: float, c: float) -> float | None:
