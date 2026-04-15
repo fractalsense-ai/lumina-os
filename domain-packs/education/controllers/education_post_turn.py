@@ -40,6 +40,7 @@ def education_post_turn(
     if turn_data.get("problem_solved") is True:
         resolved_action = "task_complete"
         prompt_contract["prompt_type"] = "task_complete"
+        current_problem["solved"] = True
 
     # ── problem_status tracking ───────────────────────────────
     reported_status = turn_data.get("problem_status")
@@ -56,8 +57,12 @@ def education_post_turn(
     should_advance = fluency_decision.get("advanced", False)
 
     if should_advance or turn_data.get("problem_solved") is True:
-        domain = (runtime.get("domain") or {}).get("subsystem_configs") or {}
-        tiers = domain.get("equation_difficulty_tiers")
+        # Use the module-specific domain physics (on the orchestrator),
+        # not the default runtime physics which may lack tiers.
+        module_physics = getattr(orchestrator, "domain", None) or {}
+        subsystem_configs = module_physics.get("subsystem_configs") or {}
+        tiers = subsystem_configs.get("equation_difficulty_tiers")
+        module_key = session.get("module_key")
         if isinstance(tiers, list) and tiers:
             try:
                 gen_fn = (runtime.get("tool_fns") or {}).get("generate_problem")
@@ -71,10 +76,15 @@ def education_post_turn(
                         task_spec["nominal_difficulty"] = diff
                     else:
                         diff = float(task_spec.get("nominal_difficulty", 0.5))
-                    current_problem = gen_fn(diff, domain)
+                    current_problem = gen_fn(diff, subsystem_configs, domain_id=module_key)
+                    current_problem["solved"] = False
+                    new_problem_presented = True
+                else:
+                    log.warning("generate_problem tool function not available")
             except Exception:
                 log.warning("Problem generation on advance failed", exc_info=True)
-        new_problem_presented = True
+        else:
+            log.warning("No equation_difficulty_tiers found in module physics")
 
     return {
         "resolved_action": resolved_action,

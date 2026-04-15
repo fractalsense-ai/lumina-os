@@ -324,10 +324,22 @@ class TestTaskCompletePayloadSeparation:
     _OLD_PROBLEM = {"equation": "6x = 90", "target_variable": "x", "expected_answer": "x = 15"}
     _NEW_PROBLEM = {"equation": "7x = 98", "target_variable": "x", "expected_answer": "x = 14"}
 
+    _MODULE_PHYSICS = {
+        "id": "edu",
+        "version": "1",
+        "glossary": [],
+        "subsystem_configs": {
+            "equation_difficulty_tiers": [
+                {"tier_id": "tier_2", "min_difficulty": 0.35, "max_difficulty": 0.65},
+            ],
+        },
+    }
+
     def _make_session(self) -> dict[str, Any]:
         mock_orch = MagicMock()
         mock_orch.state = SimpleNamespace(world_sim_theme={}, mud_world_state={})
         mock_orch.last_domain_lib_decision = {}
+        mock_orch.domain = self._MODULE_PHYSICS
         mock_orch.process_turn.return_value = (
             {
                 "prompt_type": "task_complete",
@@ -352,12 +364,13 @@ class TestTaskCompletePayloadSeparation:
             "current_problem": dict(self._OLD_PROBLEM),
             "turn_count": 1,
             "domain_id": "education",
+            "module_key": "domain/edu/pre-algebra/v1",
             "problem_presented_at": 1_000_000.0,
         }
 
     def _make_runtime_with_generator(self, new_problem: dict[str, Any]) -> dict[str, Any]:
         """Runtime that includes a problem generator returning new_problem."""
-        def _generate_problem(difficulty, domain):
+        def _generate_problem(difficulty, domain, *, domain_id=None):
             return new_problem
 
         return {
