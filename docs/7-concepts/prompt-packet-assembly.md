@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-20
+version: 1.1.0
+last_updated: 2026-04-16
 ---
 
 # Prompt Packet Assembly
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Active
-**Last updated:** 2026-03-13
+**Last updated:** 2026-04-16
 
 ---
 
@@ -27,7 +27,11 @@ The **assembled prompt contract** is the "packet." It is built by stacking heade
 ├─────────────────────────────────────────────┤
 │  Domain Adapter — Input Normalization (A)   │  ← NLP classification + anchor extraction
 ├─────────────────────────────────────────────┤
+│  RAG Retrieval (MiniLM embeddings)          │  ← per-domain vector search (pre-interp)
+├─────────────────────────────────────────────┤
 │  SLM Context Compression (optional)         │  ← physics interpretation + signal digest
+├─────────────────────────────────────────────┤
+│  Turn Interpretation (SLM-preferred)        │  ← structured evidence extraction
 ├─────────────────────────────────────────────┤
 │  Global Base Prompt                         │  ← universal rules  (the "IP header")
 ├─────────────────────────────────────────────┤
@@ -62,7 +66,9 @@ Each layer in the assembly pipeline has a distinct role, a distinct owner, and a
 |---|-------|-------|------------|---------------------------|
 | 1 | **Input Interface** | External (caller) | Per-turn | Raw signal: chat message, sensor value, lab event, API payload |
 | 2 | **Domain Adapter A — Input Normalization** | Domain pack | Per-turn | NLP classification result; `_nlp_anchors`; structured evidence partial |
-| 2½ | **SLM Context Compression** (optional) | Core engine (SLM) | Per-turn | Matches incoming signals against domain physics; produces `_slm_context` (matched invariants, relevant glossary terms, context summary, suggested evidence fields). See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
+| 2½a | **RAG Retrieval** (MiniLM embeddings) | Core engine | Per-turn | Embeds the raw input via MiniLM (`all-MiniLM-L6-v2`, 384-dim) and runs cosine-similarity search against per-domain vector stores. Produces `_rag_context` (top-k document chunks with source, heading, score). Runs **before** turn interpretation so retrieved domain context is available to the interpreter. See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
+| 2½b | **SLM Context Compression** (optional) | Core engine (SLM) | Per-turn | Matches incoming signals against domain physics; produces `_slm_context` (matched invariants, relevant glossary terms, context summary, suggested evidence fields). Runs after turn interpretation once structured `turn_data` is available. See [`slm-compute-distribution(7)`](slm-compute-distribution.md). |
+| 2½c | **Turn Interpretation** | Domain pack (SLM-preferred) | Per-turn | Extracts structured evidence from raw input. Prefers the local SLM (`call_slm`); falls back to the LLM (`call_llm`) when the SLM is unavailable. Deterministic tools (algebra parser, NLP anchors) bracket the model call — they run before and after to constrain the output. |
 | 3 | **Global Base Prompt** | Core engine / system physics | Immutable per session | Universal rules that apply regardless of domain; "never act outside authorization"; append-only accountability; scope constraints |
 | 4 | **Domain Physics** | Domain Authority | Immutable per session | Domain-specific standing orders; invariants; escalation triggers; tool call policies; consent flags |
 | 5 | **Module State + Turn Data** | Core engine (from adapter outputs) | Mutable per turn | Current entity profile (ZPD position, fluency score, fatigue estimate); current task; turn number; NLP anchor lines |
@@ -135,6 +141,18 @@ Domain library functions track entity state across turns. They are called by the
 
 These produce fields like `zpd_zone: "within"`, `fluency_advanced: true`, `fatigue_signal: 0.3` that flow into Module State. The LLM sees them as session context when they are relevant to the current action.
 
+### Embedding / Retrieval Infrastructure (passive, pre-interpretation)
+
+The core engine provides a MiniLM-based embedding and retrieval layer that runs before turn interpretation. This is not a domain library function — it is core infrastructure available to all domains.
+
+| Component | Model / Implementation | What it does |
+|-----------|----------------------|-------------|
+| `DocEmbedder` | `all-MiniLM-L6-v2` (384-dim) via Ollama or `sentence-transformers` | Embeds document chunks and query text into dense vectors |
+| `VectorStore` | Flat-file `.npz` with brute-force cosine similarity | Per-domain vector index storing embedded chunks from domain docs, physics files, and standards |
+| `search_domain()` | Cosine similarity, top-k retrieval | Finds the most relevant domain document chunks for the current input; results are filtered by active module to exclude sibling-module content |
+
+The retrieval step produces `_rag_context` — a list of `{text, source, heading, score}` dicts injected into `turn_data`. The LLM sees these as grounding context in the assembled prompt. The embedding model, vector store internals, and similarity scores are hidden from the LLM.
+
 ---
 
 ## E. What the LLM Sees vs. What It Doesn't
@@ -164,6 +182,8 @@ The packet is carefully bounded. Some information is structurally hidden from th
 | Caller identity and RBAC result | The LLM operates on pseudonymous session IDs only. Canonical identity, role, and permission check outcomes are resolved at the API layer before the prompt is assembled. |
 | Raw telemetry before normalization | Sensor readings, raw event payloads, and protocol frames are normalized by Domain Adapter A before the Global Base Prompt layer. The LLM receives structured signals, not raw instrument data. |
 | Conversation transcripts | No raw transcript is stored or re-injected. The LLM receives structured state and signals, not a replay of prior turns in free text. |
+| RAG retrieval internals | The embedding model (MiniLM), vector store implementation, similarity scores, and source-path filtering logic are hidden. The LLM sees only the final `_rag_context` chunks (truncated text + heading), not the retrieval mechanism. |
+| Turn interpretation routing | Whether the SLM or LLM handled turn interpretation, which weight class was assigned, and the fallback logic are infrastructure concerns. The LLM sees structured `turn_data`, not the model that produced it. |
 
 This boundary is not an accident. The domain authority does not want the student to see the standing order that says "if off-task ratio exceeds 0.6, issue a single redirect and log a drift event." The lab operator does not need the LLM to know that the pipette verifier was invoked via a policy trigger — only that the volume check passed. Hiding these layers makes the LLM simpler to constrain, debug, and verify.
 

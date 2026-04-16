@@ -22,6 +22,13 @@ runtime:
 
   # Module routing: maps a student profile's domain_id to the correct domain-physics file.
   # The static domain_physics_path above is the default fallback for sessions without a domain_id.
+
+  # SLM weight overrides: reclassify prompt types for the education domain.
+  # Turn interpretation defaults to LOW (SLM-preferred).  Set to "high" to
+  # force LLM if SLM quality is insufficient for nuanced student parsing.
+  slm_weight_overrides:
+    turn_interpretation: low
+
   module_map:
     domain/edu/general-education/v1:
       domain_physics_path: domain-packs/education/modules/general-education/domain-physics.json

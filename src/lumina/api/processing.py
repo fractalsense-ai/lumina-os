@@ -26,7 +26,7 @@ from lumina.api.pipeline.commands import (
     build_clarification_response,
     build_command_content,
 )
-from lumina.api.pipeline.enrichment import enrich_turn_data
+from lumina.api.pipeline.enrichment import enrich_turn_data, pre_enrich_rag
 from lumina.api.pipeline.gates import (
     check_consent_gate,
     check_session_freeze,
@@ -299,6 +299,15 @@ def process_message(
     world_sim_theme = getattr(orch.state, "world_sim_theme", {}) or {}
     mud_world_state = getattr(orch.state, "mud_world_state", {}) or {}
 
+    # ── Layer 2½a: Pre-enrichment RAG retrieval ───────────────
+    # RAG only needs input_text + domain_id — no turn_data dependency.
+    # Runs before turn interpretation so the interpreter (and downstream
+    # SLM context compression) have domain context available.
+    _pre_rag_context = pre_enrich_rag(
+        input_text, resolved_domain_id,
+        module_key=session.get("module_key"),
+    )
+
     # ── Turn interpretation ───────────────────────────────────
     vlog.debug("[TURN] Interpreting turn input (override=%s, deterministic=%s)", turn_data_override is not None, deterministic_response)
     if turn_data_override is not None:
@@ -346,7 +355,7 @@ def process_message(
         if _g_result is not None:
             return _g_result
 
-    # ── Layer 3: Enrichment ───────────────────────────────────
+    # ── Layer 2½b: Post-interpretation enrichment (SLM context + telemetry) ──
     vlog.debug("[ENRICH] Enriching turn data (domain=%s)", resolved_domain_id)
     glossary = (
         domain_physics.get("glossary")
@@ -359,6 +368,7 @@ def process_message(
         module_key=session.get("module_key"),
         slm_available_fn=slm_available,
         slm_interpret_physics_context_fn=slm_interpret_physics_context,
+        rag_context=_pre_rag_context,
     )
 
     log.info("[%s] Turn Data: %s", session_id, json.dumps(turn_data, default=str))

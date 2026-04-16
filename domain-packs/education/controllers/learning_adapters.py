@@ -214,6 +214,7 @@ def interpret_turn_input(
     prompt_text: str,
     default_fields: dict[str, Any] | None = None,
     tool_fns: dict[str, Callable[..., Any]] | None = None,
+    call_slm: Callable[..., Any] | None = None,
     nlp_pre_interpreter_fn: Callable[..., Any] | None = None,
     world_sim_theme: dict[str, Any] | None = None,
     mud_world_state: dict[str, Any] | None = None,
@@ -314,8 +315,9 @@ def interpret_turn_input(
                 )
                 parser_result = None
 
-    # ── LLM extraction (fallback / supplementary) ─────────────
-    raw_response = call_llm(
+    # ── SLM-preferred extraction (LLM fallback) ────────────────
+    _classify = call_slm or call_llm
+    raw_response = _classify(
         system=prompt_text,
         user=f"Student message: {input_text}{context_hint}",
         model=None,
