@@ -25,7 +25,7 @@ rules. This document defines what triggers version bumps, what must be recorded 
 
 A domain pack contains two versioned sub-artifacts with related but independent lifecycles:
 
-1. **Domain physics document** (`domain-physics.yaml` / `domain-physics.json`) — The immutable
+1. **Domain physics document** (`domain-physics.json`) — The immutable
    ruleset defining what is true in the domain. Its version is embedded in the document's
    `version` field and its SHA-256 hash is committed to the System Logs before activation.
 
@@ -40,8 +40,7 @@ pack root is required by [lumina-core-v1](../../standards/lumina-core-v1.md).
 
 ## DOMAIN PACK VERSION BUMP RULES
 
-The domain pack version is carried in `domain-physics.yaml` (and its derived
-`domain-physics.json`).
+The domain pack version is carried in `domain-physics.json`.
 
 | Change | Bump Level | Notes |
 |---|---|---|

@@ -108,7 +108,7 @@ The Orchestrator formats and appends these fields as a `# DOMAIN CONFIGURATION` 
 The following override produces **exactly the same Conversational Interface behaviour** as the hardcoded education-specific prompt that existed in v1.0.0 of this spec. No regression for the education domain.
 
 ```yaml
-# In domain-packs/education/modules/algebra-level-1/domain-physics.yaml
+# In domain-packs/education/modules/algebra-level-1/domain-physics.json
 conversational_interface_overrides:
   target_audience: "teenagers (middle school, ages 11–14)"
   tone_profile: >
@@ -148,7 +148,7 @@ forbidden_disclosures:
 ### Brief Example — Agriculture Domain Pack
 
 ```yaml
-# In domain-packs/agriculture/crop-planning-level-1/domain-physics.yaml
+# In domain-packs/agriculture/crop-planning-level-1/domain-physics.json
 conversational_interface_overrides:
   target_audience: "adult farm operators"
   tone_profile: >

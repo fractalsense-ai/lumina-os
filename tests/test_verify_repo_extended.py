@@ -194,10 +194,7 @@ def _make_algebra_module(
     alg_dir = tmp_path / "domain-packs" / "education" / "modules" / "algebra-level-1"
     alg_dir.mkdir(parents=True, exist_ok=True)
 
-    # domain-physics.yaml
-    (alg_dir / "domain-physics.yaml").write_text(f"version: {version}\n", encoding="utf-8")
-
-    # domain-physics.json
+    # domain-physics.json is the sole source of truth
     (alg_dir / "domain-physics.json").write_text(
         json.dumps({"id": "algebra-level-1", "version": version}), encoding="utf-8"
     )

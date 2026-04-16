@@ -104,13 +104,10 @@ def check_runtime_config_paths(errors: list[str]) -> None:
 
 
 def check_algebra_version_alignment(errors: list[str]) -> None:
-    yaml_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.yaml"
     json_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.json"
     changelog_path = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "CHANGELOG.md"
     examples_path = REPO_ROOT / "examples" / "README.md"
     domain_packs_readme_path = REPO_ROOT / "domain-packs" / "README.md"
-
-    yaml_version = str(load_yaml(yaml_path).get("version", "")).strip()
 
     json_version = ""
     try:
@@ -120,10 +117,6 @@ def check_algebra_version_alignment(errors: list[str]) -> None:
 
     changelog_version = parse_latest_changelog_version(changelog_path)
 
-    if yaml_version != changelog_version:
-        errors.append(
-            f"Version mismatch: domain-physics.yaml={yaml_version} but CHANGELOG latest=v{changelog_version}"
-        )
     if json_version != changelog_version:
         errors.append(
             f"Version mismatch: domain-physics.json={json_version} but CHANGELOG latest=v{changelog_version}"
@@ -297,12 +290,15 @@ def check_auth_infrastructure(errors: list[str]) -> None:
             errors.append(f"rbac-permission-schema-v1.json: invalid JSON — {exc}")
 
     # Verify domain-physics files include permissions block
-    edu_dp = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.yaml"
+    edu_dp = REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-level-1" / "domain-physics.json"
     agr_dp = REPO_ROOT / "domain-packs" / "agriculture" / "modules" / "operations-level-1" / "domain-physics.json"
     if edu_dp.exists():
-        edu_text = edu_dp.read_text(encoding="utf-8")
-        if "permissions:" not in edu_text:
-            errors.append("education domain-physics.yaml: missing permissions block")
+        try:
+            edu_data = json.loads(edu_dp.read_text(encoding="utf-8"))
+            if "permissions" not in edu_data:
+                errors.append("education domain-physics.json: missing permissions block")
+        except json.JSONDecodeError as exc:
+            errors.append(f"education domain-physics.json: invalid JSON — {exc}")
     if agr_dp.exists():
         try:
             agr_data = json.loads(agr_dp.read_text(encoding="utf-8"))

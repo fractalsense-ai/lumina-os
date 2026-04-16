@@ -104,6 +104,44 @@ class FilesystemPersistenceAdapter(PersistenceAdapter):
             fh.write(_dump_yaml(data))
         tmp.replace(target)
 
+    # ── Key-based profile persistence (filesystem-backed) ─────
+
+    _PROFILES_DIR_NAME = "data/profiles"
+
+    def _profile_path(self, user_id: str, domain_key: str) -> Path:
+        safe_uid = user_id.replace("/", "_").replace("\\", "_")
+        safe_domain = domain_key.replace("/", "_").replace("\\", "_")
+        return self.repo_root / self._PROFILES_DIR_NAME / safe_uid / f"{safe_domain}.yaml"
+
+    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        p = self._profile_path(user_id, domain_key)
+        if not p.exists():
+            return None
+        data = self._load_yaml(str(p))
+        return data if isinstance(data, dict) else None
+
+    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        target = self._profile_path(user_id, domain_key)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_suffix(target.suffix + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(_dump_yaml(data))
+        tmp.replace(target)
+
+    def list_profiles(self, user_id: str) -> list[str]:
+        safe_uid = user_id.replace("/", "_").replace("\\", "_")
+        user_dir = self.repo_root / self._PROFILES_DIR_NAME / safe_uid
+        if not user_dir.is_dir():
+            return []
+        return sorted(p.stem for p in user_dir.glob("*.yaml"))
+
+    def delete_profile(self, user_id: str, domain_key: str) -> bool:
+        p = self._profile_path(user_id, domain_key)
+        if p.exists():
+            p.unlink()
+            return True
+        return False
+
     def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:
             return str(self.log_dir / f"session-{session_id}-{domain_id}.jsonl")

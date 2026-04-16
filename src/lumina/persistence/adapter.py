@@ -15,11 +15,35 @@ class PersistenceAdapter(ABC):
 
     @abstractmethod
     def load_subject_profile(self, path: str) -> dict[str, Any]:
-        """Load subject profile document from persistent storage."""
+        """Load subject profile document from persistent storage.
+
+        .. deprecated:: Use :meth:`load_profile` instead.
+        """
 
     @abstractmethod
     def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
-        """Persist a subject profile document (atomic write)."""
+        """Persist a subject profile document (atomic write).
+
+        .. deprecated:: Use :meth:`save_profile` instead.
+        """
+
+    # ── Key-based profile persistence ────────────────────────
+
+    @abstractmethod
+    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        """Load a user profile by composite key. Returns None if not found."""
+
+    @abstractmethod
+    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        """Persist a user profile by composite key (upsert)."""
+
+    @abstractmethod
+    def list_profiles(self, user_id: str) -> list[str]:
+        """Return domain_key values for which profiles exist for this user."""
+
+    @abstractmethod
+    def delete_profile(self, user_id: str, domain_key: str) -> bool:
+        """Delete a profile. Returns True if it existed."""
 
     @abstractmethod
     def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
@@ -241,6 +265,7 @@ class NullPersistenceAdapter(PersistenceAdapter):
 
     def __init__(self) -> None:
         self._session_state: dict[str, dict[str, Any]] = {}
+        self._profiles: dict[str, dict[str, dict[str, Any]]] = {}  # user_id → domain_key → data
 
     def load_domain_physics(self, path: str) -> dict[str, Any]:
         import json
@@ -263,6 +288,24 @@ class NullPersistenceAdapter(PersistenceAdapter):
 
     def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
         return None
+
+    # ── Key-based profile (in-memory) ─────────────────────────
+
+    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        return self._profiles.get(user_id, {}).get(domain_key)
+
+    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        self._profiles.setdefault(user_id, {})[domain_key] = dict(data)
+
+    def list_profiles(self, user_id: str) -> list[str]:
+        return list(self._profiles.get(user_id, {}).keys())
+
+    def delete_profile(self, user_id: str, domain_key: str) -> bool:
+        bucket = self._profiles.get(user_id, {})
+        if domain_key in bucket:
+            del bucket[domain_key]
+            return True
+        return False
 
     def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         if domain_id:

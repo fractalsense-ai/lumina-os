@@ -106,13 +106,13 @@ class TestRagModuleScoping:
     def test_only_active_module_chunks_survive(self):
         """All chunks from sibling modules are removed; active module kept."""
         hits = [
-            _FakeHit("domain-packs/education/modules/algebra-1/domain-physics.yaml"),
-            _FakeHit("domain-packs/education/modules/algebra-intro/domain-physics.yaml"),
-            _FakeHit("domain-packs/education/modules/pre-algebra/domain-physics.yaml"),
+            _FakeHit("domain-packs/education/modules/algebra-1/domain-physics.json"),
+            _FakeHit("domain-packs/education/modules/algebra-intro/domain-physics.json"),
+            _FakeHit("domain-packs/education/modules/pre-algebra/domain-physics.json"),
         ]
         td = self._call_enrich(hits, module_key="pre-algebra")
         sources = [r["source"] for r in td["_rag_context"]]
-        assert sources == ["domain-packs/education/modules/pre-algebra/domain-physics.yaml"]
+        assert sources == ["domain-packs/education/modules/pre-algebra/domain-physics.json"]
 
     def test_processing_passes_module_key(self):
         """processing.py must pass session module_key to enrich_turn_data."""

@@ -14,7 +14,6 @@ description: "Adaptive maths tutoring domain — algebra sequence from pre-algeb
 layers:
   model:
     - modules/*/domain-physics.json
-    - modules/*/domain-physics.yaml
     - schemas/
     - domain-lib/
   controller:

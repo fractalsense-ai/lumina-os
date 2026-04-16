@@ -209,7 +209,7 @@ A domain pack is the **D pillar** of the D.S.A. Framework — a self-contained u
 
 | # | Component | Location | Mandatory | What it owns |
 |---|-----------|----------|-----------|--------------|
-| 1 | **Physics files** | `modules/<module>/domain-physics.yaml` and `.json` | Yes | Invariants, standing orders, escalation triggers, artifact definitions, `actor_types`, `group_libraries`, `group_tools` |
+| 1 | **Physics files** | `modules/<module>/domain-physics.json` | Yes | Invariants, standing orders, escalation triggers, artifact definitions, `actor_types`, `group_libraries`, `group_tools` |
 | 2 | **Tool adapters** | `modules/<module>/tool-adapters/*.yaml` + `controllers/tool_adapters.py` | Recommended | Active deterministic verifiers — policy-driven (YAML) or direct (Python) |
 | 3 | **Runtime adapter** | `controllers/runtime_adapters.py` | Yes | Phase A (NLP pre-processing before LLM) + Phase B (signal synthesis after tools); emits engine contract fields |
 | 4 | **NLP pre-interpreter** | `controllers/nlp_pre_interpreter.py` | Recommended | Information gate — extracts deterministic anchors before any LLM inference |
@@ -440,7 +440,7 @@ lumina-os/
 │   └── <domain>/
 │       ├── cfg/runtime-config.yaml       ← adapter bindings, ui_manifest, world-sim config
 │       ├── modules/<module>/
-│       │   ├── domain-physics.yaml/.json
+│       │   ├── domain-physics.json
 │       │   ├── evidence-schema.json
 │       │   └── tool-adapters/
 │       ├── controllers/                   ← nlp_pre_interpreter, runtime_adapters, tool_adapters, group_tool_adapters

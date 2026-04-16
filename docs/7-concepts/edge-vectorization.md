@@ -81,7 +81,7 @@ for vector-based domain classification — see §F.
 ### Isolation guarantee
 
 A domain store contains embeddings derived **only** from that domain pack's files:
-`domain-physics.yaml`, glossary entries, `domain-lib/` specifications, tool adapter
+`domain-physics.json`, glossary entries, `domain-lib/` specifications, tool adapter
 descriptions, and domain-scoped documentation under `domain-packs/<domain>/docs/`.  No
 cross-domain content enters a domain store.
 

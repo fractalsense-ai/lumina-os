@@ -20,7 +20,7 @@ All generation is server-side Python (stdlib `random` only) — no external depe
 
 **When it is called:** The API server calls `generate_problem` when the fluency monitor or ZPD monitor returns an `advance_tier` action, or when initialising a new session. The resulting `ProblemSpec` dict is stored as `current_problem` in session state and surfaced in task context for the turn interpreter and domain adapters.
 
-**Difficulty tiers** are defined in `domain-physics.yaml` under `equation_difficulty_tiers` and loaded at runtime via the domain physics config. The three tiers in the education algebra-level-1 pack are:
+**Difficulty tiers** are defined in `domain-physics.json` under `equation_difficulty_tiers` and loaded at runtime via the domain physics config. The three tiers in the education algebra-level-1 pack are:
 
 | Tier | Form | Steps | Example |
 |------|------|-------|---------|
@@ -109,7 +109,7 @@ Returns the tier whose `[min_difficulty, max_difficulty)` range contains `diffic
 
 ## SEE ALSO
 
-- `domain-packs/education/modules/algebra-level-1/domain-physics.yaml` — defines `equation_difficulty_tiers` (tier boundaries and generator names)
+- `domain-packs/education/modules/algebra-level-1/domain-physics.json` — defines `equation_difficulty_tiers` (tier boundaries and generator names)
 - `domain-packs/education/reference-implementations/fluency_monitor.py` — `advance_tier` action triggers a new problem generation call
 - `domain-packs/education/reference-implementations/runtime-adapters.py` — `domain_step()` merges fluency decision and triggers problem generation
 - `reference-implementations/lumina-api-server.py` — wrapper that calls `generate_problem` when `advance_tier` is received

@@ -22,7 +22,7 @@ Currently, Project Lumina is in experimental pre-release. Only the latest commit
 Because of our "Measurement, not surveillance" and "Pseudonymity by default" principles, the following are **not** considered vulnerabilities of the core engine, provided the engine is functioning as designed:
 
 1. **AI Hallucinations / Drift:** LLMs hallucinating is expected. It is only a security vulnerability if the Orchestrator fails to halt the session, trigger an `EscalationRecord`, and log the hash to the System Logs.
-2. **Domain Pack Logic Flaws:** If a Domain Authority writes a flawed `domain-physics.yaml` that permits unsafe actions, that is a domain-level policy failure, not a core engine vulnerability.
+2. **Domain Pack Logic Flaws:** If a Domain Authority writes a flawed `domain-physics.json` that permits unsafe actions, that is a domain-level policy failure, not a core engine vulnerability.
 3. **Upstream LLM Provider Outages:** Failures by OpenAI or Anthropic APIs.
 
 ---
@@ -49,7 +49,7 @@ We are highly interested in vulnerabilities that compromise the **Fractal Author
 
 #### 4. Privilege Escalation
 
-* An operator (Micro Authority) finding a way to rewrite the `domain-physics.yaml` or override the constraints set by the Meso/Macro Authority.
+* An operator (Micro Authority) finding a way to rewrite the `domain-physics.json` or override the constraints set by the Meso/Macro Authority.
 
 ---
 

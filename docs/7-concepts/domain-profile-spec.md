@@ -32,9 +32,9 @@ A Domain Profile does not define conversation scripts, specific problem sets, or
 
 ## Authoring Process
 
-### Step 1: Author the YAML
+### Step 1: Author the JSON
 
-Write `domain-physics.yaml` following the structure below. The YAML is the source of truth — human-readable and version-controlled.
+Write `domain-physics.json` following the structure below. The JSON file is the authoritative format — schema-validated and version-controlled.
 
 ```yaml
 id: domain/org/subject-level/v1
@@ -89,17 +89,17 @@ subsystem_configs:
     persistence_required: 3
 ```
 
-### Step 2: Validate and Convert
+### Step 2: Validate
 
-Run the converter to validate and produce the JSON:
+Validate the JSON against the schema before committing:
 
 ```bash
 python reference-implementations/yaml-to-json-converter.py \
-  domain-packs/education/modules/algebra-level-1/domain-physics.yaml \
+  domain-packs/education/modules/algebra-level-1/domain-physics.json \
   --schema standards/domain-physics-schema-v1.json
 ```
 
-If validation passes, the JSON file is written alongside the YAML.
+> **Note:** The `yaml-to-json-converter` is a legacy migration tool that also performs schema validation. For new domain packs, author `domain-physics.json` directly.
 
 ### Step 3: Commit the Hash
 
@@ -133,8 +133,7 @@ Every version must have a CHANGELOG entry. Format:
 
 ```
 domain-packs/{org}/{subject-level}/
-├── domain-physics.yaml          ← authored YAML (source)
-├── domain-physics.json          ← derived JSON (machine-authoritative)
+├── domain-physics.json          ← authoritative domain physics
 ├── tool-adapters/
 │   └── {tool-name}-adapter-v{N}.yaml
 ├── entity-profile-template.yaml ← filename follows domain naming conventions

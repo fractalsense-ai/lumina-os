@@ -71,11 +71,10 @@ def discover_structured_files(repo_root: Path = REPO_ROOT) -> list[Path]:
         for pack in sorted(packs.iterdir()):
             if not pack.is_dir():
                 continue
-            # domain-physics JSON/YAML in modules/*/
+            # domain-physics JSON in modules/*/
             modules_dir = pack / "modules"
             if modules_dir.is_dir():
                 files.extend(sorted(modules_dir.rglob("domain-physics.json")))
-                files.extend(sorted(modules_dir.rglob("domain-physics.yaml")))
             # cfg/ directory in each domain pack
             pack_cfg = pack / "cfg"
             if pack_cfg.is_dir():
@@ -124,7 +123,6 @@ def discover_domain_files(
     modules = pack_root / "modules"
     if modules.is_dir():
         structured.extend(sorted(modules.rglob("domain-physics.json")))
-        structured.extend(sorted(modules.rglob("domain-physics.yaml")))
         structured.extend(sorted(modules.rglob("glossary*.yaml")))
         structured.extend(sorted(modules.rglob("glossary*.json")))
 
@@ -459,14 +457,10 @@ def rebuild_group_library_dependents(
         pack_root = repo_root / "domain-packs" / domain_id / "modules"
         if not pack_root.is_dir():
             continue
-        for physics_path in list(pack_root.rglob("domain-physics.json")) + list(pack_root.rglob("domain-physics.yaml")):
+        for physics_path in pack_root.rglob("domain-physics.json"):
             try:
                 text = physics_path.read_text(encoding="utf-8")
-                if physics_path.suffix == ".json":
-                    data = json.loads(text)
-                else:
-                    import yaml
-                    data = yaml.safe_load(text)
+                data = json.loads(text)
                 for lib in data.get("group_libraries", []):
                     if lib.get("id") == library_id:
                         affected.append(domain_id)

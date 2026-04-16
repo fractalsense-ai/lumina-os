@@ -184,8 +184,23 @@ def _ensure_user_profile(
     ``profile_templates``), the profile is assembled from three layers
     (Base → Domain → Role).  Otherwise falls back to a flat copy of
     *template_path* for backward compatibility.
+
+    If the persistence backend supports key-based profiles, the assembled
+    profile is also persisted there via ``save_profile()``.
     """
     target = _resolve_user_profile_path(user_id, domain_key)
+
+    # Check key-based store first (DB backend)
+    existing = PERSISTENCE.load_profile(user_id, domain_key)
+    if existing is not None:
+        # Ensure the filesystem copy also exists for path-based callers
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            import yaml
+            with open(target, "w", encoding="utf-8") as fh:
+                yaml.safe_dump(existing, fh, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        return str(target)
+
     if not target.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
         rt = runtime or {}
@@ -216,6 +231,16 @@ def _ensure_user_profile(
             import shutil
             shutil.copy2(template_path, target)
             log.info("Initialised profile for user=%s domain=%s at %s", user_id, domain_key, target)
+
+        # Persist into key-based store so DB backend has it
+        try:
+            from lumina.core.yaml_loader import load_yaml
+            fresh = load_yaml(str(target))
+            if isinstance(fresh, dict):
+                PERSISTENCE.save_profile(user_id, domain_key, fresh)
+        except Exception:
+            log.debug("Could not save new profile to key-based store for user=%s", user_id)
+
     return str(target)
 
 

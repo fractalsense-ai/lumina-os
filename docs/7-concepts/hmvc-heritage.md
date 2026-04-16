@@ -118,9 +118,9 @@ complementary structures:
 
 ### Physics files (declarative rules)
 
-`modules/{module}/domain-physics.yaml` and `.json` declare invariants, standing orders,
+`modules/{module}/domain-physics.json` declares invariants, standing orders,
 escalation triggers, and artifacts. These are the domain's law — what must be true, what the
-orchestrator may do, and when to escalate. They are immutable per session (hash-committed to
+orchestrator may do, and when to escalate. It is immutable per session (hash-committed to
 the System Log before activation).
 
 ### Schemas and evidence (state definition)

@@ -76,10 +76,10 @@ Domain modules that cannot meaningfully measure a universal base field SHOULD em
 
 ## Declaring Domain Evidence Fields
 
-Each domain module that emits domain-specific evidence fields declares them in an `evidence-schema.json` file located alongside its `domain-physics.yaml` / `domain-physics.json`. The `domain-physics` file references it via the `evidence_schema` block:
+Each domain module that emits domain-specific evidence fields declares them in an `evidence-schema.json` file located alongside its `domain-physics.json`. The `domain-physics` file references it via the `evidence_schema` block:
 
 ```yaml
-# in domain-physics.yaml
+# in domain-physics.json
 evidence_schema:
   path: "evidence-schema.json"   # relative to this file's directory
   version: "1.0"                 # must match the version in evidence-schema.json
@@ -190,7 +190,7 @@ A complete agriculture `evidence_summary` record:
 To extend the System Logs with a new domain's evidence vocabulary:
 
 1. Create `<domain-pack-root>/<module>/<evidence-schema.json>` conforming to `standards/domain-evidence-schema-v1.json`.
-2. Add the `evidence_schema` block to the module's `domain-physics.yaml`:
+2. Add the `evidence_schema` block to the module's `domain-physics.json`:
    ```yaml
    evidence_schema:
      path: "evidence-schema.json"

@@ -468,9 +468,17 @@ def process_message(
         if container.user is not None and orch.state is not None:
             profile_path = container.active_context.subject_profile_path
             _mod_key = container.active_context.module_key
+            _user_id = str(container.user["sub"]) if container.user else None
+            _ac_domain_id = container.active_context.domain_id or ""
+            _domain_key = _ac_domain_id.split("/")[0] if "/" in _ac_domain_id else _ac_domain_id
             if profile_path:
                 try:
-                    profile_data = _cfg.PERSISTENCE.load_subject_profile(profile_path)
+                    # Try key-based store first, fall back to path-based
+                    profile_data = None
+                    if _user_id and _domain_key:
+                        profile_data = _cfg.PERSISTENCE.load_profile(_user_id, _domain_key)
+                    if profile_data is None:
+                        profile_data = _cfg.PERSISTENCE.load_subject_profile(profile_path)
                     _ps_fn = (
                         _active_mod.get("profile_serializer_fn")
                         or runtime.get("profile_serializer_fn")
@@ -485,7 +493,7 @@ def process_message(
                         if "persistence" in _ps_sig.parameters:
                             _ps_kwargs["persistence"] = _cfg.PERSISTENCE
                         if "user_id" in _ps_sig.parameters:
-                            _ps_kwargs["user_id"] = str(container.user["sub"]) if container.user else None
+                            _ps_kwargs["user_id"] = _user_id
                         profile_data = _ps_fn(**_ps_kwargs)
                     else:
                         import dataclasses
@@ -493,6 +501,9 @@ def process_message(
                             profile_data["session_state"] = dataclasses.asdict(orch.state)
                         elif isinstance(orch.state, dict):
                             profile_data["session_state"] = dict(orch.state)
+                    # Save to both key-based and legacy path-based stores
+                    if _user_id and _domain_key:
+                        _cfg.PERSISTENCE.save_profile(_user_id, _domain_key, profile_data)
                     _cfg.PERSISTENCE.save_subject_profile(profile_path, profile_data)
                 except Exception:
                     log.warning("Profile auto-save failed for session %s", session_id)

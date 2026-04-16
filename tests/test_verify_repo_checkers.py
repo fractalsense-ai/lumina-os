@@ -158,7 +158,6 @@ def test_check_algebra_version_alignment_json_parse_error(tmp_path: Path) -> Non
     alg_dir = tmp_path / "domain-packs" / "education" / "modules" / "algebra-level-1"
     alg_dir.mkdir(parents=True, exist_ok=True)
 
-    (alg_dir / "domain-physics.yaml").write_text("version: 2.0.0\n", encoding="utf-8")
     (alg_dir / "domain-physics.json").write_text("INVALID JSON {{{", encoding="utf-8")
     (alg_dir / "CHANGELOG.md").write_text("# Changelog\n\n## v2.0.0\n\n- Changes\n", encoding="utf-8")
 

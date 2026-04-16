@@ -25,8 +25,7 @@ Every domain pack must include the following artifacts:
 
 | Artifact | Required | Schema |
 |----------|----------|--------|
-| `domain-physics.yaml` | Yes | [`domain-physics-schema-v1.json`](domain-physics-schema-v1.json) |
-| `domain-physics.json` | Yes (derived) | Same schema |
+| `domain-physics.json` | Yes | [`domain-physics-schema-v1.json`](domain-physics-schema-v1.json) |
 | `entity-profile-template.yaml` | Yes | Domain-specific subject profile schema in `schemas/` (see note below) |
 | `CHANGELOG.md` | Yes | Semver entries |
 | `prompt-contract-schema.json` | Yes | Extends [`prompt-contract-schema-v1.json`](prompt-contract-schema-v1.json) — domain-specific prompt constraints must extend the universal base schema |
@@ -51,11 +50,11 @@ To keep domain ownership explicit and avoid cross-domain coupling, packs must fo
 
 Runtime configuration files are wiring surfaces (paths, adapter bindings, runtime flags). Normative thresholds/tolerances and standing-order semantics belong in module `domain-physics`, not runtime wiring.
 
-Operational policy truth for a module is the module `domain-physics.json` artifact derived from authored YAML. Any material policy update requires: semantic version update, YAML->JSON regeneration, and System Log `CommitmentRecord` hash commitment before activation.
+Operational policy truth for a module is the module `domain-physics.json` artifact. Any material policy update requires: semantic version update and System Log `CommitmentRecord` hash commitment before activation.
 
 ### 1.1 Domain Physics Requirements
 
-A conformant `domain-physics.yaml` must declare:
+A conformant `domain-physics.json` must declare:
 
 - `id`: globally unique identifier (format: `domain/{org}/{name}/v{major}`)
 - `version`: semver string

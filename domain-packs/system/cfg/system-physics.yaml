@@ -518,7 +518,7 @@ glossary:
       - domain_physics
     example_in_context: >-
       The domain_authority for the education pack may update the ZPD
-      thresholds in domain-physics.yaml; the change must be committed to
+      thresholds in domain-physics.json; the change must be committed to
       the System Logs before it takes effect.
 
   - term: meta_authority

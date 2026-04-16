@@ -1042,30 +1042,6 @@ artifacts:
   status: active
   last_updated: 2026-04-04
   sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
-- path: domain-packs/education/modules/pre-algebra/domain-physics.yaml
-  type: config
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-04-04
-  sha256: fd317779148a9623fbdd1064c66a426bd68667e484b7a0a4279b82fec9046209
-- path: domain-packs/education/modules/algebra-intro/domain-physics.yaml
-  type: config
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-04-04
-  sha256: 9ce15fdd639a7144196cbd302f0f6a7f40a399fe795a518d23c2396a1895584c
-- path: domain-packs/education/modules/algebra-1/domain-physics.yaml
-  type: config
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-04-04
-  sha256: fa0e835e7ded48b882bea508d41581c637cfe58d67ac06392f586c8befa549f8
-- path: domain-packs/education/modules/algebra-level-1/domain-physics.yaml
-  type: config
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-04-04
-  sha256: f4f182f22e922a3edc1d9b40681553942a1198dcdfd40ea3a8fe63568664647f
 - path: domain-packs/education/modules/teaching-assistant/tool-adapters/student-view-adapter-v1.yaml
   type: config
   doc_version: 1.0.0

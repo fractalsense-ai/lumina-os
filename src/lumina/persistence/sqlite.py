@@ -81,11 +81,19 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
             state_json = Column(Text, nullable=False)
             updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+        class SubjectProfile(Base):
+            __tablename__ = "subject_profiles"
+            user_id = Column(String(128), primary_key=True)
+            domain_key = Column(String(256), primary_key=True)
+            profile_json = Column(Text, nullable=False)
+            updated_at_utc = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
         self._Base = Base
         self._SystemLogRecord = SystemLogRecord
         self._SessionState = SessionState
         self._User = User
         self._ActorModuleState = ActorModuleState
+        self._SubjectProfile = SubjectProfile
         self._engine = create_async_engine(self.database_url, echo=False)
 
     async def _create_tables(self) -> None:
@@ -147,6 +155,74 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         with open(tmp, "w", encoding="utf-8") as fh:
             fh.write(_dump_yaml(data))
         tmp.replace(target)
+
+    # ── Key-based profile persistence (DB-backed) ─────────────
+
+    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        return asyncio.run(self._load_profile_async(user_id, domain_key))
+
+    async def _load_profile_async(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._SubjectProfile.profile_json).where(
+                    self._SubjectProfile.user_id == user_id,
+                    self._SubjectProfile.domain_key == domain_key,
+                )
+            )
+            payload = result.scalar_one_or_none()
+        if payload is None:
+            return None
+        data = json.loads(payload)
+        return data if isinstance(data, dict) else None
+
+    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        asyncio.run(self._save_profile_async(user_id, domain_key, data))
+
+    async def _save_profile_async(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        payload = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        stmt = sqlite_insert(self._SubjectProfile).values(
+            user_id=user_id, domain_key=domain_key, profile_json=payload,
+        )
+        upsert_stmt = stmt.on_conflict_do_update(
+            index_elements=[self._SubjectProfile.user_id, self._SubjectProfile.domain_key],
+            set_={"profile_json": payload},
+        )
+        async with self._engine.begin() as conn:
+            await conn.execute(upsert_stmt)
+
+    def list_profiles(self, user_id: str) -> list[str]:
+        return asyncio.run(self._list_profiles_async(user_id))
+
+    async def _list_profiles_async(self, user_id: str) -> list[str]:
+        from sqlalchemy import select
+
+        async with self._engine.connect() as conn:
+            result = await conn.execute(
+                select(self._SubjectProfile.domain_key).where(
+                    self._SubjectProfile.user_id == user_id,
+                ).order_by(self._SubjectProfile.domain_key)
+            )
+            values = result.scalars().all()
+        return [str(v) for v in values]
+
+    def delete_profile(self, user_id: str, domain_key: str) -> bool:
+        return asyncio.run(self._delete_profile_async(user_id, domain_key))
+
+    async def _delete_profile_async(self, user_id: str, domain_key: str) -> bool:
+        from sqlalchemy import delete
+
+        async with self._engine.begin() as conn:
+            result = await conn.execute(
+                delete(self._SubjectProfile).where(
+                    self._SubjectProfile.user_id == user_id,
+                    self._SubjectProfile.domain_key == domain_key,
+                )
+            )
+        return result.rowcount > 0
 
     def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
         # DB backend does not rely on file path, but we keep interface compatibility.

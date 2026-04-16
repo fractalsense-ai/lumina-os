@@ -35,7 +35,7 @@ This means Domain Authority is not a rung on a hierarchy below `root` — it is 
 
 A Domain Authority may:
 
-1. **Author Domain Packs** — write and version the `domain-physics.yaml` for their scope
+1. **Author Domain Packs** — write and version the `domain-physics.json` for their scope
 2. **Define Invariants** — specify what is and is not acceptable (critical and warning severity)
 3. **Define Standing Orders** — specify the bounded automated responses within their domain
 4. **Define Escalation Triggers** — specify when the system must escalate to them or above

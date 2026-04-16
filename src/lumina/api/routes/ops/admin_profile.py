@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from lumina.api.admin_context import AdminOperationContext
@@ -26,12 +25,11 @@ async def execute(
         domain_key = str(params.get("domain_id", "")).strip()
         if not domain_key:
             domain_key = ctx.domain_registry.resolve_default_for_user(user_data)
-        _profile_path = str(Path("data/profiles") / f"{caller_id}.yaml")
-        try:
-            _profile = await ctx.run_in_threadpool(ctx.persistence.load_subject_profile, _profile_path)
-        except Exception:
-            _profile = {}
-        # Also try the hierarchical path
+
+        # Key-based lookup first (DB or filesystem)
+        _profile = await ctx.run_in_threadpool(ctx.persistence.load_profile, caller_id, domain_key)
+
+        # Legacy fallback: flat path and hierarchical path
         if not _profile or not isinstance(_profile, dict):
             _hier_path = str(ctx.resolve_user_profile_path(caller_id, domain_key))
             try:
@@ -73,12 +71,18 @@ async def execute(
         if not isinstance(updates, dict) or not updates:
             raise ctx.HTTPException(status_code=422, detail="updates parameter must be a non-empty object")
 
-        # Load profile
-        _profile_path = str(Path("data/profiles") / f"{target_user_id}.yaml")
-        try:
-            _profile = await ctx.run_in_threadpool(ctx.persistence.load_subject_profile, _profile_path)
-        except Exception:
-            _profile = {}
+        domain_key = str(params.get("domain_id", "")).strip()
+        if not domain_key:
+            domain_key = ctx.domain_registry.resolve_default_for_user(user_data)
+
+        # Load profile — key-based first, then legacy path fallback
+        _profile = await ctx.run_in_threadpool(ctx.persistence.load_profile, target_user_id, domain_key)
+        if not _profile or not isinstance(_profile, dict):
+            _profile_path = str(ctx.resolve_user_profile_path(target_user_id, domain_key))
+            try:
+                _profile = await ctx.run_in_threadpool(ctx.persistence.load_subject_profile, _profile_path)
+            except Exception:
+                _profile = {}
         if not isinstance(_profile, dict):
             _profile = {}
 
@@ -97,7 +101,10 @@ async def execute(
             })
             _profile["supervisor_notes"] = _snotes
 
-        await ctx.run_in_threadpool(ctx.persistence.save_subject_profile, _profile_path, _profile)
+        # Save to key-based store and legacy path
+        await ctx.run_in_threadpool(ctx.persistence.save_profile, target_user_id, domain_key, _profile)
+        _legacy_path = str(ctx.resolve_user_profile_path(target_user_id, domain_key))
+        await ctx.run_in_threadpool(ctx.persistence.save_subject_profile, _legacy_path, _profile)
 
         record = ctx.build_commitment_record(
             actor_id=caller_id,

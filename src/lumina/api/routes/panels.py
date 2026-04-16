@@ -39,12 +39,14 @@ _Resolver = Callable[
 def _load_profile(user_id: str, domain_key: str = "") -> dict[str, Any]:
     """Load a user profile.
 
-    When *domain_key* is given, reads the domain-scoped path
-    ``data/profiles/{user_id}/{domain_key}.yaml`` that education-ops
-    and other domain-pack handlers write to.  Falls back to the flat
-    ``data/profiles/{user_id}.yaml`` for backward compatibility.
+    Tries the key-based persistence store first (DB backend).
+    Falls back to path-based loading for backward compatibility.
     """
     if domain_key:
+        profile = _cfg.PERSISTENCE.load_profile(user_id, domain_key)
+        if profile is not None:
+            return profile
+        # Fall back to path-based loading
         from lumina.api.config import _resolve_user_profile_path
         path = str(_resolve_user_profile_path(user_id, domain_key))
     else:

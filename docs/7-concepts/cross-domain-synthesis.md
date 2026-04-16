@@ -54,7 +54,7 @@ Each domain in Project Lumina is a fully isolated **Virtual LAN (VLAN)**:
 
 ## C. Opt-In Configuration
 
-Cross-domain synthesis is configured in each domain's `domain-physics.yaml`:
+Cross-domain synthesis is configured in each domain's `domain-physics.json`:
 
 ```yaml
 cross_domain_synthesis:
@@ -121,7 +121,7 @@ This extends the Novel Synthesis Framework's two-key gate to a **four-key gate**
 
 To enable cross-domain synthesis for a domain pack:
 
-1. **Add the config block** to `domain-physics.yaml`:
+1. **Add the config block** to `domain-physics.json`:
    ```yaml
    cross_domain_synthesis:
      enabled: true
