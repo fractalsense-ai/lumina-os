@@ -24,6 +24,7 @@ def enrich_turn_data(
     actor_elapsed: float | None,
     deterministic_response: bool,
     *,
+    module_key: str | None = None,
     slm_available_fn,
     slm_interpret_physics_context_fn,
 ) -> dict[str, Any]:
@@ -46,6 +47,17 @@ def enrich_turn_data(
         from lumina.core.nlp import search_domain as _search_domain
 
         _rag_hits = _search_domain(input_text, resolved_domain_id, k=3)
+        # Filter out chunks from sibling modules.  Documents under
+        # ``modules/<other>/`` are irrelevant when the student is in a
+        # specific module — only the active module's chunks and
+        # domain-level (non-module) docs should be returned.
+        if module_key and _rag_hits:
+            _mod_seg = f"/modules/{module_key}/"
+            _rag_hits = [
+                h for h in _rag_hits
+                if "/modules/" not in h.chunk.source_path
+                or _mod_seg in h.chunk.source_path
+            ]
         if _rag_hits:
             turn_data["_rag_context"] = [
                 {

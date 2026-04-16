@@ -356,6 +356,7 @@ def process_message(
     turn_data = enrich_turn_data(
         turn_data, input_text, domain_physics, glossary,
         resolved_domain_id, _actor_elapsed, deterministic_response,
+        module_key=session.get("module_key"),
         slm_available_fn=slm_available,
         slm_interpret_physics_context_fn=slm_interpret_physics_context,
     )

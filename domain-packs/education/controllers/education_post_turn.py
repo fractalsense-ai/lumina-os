@@ -87,6 +87,12 @@ def education_post_turn(
         else:
             log.warning("No equation_difficulty_tiers found in module physics")
 
+    # ── Reset standing-order counters on task transition ───────
+    # Counters (e.g. request_verification_retry) are per-problem:
+    # they must not carry over from one problem to the next.
+    if new_task_presented:
+        orchestrator.set_standing_order_attempts({})
+
     return {
         "resolved_action": resolved_action,
         "current_task": current_task,
