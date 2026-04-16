@@ -366,7 +366,7 @@ def process_message(
     from lumina.middleware import InspectionPipeline
 
     _turn_schema = runtime.get("turn_input_schema") or {}
-    _domain_invariants = (runtime.get("domain") or {}).get("invariants", [])
+    _domain_invariants = domain_physics.get("invariants", [])
     vlog.debug("[INSPECT] Running inspection pipeline (invariants=%d)", len(_domain_invariants))
     _inspection = InspectionPipeline(
         turn_input_schema=_turn_schema,

@@ -521,11 +521,13 @@ runtime:
   deterministic_templates:
     hint: "Let's take one small step on {task_id}. Show the next equivalence-preserving move."
     more_steps_request: "Please show your work step-by-step for {task_id} and keep each operation balanced."
+    verification_request: "Almost there! Please substitute your answer back into the original equation for {task_id} to verify it is correct."
     scaffold: "Let's break {task_id} into smaller steps and do one move at a time."
     zpd_scaffold: "Let's simplify this and do one clear step for {task_id}."
     pause_or_break: "Let's pause briefly. When ready, we will continue with one smaller step."
     definition_lookup: "{term}: {definition} Example: {example_in_context}"
     zpd_intervene_or_escalate: "Let's pause and reset. We can continue with a smaller step once you're ready."
+    method_justification_request: "You used a non-standard method on {task_id}. Can you explain why your approach works?"
     task_complete: "Correct! Now solve: {task_id}. Show each step."
     default: "Continue with {task_id}. Share your next step and we will verify it together."
     # Governance role templates
@@ -540,6 +542,7 @@ runtime:
     hint: "{guide_npc}: A {obstacle_theme} blocks the path in {zone}, {protagonist}. Take one small step on {task_id} to continue."
     scaffold: "{guide_npc}: Let us break this {obstacle_theme} into smaller pieces, {protagonist}. One move at a time in {zone}."
     zpd_scaffold: "{guide_npc}: This {obstacle_theme} is tricky, {protagonist}. Let us simplify and do one clear step for {task_id}."
+    verification_request: "{guide_npc}: Hold, {protagonist}! Before the {obstacle_theme} in {zone} falls, substitute your answer back into the original equation for {task_id} to prove it."
     task_complete: "{guide_npc}: Well done, {protagonist}! The {obstacle_theme} in {zone} is defeated. Now face the next challenge: {task_id}."
     task_presentation: "{guide_npc}: Welcome to {zone}, {protagonist}. A new {obstacle_theme} stands between you and the {macguffin}. Solve {task_id} to proceed."
     default: "{guide_npc}: The {obstacle_theme} awaits in {zone}, {protagonist}. Continue with {task_id} to reach the {macguffin}."
