@@ -77,28 +77,136 @@ class TestVerificationRequestTemplate:
         assert "substitut" in tmpl.lower()
 
 
+# ── Inspection gate must not block orchestrator-grade invariants ───────
+
+
+class TestInspectionGateDoesNotBlockStandingOrders:
+    """The InspectionPipeline must approve turns where the only critical
+    failures come from invariants that have standing_order_on_violation.
+
+    Those invariants are handled by ActorResolver — if the inspection gate
+    denies them, the student gets locked out on their first wrong answer.
+    """
+
+    def test_critical_with_standing_order_is_approved(self):
+        """Simulates the exact scenario: substitution_check=false triggers
+        solution_verifies (critical), but since it has a standing order,
+        the inspection pipeline should NOT see it at all."""
+        from lumina.middleware.pipeline import InspectionPipeline
+
+        # This invariant has a standing_order — it should be filtered OUT
+        # before reaching the pipeline.
+        orchestrator_invariant = {
+            "id": "solution_verifies",
+            "check": "substitution_check",
+            "severity": "critical",
+            "standing_order_on_violation": "request_verification_retry",
+        }
+
+        # Filter the same way processing.py does
+        all_invariants = [orchestrator_invariant]
+        inspection_invariants = [
+            inv for inv in all_invariants
+            if not inv.get("standing_order_on_violation")
+        ]
+
+        pipe = InspectionPipeline(invariants=inspection_invariants)
+        result = pipe.run({"substitution_check": False})
+        assert result.approved is True, (
+            "Orchestrator-grade invariants must be filtered out; "
+            "the inspection gate should not deny this turn"
+        )
+
+    def test_critical_without_standing_order_is_denied(self):
+        """A pure-validation invariant (no standing order) with critical
+        severity SHOULD still cause denial."""
+        from lumina.middleware.pipeline import InspectionPipeline
+
+        validation_invariant = {
+            "id": "input_safe",
+            "check": "safe_input",
+            "severity": "critical",
+            # No standing_order_on_violation — this is inspection-grade
+        }
+
+        pipe = InspectionPipeline(invariants=[validation_invariant])
+        result = pipe.run({"safe_input": False})
+        assert result.approved is False
+
+
+# ── Inspection gate must not block orchestrator-grade invariants ───────
+
+
+class TestInspectionGateDoesNotBlockStandingOrders:
+    """The InspectionPipeline must approve turns where the only critical
+    failures come from invariants that have standing_order_on_violation.
+
+    Those invariants are handled by ActorResolver — if the inspection gate
+    denies them, the student gets locked out on their first wrong answer.
+    """
+
+    def test_critical_with_standing_order_is_approved(self):
+        """Simulates the exact scenario: substitution_check=false triggers
+        solution_verifies (critical), but since it has a standing order,
+        the inspection pipeline should NOT see it at all."""
+        from lumina.middleware.pipeline import InspectionPipeline
+
+        # This invariant has a standing_order — it should be filtered OUT
+        # before reaching the pipeline.
+        orchestrator_invariant = {
+            "id": "solution_verifies",
+            "check": "substitution_check",
+            "severity": "critical",
+            "standing_order_on_violation": "request_verification_retry",
+        }
+
+        # Filter the same way processing.py does
+        all_invariants = [orchestrator_invariant]
+        inspection_invariants = [
+            inv for inv in all_invariants
+            if not inv.get("standing_order_on_violation")
+        ]
+
+        pipe = InspectionPipeline(invariants=inspection_invariants)
+        result = pipe.run({"substitution_check": False})
+        assert result.approved is True, (
+            "Orchestrator-grade invariants must be filtered out; "
+            "the inspection gate should not deny this turn"
+        )
+
+    def test_critical_without_standing_order_is_denied(self):
+        """A pure-validation invariant (no standing order) with critical
+        severity SHOULD still cause denial."""
+        from lumina.middleware.pipeline import InspectionPipeline
+
+        validation_invariant = {
+            "id": "input_safe",
+            "check": "safe_input",
+            "severity": "critical",
+            # No standing_order_on_violation — this is inspection-grade
+        }
+
+        pipe = InspectionPipeline(invariants=[validation_invariant])
+        result = pipe.run({"safe_input": False})
+        assert result.approved is False
+
+
 # ── Bug 1 regression: inspection pipeline invariant source ─────────────
 
 
 class TestInvariantSourceUsesModulePhysics:
-    """Verify that the inspection pipeline receives module-specific invariants,
-    not the default-domain invariant list.
-
-    The actual wiring is in processing.py; we test indirectly by reading the
-    source line that was fixed.
+    """Verify that the inspection pipeline receives module-specific invariants
+    (not the default-domain list) AND that orchestrator-grade invariants are
+    filtered out so the inspection gate does not deny pedagogical turns.
     """
 
     def test_processing_uses_domain_physics_for_invariants(self):
-        """The _domain_invariants variable must be derived from domain_physics,
-        not from runtime.get('domain')."""
+        """Invariants must be sourced from domain_physics (module-specific),
+        not from runtime.get('domain') (default fallback)."""
         src = (REPO / "src" / "lumina" / "api" / "processing.py").read_text(encoding="utf-8")
 
-        # The buggy line was:
-        #   _domain_invariants = (runtime.get("domain") or {}).get("invariants", [])
-        # The fix is:
-        #   _domain_invariants = domain_physics.get("invariants", [])
         assert 'domain_physics.get("invariants"' in src, (
-            "processing.py must load _domain_invariants from domain_physics "
+            "processing.py must load invariants from domain_physics "
             "(module-specific), not from runtime.get('domain') (default fallback)"
         )
 
@@ -106,6 +214,36 @@ class TestInvariantSourceUsesModulePhysics:
         assert '(runtime.get("domain") or {}).get("invariants"' not in src, (
             "The old buggy invariant source (runtime['domain']) must be removed"
         )
+
+    def test_orchestrator_invariants_excluded_from_inspection_gate(self):
+        """Invariants with standing_order_on_violation must NOT be passed to
+        the InspectionPipeline — they are handled by ActorResolver.resolve().
+        Passing them to the inspection gate causes false denials on normal
+        learning turns (e.g. student forgets to verify → session locked)."""
+        src = (REPO / "src" / "lumina" / "api" / "processing.py").read_text(encoding="utf-8")
+
+        assert "standing_order_on_violation" in src, (
+            "processing.py must filter out orchestrator-grade invariants "
+            "(those with standing_order_on_violation) before passing to "
+            "the InspectionPipeline"
+        )
+
+    def test_prealgebra_invariants_all_have_standing_orders(self):
+        """All pre-algebra invariants define a standing_order_on_violation,
+        meaning NONE should reach the inspection gate."""
+        import json
+        physics_path = (
+            REPO / "domain-packs" / "education" / "modules"
+            / "pre-algebra" / "domain-physics.json"
+        )
+        physics = json.loads(physics_path.read_text(encoding="utf-8"))
+        invariants = physics.get("invariants", [])
+        assert len(invariants) > 0, "pre-algebra should define invariants"
+        for inv in invariants:
+            assert "standing_order_on_violation" in inv, (
+                f"Invariant '{inv.get('id')}' lacks standing_order_on_violation — "
+                f"if this is intentional, it will be checked by the inspection gate"
+            )
 
 
 # ── Action-prompt-type map completeness ────────────────────────────────

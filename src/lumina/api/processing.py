@@ -366,11 +366,24 @@ def process_message(
     from lumina.middleware import InspectionPipeline
 
     _turn_schema = runtime.get("turn_input_schema") or {}
-    _domain_invariants = domain_physics.get("invariants", [])
-    vlog.debug("[INSPECT] Running inspection pipeline (invariants=%d)", len(_domain_invariants))
+    # Invariants with standing_order_on_violation are orchestrator-grade:
+    # they fire standing orders and track attempt counters inside
+    # ActorResolver.check_invariants() → resolve().  The inspection
+    # gate must NOT evaluate them — a critical failure here would deny
+    # the input before the orchestrator can respond pedagogically.
+    _all_invariants = domain_physics.get("invariants", [])
+    _inspection_invariants = [
+        inv for inv in _all_invariants
+        if not inv.get("standing_order_on_violation")
+    ]
+    vlog.debug(
+        "[INSPECT] Running inspection pipeline (invariants=%d of %d, %d orchestrator-only)",
+        len(_inspection_invariants), len(_all_invariants),
+        len(_all_invariants) - len(_inspection_invariants),
+    )
     _inspection = InspectionPipeline(
         turn_input_schema=_turn_schema,
-        invariants=_domain_invariants,
+        invariants=_inspection_invariants,
         strict=True,
     )
     _inspection_result = _inspection.run(
