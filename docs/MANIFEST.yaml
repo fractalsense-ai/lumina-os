@@ -365,6 +365,13 @@ artifacts:
   status: active
   last_updated: 2026-04-05
   sha256: 2b523072f2b9f7c701350a4bcc1da914ad469212dedf0c7d52161b2ef18a4cde
+- path: docs/7-concepts/baseline-before-escalation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-14
+  sha256: 4f6327aaaa2420751b29c8b5b8e156ad8ee10a7421d4aff2fc4f567571fb0884
 - path: docs/7-concepts/student-commons.md
   type: doc
   section: 7
@@ -743,6 +750,18 @@ artifacts:
   status: active
   last_updated: 2026-03-20
   sha256: 6ba3498ea0a31b7fd0fd826bd264b99c56daf963f3b2f4ab6f6e2978b6443a25
+- path: standards/admin-command-schemas/assign-guardian.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-14
+  sha256: 85a336c56a7599c20f200d5620eca2ae6e610130c8f4c65f0b5818f02793e467
+- path: standards/admin-command-schemas/assign-ta.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-06-14
+  sha256: 97951ae377cabc77daa5c5256c51d0aa3ba22b7aa989165229a9a66a1b8cd5f2
 - path: standards/admin-command-schemas/commit-domain-physics.json
   type: schema
   doc_version: 1.0.0

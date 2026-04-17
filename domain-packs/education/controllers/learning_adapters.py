@@ -204,6 +204,14 @@ def domain_step(
     if zpd_decision.get("action") is None and fluency_decision.get("action") is not None:
         merged["action"] = fluency_decision["action"]
 
+    # 4. Baseline-before-escalation gate: suppress metric-driven
+    #    escalation until the ZPD drift window has enough data points
+    #    for reliable drift percentages.
+    drift_window = int((params or {}).get("drift_window_turns", 10))
+    window_filled = int(zpd_decision.get("window_turns_filled", 0))
+    if window_filled < drift_window:
+        merged["escalation_eligible"] = False
+
     return state, merged
 
 

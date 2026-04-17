@@ -15,9 +15,12 @@ without mocking a filesystem or ledger.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from lumina.middleware.invariant_checker import evaluate_invariants as _mw_evaluate_invariants
+
+logger = logging.getLogger("lumina.orchestrator.actor_resolver")
 
 if TYPE_CHECKING:
     from lumina.core.route_compiler import CompiledRoutes
@@ -154,6 +157,27 @@ class ActorResolver:
         # Fall through to domain-lib decision
         action = domain_lib_decision.get("action")
         should_escalate = bool(domain_lib_decision.get("should_escalate", False))
+
+        # ── Baseline-before-escalation gate ───────────────────────
+        # Domain-lib step functions may set ``escalation_eligible`` to
+        # ``False`` while their subsystem baselines are still priming
+        # (e.g. first N turns of ZPD drift window, vocabulary baseline
+        # lock period).  Metric-driven escalations are suppressed until
+        # the baseline is established.  Safety/invariant escalations
+        # (standing-order exhaustion) are resolved earlier in this
+        # method and are never affected by this gate.
+        escalation_eligible = bool(
+            domain_lib_decision.get("escalation_eligible", True)
+        )
+        if should_escalate and not escalation_eligible:
+            logger.info(
+                "escalation suppressed: subsystem baseline not yet primed "
+                "(action=%s, tier=%s)",
+                action,
+                domain_lib_decision.get("tier"),
+            )
+            should_escalate = False
+
         escalation_trigger = "domain_lib_escalation_event" if should_escalate else None
         return action, should_escalate, escalation_trigger
 

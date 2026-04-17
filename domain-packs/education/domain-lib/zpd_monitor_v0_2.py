@@ -467,6 +467,7 @@ def zpd_monitor_step(
     decision = _detect_drift(new_window, frustration, p)
     decision["challenge"] = new_challenge
     decision["outside_band"] = outside_band
+    decision["window_turns_filled"] = new_window.attempts
 
     # 9. Assemble updated state
     new_state = LearningState(

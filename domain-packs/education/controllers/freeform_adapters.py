@@ -117,6 +117,15 @@ def freeform_domain_step(
         "should_escalate": False,
     }
 
+    # ── Baseline-before-escalation gate (vocabulary subsystem) ─
+    # While the vocabulary baseline is still priming, suppress any
+    # metric-driven escalation.  The vocabulary growth monitor tracks
+    # ``baseline_sessions_remaining``; deltas are meaningless until it
+    # reaches zero and the baseline locks.
+    vocab_state = state.get("vocabulary_tracking") or {}
+    if int(vocab_state.get("baseline_sessions_remaining", 3)) > 0:
+        decision["escalation_eligible"] = False
+
     # ── Vocabulary growth tracking (passive subsystem) ────────
     vocab_score = evidence.get("vocabulary_complexity_score")
     if vocab_score is not None:

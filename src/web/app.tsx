@@ -895,7 +895,31 @@ function ChatInterface({
         }
 
         // Direct dispatch to tiered command endpoint
-        const cmdResponse = await commandCall(slashCmd.operation, slashCmd.params, auth, domainId, slashCmd.endpoint)
+        let cmdResponse: AdminCommandResponse
+        try {
+          cmdResponse = await commandCall(slashCmd.operation, slashCmd.params, auth, domainId, slashCmd.endpoint)
+        } catch (cmdError) {
+          // Surface the server's validation detail (e.g. "Guardian not found: X")
+          // instead of falling through to the generic "API request failed" catch.
+          let detail = 'Command failed.'
+          if (cmdError instanceof Error && cmdError.message) {
+            try {
+              const parsed = JSON.parse(cmdError.message)
+              detail = parsed.detail ?? cmdError.message
+            } catch {
+              detail = cmdError.message
+            }
+          }
+          const errMsg: Message = {
+            role: 'assistant',
+            content: detail,
+            id: `error-${Date.now()}`,
+            meta: { action: 'slash_command', promptType: slashCmd.operation },
+          }
+          setMessages((prev) => [...prev, errMsg])
+          setIsLoading(false)
+          return
+        }
         const resultData = cmdResponse.result ?? {}
         const content = cmdResponse.hitl_exempt
           ? (resultData as Record<string, unknown>).message as string ?? `Command executed: ${slashCmd.operation}`
