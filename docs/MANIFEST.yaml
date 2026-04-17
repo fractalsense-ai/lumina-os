@@ -471,6 +471,13 @@ artifacts:
   status: active
   last_updated: 2026-03-28
   sha256: 68a4a845f404bdb872c6eeedf64604b49323e9141d40338a15208c5d5cc4ce27
+- path: docs/7-concepts/authoring-a-domain-pack.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 1419d511af7ccabbc96b87cac0e07da31bf44b44623c9eb8b0b97be6663f7340
 - path: docs/8-admin/README.md
   type: doc
   section: 8
@@ -1236,6 +1243,42 @@ artifacts:
   status: active
   last_updated: 2026-04-04
   sha256: 95718a2ff385ed40278a4322b0b257359bfedbf7dfa5f544a68aaa4e92f11783
+- path: domain-packs/template/pack.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 7947e3ed261863d39ef52118ca15dae9d9bbf4909e6e05d5440bc97fa5442310
+- path: domain-packs/template/cfg/runtime-config.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 263dec68a45b564f96d8d808b32c7b0a8f086dc20d7371d9364fc59ea8fa5bf4
+- path: domain-packs/template/cfg/domain-profile-extension.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 4bc26705221cd3e7529b5c756399ccd3cc26c9df375512c76b4f8a805c4b3319
+- path: domain-packs/template/modules/example-module/domain-physics.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 36d075a0ca36fba8bf335651a0cb57f6cad02171a1e5a9741f8314d0900c0869
+- path: domain-packs/template/modules/example-module/tool-adapters/example-tool-adapter-v1.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: ec5d167ba2e9779008daf23efa32560735e00a19d600d3801f67e691600534de
+- path: domain-packs/template/profiles/entity.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-17
+  sha256: 615a76aa5e12cd5b45d9195d01145f2499718c4f614ccb6d9cc9eca80b857f73
 - path: domain-packs/education/world-sim/mud-world-templates.yaml
   type: config
   doc_version: 1.0.0

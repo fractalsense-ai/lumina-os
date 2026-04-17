@@ -1,0 +1,34 @@
+# ─── Template Domain — Domain Profile Extension ──────────────────────
+# Layer 2 of the hierarchical profile system (Base → Domain → Role).
+#
+# Fields defined here are shared by ALL roles in this domain.
+# They are merged on top of the base entity profile (Layer 1) and
+# underneath the role-specific profile (Layer 3).
+#
+# TODO: Add fields that every role in your domain needs.
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-17
+
+# ── Consent tracking ────────────────────────────────────────────────
+# Every domain should track whether the entity accepted the operating
+# conditions (displayed via ui_manifest.consent_text).
+consent:
+  accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+
+# ── Session history ─────────────────────────────────────────────────
+# Lightweight session counters.  Subsystems use these for baseline
+# calculations and reporting.
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# TODO: Add domain-wide fields below.  Examples from existing packs:
+#
+# teacher_notes: []           # Education: append-only timestamped notes
+# assigned_guardians: []      # Education: linked guardian user IDs
+# sensor_calibration: null    # Agriculture: last calibration timestamp

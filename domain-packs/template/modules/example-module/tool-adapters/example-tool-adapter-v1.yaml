@@ -1,0 +1,75 @@
+# ─── Example Tool Adapter — Template Domain ──────────────────────────
+# Tool adapters declare how the orchestrator may call external tools.
+# They define inputs, outputs, authorization, and side-effect categories.
+#
+# SCHEMA:  standards/tool-adapter-schema-v1.json
+#
+# HOW TO USE:
+#   1. Copy this file and rename it for your tool.
+#   2. Replace all placeholder values.
+#   3. Reference the adapter ID in your domain-physics.json under
+#      tool_adapters[] and optionally in execution_policy.
+#   4. Implement the tool callable in your controllers/ or domain-lib/.
+#
+# TODO: Replace all values below with your tool's actual definition.
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-17
+
+# Format: adapter/<domain-short>/<tool-name>/v<major>
+id: adapter/tmpl/example-tool/v1
+version: "1.0.0"
+tool_name: "Example Validation Tool"
+description: >
+  Deterministic validation tool for the template domain.
+  Checks entity input against domain rules and returns a
+  structured validation result.  Called by the orchestrator
+  during the evidence-gathering phase to override SLM estimates
+  with ground-truth values.
+
+# The domain pack that authorized this tool.
+domain_id: domain/tmpl/example-module/v1
+
+# How this tool is invoked:
+#   deterministic — pure validation, no side effects
+#   stateful      — modifies session state
+#   llm_visible   — output included in LLM context
+call_types:
+  - deterministic
+
+# JSON Schema fragment for acceptable inputs.
+input_schema:
+  type: object
+  required:
+    - input_text
+    - evidence
+  properties:
+    input_text:
+      type: string
+      description: "Raw entity message to validate."
+    evidence:
+      type: object
+      description: "Current evidence dict from the turn interpreter."
+
+# JSON Schema fragment for tool output.
+output_schema:
+  type: object
+  properties:
+    on_track:
+      type: boolean
+      description: "Deterministic on-track assessment."
+    confidence:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+      description: "Confidence in the on_track determination."
+
+# Authorization: who may invoke this tool.
+#   orchestrator      — called automatically during turn processing
+#   entity            — the domain subject may request it
+#   domain_authority  — admin may invoke it
+authorization:
+  who_may_call:
+    - orchestrator
+  requires_entity_consent: false

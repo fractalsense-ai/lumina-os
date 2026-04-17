@@ -78,6 +78,19 @@ domains:
       - domain physics
       - domain pack
       - domain authority
+
+  # ── Template domain (commented out) ──────────────────────────────
+  # Uncomment and customise when building a new domain from the template.
+  # See: domain-packs/template/README.md
+  #
+  # template:
+  #   runtime_config_path: domain-packs/template/cfg/runtime-config.yaml
+  #   label: Template — Starter Pack
+  #   description: Copy-and-customise scaffold for new domains.
+  #   module_prefix: tmpl
+  #   keywords:
+  #     - template
+  #     - scaffold
       - meta authority
       - domain registry
       - pseudonymous

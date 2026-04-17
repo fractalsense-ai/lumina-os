@@ -1,0 +1,69 @@
+{
+  "id": "domain/tmpl/example-module/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_template_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Template example module \u00e2\u20ac\u201d demonstrates the minimum viable domain physics structure.",
+  "department": "General",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "threshold_exceeded",
+      "description": "The primary metric has exceeded the acceptable operating range.",
+      "severity": "warning",
+      "check": "score > 0.9",
+      "standing_order_on_violation": "request_more_detail"
+    },
+    {
+      "id": "response_delayed",
+      "description": "Entity has not responded within the expected time window.",
+      "severity": "warning",
+      "check": "response_latency_sec > 30",
+      "standing_order_on_violation": "request_more_detail"
+    },
+    {
+      "id": "safety_violation",
+      "description": "Content safety flags detected \u00e2\u20ac\u201d immediate escalation required.",
+      "severity": "critical",
+      "check": "safety_flags != []",
+      "standing_order_on_violation": "escalate_to_authority"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "request_more_detail",
+      "action": "request_more_detail",
+      "trigger_condition": "threshold_exceeded or response_delayed",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Ask the entity to provide more detail or clarify their input."
+    },
+    {
+      "id": "escalate_to_authority",
+      "action": "escalate",
+      "trigger_condition": "safety_violation",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "Immediately escalate to the Domain Authority."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "standing_order_exhausted",
+      "condition": "A standing order reached max_attempts without resolution.",
+      "target_role": "domain_authority",
+      "sla_minutes": 30
+    },
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (safety_violation).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": []
+}

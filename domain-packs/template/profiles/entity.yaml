@@ -1,0 +1,29 @@
+# ─── Template Domain — Default Entity Profile ────────────────────────
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+#
+# This is the default profile for entities (users/subjects) in this
+# domain.  The runtime merges profiles in order:
+#   1. base-entity-profile.yaml     (system pack — universal fields)
+#   2. domain-profile-extension.yaml (this domain — shared domain fields)
+#   3. THIS FILE                     (role-specific fields)
+#
+# TODO: Rename this file to match your primary entity type
+#       (e.g. operator.yaml, patient.yaml, student.yaml).
+# TODO: Add fields your domain step and subsystems need to read.
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-17
+
+# ── Preferences ──────────────────────────────────────────────────────
+# Entity-facing preferences that may influence persona tone or module selection.
+preferences:
+  explanation_style: standard         # TODO: Define your domain's preference options.
+
+# ── Domain-specific state ────────────────────────────────────────────
+# Mutable state that your adapters read/write across sessions.
+# TODO: Replace with your domain's entity state fields.
+entity_state:
+  active_task_id: null
+  total_sessions: 0
+  last_session_utc: null

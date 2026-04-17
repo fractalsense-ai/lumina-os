@@ -1,0 +1,65 @@
+# ─── Template Domain Pack Manifest ────────────────────────────────────
+# HMVC identity card — declares what this pack is, what it owns,
+# and how its components map to the Model / Controller / View layers.
+# See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
+#
+# HOW TO USE THIS TEMPLATE:
+#   1. Copy the entire domain-packs/template/ directory to
+#      domain-packs/<your-domain>/
+#   2. Replace every "template" / "tmpl" / "example" occurrence
+#      with your domain's naming convention
+#   3. Follow the TODO markers in each file
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-17
+
+# TODO: Replace with your domain's short identifier (lowercase, no spaces).
+#       Convention: matches the directory name under domain-packs/.
+pack_id: template
+
+# TODO: Start at 0.1.0 and bump per semver as your domain evolves.
+version: "0.1.0"
+
+# TODO: One-line description of what this domain does.
+description: "Template domain pack — copy and customise to create a new domain."
+
+# ── HMVC Layer Map ────────────────────────────────────────────────────
+# Declares which files belong to each architectural layer.  The runtime
+# does not enforce this — it is documentation for humans and tooling.
+layers:
+  model:
+    - modules/*/domain-physics.json       # Immutable domain rules per module
+    # - schemas/                           # TODO: Add if you have JSON schemas
+    - domain-lib/
+  controller:
+    - controllers/runtime_adapters.py     # 3 required callables
+    - controllers/nlp_pre_interpreter.py  # Phase A deterministic extraction
+    # - controllers/ops/                   # TODO: Uncomment if adding slash commands
+    - modules/*/tool-adapters/*.yaml
+  domain_lib:
+    - domain-lib/reference/turn-interpretation-spec-v1.md
+  view:
+    - prompts/domain-persona-v1.md
+    # - world-sim/                         # TODO: Uncomment if using narrative framing
+  docs:
+    - docs/
+
+# ── Modules ───────────────────────────────────────────────────────────
+# List every module this domain pack provides.  Each module has its own
+# domain-physics file and optionally overrides adapters.
+# TODO: Replace with your actual modules.
+modules:
+  - example-module
+
+# ── Default Module ────────────────────────────────────────────────────
+# Users invited without a specific module assignment land here.
+# TODO: Set to the module ID from your modules list above.
+default_module: example-module
+
+# ── Entry Points ──────────────────────────────────────────────────────
+# The runtime loader resolves these paths to find your adapters.
+entry_points:
+  runtime_config: cfg/runtime-config.yaml
+  runtime_adapter: controllers/runtime_adapters.py
+  nlp_pre_interpreter: controllers/nlp_pre_interpreter.py
