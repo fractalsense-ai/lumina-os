@@ -42,7 +42,7 @@ This module conforms to the domain-state-lib contract: deterministic, structured
 
 ### Vocabulary tracking state
 
-The monitor operates on the `vocabulary_tracking` section of the student's learning state (see [`learning-profile(7)`](../../../../docs/7-concepts/learning-profile.md)):
+The monitor operates on the `vocabulary_tracking` section of the student's learning state (see [`learning-profile(7)`](../7-concepts/learning-profile.md)):
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -127,7 +127,7 @@ The API endpoint is a domain-declared route (see [`api-server-architecture(7)`](
 ## SEE ALSO
 
 - [`fluency-monitor(3)`](fluency-monitor.md) — Tier-advancement fluency gate (sibling domain-lib monitor)
-- [`learning-profile(7)`](../../../../docs/7-concepts/learning-profile.md) — Student profile schema including `vocabulary_tracking`
+- [`learning-profile(7)`](../7-concepts/learning-profile.md) — Student profile schema including `vocabulary_tracking`
 - [`domain-pack-anatomy(7)`](../../../../docs/7-concepts/domain-pack-anatomy.md) — Eight-component domain pack structure
 - `domain-packs/education/domain-lib/vocabulary_growth_monitor_v0_1.py` — Implementation
 - `src/web/services/vocabularyAnalyzer.ts` — Client-side complexity analyzer

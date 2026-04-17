@@ -531,7 +531,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             # Per-module turn_input_defaults / turn_input_schema override
             # so governance modules get governance-shaped evidence instead
             # of inheriting the domain-wide (learning) defaults.
-            # See: docs/7-concepts/llm-assisted-governance-adapters.md
+            # See: docs/8-admin/llm-assisted-governance-adapters.md
             _mod_tid = _mod_cfg.get("turn_input_defaults")
             if isinstance(_mod_tid, dict) and _mod_tid:
                 _mod_cfg["turn_input_defaults"] = dict(_mod_tid)

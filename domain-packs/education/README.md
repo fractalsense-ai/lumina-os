@@ -96,7 +96,7 @@ The education domain includes a passive vocabulary complexity monitor for Studen
 
 Function references:
 - [`docs/3-functions/vocabulary-growth-monitor.md`](docs/3-functions/vocabulary-growth-monitor.md)
-- [`../../docs/7-concepts/learning-profile.md`](../../docs/7-concepts/learning-profile.md) — `vocabulary_tracking` schema
+- [`docs/7-concepts/learning-profile.md`](docs/7-concepts/learning-profile.md) — `vocabulary_tracking` schema
 
 ---
 

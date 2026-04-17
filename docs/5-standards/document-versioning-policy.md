@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2026-03-20
+version: 1.1.0
+last_updated: 2026-04-16
 ---
 
 # document-versioning-policy(5)
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Active  
-**Last updated:** 2026-03-12  
+**Last updated:** 2026-04-16  
 
 ---
 
@@ -145,6 +145,24 @@ After any artifact is modified:
 A `verify-manifest-integrity` script — analogous to `verify-repo-integrity.py` — is planned to
 automate SHA-256 verification and flag stale manifest entries on commit. Until that script
 exists, manifest hashes must be updated manually whenever an artifact is modified.
+
+---
+
+## IMPLEMENTATION VS. SPECIFICATION VERSIONING
+
+Project Lumina maintains two independent version tracks:
+
+| Track | Location | Current | What it tracks |
+|-------|----------|---------|----------------|
+| **Implementation** | `pyproject.toml` | 0.1.0 | The software — API server, orchestrator, persistence, tests |
+| **Specification** | `standards/lumina-core-v1.md` | 1.1.0 | The formal spec — D.S.A. contracts, PPA protocol, System Log schema |
+
+These tracks **intentionally diverge**. The specification leads: it defines the target behavior.
+The implementation follows: it catches up to the spec incrementally. A spec version bump does
+not require an implementation version bump, and vice versa.
+
+The root [`CHANGELOG.md`](../../CHANGELOG.md) tracks the implementation version. Specification
+changes are tracked in the spec document's own version header and in `docs/MANIFEST.yaml`.
 
 ---
 

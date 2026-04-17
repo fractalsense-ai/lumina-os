@@ -1,15 +1,5 @@
 ---
 version: 1.1.0
-last_updated: 2026-04-16
-status: Moved
----
-
-# Learning Profile
-
-This document has moved to the education domain pack:
-[`domain-packs/education/docs/7-concepts/learning-profile.md`](../../domain-packs/education/docs/7-concepts/learning-profile.md)
----
-version: 1.1.0
 last_updated: 2026-06-15
 ---
 

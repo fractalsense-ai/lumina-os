@@ -165,10 +165,10 @@ artifacts:
 - path: docs/5-standards/document-versioning-policy.md
   type: doc
   section: 5
-  doc_version: 1.0.0
+  doc_version: 1.1.0
   status: active
-  last_updated: 2026-03-12
-  sha256: e3702a638dceb4e8961e3940885efb84cadfbba364867bfdf12dc2c54ad391f9
+  last_updated: 2026-04-16
+  sha256: 320f61d3dadc908173544945e4c5be32870917ca55b893cd5d2f24dea7d0b06c
 - path: docs/5-standards/domain-library-lifecycle.md
   type: doc
   section: 5
@@ -186,10 +186,10 @@ artifacts:
 - path: docs/7-concepts/README.md
   type: doc
   section: 7
-  doc_version: 1.3.0
+  doc_version: 1.5.0
   status: active
-  last_updated: 2026-03-18
-  sha256: e56f15442cda7d81e2c3e4fd6bcb86b368b34e8929a48cab608d728fcf3de6e0
+  last_updated: 2026-04-16
+  sha256: 873ebc4c9361934b90842d5db1c14b2c660f9e280624717744e4d3edf02678b9
 - path: docs/7-concepts/api-server-architecture.md
   type: doc
   section: 7
@@ -239,9 +239,9 @@ artifacts:
   status: active
   last_updated: 2026-03-20
   sha256: 0243464c36f258f302786c3a7990d69a8e4467a9408e7509ca7093e5921badfe
-- path: docs/7-concepts/governance-dashboard.md
+- path: docs/8-admin/governance-dashboard.md
   type: doc
-  section: 7
+  section: 8
   doc_version: 1.1.0
   status: active
   last_updated: 2026-06-15
@@ -267,16 +267,16 @@ artifacts:
   status: active
   last_updated: 2026-03-20
   sha256: 3a2f0346f4f2e5f18bcdf31be4f8d6cf7c0b0f80970fcf6efe226b74a877d2ec
-- path: docs/7-concepts/llm-assisted-governance-adapters.md
+- path: docs/8-admin/llm-assisted-governance-adapters.md
   type: doc
-  section: 7
+  section: 8
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-03
   sha256: 677245429b7b1e56bb86b4bd161305ee076351adc8688db794ddb2a5d8c15681
-- path: docs/7-concepts/logic-scraping.md
+- path: docs/8-admin/logic-scraping.md
   type: doc
-  section: 7
+  section: 8
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-15
@@ -288,9 +288,9 @@ artifacts:
   status: active
   last_updated: 2026-04-11
   sha256: c52b813e3dd72c586c7c0f8ee9bd70c2796399e24d09fe28be9a7086a216993e
-- path: docs/7-concepts/daemon-batch-processing.md
+- path: docs/8-admin/daemon-batch-processing.md
   type: doc
-  section: 7
+  section: 8
   doc_version: 2.0.0
   status: active
   last_updated: 2026-03-31
@@ -375,10 +375,11 @@ artifacts:
 - path: docs/7-concepts/learning-profile.md
   type: doc
   section: 7
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-04-05
-  sha256: 101c9734bbabd2d9bde691b0addbec96d919f7a85e7d10799c83635b4118edd6
+  doc_version: 1.1.0
+  status: moved
+  last_updated: 2026-04-16
+  sha256: 8acf8b875a12f57b667b38490bc5ddbe4547ffdcd19954de37c218d841d486cc
+  moved_to: domain-packs/education/docs/7-concepts/learning-profile.md
 - path: docs/7-concepts/telemetry-masking.md
   type: doc
   section: 7
@@ -389,10 +390,10 @@ artifacts:
 - path: docs/7-concepts/telemetry-and-blackbox.md
   type: doc
   section: 7
-  doc_version: 1.0.0
+  doc_version: 1.0.1
   status: active
-  last_updated: 2025-07-15
-  sha256: 4dd7199d35dc5f880970ea927b20751f33db0d470ba79dca4c8e50b2db934ef0
+  last_updated: 2026-04-16
+  sha256: ff6e66bb7dc4de8f800baf406798671908aa60dfd0d478ac8871d3e9adc30a79
 - path: docs/7-concepts/state-change-commit-policy.md
   type: doc
   section: 7
@@ -466,10 +467,10 @@ artifacts:
 - path: docs/8-admin/README.md
   type: doc
   section: 8
-  doc_version: 1.0.0
+  doc_version: 1.1.0
   status: active
-  last_updated: 2026-03-12
-  sha256: 546e6a5f487811725c813580a555cfe41fab9e8e6a01108e6c3610403c2fcfc5
+  last_updated: 2026-04-16
+  sha256: cb34325a6e77d2ab9d39e65011049b9bf4e4fafd018ac43612a13a41bf3ca585
 - path: docs/8-admin/admin-command-schemas.md
   type: doc
   section: 8

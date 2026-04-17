@@ -6,7 +6,7 @@ pattern mirrors the system domain's ``build_system_state`` /
 ``system_domain_step`` in domain-packs/system/controllers/runtime_adapters.py.
 
 See also:
-    docs/7-concepts/llm-assisted-governance-adapters.md
+    docs/8-admin/llm-assisted-governance-adapters.md
     docs/7-concepts/slm-compute-distribution.md
     docs/7-concepts/domain-adapter-pattern.md
 """

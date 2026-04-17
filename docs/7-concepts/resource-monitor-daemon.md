@@ -192,4 +192,4 @@ loop is never created).
 - [`edge-vectorization(7)`](edge-vectorization.md) — per-domain vector stores and daemon-driven rebuild triggers
 - [`group-libraries-and-tools(7)`](group-libraries-and-tools.md) — Group Library dependency-aware rebuilds via `rebuild_group_library_dependents()`
 - [`execution-route-compilation(7)`](execution-route-compilation.md) — ahead-of-time route compilation (may be re-triggered after physics changes)
-- [`daemon-batch-processing(7)`](daemon-batch-processing.md) — batch processing subsystem that the daemon dispatches into
+- [`daemon-batch-processing(8)`](../8-admin/daemon-batch-processing.md) — batch processing subsystem that the daemon dispatches into

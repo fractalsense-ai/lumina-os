@@ -1,13 +1,13 @@
 ---
-version: 1.0.0
-last_updated: 2025-07-15
+version: 1.0.1
+last_updated: 2026-04-16
 ---
 
 # Concept — Telemetry Sliding Window & Conversation Black Box
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Status:** Active  
-**Last updated:** 2025-07-15  
+**Last updated:** 2026-04-16  
 
 ---
 
