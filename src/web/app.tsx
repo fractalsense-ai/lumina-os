@@ -633,6 +633,7 @@ function AppHeader({
 
 function ChatInterface({
   manifest,
+  onManifestChange,
   auth,
   onLogout,
   showDashboard,
@@ -645,6 +646,7 @@ function ChatInterface({
   domainKey,
 }: {
   manifest: UiManifest
+  onManifestChange: (updater: UiManifest | ((prev: UiManifest) => UiManifest)) => void
   auth: AuthState
   onLogout: () => void
   showDashboard: boolean
@@ -916,7 +918,7 @@ function ChatInterface({
         if (slashCmd.operation === 'switch_active_module' && cmdResponse.hitl_exempt) {
           const uiOverrides = (resultData as Record<string, unknown>).ui_overrides as Record<string, unknown> | undefined
           if (uiOverrides) {
-            setManifest((prev) => ({ ...prev, ...uiOverrides }))
+            onManifestChange((prev) => ({ ...prev, ...uiOverrides }))
           }
           const switchedModuleId = (resultData as Record<string, unknown>).module_id as string | undefined
           // Save current session, then open a fresh one for the new module
@@ -1301,6 +1303,7 @@ function App() {
       <div style={{ display: showDashboardView ? 'none' : undefined }}>
         <ChatInterface
           manifest={manifest}
+          onManifestChange={setManifest}
           auth={auth}
           onLogout={handleLogout}
           showDashboard={showDashboard}
