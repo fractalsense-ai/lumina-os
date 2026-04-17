@@ -22,7 +22,7 @@ Lumina OS is a **zero-trust orchestration layer** that wraps any LLM in determin
 
 Three properties define the system:
 
-1. **Prompt injection is structurally mitigated** — the LLM never sees raw user input. All input passes through an inspection middleware pipeline (NLP extraction → schema validation → invariant checking) before the prompt contract is assembled. The LLM receives a compressed, pre-interpreted context — not a chat transcript.
+1. **Prompt injection is structurally mitigated** — the LLM receives the user's raw input, but never in isolation. All input passes through an inspection middleware pipeline (NLP extraction → schema validation → invariant checking) before the prompt contract is assembled. The model sees the original message embedded inside a deterministic contract — domain physics, actor identity, state context, and a sliding window of recent turns — so it cannot be manipulated by the input alone.
 
 2. **Hallucinations are traceable** — every LLM output passes through deterministic tool-adapter verification. Unrecognized patterns trigger a two-key gate: the LLM flags it, then a human Domain Authority confirms or rejects. The append-only System Log records `model_id`, `model_version`, and the verdict for every decision.
 
