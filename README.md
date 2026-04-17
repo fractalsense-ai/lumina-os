@@ -8,12 +8,11 @@
 
 ## Screenshots
 
-> **Screenshots coming soon** — verbose CLI output and chat interface.
 
-<!-- Uncomment when images are added to screenshots/:
-![Verbose CLI output](screenshots/cli-verbose.png)
-![Chat interface](screenshots/chat-interface.png)
--->
+
+[Verbose CLI output](screenshots/cli-verbose.png)
+[Chat interface](screenshots/chat-interface.png)
+
 
 ---
 
