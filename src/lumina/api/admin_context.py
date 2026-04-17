@@ -46,6 +46,9 @@ class AdminOperationContext:
     has_domain_capability: Callable[..., bool]
     has_escalation_capability: Callable[..., bool]
 
+    # Session invalidation (e.g. after /switch module)
+    rebuild_domain_context: Callable[[str, str], None] | None = None
+
     # Domain scoping — set when dispatching to a domain-pack handler
     domain_id: str | None = None
 

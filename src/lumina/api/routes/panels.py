@@ -142,22 +142,46 @@ async def _resolve_self_profile(
     """Caller's own profile summary."""
     prefs = profile.get("preferences") or {}
     modules = profile.get("modules") if isinstance(profile.get("modules"), dict) else {}
+    module_ids = set(modules.keys())
+    # Also include governed_modules from the user record
+    try:
+        user_rec = await run_in_threadpool(_cfg.PERSISTENCE.get_user, user_data["sub"])
+        module_ids |= set((user_rec or {}).get("governed_modules") or [])
+    except Exception:
+        pass
     return {
         "panel": pcfg.get("id", "self_profile"),
         "user_id": user_data["sub"],
         "display_name": profile.get("display_name") or profile.get("name") or user_data["sub"],
         "role": user_data.get("role", ""),
         "preferences": dict(prefs),
-        "assigned_modules": list(modules.keys()),
+        "assigned_modules": sorted(module_ids),
     }
 
 
 async def _resolve_self_modules(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
-    """Caller's module list with state summaries."""
+    """Caller's module list with state summaries.
+
+    Merges modules from two sources so newly-assigned modules appear
+    even before the student has interacted with them:
+
+    1. ``profile["modules"]`` — modules with session state (turn history).
+    2. ``user_rec["governed_modules"]`` — modules assigned via /assign.
+    """
     modules = profile.get("modules") if isinstance(profile.get("modules"), dict) else {}
+
+    # Also include governed_modules from the user record
+    user_id = user_data["sub"]
+    try:
+        user_rec = await run_in_threadpool(_cfg.PERSISTENCE.get_user, user_id)
+        governed = set((user_rec or {}).get("governed_modules") or [])
+    except Exception:
+        governed = set()
+
     summaries = []
+    seen: set[str] = set()
     for mk, mv in modules.items():
         entry: dict[str, Any] = {"module_id": mk}
         if isinstance(mv, dict):
@@ -165,6 +189,12 @@ async def _resolve_self_modules(
             if "mastery" in mv:
                 entry["mastery_level"] = mv["mastery"] if isinstance(mv["mastery"], (int, float, str)) else "present"
         summaries.append(entry)
+        seen.add(mk)
+
+    # Append governed modules not yet in profile (no session state yet)
+    for gm in sorted(governed - seen):
+        summaries.append({"module_id": gm, "turn_count": 0})
+
     return {
         "panel": pcfg.get("id", "self_modules"),
         "user_id": user_data["sub"],

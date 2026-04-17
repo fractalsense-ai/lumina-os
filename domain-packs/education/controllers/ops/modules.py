@@ -172,6 +172,14 @@ async def switch_active_module(
     _profile["domain_id"] = module_id
     await save_profile(ctx, user_id, _profile)
 
+    # Rebuild the cached session context so the next chat message uses
+    # the new module's physics instead of the stale cached context.
+    if getattr(ctx, "rebuild_domain_context", None) is not None:
+        try:
+            ctx.rebuild_domain_context(user_id, "education")
+        except Exception:
+            log.debug("Could not rebuild session context for %s", user_id)
+
     log.info("User %s switched active module to %s", user_id, module_id)
 
     # Include ui_overrides so the frontend can update the header/subtitle

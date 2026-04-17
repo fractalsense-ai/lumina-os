@@ -291,3 +291,66 @@ class TestSwitchModuleUiOverrides:
         )
 
         assert result["ui_overrides"]["subtitle"] == "Algebra — Introduction"
+
+
+# ═════════════════════════════════════════════════════════════
+# Phase 3: switch rebuilds cached session context
+# ═════════════════════════════════════════════════════════════
+
+@pytest.mark.unit
+class TestSwitchModuleRebuildsDomainContext:
+    """After switching modules the handler must call
+    rebuild_domain_context so the in-memory session picks up
+    the new module's physics on the next chat turn."""
+
+    def test_rebuild_called_with_user_and_domain(self) -> None:
+        ctx = _make_ctx()
+        ctx.rebuild_domain_context = MagicMock()
+        student = _student_user()
+
+        asyncio.run(
+            switch_active_module_handler(
+                "switch_active_module",
+                {"module_id": "pre-algebra"},
+                student, ctx,
+            )
+        )
+
+        ctx.rebuild_domain_context.assert_called_once_with("student1", "education")
+
+    def test_rebuild_not_called_when_absent(self) -> None:
+        """If ctx has no rebuild_domain_context (older framework),
+        the switch must still succeed without errors."""
+        ctx = _make_ctx()
+        # Ensure attribute is absent (default MagicMock would auto-create it)
+        if hasattr(ctx, "rebuild_domain_context"):
+            del ctx.rebuild_domain_context
+        student = _student_user()
+
+        result = asyncio.run(
+            switch_active_module_handler(
+                "switch_active_module",
+                {"module_id": "pre-algebra"},
+                student, ctx,
+            )
+        )
+
+        assert result["status"] == "switched"
+
+    def test_rebuild_failure_does_not_block_switch(self) -> None:
+        """If rebuild_domain_context raises, the switch should still
+        succeed — the context will be rebuilt on the next chat request."""
+        ctx = _make_ctx()
+        ctx.rebuild_domain_context = MagicMock(side_effect=RuntimeError("boom"))
+        student = _student_user()
+
+        result = asyncio.run(
+            switch_active_module_handler(
+                "switch_active_module",
+                {"module_id": "pre-algebra"},
+                student, ctx,
+            )
+        )
+
+        assert result["status"] == "switched"
+        ctx.rebuild_domain_context.assert_called_once()

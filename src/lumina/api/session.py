@@ -435,6 +435,28 @@ def get_or_create_session(
     return container.active_context.to_session_dict()
 
 
+def rebuild_user_domain_context(user_id: str, domain_id: str) -> None:
+    """Rebuild cached domain contexts for *user_id* under *domain_id*.
+
+    Called after a module switch (``/switch``) so the next chat message
+    picks up the newly-selected module's physics instead of the stale
+    cached context.
+    """
+    resolved = _cfg.DOMAIN_REGISTRY.resolve_domain_id(domain_id)
+    for sid, container in _session_containers.items():
+        if container.user is None or str(container.user.get("sub", "")) != str(user_id):
+            continue
+        if resolved not in container.contexts:
+            continue
+        new_ctx = _build_domain_context(sid, resolved, user=container.user)
+        container.contexts[resolved] = new_ctx
+        _persist_session_container(sid, container)
+        log.info(
+            "[%s] Rebuilt domain context %s for user %s (module=%s)",
+            sid, resolved, user_id, new_ctx.module_key,
+        )
+
+
 def _close_session(session_id: str, actor_id: str, actor_role: str, close_type: str = "normal", close_reason: str | None = None) -> None:
     """Close a session: write CommitmentRecords and remove from memory."""
     from lumina.system_log.admin_operations import build_commitment_record

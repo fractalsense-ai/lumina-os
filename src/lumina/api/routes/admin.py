@@ -287,6 +287,8 @@ from lumina.api.governance import (  # noqa: E402
 
 def _build_admin_context() -> AdminOperationContext:
     """Construct the shared context object for operation handlers."""
+    from lumina.api.session import rebuild_user_domain_context
+
     return AdminOperationContext(
         persistence=_cfg.PERSISTENCE,
         domain_registry=_cfg.DOMAIN_REGISTRY,
@@ -300,6 +302,7 @@ def _build_admin_context() -> AdminOperationContext:
         resolve_user_profile_path=_resolve_user_profile_path,
         has_domain_capability=_has_domain_capability,
         has_escalation_capability=_has_escalation_capability,
+        rebuild_domain_context=rebuild_user_domain_context,
     )
 
 
