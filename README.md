@@ -8,11 +8,13 @@
 
 ## Screenshots
 
+**Chat interface** — natural-language admin command staged for HITL review, setup link generated:
 
+![Chat interface](screenshots/chat-interface.png)
 
-[Verbose CLI output](screenshots/cli-verbose.png)
-[Chat interface](screenshots/chat-interface.png)
+**Verbose CLI output** — full PPA pipeline trace: GATE → AUDIT → TURN → ENRICH → INSPECT → ORCH → RESPONSE → RESULT:
 
+![Verbose CLI output](screenshots/cli-verbose.png)
 
 ---
 
@@ -181,7 +183,7 @@ lumina-os/
 ├── specs/                ← formal specifications (DSA, principles, RBAC)
 ├── standards/            ← JSON schemas and conformance standards
 ├── docs/                 ← UNIX man-page reference (sections 1–8)
-├── tests/                ← pytest suite (3690+ tests)
+├── tests/                ← pytest suite (3690+ tests, zero regressions)
 ├── scripts/              ← build, integrity, migration, and verification tools
 └── data/                 ← retrieval indices, profiles, blackbox snapshots
 ```
