@@ -1,4 +1,4 @@
-"""Roster operations: assign_student, remove_student.
+"""Roster operations: assign_student, remove_student, assign_ta, assign_guardian.
 
 Also contains the TA ↔ teacher student-roster sync helper used
 when students are added/removed from a teacher's roster.
@@ -177,5 +177,185 @@ async def remove_student(
         "student_id": student_id,
         "teacher_id": teacher_id,
         "status": "removed",
+        "record_id": record["record_id"],
+    }
+
+
+# ── assign_ta ─────────────────────────────────────────────────
+
+async def assign_ta(
+    operation: str,
+    params: dict[str, Any],
+    user_data: dict[str, Any],
+    ctx: Any,
+) -> dict[str, Any]:
+    """Assign a teaching assistant to one or more students.
+
+    Teachers can only assign TAs linked to themselves; domain authorities
+    can assign any TA.  If the TA has a supervising teacher the students
+    are also placed on that teacher's roster.
+    """
+    ta_id = str(params.get("ta_id", "")).strip()
+    raw_students = str(params.get("student_ids", "")).strip()
+    if not ta_id:
+        raise ctx.HTTPException(status_code=422, detail="ta_id required")
+    if not raw_students:
+        raise ctx.HTTPException(status_code=422, detail="student_ids required")
+
+    student_ids_raw = [s.strip() for s in raw_students.split(",") if s.strip()]
+
+    caller_role = user_data["role"]
+    if caller_role == "user":
+        await require_teacher_capability(user_data, ctx)
+    elif caller_role not in ("root", "domain_authority"):
+        raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
+
+    ta_rec = await require_user_exists(ctx, ta_id, "Teaching assistant")
+    ta_id = ta_rec["user_id"]
+
+    ta_profile = await load_profile(ctx, ta_id)
+    _ast = ta_profile.setdefault("assistant_state", {})
+    supervising_teacher_id = _ast.get("supervising_teacher_id")
+
+    if caller_role == "user":
+        if supervising_teacher_id and supervising_teacher_id != user_data["sub"]:
+            raise ctx.HTTPException(
+                status_code=403,
+                detail="TA is not linked to your roster",
+            )
+
+    if not supervising_teacher_id:
+        log.warning("assign_ta: TA %s has no supervising teacher — proceeding with warning", ta_id)
+
+    assigned: list[str] = []
+    for sid_raw in student_ids_raw:
+        s_rec = await require_user_exists(ctx, sid_raw, "Student")
+        sid = s_rec["user_id"]
+
+        ta_students = list(_ast.get("assigned_students") or [])
+        if sid not in ta_students:
+            ta_students.append(sid)
+            _ast["assigned_students"] = ta_students
+
+        if supervising_teacher_id:
+            t_profile = await load_profile(ctx, supervising_teacher_id)
+            t_edu = t_profile.setdefault("educator_state", {})
+            t_students = list(t_edu.get("assigned_students") or [])
+            if sid not in t_students:
+                t_students.append(sid)
+                t_edu["assigned_students"] = t_students
+                await save_profile(ctx, supervising_teacher_id, t_profile)
+
+            s_profile = await load_profile(ctx, sid)
+            s_profile["assigned_teacher_id"] = supervising_teacher_id
+            await save_profile(ctx, sid, s_profile)
+
+        assigned.append(sid)
+
+    await save_profile(ctx, ta_id, ta_profile)
+
+    record = write_commitment(
+        ctx,
+        actor_id=user_data["sub"],
+        actor_role=ctx.map_role_to_actor_role(caller_role),
+        commitment_type="ta_student_assignment",
+        subject_id=ta_id,
+        summary=f"Assigned TA {ta_id} to students {', '.join(assigned)}",
+        metadata={
+            "ta_id": ta_id,
+            "student_ids": assigned,
+            "supervising_teacher_id": supervising_teacher_id,
+            "assigned_by": user_data["sub"],
+        },
+        references=[ta_id, *assigned],
+    )
+    return {
+        "operation": operation,
+        "ta_id": ta_id,
+        "student_ids": assigned,
+        "supervising_teacher_id": supervising_teacher_id,
+        "status": "assigned",
+        "record_id": record["record_id"],
+    }
+
+
+# ── assign_guardian ───────────────────────────────────────────
+
+async def assign_guardian(
+    operation: str,
+    params: dict[str, Any],
+    user_data: dict[str, Any],
+    ctx: Any,
+) -> dict[str, Any]:
+    """Assign a guardian to a student.
+
+    * Students can self-assign: ``/assign guardian <guardian_id>`` — the
+      student_id is inferred from the caller.
+    * Teachers and domain authorities must provide both IDs.
+    * Supports multiple guardians per student (list-based).
+    """
+    guardian_id = str(params.get("guardian_id", "")).strip()
+    student_id = str(params.get("student_id", "")).strip()
+    if not guardian_id:
+        raise ctx.HTTPException(status_code=422, detail="guardian_id required")
+
+    caller_role = user_data["role"]
+    caller_domain_roles = (user_data.get("domain_roles") or {})
+    caller_education_role = caller_domain_roles.get("education")
+
+    if caller_education_role == "student" or (caller_role == "user" and not caller_education_role):
+        student_id = user_data["sub"]
+    elif caller_role == "user":
+        await require_teacher_capability(user_data, ctx)
+        if not student_id:
+            raise ctx.HTTPException(status_code=422, detail="student_id required for teacher callers")
+    elif caller_role in ("root", "domain_authority"):
+        if not student_id:
+            raise ctx.HTTPException(status_code=422, detail="student_id required for domain authorities")
+    else:
+        raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
+
+    g_rec = await require_user_exists(ctx, guardian_id, "Guardian")
+    guardian_id = g_rec["user_id"]
+
+    s_rec = await require_user_exists(ctx, student_id, "Student")
+    student_id = s_rec["user_id"]
+
+    # Update student profile — assigned_guardians list
+    s_profile = await load_profile(ctx, student_id)
+    guardians = list(s_profile.get("assigned_guardians") or [])
+    if guardian_id not in guardians:
+        guardians.append(guardian_id)
+    s_profile["assigned_guardians"] = guardians
+    await save_profile(ctx, student_id, s_profile)
+
+    # Update guardian profile — guardian_state.assigned_children list
+    g_profile = await load_profile(ctx, guardian_id)
+    g_state = g_profile.setdefault("guardian_state", {})
+    children = list(g_state.get("assigned_children") or [])
+    if student_id not in children:
+        children.append(student_id)
+    g_state["assigned_children"] = children
+    await save_profile(ctx, guardian_id, g_profile)
+
+    record = write_commitment(
+        ctx,
+        actor_id=user_data["sub"],
+        actor_role=ctx.map_role_to_actor_role(caller_role),
+        commitment_type="guardian_assignment",
+        subject_id=student_id,
+        summary=f"Assigned guardian {guardian_id} to student {student_id}",
+        metadata={
+            "guardian_id": guardian_id,
+            "student_id": student_id,
+            "assigned_by": user_data["sub"],
+        },
+        references=[guardian_id, student_id],
+    )
+    return {
+        "operation": operation,
+        "guardian_id": guardian_id,
+        "student_id": student_id,
+        "status": "assigned",
         "record_id": record["record_id"],
     }

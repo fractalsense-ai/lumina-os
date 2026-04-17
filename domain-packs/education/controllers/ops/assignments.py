@@ -104,11 +104,54 @@ async def request_teacher_assignment(
     if not _is_student:
         raise ctx.HTTPException(status_code=403, detail="Only students may request teacher assignment")
 
-    teacher = await require_user_exists(ctx, teacher_id, "Teacher")
+    teacher = await require_user_exists(ctx, teacher_id, "Teacher or TA")
     teacher_id = teacher["user_id"]  # normalise — input may be a username
-    _teacher_roles = list((teacher.get("domain_roles") or {}).values())
-    if "teacher" not in _teacher_roles:
-        raise ctx.HTTPException(status_code=422, detail=f"{teacher_id} is not a teacher")
+    _target_roles = list((teacher.get("domain_roles") or {}).values())
+
+    # If target is a TA, route through their supervising teacher
+    _via_ta_id: str | None = None
+    if "teaching_assistant" in _target_roles and "teacher" not in _target_roles:
+        _ta_profile = await load_profile(ctx, teacher_id)
+        _supervising = (_ta_profile.get("assistant_state") or {}).get("supervising_teacher_id")
+        if not _supervising:
+            log.warning("request_teacher_assignment: TA %s has no supervising teacher — assigning directly to TA only", teacher_id)
+            _via_ta_id = teacher_id
+            _ast = _ta_profile.setdefault("assistant_state", {})
+            _ta_students = list(_ast.get("assigned_students") or [])
+            if student_id not in _ta_students:
+                _ta_students.append(student_id)
+                _ast["assigned_students"] = _ta_students
+                await save_profile(ctx, teacher_id, _ta_profile)
+
+            _sprofile = await load_profile(ctx, student_id)
+            await save_profile(ctx, student_id, _sprofile)
+
+            record = write_commitment(
+                ctx,
+                actor_id=student_id,
+                actor_role="student",
+                commitment_type="student_self_assignment",
+                subject_id=student_id,
+                summary=f"Student {student_id} self-assigned to TA {teacher_id} (no supervising teacher)",
+                metadata={"ta_id": teacher_id},
+                references=[student_id, teacher_id],
+            )
+            return {
+                "operation": operation,
+                "student_id": student_id,
+                "ta_id": teacher_id,
+                "teacher_id": None,
+                "status": "assigned",
+                "record_id": record["record_id"],
+            }
+
+        _via_ta_id = teacher_id
+        teacher_id = _supervising
+        teacher = await require_user_exists(ctx, teacher_id, "Teacher")
+        teacher_id = teacher["user_id"]
+
+    elif "teacher" not in _target_roles:
+        raise ctx.HTTPException(status_code=422, detail=f"{teacher_id} is not a teacher or teaching assistant")
 
     # Update student profile
     _sprofile = await load_profile(ctx, student_id)
@@ -142,17 +185,21 @@ async def request_teacher_assignment(
         actor_role="student",
         commitment_type="student_self_assignment",
         subject_id=student_id,
-        summary=f"Student {student_id} self-assigned to teacher {teacher_id}",
-        metadata={"teacher_id": teacher_id},
-        references=[student_id, teacher_id],
+        summary=f"Student {student_id} self-assigned to teacher {teacher_id}"
+               + (f" via TA {_via_ta_id}" if _via_ta_id else ""),
+        metadata={"teacher_id": teacher_id, "via_ta_id": _via_ta_id},
+        references=[student_id, teacher_id] + ([_via_ta_id] if _via_ta_id else []),
     )
-    return {
+    result: dict[str, Any] = {
         "operation": operation,
         "student_id": student_id,
         "teacher_id": teacher_id,
         "status": "assigned",
         "record_id": record["record_id"],
     }
+    if _via_ta_id:
+        result["via_ta_id"] = _via_ta_id
+    return result
 
 
 # ── request_ta_assignment ─────────────────────────────────────

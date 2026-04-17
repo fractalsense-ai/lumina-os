@@ -29,6 +29,12 @@ export type CommandTier = 'user' | 'domain' | 'admin'
 
 // ── Plugin contribution types ──────────────────────────────
 
+export interface SubCommandDef {
+  operation: string
+  args: string[]
+  joinTrailingArgs?: boolean
+}
+
 export interface SlashCommandDef {
   name: string
   operation: string | null
@@ -40,6 +46,7 @@ export interface SlashCommandDef {
   aliases?: string[]
   joinTrailingArgs?: boolean
   tier: CommandTier
+  subCommands?: Record<string, SubCommandDef>
 }
 
 export interface DashboardTabDef {

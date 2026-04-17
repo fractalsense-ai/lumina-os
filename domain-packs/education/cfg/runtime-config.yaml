@@ -758,6 +758,16 @@ operation_handlers:
     callable: handle_operation
     hitl_exempt: true
     min_role: user
+  assign_ta:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_guardian:
+    module_path: domain-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
 
 adapters:
   state_builder:

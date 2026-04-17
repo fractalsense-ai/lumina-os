@@ -20,3 +20,12 @@ session_history:
 
 # ── Teacher-editable notes (append-only, timestamped) ───────
 teacher_notes: []
+
+# ── Guardian associations (populated by assign_guardian op) ──
+# assigned_guardians: list of guardian user IDs linked to a student
+assigned_guardians: []
+
+# ── Guardian state (populated on guardian profiles) ──────────
+# guardian_state.assigned_children: list of student IDs the guardian oversees
+guardian_state:
+  assigned_children: []

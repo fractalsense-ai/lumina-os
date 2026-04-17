@@ -53,15 +53,30 @@ operation first, then use the returned values in subsequent commands.
   Params: `student_id` (required), `teacher_id` (optional, defaults to caller for teachers).
 - remove_student = REMOVE a student from a teacher's roster.
   Examples: "remove Alice from Mr. Smith's class", "take Bob off the roster".
-- request_teacher_assignment = STUDENT self-assigns to a teacher (join a classroom / roll call).
+- request_teacher_assignment = STUDENT self-assigns to a teacher or teaching assistant (join a classroom / roll call).
   Only usable by students — the student_id is always the caller.
+  When the target is a TA, the student is assigned to the TA's supervising teacher
+  and cascaded to all linked TAs. If the TA has no supervising teacher, the student
+  is assigned directly to the TA's roster with a warning.
   Examples: "I want to join Mr. Smith's class", "assign me to TestTeacher1",
-  "join TestTeacher1", "I'm in Teacher Jane's class".
-  Params: `teacher_id` (required).
+  "join TestTeacher1", "I'm in Teacher Jane's class", "join TA Sam's group".
+  Params: `teacher_id` (required — may be a teacher or TA user ID).
 - request_ta_assignment = TEACHING ASSISTANT self-assigns to a supervising teacher.
   Only usable by TAs — the TA copies the teacher's student roster.
   Examples: "I want to assist Mr. Smith", "assign me to TestTeacher1 as TA".
   Params: `teacher_id` (required).
+- assign_ta = ASSIGN a teaching assistant to one or more students.
+  Teachers can only assign TAs linked to themselves; domain authorities can assign any TA.
+  If the TA has a supervising teacher, students are also ensured on that teacher's roster.
+  Examples: "assign TA Sam to Alice and Bob", "put TA Sam on students Alice, Bob",
+  "assign teaching assistant Sam to Alice".
+  Params: `ta_id` (required), `student_ids` (required, comma-separated).
+- assign_guardian = ASSIGN a guardian/parent to a student.
+  Students can self-assign their own guardian (student_id defaults to caller).
+  Teachers and domain authorities must provide both IDs. Supports multiple guardians.
+  Examples: "assign guardian ParentJane to student Alice", "add my parent ParentJane",
+  "set guardian for Bob to ParentJohn".
+  Params: `guardian_id` (required), `student_id` (optional for students, required for teacher/DA).
 - assign_domain_role = GRANT a user an education role for a specific module.
   Examples: "make Alice a teacher in algebra-level-1", "assign student role to Bob in pre-algebra".
 - revoke_domain_role = REVOKE a user's education role from a module.

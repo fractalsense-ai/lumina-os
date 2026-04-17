@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lumina://standards/admin-command-schemas/assign-ta.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-06-19",
+  "title": "assign_ta",
+  "description": "Assign a teaching assistant to one or more students. Teachers assign TAs linked to themselves; domain authorities can assign any TA.",
+  "type": "object",
+  "required": [
+    "operation",
+    "params"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "operation": {
+      "const": "assign_ta"
+    },
+    "target": {
+      "type": "string"
+    },
+    "params": {
+      "type": "object",
+      "required": [
+        "ta_id",
+        "student_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ta_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "User ID or display name of the teaching assistant."
+        },
+        "student_ids": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Comma-separated student user IDs or display names."
+        }
+      }
+    }
+  }
+}

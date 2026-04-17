@@ -138,14 +138,26 @@ operations:
       reason: "string — brief reason for the enrolment request (optional)"
 
   - name: request_teacher_assignment
-    description: "Join a teacher's classroom (student self-assignment / roll call). The student appears on the teacher's roster immediately. Only usable by students — student_id is always the caller."
+    description: "Join a teacher's or teaching assistant's classroom (student self-assignment / roll call). When joining a TA, the student is assigned to the TA's supervising teacher's roster and cascaded to all linked TAs. Only usable by students — student_id is always the caller."
     params:
-      teacher_id: "string — the teacher's user ID or display name"
+      teacher_id: "string — the teacher's or TA's user ID or display name"
 
   - name: request_ta_assignment
     description: "Assign yourself as a teaching assistant to a supervising teacher. Copies the teacher's current student roster to your TA profile. Only usable by teaching assistants."
     params:
       teacher_id: "string — the supervising teacher's user ID or display name"
+
+  - name: assign_ta
+    description: "Assign a teaching assistant to one or more students. Teachers assign TAs linked to themselves; domain authorities can assign any TA. If the TA has a supervising teacher, students are also ensured on that teacher's roster."
+    params:
+      ta_id: "string — the teaching assistant's user ID or display name"
+      student_ids: "string — comma-separated student user IDs or display names"
+
+  - name: assign_guardian
+    description: "Assign a guardian/parent to a student. Students can self-assign their own guardian (student_id defaults to caller). Teachers and domain authorities must provide both guardian_id and student_id. Supports multiple guardians per student."
+    params:
+      guardian_id: "string — the guardian's user ID or display name"
+      student_id: "string — the student's user ID or display name (optional for student callers, required for teacher/DA callers)"
 
   - name: switch_active_module
     description: "Switch your active education module. Only switches between modules you are already enrolled in — does not create new enrolments. Available to all roles."

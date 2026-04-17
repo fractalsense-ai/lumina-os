@@ -27,7 +27,7 @@ const educationPlugin: DomainPlugin = {
       {
         name: 'join',
         operation: 'request_teacher_assignment',
-        description: 'Request assignment to a teacher',
+        description: 'Request assignment to a teacher or teaching assistant',
         args: ['teacher_id'],
         allowedRoles: ['student'],
         domainScope: 'education',
@@ -46,11 +46,31 @@ const educationPlugin: DomainPlugin = {
       {
         name: 'assign',
         operation: 'assign_student',
-        description: 'Assign a student to your roster',
+        description: 'Assign a student, TA, guardian, or module(s)',
         args: ['student_id'],
-        allowedRoles: ['teacher', 'domain_authority'],
+        allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
         domainScope: 'education',
         tier: 'user',
+        subCommands: {
+          module: {
+            operation: 'assign_module',
+            args: ['user_id', 'module_id'],
+          },
+          modules: {
+            operation: 'assign_modules',
+            args: ['target', 'module_ids'],
+            joinTrailingArgs: true,
+          },
+          ta: {
+            operation: 'assign_ta',
+            args: ['ta_id', 'student_ids'],
+            joinTrailingArgs: true,
+          },
+          guardian: {
+            operation: 'assign_guardian',
+            args: ['guardian_id', 'student_id'],
+          },
+        },
       },
       {
         name: 'escalations',
@@ -528,5 +548,65 @@ describe('generateHelpText', () => {
     // /modules is system-wide, visible in all domains
     expect(text).toContain('/modules')
     expect(text).toContain('/domains')
+  })
+})
+
+// ── Sub-command routing ─────────────────────────────────
+
+describe('parseSlashCommand — sub-command routing', () => {
+  it('/assign without sub-command falls back to assign_student', () => {
+    const result = parseSlashCommand('/assign student123')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_student')
+    expect(result!.params).toEqual({ student_id: 'student123' })
+  })
+
+  it('/assign ta routes to assign_ta', () => {
+    const result = parseSlashCommand('/assign ta ta-user stu1,stu2')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_ta')
+    expect(result!.params).toEqual({ ta_id: 'ta-user', student_ids: 'stu1,stu2' })
+  })
+
+  it('/assign ta with joinTrailingArgs joins remaining tokens', () => {
+    const result = parseSlashCommand('/assign ta ta-user stu1 stu2 stu3')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_ta')
+    expect(result!.params).toEqual({ ta_id: 'ta-user', student_ids: 'stu1 stu2 stu3' })
+  })
+
+  it('/assign guardian routes to assign_guardian', () => {
+    const result = parseSlashCommand('/assign guardian parent-jane student-alice')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_guardian')
+    expect(result!.params).toEqual({ guardian_id: 'parent-jane', student_id: 'student-alice' })
+  })
+
+  it('/assign guardian with only guardian_id (student self-assign)', () => {
+    const result = parseSlashCommand('/assign guardian parent-jane')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_guardian')
+    expect(result!.params).toEqual({ guardian_id: 'parent-jane' })
+  })
+
+  it('/assign module routes to assign_module', () => {
+    const result = parseSlashCommand('/assign module user-1 algebra-1')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_module')
+    expect(result!.params).toEqual({ user_id: 'user-1', module_id: 'algebra-1' })
+  })
+
+  it('/assign modules routes to assign_modules with joinTrailingArgs', () => {
+    const result = parseSlashCommand('/assign modules user-1 algebra-1 pre-algebra geometry')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_modules')
+    expect(result!.params).toEqual({ target: 'user-1', module_ids: 'algebra-1 pre-algebra geometry' })
+  })
+
+  it('/assign with unknown sub-command treats it as student_id', () => {
+    const result = parseSlashCommand('/assign unknownstudent')
+    expect(result).not.toBeNull()
+    expect(result!.operation).toBe('assign_student')
+    expect(result!.params).toEqual({ student_id: 'unknownstudent' })
   })
 })

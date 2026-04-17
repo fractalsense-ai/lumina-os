@@ -26,7 +26,7 @@ const EDUCATION_COMMANDS: SlashCommandDef[] = [
   {
     name: 'join',
     operation: 'request_teacher_assignment',
-    description: 'Request assignment to a teacher',
+    description: 'Request assignment to a teacher or teaching assistant',
     args: ['teacher_id'],
     allowedRoles: ['student'],
     domainScope: 'education',
@@ -45,11 +45,31 @@ const EDUCATION_COMMANDS: SlashCommandDef[] = [
   {
     name: 'assign',
     operation: 'assign_student',
-    description: 'Assign a student to your roster',
+    description: 'Assign a student, TA, guardian, or module(s) — use /assign ta|guardian|module|modules <args>',
     args: ['student_id'],
-    allowedRoles: ['teacher', 'domain_authority'],
+    allowedRoles: ['student', 'teaching_assistant', 'teacher', 'domain_authority'],
     domainScope: 'education',
     tier: 'user',
+    subCommands: {
+      module: {
+        operation: 'assign_module',
+        args: ['user_id', 'module_id'],
+      },
+      modules: {
+        operation: 'assign_modules',
+        args: ['target', 'module_ids'],
+        joinTrailingArgs: true,
+      },
+      ta: {
+        operation: 'assign_ta',
+        args: ['ta_id', 'student_ids'],
+        joinTrailingArgs: true,
+      },
+      guardian: {
+        operation: 'assign_guardian',
+        args: ['guardian_id', 'student_id'],
+      },
+    },
   },
   {
     name: 'assignmodules',

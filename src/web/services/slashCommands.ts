@@ -14,6 +14,15 @@ import { getPluginCommands, getPluginRoleEquivalences } from '@/plugins/PluginRe
 
 export type CommandTier = 'user' | 'domain' | 'admin'
 
+export interface SubCommandDef {
+  /** Operation name sent to the command endpoint. */
+  operation: string
+  /** Named argument templates for the sub-command (positional after the sub-command keyword). */
+  args: string[]
+  /** If true, the last arg captures all remaining tokens joined with spaces. */
+  joinTrailingArgs?: boolean
+}
+
 export interface SlashCommandDef {
   /** The slash command name (without the leading "/"). */
   name: string
@@ -35,6 +44,13 @@ export interface SlashCommandDef {
   joinTrailingArgs?: boolean
   /** Command tier — determines which API endpoint to use. */
   tier: CommandTier
+  /**
+   * Optional sub-command routing.  When present, the first positional token
+   * after the command name is checked against these keys.  If it matches,
+   * the sub-command's operation and args are used instead of the default.
+   * If it does NOT match, the default operation/args apply (backward compat).
+   */
+  subCommands?: Record<string, SubCommandDef>
 }
 
 export interface ParsedSlashCommand {
@@ -388,16 +404,36 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
   const def = buildMergedMap().get(commandName)
   if (!def) return null
 
+  // ── Sub-command routing ──────────────────────────────────
+  // If the command declares subCommands, check whether the first
+  // positional token matches a sub-command key.  When it does, use
+  // that sub-command's operation/args for the remaining tokens.
+  let activeOperation = def.operation
+  let activeArgs = def.args
+  let activeJoinTrailing = def.joinTrailingArgs ?? false
+  let argOffset = 1 // default: args start at parts[1]
+
+  if (def.subCommands) {
+    const subKey = (parts[1] ?? '').toLowerCase()
+    const sub = def.subCommands[subKey]
+    if (sub) {
+      activeOperation = sub.operation
+      activeArgs = sub.args
+      activeJoinTrailing = sub.joinTrailingArgs ?? false
+      argOffset = 2 // skip command name + sub-command keyword
+    }
+  }
+
   // Map positional args to named params
   const params: Record<string, string> = { ...(def.defaultParams ?? {}) }
-  for (let i = 0; i < def.args.length; i++) {
-    if (def.joinTrailingArgs && i === def.args.length - 1) {
+  for (let i = 0; i < activeArgs.length; i++) {
+    if (activeJoinTrailing && i === activeArgs.length - 1) {
       // Last arg captures all remaining tokens
-      const rest = parts.slice(i + 1).join(' ')
-      if (rest) params[def.args[i]] = rest
+      const rest = parts.slice(i + argOffset).join(' ')
+      if (rest) params[activeArgs[i]] = rest
     } else {
-      const value = parts[i + 1]
-      if (value) params[def.args[i]] = value
+      const value = parts[i + argOffset]
+      if (value) params[activeArgs[i]] = value
     }
   }
 
@@ -422,7 +458,7 @@ export function parseSlashCommand(input: string): ParsedSlashCommand | null {
     delete params['value']
   }
 
-  return { def, operation: def.operation, params, endpoint: tierEndpoint(def.tier) }
+  return { def, operation: activeOperation, params, endpoint: tierEndpoint(def.tier) }
 }
 
 /**
