@@ -26,7 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 
-from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
+from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
 from lumina.system_log import log_bus
 from lumina.system_log.event_payload import LogEvent, LogLevel
 
@@ -58,7 +58,13 @@ async def get_sse_token(
     """Issue a short-lived token for SSE connections."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "domain_authority", "auditor", "it_support", "qa")
+
+    # Governance roles always allowed; domain-role holders (e.g. teachers)
+    # are allowed so they can receive real-time escalation events.
+    _governance_roles = {"root", "domain_authority", "auditor", "it_support", "qa"}
+    if user_data.get("role") not in _governance_roles:
+        if not (user_data.get("domain_roles") or {}):
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     _purge_expired_tokens()
 
@@ -138,6 +144,13 @@ def _event_visible_to_user(event: LogEvent, user: dict[str, Any]) -> bool:
             LogLevel.ERROR,
             LogLevel.CRITICAL,
         )
+
+    # Domain-role holders (e.g. teachers) see only escalation events
+    # for modules they hold a role in.
+    domain_roles = user.get("domain_roles") or {}
+    if domain_roles and event.category == "escalation":
+        event_domain = event.data.get("domain_id", "")
+        return event_domain in domain_roles
 
     return False
 

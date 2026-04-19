@@ -282,6 +282,7 @@ def _make_roster_ctx(student_profile: dict, teacher_profile: dict) -> MagicMock:
     _roster_mod.write_commitment = MagicMock(return_value={"record_id": "rec-r2"})
     _roster_mod._sync_ta_students = AsyncMock()
     ctx.map_role_to_actor_role = MagicMock(return_value="student")
+    ctx.run_in_threadpool = AsyncMock()
 
     return ctx, _profiles
 

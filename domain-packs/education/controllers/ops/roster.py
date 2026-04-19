@@ -98,6 +98,14 @@ async def assign_student(
 
     await save_profile(ctx, teacher_id, _tprofile)
 
+    # Sync domain_roles to the user record so JWT includes them.
+    if _student_domain_id:
+        await ctx.run_in_threadpool(
+            ctx.persistence.update_user_domain_roles,
+            teacher_id,
+            {_student_domain_id: "teacher"},
+        )
+
     await _sync_ta_students(teacher_id, student_id, "add", ctx)
 
     record = write_commitment(
@@ -249,6 +257,19 @@ async def assign_ta(
             s_profile = await load_profile(ctx, sid)
             s_profile["assigned_teacher_id"] = supervising_teacher_id
             await save_profile(ctx, sid, s_profile)
+
+            # Sync teacher domain_roles to user DB for JWT (same as assign_student).
+            _s_domain = s_profile.get("domain_id") or s_profile.get("subject_domain_id")
+            if _s_domain:
+                _t_dr = t_profile.setdefault("domain_roles", {})
+                if _s_domain not in _t_dr:
+                    _t_dr[_s_domain] = "teacher"
+                    await save_profile(ctx, supervising_teacher_id, t_profile)
+                await ctx.run_in_threadpool(
+                    ctx.persistence.update_user_domain_roles,
+                    supervising_teacher_id,
+                    {_s_domain: "teacher"},
+                )
 
         assigned.append(sid)
 

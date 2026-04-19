@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, Component, type ReactNode } from 'react'
 import { Shield, PaperPlaneRight, User, Robot, SignOut, Gauge, Bell, SidebarSimple, Warning, ChatCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -10,7 +10,7 @@ import { ActionCard, type ActionCardData } from '@/components/ActionCard'
 import { QueryResultCard, type QueryResultData } from '@/components/QueryResultCard'
 import { ClarificationCard, type ClarificationData } from '@/components/ClarificationCard'
 import { MathText } from '@/components/MathText'
-import { useEventStream } from '@/hooks/useEventStream'
+import { useEventStream, type SSEEvent } from '@/hooks/useEventStream'
 import { SetupPasswordPage } from '@/components/SetupPasswordPage'
 import { RoleSidebar } from '@/components/sidebar/RoleSidebar'
 import { SessionPanel } from '@/components/sidebar/SessionPanel'
@@ -94,6 +94,20 @@ interface AuthState {
   username: string
   role: string
   scope?: 'user' | 'admin' | 'domain'
+  domainRoles?: Record<string, string>
+}
+
+/** Extract domain_roles from a Lumina JWT payload (base64url middle segment). */
+function parseDomainRoles(token: string): Record<string, string> | undefined {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return undefined
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    const dr = payload?.domain_roles
+    return dr && typeof dr === 'object' ? dr : undefined
+  } catch {
+    return undefined
+  }
 }
 
 const DEFAULT_MANIFEST: UiManifest = {
@@ -297,6 +311,7 @@ function LoginScreen({
         username: u,
         role: data.role,
         scope,
+        domainRoles: parseDomainRoles(data.access_token),
       }
       localStorage.setItem('lumina.auth', JSON.stringify(auth))
       onAuth(auth)
@@ -527,6 +542,8 @@ function AppHeader({
   onViewChange,
   unreadCount,
   onClearUnread,
+  escalationCount,
+  onClearEscalations,
   hasSidebar,
   sidebarOpen,
   onToggleSidebar,
@@ -541,6 +558,8 @@ function AppHeader({
   onViewChange: (v: 'chat' | 'dashboard') => void
   unreadCount?: number
   onClearUnread?: () => void
+  escalationCount?: number
+  onClearEscalations?: () => void
   hasSidebar?: boolean
   sidebarOpen?: boolean
   onToggleSidebar?: () => void
@@ -613,6 +632,20 @@ function AppHeader({
               )}
             </Button>
           )}
+          {!showDashboard && (escalationCount ?? 0) > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearEscalations}
+              title="Escalation alerts"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 relative"
+            >
+              <Bell size={18} weight="fill" className="text-amber-500" />
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                {escalationCount! > 99 ? '99+' : escalationCount}
+              </span>
+            </Button>
+          )}
           <span className="text-sm text-muted-foreground hidden sm:block">
             {auth.username}
           </span>
@@ -641,6 +674,8 @@ function ChatInterface({
   onViewChange,
   unreadCount,
   onClearUnread,
+  escalationCount,
+  onClearEscalations,
   roleLayout,
   domainId,
   domainKey,
@@ -654,6 +689,8 @@ function ChatInterface({
   onViewChange: (v: 'chat' | 'dashboard') => void
   unreadCount?: number
   onClearUnread?: () => void
+  escalationCount?: number
+  onClearEscalations?: () => void
   roleLayout?: RoleLayout
   domainId?: string
   domainKey?: string
@@ -1094,6 +1131,8 @@ function ChatInterface({
         onViewChange={onViewChange}
         unreadCount={unreadCount}
         onClearUnread={onClearUnread}
+        escalationCount={escalationCount}
+        onClearEscalations={onClearEscalations}
         hasSidebar={(roleLayout?.sidebar_panels?.length ?? 0) > 0}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -1220,11 +1259,25 @@ function App() {
   const [domainKey, setDomainKey] = useState<string | undefined>(undefined)
   const [view, setView] = useState<'chat' | 'dashboard'>('chat')
   const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'domain_authority')
+  const hasDomainRoles = auth !== null && !!auth.domainRoles && Object.keys(auth.domainRoles).length > 0
 
-  // SSE event stream for governance-role users
+  // Escalation events for domain-role holders (teachers)
+  const [escalationEvents, setEscalationEvents] = useState<SSEEvent[]>([])
+  const handleSSEEvent = useCallback((event: SSEEvent) => {
+    if (event.type === 'escalation' && hasDomainRoles) {
+      setEscalationEvents((prev) => {
+        const next = [...prev, event]
+        return next.length > 50 ? next.slice(-50) : next
+      })
+    }
+  }, [hasDomainRoles])
+  const clearEscalations = useCallback(() => setEscalationEvents([]), [])
+
+  // SSE event stream for governance-role users and domain-role holders (e.g. teachers)
   const { unreadCount, clearUnread } = useEventStream({
     token: auth?.token ?? '',
-    enabled: showDashboard && consentGiven,
+    enabled: (showDashboard || hasDomainRoles) && consentGiven,
+    onEvent: handleSSEEvent,
   })
 
   // Validate stored token against the correct /me endpoint on mount; clear if stale
@@ -1335,6 +1388,8 @@ function App() {
           onViewChange={setView}
           unreadCount={unreadCount}
           onClearUnread={clearUnread}
+          escalationCount={escalationEvents.length}
+          onClearEscalations={clearEscalations}
           roleLayout={roleLayout}
           domainId={domainId}
           domainKey={domainKey}
