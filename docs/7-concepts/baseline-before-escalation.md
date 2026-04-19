@@ -48,28 +48,6 @@ If `escalation_eligible` is absent from the decision dict, the framework
 treats it as `true` (backward-compatible — existing domain packs that
 do not set the field are unaffected).
 
-## Education domain examples
-
-### ZPD drift window (structured modules)
-
-The ZPD monitor's drift detection uses a rolling window of
-`drift_window_turns` (default 10) attempts.  Until the window is full,
-drift percentages are based on incomplete data.
-
-`learning_adapters.domain_step()` compares `window_turns_filled` (from
-the ZPD decision dict) against `drift_window_turns` and sets
-`escalation_eligible: false` while `filled < window_size`.
-
-### Vocabulary growth baseline (freeform modules)
-
-The vocabulary growth monitor collects `baseline_sessions` (default 3)
-complexity samples before locking the baseline.  During this period
-`measurement_valid` is `false` and growth deltas are undefined.
-
-`freeform_adapters.freeform_domain_step()` checks
-`vocabulary_tracking.baseline_sessions_remaining > 0` and sets
-`escalation_eligible: false` until the baseline locks.
-
 ## Adding baseline gating to a new domain pack
 
 1. Identify the subsystem's readiness criterion (window fill count,
@@ -85,3 +63,7 @@ complexity samples before locking the baseline.  During this period
 - `escalation-auto-freeze(7)` — what happens when escalation *does* fire
 - `dsa-framework(7)` — Actor resolution pipeline
 - `domain-adapter-pattern(7)` — step function conventions
+
+## Domain examples
+
+- **Education:** ZPD drift window, vocabulary growth baseline — see [`domain-packs/education/docs/7-concepts/baseline-before-escalation.md`](../../domain-packs/education/docs/7-concepts/baseline-before-escalation.md)

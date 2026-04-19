@@ -322,9 +322,11 @@ class TestPerModuleLocalOnly:
     def test_all_governance_modules_have_local_only_in_config(self) -> None:
         """Verify runtime-config.yaml has local_only: true on all governance modules."""
         from lumina.core.yaml_loader import load_yaml
+        from conftest import merge_module_config_sidecars
 
         cfg = load_yaml(str(REPO_ROOT / "domain-packs/education/cfg/runtime-config.yaml"))
         module_map = cfg.get("runtime", {}).get("module_map", {})
+        merge_module_config_sidecars(module_map)
 
         governance_modules = [
             "domain/edu/domain-authority/v1",
@@ -342,9 +344,11 @@ class TestPerModuleLocalOnly:
     def test_student_modules_no_local_only_in_config(self) -> None:
         """Student/learning modules must NOT have local_only set."""
         from lumina.core.yaml_loader import load_yaml
+        from conftest import merge_module_config_sidecars
 
         cfg = load_yaml(str(REPO_ROOT / "domain-packs/education/cfg/runtime-config.yaml"))
         module_map = cfg.get("runtime", {}).get("module_map", {})
+        merge_module_config_sidecars(module_map)
 
         student_modules = [
             "domain/edu/general-education/v1",

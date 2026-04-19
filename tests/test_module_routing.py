@@ -61,7 +61,21 @@ def runtime_cfg() -> dict:
 
 @pytest.fixture(scope="module")
 def module_map(runtime_cfg) -> dict:
-    return runtime_cfg.get("module_map", {})
+    raw = runtime_cfg.get("module_map", {})
+    # Replicate the runtime-loader sidecar merge so tests see the full
+    # module config even when entries use module_path stubs.
+    for _mod_id, _mod_cfg in raw.items():
+        _mod_dir = _mod_cfg.get("module_path")
+        if _mod_dir:
+            _mc_path = REPO_ROOT / _mod_dir / "module-config.yaml"
+            if _mc_path.is_file():
+                with open(_mc_path, encoding="utf-8") as f:
+                    _mc = yaml.safe_load(f)
+                if isinstance(_mc, dict):
+                    for _k, _v in _mc.items():
+                        if _k not in _mod_cfg:
+                            _mod_cfg[_k] = _v
+    return raw
 
 
 # ---------------------------------------------------------------------------

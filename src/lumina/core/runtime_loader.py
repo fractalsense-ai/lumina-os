@@ -476,6 +476,22 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     # Module routing map (optional) — used by session.py for profile→physics
     _module_map = runtime_cfg.get("module_map")
     if isinstance(_module_map, dict) and _module_map:
+        # ── Auto-discover module-config.yaml sidecars ──────────────────
+        # Convention: if an entry has `module_path`, look for a
+        # module-config.yaml in that directory and merge its keys.
+        # Inline keys in runtime-config.yaml always win (same semantics
+        # as ui-config.yaml auto-discovery).
+        for _mod_id, _mod_cfg in _module_map.items():
+            _mod_dir = _mod_cfg.get("module_path")
+            if _mod_dir:
+                _mc_path = repo_root / _mod_dir / "module-config.yaml"
+                if _mc_path.is_file():
+                    _mc = load_yaml(str(_mc_path))
+                    if isinstance(_mc, dict):
+                        for _k, _v in _mc.items():
+                            if _k not in _mod_cfg:
+                                _mod_cfg[_k] = _v
+
         # Pre-compile per-module adapter overrides so session.py can swap
         # state_builder_fn / domain_step_fn for governance modules.
         for _mod_id, _mod_cfg in _module_map.items():

@@ -82,21 +82,9 @@ runtime:
   # TODO: Replace "tmpl" with your domain short code.
   module_map:
     domain/tmpl/example-module/v1:
-      domain_physics_path: domain-packs/template/modules/example-module/domain-physics.json
-      initial_module_state:
-        # TODO: Define whatever state your domain step needs to track.
-        #       This is the seed state for brand-new sessions.
-        score: 0.0
-        uncertainty: 0.5
-        turn_count: 0
-      turn_input_defaults:
-        # TODO: Fallback values the turn interpreter uses when the SLM
-        #       omits a field.  Keys must match your turn-interpretation spec.
-        on_track: true
-        response_latency_sec: 5.0
-        off_task_ratio: 0.0
-      ui_overrides:
-        subtitle: "Example Module"
+      # Thin stub — full config lives in modules/example-module/module-config.yaml.
+      # Any keys set inline here take precedence over the sidecar file.
+      module_path: domain-packs/template/modules/example-module
 
   # ── Access Control ────────────────────────────────────────────────
   # System-level RBAC gate.  The runtime checks this before routing.

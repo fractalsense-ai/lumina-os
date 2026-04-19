@@ -210,8 +210,11 @@ class TestModuleLevelDefaultTaskSpec:
         """The runtime-config.yaml pre-algebra module entry declares a
         default_task_spec with nominal_difficulty 0.15."""
         from lumina.core.runtime_loader import load_yaml
+        from conftest import merge_module_config_sidecars
         cfg = load_yaml(str(_REPO_ROOT / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"))
-        pa_entry = cfg["runtime"]["module_map"]["domain/edu/pre-algebra/v1"]
+        module_map = cfg["runtime"]["module_map"]
+        merge_module_config_sidecars(module_map)
+        pa_entry = module_map["domain/edu/pre-algebra/v1"]
         task_spec = pa_entry.get("default_task_spec")
         assert task_spec is not None
         assert task_spec["nominal_difficulty"] == 0.45

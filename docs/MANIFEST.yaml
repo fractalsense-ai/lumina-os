@@ -1045,12 +1045,24 @@ artifacts:
   status: active
   last_updated: 2026-04-04
   sha256: 1fd1c516d1318d528f5826213fc5302fda1d93fba272ca808e02d1f82844ed7a
+- path: domain-packs/system/cfg/ui-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 5dde34501978bee853683df9cf0762e09eb759a4981517c31067acb881fb0530
 - path: domain-packs/education/cfg/runtime-config.yaml
   type: config
   doc_version: 1.0.0
   status: active
-  last_updated: 2026-04-04
-  sha256: 8fc612bb43db5c463c8a8851c082c8f1b82bd0a2c9e40210741b418da0a4c7a2
+  last_updated: 2026-04-19
+  sha256: 691b8e93c55cf2b74316bfa12df30a434a7dd86904de5d48cb9f5ef282db709e
+- path: domain-packs/education/cfg/ui-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: d96b97722e8dbd4311fa013c7454d3c2dfbfdcc646056bec5cf76f02b4c8e78d
 - path: domain-packs/education/cfg/domain-profile-extension.yaml
   type: config
   doc_version: 1.0.0
@@ -1069,6 +1081,60 @@ artifacts:
   status: active
   last_updated: 2026-04-04
   sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
+- path: domain-packs/education/modules/general-education/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 62680b739cffcabf0df6bbbcedd591802a862ee52835be3f3ebe02bb21d58c92
+- path: domain-packs/education/modules/pre-algebra/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: e98173db8933416c4005578097fb377a3f040f16ea426b8622b3d01c0ecf309b
+- path: domain-packs/education/modules/algebra-intro/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 09afccc5b7020d3faf4e057745e67279989ae37fc7b277a629620c2273a48e78
+- path: domain-packs/education/modules/algebra-1/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 6ace43fe6b88c803d1f78fb5f86cfab88dbe7fb3f5c892c25f4c261d6df33a1d
+- path: domain-packs/education/modules/algebra-level-1/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 66a6202e5d84f70eda8d72511d89720b655aff445b94537a62b2046856fb417e
+- path: domain-packs/education/modules/domain-authority/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 3945f1be21fffc397f37f47d27dfd962f15bc03fa2bffc6afd5ff7cc90c09ecb
+- path: domain-packs/education/modules/teacher/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 47f0faaffae2381c4ba1d2d0d7cb93e8210624ebe50bf176e3cf2e6eee3b422f
+- path: domain-packs/education/modules/teaching-assistant/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 6db1e62ed156dce931e7925b0f1a292bdfd9448c783735c6a2d2b24eb21e18e3
+- path: domain-packs/education/modules/guardian/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 129e1493d336983c8bb6ef8c25a4b853154ba41c179d768d8ae8f04a37951460
 - path: domain-packs/education/modules/teaching-assistant/tool-adapters/student-view-adapter-v1.yaml
   type: config
   doc_version: 1.0.0
@@ -1253,14 +1319,26 @@ artifacts:
   type: config
   doc_version: 0.1.0
   status: active
-  last_updated: 2026-04-17
-  sha256: 263dec68a45b564f96d8d808b32c7b0a8f086dc20d7371d9364fc59ea8fa5bf4
+  last_updated: 2026-04-19
+  sha256: 7c7e058a72a99b0c479de5916065b5795032ec6ea8932db0a500cb23dfa556bd
+- path: domain-packs/template/cfg/ui-config.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: 6d9e7e3f98b8db6728ab03f6f3e50e32958c761a0c3537ffdc4ea0de428f24d6
 - path: domain-packs/template/cfg/domain-profile-extension.yaml
   type: config
   doc_version: 0.1.0
   status: active
   last_updated: 2026-04-17
   sha256: 4bc26705221cd3e7529b5c756399ccd3cc26c9df375512c76b4f8a805c4b3319
+- path: domain-packs/template/modules/example-module/module-config.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-19
+  sha256: f5e4de61673b9b22018dcd4e66ffdf785a553dcded20ac14a80555a590461dea
 - path: domain-packs/template/modules/example-module/domain-physics.yaml
   type: config
   doc_version: 0.1.0

@@ -34,9 +34,13 @@ def _load_student_yaml() -> dict[str, Any]:
 
 def _load_runtime_config() -> dict[str, Any]:
     from lumina.core.yaml_loader import load_yaml
+    from conftest import merge_module_config_sidecars
 
     path = _REPO_ROOT / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"
-    return load_yaml(path)
+    cfg = load_yaml(path)
+    module_map = cfg.get("runtime", {}).get("module_map", {})
+    merge_module_config_sidecars(module_map)
+    return cfg
 
 
 def _sample_initial_module_state() -> dict[str, Any]:

@@ -3,9 +3,31 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def merge_module_config_sidecars(module_map: dict) -> dict:
+    """Merge module-config.yaml sidecars into raw module_map entries.
+
+    Replicates the runtime-loader auto-discovery so tests that read
+    runtime-config.yaml directly see the full merged configuration.
+    Inline keys always win (same semantics as the loader).
+    """
+    for _mod_cfg in module_map.values():
+        _mod_dir = _mod_cfg.get("module_path")
+        if _mod_dir:
+            _mc_path = REPO_ROOT / _mod_dir / "module-config.yaml"
+            if _mc_path.is_file():
+                with open(_mc_path, encoding="utf-8") as f:
+                    _mc = yaml.safe_load(f)
+                if isinstance(_mc, dict):
+                    for _k, _v in _mc.items():
+                        if _k not in _mod_cfg:
+                            _mod_cfg[_k] = _v
+    return module_map
 
 
 @pytest.fixture(autouse=True)
