@@ -16,11 +16,35 @@ interface Escalation {
   session_id: string
   status: string
   timestamp_utc: string
+  reason?: string
+  student_username?: string
+  active_module?: string
+  evidence?: {
+    frustration?: boolean
+    drift_pct?: number
+    tier?: string
+  }
+  domain_lib_decision?: {
+    domain_alert_flag?: boolean
+    domain_metric_pct?: number
+    tier?: string
+  }
+  sla_minutes?: number
   [key: string]: unknown
 }
 
 function getApiBase(): string {
   return (import.meta as any).env?.VITE_LUMINA_API_BASE_URL ?? 'http://localhost:8000'
+}
+
+function severityColor(esc: Escalation): string {
+  const d = esc.domain_lib_decision ?? esc.evidence
+  if (!d) return 'border-l-gray-400'
+  if (d.domain_alert_flag || d.frustration) return 'border-l-red-500'
+  const drift = d.domain_metric_pct ?? d.drift_pct ?? 0
+  if (drift > 0.5) return 'border-l-orange-500'
+  if (drift > 0.25) return 'border-l-yellow-400'
+  return 'border-l-green-500'
 }
 
 export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?: string; domainKey?: string }) {
@@ -82,10 +106,29 @@ export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?
       )}
 
       {escalations.map((esc) => (
-        <Card key={esc.record_id} className="p-4 flex flex-col gap-3">
+        <Card key={esc.record_id} className={`p-4 flex flex-col gap-3 border-l-4 ${severityColor(esc)}`}>
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-medium text-foreground text-sm">{esc.trigger}</p>
+              <p className="font-medium text-foreground text-sm">
+                {esc.reason ?? esc.trigger}
+              </p>
+              {esc.student_username && (
+                <p className="text-xs text-foreground font-medium">
+                  Student: {esc.student_username}
+                  {esc.active_module && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      {esc.active_module.split('/').pop()}
+                    </span>
+                  )}
+                </p>
+              )}
+              {esc.evidence && (
+                <p className="text-xs text-muted-foreground">
+                  {esc.evidence.frustration && <span className="text-red-500 mr-2">frustrated</span>}
+                  {esc.evidence.drift_pct != null && <span className="mr-2">drift {Math.round(esc.evidence.drift_pct * 100)}%</span>}
+                  {esc.evidence.tier && <span>tier {esc.evidence.tier}</span>}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Domain: {esc.domain_pack_id} &middot; Session: {esc.session_id}
               </p>

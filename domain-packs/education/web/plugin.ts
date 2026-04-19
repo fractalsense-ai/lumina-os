@@ -4,10 +4,46 @@
  * Registers:
  *  - Vocabulary complexity chat hook (passive, client-side analysis)
  *  - Education-scoped slash commands (/teachers, /join, /students, /assign, /escalations)
+ *  - Dashboard tab: Teacher Overview (DA / root)
+ *  - Sidebar panel: ClassroomPanel (teacher classroom view)
  */
 
-import type { DomainPlugin, PluginRegistration, SlashCommandDef } from '@lumina/plugins'
+import type { DomainPlugin, PluginRegistration, SlashCommandDef, DashboardTabDef, SidebarPanelDef, PanelComponentProps } from '@lumina/plugins'
+import type { ComponentType } from 'react'
+import { createElement } from 'react'
 import { analyzeVocabulary, postVocabularyMetric } from './services/vocabularyAnalyzer'
+import { ClassroomPanel } from './components/ClassroomPanel'
+import { TeacherOverview } from './components/TeacherOverview'
+
+// ── Sidebar panel wrapper ───────────────────────────────
+
+type LegacyProps = { auth: { token: string; userId: string; username: string; role: string }; domainId?: string; domainKey?: string }
+
+function wrapLegacy(
+  Comp: ComponentType<LegacyProps>,
+): ComponentType<PanelComponentProps> {
+  return function LegacyWrapper({ auth, domainId, domainKey }: PanelComponentProps) {
+    return createElement(Comp, { auth, domainId, domainKey })
+  }
+}
+
+// ── Education sidebar panels ────────────────────────────
+
+const EDUCATION_SIDEBAR_PANELS: SidebarPanelDef[] = [
+  { name: 'ClassroomPanel', component: wrapLegacy(ClassroomPanel) },
+]
+
+// ── Education dashboard tabs ────────────────────────────
+
+const EDUCATION_DASHBOARD_TABS: DashboardTabDef[] = [
+  {
+    id: 'teacher-overview',
+    label: 'Teachers',
+    roles: ['root', 'domain_authority'],
+    component: TeacherOverview,
+    order: 110,
+  },
+]
 
 // ── Education slash commands ───────────────────────────────
 
@@ -69,6 +105,10 @@ const EDUCATION_COMMANDS: SlashCommandDef[] = [
         operation: 'assign_guardian',
         args: ['guardian_id', 'student_id'],
       },
+      commons: {
+        operation: 'assign_commons',
+        args: ['teacher_id'],
+      },
     },
   },
   {
@@ -108,6 +148,12 @@ const educationPlugin: DomainPlugin = {
 
   register(api: PluginRegistration) {
     api.addSlashCommands(EDUCATION_COMMANDS)
+    api.addDashboardTabs(EDUCATION_DASHBOARD_TABS)
+    api.addSidebarPanels(EDUCATION_SIDEBAR_PANELS)
+    api.addRoleEquivalences({
+      teacher: 'teacher',
+      teaching_assistant: 'teaching_assistant',
+    })
 
     api.addChatHooks([
       {

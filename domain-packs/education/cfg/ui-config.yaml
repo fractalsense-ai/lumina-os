@@ -87,11 +87,9 @@ ui_manifest:
     teacher:
       inherits: student
       sidebar_panels:
-        - id: managed_users
+        - id: classroom
           label: "My Classroom"
-          component: DataPanel
-          data_source: managed_users
-          source_path: educator_state.assigned_students
+          component: ClassroomPanel
         - id: managed_user_progress
           label: "Student Progress"
           component: DataPanel

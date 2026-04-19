@@ -88,5 +88,8 @@
       "vocabulary_growth_delta": {"type": "number", "default": 0.0},
       "vocabulary_last_measured_utc": {"type": "string", "default": null}
     }
+  },
+  "commons_oversight": {
+    "default_escalation_target_id": null
   }
 }

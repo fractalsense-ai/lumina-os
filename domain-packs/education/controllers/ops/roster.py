@@ -380,3 +380,66 @@ async def assign_guardian(
         "status": "assigned",
         "record_id": record["record_id"],
     }
+
+
+# ── assign_commons ────────────────────────────────────────────
+
+async def assign_commons(
+    operation: str,
+    params: dict[str, Any],
+    user_data: dict[str, Any],
+    ctx: Any,
+) -> dict[str, Any]:
+    """Assign a teacher/TA as the commons oversight target.
+
+    Updates ``commons_oversight.default_escalation_target_id`` in the
+    general-education domain-physics so that escalations from
+    unassigned students in Student Commons route to this teacher.
+
+    Only DAs and root may assign commons oversight.
+    """
+    import json
+
+    teacher_id = str(params.get("teacher_id", "")).strip()
+    if not teacher_id:
+        raise ctx.HTTPException(status_code=422, detail="teacher_id required")
+
+    caller_role = user_data["role"]
+    if caller_role not in ("root", "domain_authority"):
+        raise ctx.HTTPException(status_code=403, detail="Only DA or root may assign commons oversight")
+
+    teacher_rec = await require_user_exists(ctx, teacher_id, "Teacher")
+    teacher_id = teacher_rec["user_id"]
+
+    # Locate the general-education domain-physics.json
+    from pathlib import Path
+    physics_path = Path("domain-packs/education/modules/general-education/domain-physics.json")
+    if not physics_path.exists():
+        raise ctx.HTTPException(status_code=500, detail="general-education domain-physics not found")
+
+    with open(physics_path, encoding="utf-8") as fh:
+        physics = json.load(fh)
+
+    co = physics.setdefault("commons_oversight", {})
+    co["default_escalation_target_id"] = teacher_id
+
+    with open(physics_path, "w", encoding="utf-8") as fh:
+        json.dump(physics, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+
+    record = write_commitment(
+        ctx,
+        actor_id=user_data["sub"],
+        actor_role=ctx.map_role_to_actor_role(caller_role),
+        commitment_type="commons_oversight_assignment",
+        subject_id=teacher_id,
+        summary=f"Assigned {teacher_id} as commons oversight target",
+        metadata={"teacher_id": teacher_id, "assigned_by": user_data["sub"]},
+        references=[teacher_id],
+    )
+    return {
+        "operation": operation,
+        "teacher_id": teacher_id,
+        "status": "assigned",
+        "record_id": record["record_id"],
+    }

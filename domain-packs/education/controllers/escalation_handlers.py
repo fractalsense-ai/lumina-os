@@ -16,6 +16,18 @@ from typing import Any
 
 log = logging.getLogger("lumina-api.education")
 
+# ── Trigger type → human-readable label map ───────────────────
+
+_TRIGGER_LABELS: dict[str, str] = {
+    "zpd_drift_major": "ZPD drift — student is consistently outside their zone of proximal development",
+    "standing_order_exhausted": "Standing order exhausted — automated interventions depleted",
+    "critical_invariant_violation": "Critical invariant violation — safety or integrity boundary crossed",
+    "frustration_detected": "Frustration detected — multiple frustration markers observed",
+    "content_safety": "Content safety — potentially unsafe content flagged",
+    "consecutive_incorrect": "Consecutive incorrect — repeated wrong answers without progress",
+    "manual_escalation": "Manual escalation — student or system requested teacher intervention",
+}
+
 
 # ── Capability helpers (domain-specific) ──────────────────────
 
@@ -112,7 +124,57 @@ async def list_escalations(
             if not r.get("escalation_target_id") or r["escalation_target_id"] == caller_id
         ]
 
+    # ── Enrich records with human-readable context ────────────
+    records = await _enrich_escalation_records(records, persistence)
+
     return records
+
+
+async def _enrich_escalation_records(
+    records: list[dict[str, Any]],
+    persistence: Any,
+) -> list[dict[str, Any]]:
+    """Add reason, evidence subset, and student username to escalation records."""
+    from starlette.concurrency import run_in_threadpool
+
+    # Resolve actor_id → username in batch
+    actor_ids = {r.get("actor_id") for r in records if r.get("actor_id")}
+    username_map: dict[str, str] = {}
+    for aid in actor_ids:
+        try:
+            user_rec = await run_in_threadpool(persistence.get_user, aid)
+            if user_rec:
+                username_map[aid] = user_rec.get("username", aid)
+        except Exception:
+            pass
+
+    enriched = []
+    for r in records:
+        # Human-readable reason
+        trigger_type = r.get("trigger", "")
+        reason = _TRIGGER_LABELS.get(trigger_type, trigger_type)
+
+        # Evidence subset from domain_lib_decision
+        dld = r.get("domain_lib_decision") or {}
+        evidence = {
+            "frustration": bool(dld.get("domain_alert_flag")),
+            "drift_pct": dld.get("domain_metric_pct"),
+            "tier": dld.get("tier"),
+        }
+
+        # Student username
+        actor_id = r.get("actor_id", "")
+        student_username = username_map.get(actor_id, actor_id)
+
+        # Merge into a copy of the record
+        enriched_rec = dict(r)
+        enriched_rec["reason"] = reason
+        enriched_rec["evidence"] = evidence
+        enriched_rec["student_username"] = student_username
+        enriched_rec["active_module"] = r.get("domain_pack_id", "")
+        enriched.append(enriched_rec)
+
+    return enriched
 
 
 # ── Handler: get_escalation_detail ────────────────────────────

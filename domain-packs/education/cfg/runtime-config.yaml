@@ -356,6 +356,13 @@ adapters:
       roles: []
       request_body: {}
       commit_guard: true
+    # ── Roster status dashboard (domain-owned) ──────────────────
+    roster_status:
+      path: /api/dashboard/education/roster-status
+      method: GET
+      module_path: domain-packs/education/controllers/dashboard_handlers.py
+      callable: roster_status
+      roles: []
     # ── Session unlock (domain-owned) ─────────────────────────
     session_unlock:
       path: /api/sessions/{session_id}/unlock
