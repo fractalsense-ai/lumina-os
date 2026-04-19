@@ -189,6 +189,18 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if not isinstance(cfg, dict):
         raise RuntimeError(f"Runtime config must parse as a mapping/dict: {cfg_path}")
 
+    # ── Auto-discover ui-config.yaml alongside runtime-config.yaml ──
+    # Convention: if a ui-config.yaml exists in the same directory, merge
+    # its top-level keys into cfg.  Inline definitions in runtime-config.yaml
+    # always take precedence (only missing keys are filled in).
+    _ui_cfg_path = (repo_root / cfg_path).parent / "ui-config.yaml"
+    if _ui_cfg_path.is_file():
+        _ui_cfg = load_yaml(str(_ui_cfg_path))
+        if isinstance(_ui_cfg, dict):
+            for _k, _v in _ui_cfg.items():
+                if _k not in cfg:
+                    cfg[_k] = _v
+
     runtime_cfg, adapters_cfg = _validate_runtime_config(repo_root, cfg, cfg_path)
 
     global_prompt_path = repo_root / runtime_cfg.get("global_system_prompt_path", "docs/5-standards/global-system-prompt.md")

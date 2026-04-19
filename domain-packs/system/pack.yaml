@@ -49,4 +49,5 @@ modules:
 # ── Entry Points ──────────────────────────────────────────────────────
 entry_points:
   runtime_config: cfg/runtime-config.yaml
+  ui_config: cfg/ui-config.yaml
   runtime_adapter: controllers/runtime_adapters.py

@@ -94,7 +94,16 @@ class TestDomainInfoProfileAware:
         fake_domain = {"id": "domain/edu/general-education/v1", "version": "1.0.0"}
         runtime = {
             "domain_physics_path": "dp/default.json",
-            "ui_manifest": {},
+            "ui_manifest": {
+                "system_role_to_domain_role": {
+                    "root": "domain_authority",
+                    "domain_authority": "domain_authority",
+                    "it_support": "teacher",
+                    "qa": "student",
+                    "auditor": "student",
+                    "user": "student",
+                },
+            },
             "ui_plugin": None,
             "module_map": {
                 "domain/edu/general-education/v1": {

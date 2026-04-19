@@ -154,49 +154,6 @@ runtime:
   action_prompt_type_map:
     request_more_detail: more_detail_request
 
-  # ── UI Manifest ───────────────────────────────────────────────────
-  # Frontend configuration.  The web layer reads this to render the chat UI.
-  # TODO: Customise branding, consent text, and sidebar panels.
-  ui_manifest:
-    title: "Project Lumina"
-    subtitle: "Example Domain"
-    domain_label: "Template"
-    consent_heading: "Project Lumina"
-    consent_text: "This system operates within defined domain rules. Data is processed according to the domain physics. By continuing you acknowledge the operating conditions."
-    consent_button_label: "I Acknowledge"
-    placeholder_text: "Type your message..."
-    theme:
-      primary: "oklch(0.45 0.12 250)"
-      accent: "oklch(0.60 0.15 200)"
-      background: "oklch(0.97 0.01 250)"
-    panels: []
-      # TODO: Add dashboard panels as needed:
-      # - id: overview
-      #   label: "Overview"
-      #   endpoint: "/api/dashboard/template/overview"
-      #   roles: [root, domain_authority]
-      #   type: chart
-
-    role_layouts: {}
-      # TODO: Define per-role sidebar layouts:
-      # manager:
-      #   inherits: operator
-      #   sidebar_panels:
-      #     - id: escalation_queue
-      #       label: "Escalation Queue"
-      #       component: EscalationQueue
-      #   capabilities:
-      #     - manage_operators
-      #     - resolve_escalations
-      # operator:
-      #   inherits: observer
-      #   sidebar_panels: []
-      #   capabilities:
-      #     - log_observations
-      # observer:
-      #   sidebar_panels: []
-      #   capabilities: []
-
   # ── Deterministic Templates ───────────────────────────────────────
   # Fallback response templates used when the system runs in local
   # validation mode (no LLM).  {task_id} is interpolated at runtime.

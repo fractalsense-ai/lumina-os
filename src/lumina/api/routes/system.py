@@ -151,7 +151,8 @@ async def domain_info(
                     _eff_role = _user_dr[_mk]
                     break
         if not _eff_role:
-            _eff_role = _SYSTEM_ROLE_TO_DOMAIN_ROLE.get(user.get("role", ""))
+            _pack_role_map = (runtime.get("ui_manifest") or {}).get("system_role_to_domain_role") or {}
+            _eff_role = _pack_role_map.get(user.get("role", "")) or _SYSTEM_ROLE_TO_DOMAIN_ROLE.get(user.get("role", ""))
         _r2m = runtime.get("role_to_default_module") or {}
         _mm = runtime.get("module_map") or {}
         _role_mod = _r2m.get(_eff_role or "")

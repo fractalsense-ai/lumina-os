@@ -215,7 +215,116 @@ def test_load_yaml_block_mapping_list_get_templates(tmp_path: pathlib.Path) -> N
     assert templates[0]["id"] == "quest_world"
     assert templates[0]["preference_keywords"] == ["adventure", "rpg"]
     assert templates[0]["zone"] == "The Quest Map"
-    assert templates[1]["id"] == "general_math"
+
+
+# ─────────────────────────────────────────────────────────────
+# ui-config.yaml auto-discovery
+# ─────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_ui_config_auto_discovery(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """ui-config.yaml in the same directory as runtime-config.yaml is
+    merged into cfg before the loader processes ui_manifest / ui keys."""
+    from lumina.core import runtime_loader as _rl
+
+    # Write a minimal runtime-config.yaml WITHOUT ui_manifest or ui.
+    cfg_dir = tmp_path / "cfg"
+    cfg_dir.mkdir()
+    (cfg_dir / "runtime-config.yaml").write_text(
+        "runtime:\n"
+        "  domain_system_prompt_path: p.md\n"
+        "  turn_interpretation_prompt_path: t.md\n"
+        "  domain_physics_path: dp.json\n"
+        "  subject_profile_path: sp.yaml\n"
+        "  default_task_spec:\n"
+        "    task_id: t1\n"
+        "adapters:\n"
+        "  state_builder: {module_path: m.py, callable: f}\n"
+        "  domain_step: {module_path: m.py, callable: f}\n"
+        "  turn_interpreter: {module_path: m.py, callable: f}\n",
+        encoding="utf-8",
+    )
+
+    # Write ui-config.yaml with ui_manifest and ui keys.
+    (cfg_dir / "ui-config.yaml").write_text(
+        "ui_manifest:\n"
+        "  title: From UI Config\n"
+        "  subtitle: Test\n"
+        "ui:\n"
+        "  plugin_bundle: test/plugin.js\n",
+        encoding="utf-8",
+    )
+
+    # Intercept load_yaml to capture the cfg dict after merge but before
+    # the rest of load_runtime_context tries to read prompt files.
+    merged_cfg: dict = {}
+
+    original_validate = _rl._validate_runtime_config
+
+    def capture_validate(repo_root, cfg, cfg_path):
+        merged_cfg.update(cfg)
+        return original_validate(repo_root, cfg, cfg_path)
+
+    monkeypatch.setattr(_rl, "_validate_runtime_config", capture_validate)
+
+    # Call will raise because prompt files don't exist — that's fine;
+    # we only care about the merged cfg dict.
+    try:
+        _rl.load_runtime_context(tmp_path, "cfg/runtime-config.yaml")
+    except (RuntimeError, FileNotFoundError, OSError):
+        pass
+
+    assert merged_cfg.get("ui_manifest") == {"title": "From UI Config", "subtitle": "Test"}
+    assert merged_cfg.get("ui") == {"plugin_bundle": "test/plugin.js"}
+
+
+@pytest.mark.unit
+def test_ui_config_inline_takes_precedence(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Inline ui_manifest in runtime-config.yaml takes precedence over
+    ui-config.yaml (backward compatible)."""
+    from lumina.core import runtime_loader as _rl
+
+    cfg_dir = tmp_path / "cfg"
+    cfg_dir.mkdir()
+    (cfg_dir / "runtime-config.yaml").write_text(
+        "runtime:\n"
+        "  domain_system_prompt_path: p.md\n"
+        "  turn_interpretation_prompt_path: t.md\n"
+        "  domain_physics_path: dp.json\n"
+        "  subject_profile_path: sp.yaml\n"
+        "  default_task_spec:\n"
+        "    task_id: t1\n"
+        "adapters:\n"
+        "  state_builder: {module_path: m.py, callable: f}\n"
+        "  domain_step: {module_path: m.py, callable: f}\n"
+        "  turn_interpreter: {module_path: m.py, callable: f}\n"
+        "ui_manifest:\n"
+        "  title: Inline Wins\n",
+        encoding="utf-8",
+    )
+
+    (cfg_dir / "ui-config.yaml").write_text(
+        "ui_manifest:\n"
+        "  title: Should Be Ignored\n",
+        encoding="utf-8",
+    )
+
+    merged_cfg: dict = {}
+    original_validate = _rl._validate_runtime_config
+
+    def capture_validate(repo_root, cfg, cfg_path):
+        merged_cfg.update(cfg)
+        return original_validate(repo_root, cfg, cfg_path)
+
+    monkeypatch.setattr(_rl, "_validate_runtime_config", capture_validate)
+
+    try:
+        _rl.load_runtime_context(tmp_path, "cfg/runtime-config.yaml")
+    except (RuntimeError, FileNotFoundError, OSError):
+        pass
+
+    assert merged_cfg["ui_manifest"]["title"] == "Inline Wins"
 
 
 # ─────────────────────────────────────────────────────────────

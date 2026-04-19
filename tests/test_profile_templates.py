@@ -382,9 +382,10 @@ class TestSystemRoleMapping:
         for role in ("root", "domain_authority"):
             assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "domain_authority"
 
-    def test_support_roles_map_to_teacher(self):
-        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["it_support"] == "teacher"
+    def test_support_roles_map_to_operator(self):
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["it_support"] == "operator"
 
-    def test_regular_roles_map_to_student(self):
-        for role in ("qa", "auditor", "user"):
-            assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "student"
+    def test_regular_roles_map_to_generic_defaults(self):
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["qa"] == "participant"
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["auditor"] == "observer"
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["user"] == "participant"

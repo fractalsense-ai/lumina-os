@@ -125,14 +125,17 @@ def _resolve_user_profile_path(user_id: str, domain_key: str) -> Path:
 
 
 # ── Default system-role → domain-role mapping ───────────────
-# Used when the JWT has no explicit domain_roles claim for the target domain.
+# Generic fallback used when the JWT has no explicit domain_roles claim
+# and the domain pack does not provide its own ``system_role_to_domain_role``
+# mapping in its manifest.  Domain packs should override this via their
+# pack.yaml or runtime-config.yaml ``system_role_to_domain_role`` key.
 _SYSTEM_ROLE_TO_DOMAIN_ROLE: dict[str, str] = {
     "root": "domain_authority",
     "domain_authority": "domain_authority",
-    "it_support": "teacher",
-    "qa": "student",
-    "auditor": "student",
-    "user": "student",
+    "it_support": "operator",
+    "qa": "participant",
+    "auditor": "observer",
+    "user": "participant",
 }
 
 

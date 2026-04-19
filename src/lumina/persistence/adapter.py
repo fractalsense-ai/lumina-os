@@ -6,119 +6,26 @@ from typing import Any
 from lumina.system_log.commit_guard import notify_log_commit
 
 
-class PersistenceAdapter(ABC):
-    """Domain-agnostic persistence interface for runtime and System Log operations."""
+# ─────────────────────────────────────────────────────────────
+# HMVC Persistence ABC Hierarchy
+#
+# The persistence interface is split into three tiers so that the
+# ScopedPersistenceAdapter can enforce domain-pack isolation at the
+# type level:
+#
+#   SystemPersistence  – user/auth/consent/system-log (system-only)
+#   DomainPersistence  – profiles/module-state/domain-physics/logs
+#   PersistenceAdapter – combines both + shared cross-cutting methods
+# ─────────────────────────────────────────────────────────────
 
-    @abstractmethod
-    def load_domain_physics(self, path: str) -> dict[str, Any]:
-        """Load domain physics document from persistent storage."""
 
-    @abstractmethod
-    def load_subject_profile(self, path: str) -> dict[str, Any]:
-        """Load subject profile document from persistent storage.
+class SystemPersistence(ABC):
+    """Persistence methods reserved for the system layer.
 
-        .. deprecated:: Use :meth:`load_profile` instead.
-        """
-
-    @abstractmethod
-    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
-        """Persist a subject profile document (atomic write).
-
-        .. deprecated:: Use :meth:`save_profile` instead.
-        """
-
-    # ── Key-based profile persistence ────────────────────────
-
-    @abstractmethod
-    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
-        """Load a user profile by composite key. Returns None if not found."""
-
-    @abstractmethod
-    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
-        """Persist a user profile by composite key (upsert)."""
-
-    @abstractmethod
-    def list_profiles(self, user_id: str) -> list[str]:
-        """Return domain_key values for which profiles exist for this user."""
-
-    @abstractmethod
-    def delete_profile(self, user_id: str, domain_key: str) -> bool:
-        """Delete a profile. Returns True if it existed."""
-
-    @abstractmethod
-    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
-        """Return a stable ledger path for a given session.
-
-        When *domain_id* is provided, the path is scoped to that domain
-        context (e.g. ``session-{sid}-{domain_id}.jsonl``).  Use
-        ``domain_id="_meta"`` for the session meta-ledger.
-
-        .. deprecated:: Use the tier-specific methods instead.
-        """
-
-    # ── 3-tier ledger path builders ──────────────────────────
-
-    @abstractmethod
-    def get_system_ledger_path(self, session_id: str) -> str:
-        """Return the ledger path for a system-tier log (auth, session, routing).
-
-        Layout: ``system/session-{sid}.jsonl``
-        """
-
-    @abstractmethod
-    def get_domain_ledger_path(self, domain_id: str) -> str:
-        """Return the ledger path for a domain-tier log (RBAC, escalations, commits).
-
-        Layout: ``domains/{domain}/domain.jsonl``
-        """
-
-    @abstractmethod
-    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
-        """Return the ledger path for a module-tier log (student ops, assignments).
-
-        Layout: ``domains/{domain}/modules/{module_id}.jsonl``
-        """
-
-    @abstractmethod
-    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
-        """Append one System Log record for the session."""
-
-    @abstractmethod
-    def load_session_state(self, session_id: str) -> dict[str, Any] | None:
-        """Load persisted session metadata if present."""
-
-    @abstractmethod
-    def save_session_state(self, session_id: str, state: dict[str, Any]) -> None:
-        """Persist session metadata."""
-
-    @abstractmethod
-    def list_log_session_ids(self) -> list[str]:
-        """Return known System Log session IDs for the current backend."""
-
-    @abstractmethod
-    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
-        """Validate System Log hash-chain integrity for one session or all sessions."""
-
-    @abstractmethod
-    def has_policy_commitment(
-        self,
-        subject_id: str,
-        subject_version: str | None,
-        subject_hash: str,
-    ) -> bool:
-        """Return True when System Log contains a matching policy CommitmentRecord."""
-
-    @abstractmethod
-    def get_system_log_ledger_path(self) -> str:
-        """Return the ledger path for the system-physics System Log."""
-
-    @abstractmethod
-    def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
-        """Return True when the system log contains a CommitmentRecord for this system-physics hash."""
-
-    @abstractmethod
-    def append_system_log_record(self, record: dict[str, Any]) -> None:
-        """Append one record to the system-physics System Log."""
+    Domain-pack handlers must NEVER receive a reference to this
+    interface directly.  The ``ScopedPersistenceAdapter`` blocks
+    these methods at runtime.
+    """
 
     # ── User / Auth persistence ──────────────────────────────
 
@@ -201,6 +108,174 @@ class PersistenceAdapter(ABC):
         Duplicate additions are ignored (idempotent).
         """
 
+    # ── User-level consent persistence ────────────────────────
+
+    @abstractmethod
+    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
+        """Persist consent acceptance for a user. Returns True on success."""
+
+    @abstractmethod
+    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
+        """Return ``{accepted: bool, timestamp: float}`` or None if no record."""
+
+    # ── System-tier log operations ────────────────────────────
+
+    @abstractmethod
+    def get_system_ledger_path(self, session_id: str) -> str:
+        """Return the ledger path for a system-tier log (auth, session, routing).
+
+        Layout: ``system/session-{sid}.jsonl``
+        """
+
+    @abstractmethod
+    def get_system_log_ledger_path(self) -> str:
+        """Return the ledger path for the system-physics System Log."""
+
+    @abstractmethod
+    def has_system_physics_commitment(self, system_physics_hash: str) -> bool:
+        """Return True when the system log contains a CommitmentRecord for this system-physics hash."""
+
+    @abstractmethod
+    def append_system_log_record(self, record: dict[str, Any]) -> None:
+        """Append one record to the system-physics System Log."""
+
+
+class DomainPersistence(ABC):
+    """Persistence methods available to domain-pack handlers.
+
+    The ``ScopedPersistenceAdapter`` delegates these methods with
+    automatic domain_id scoping where applicable.
+    """
+
+    # ── Domain physics ───────────────────────────────────────
+
+    @abstractmethod
+    def load_domain_physics(self, path: str) -> dict[str, Any]:
+        """Load domain physics document from persistent storage."""
+
+    # ── Path-based profile persistence (deprecated) ──────────
+
+    @abstractmethod
+    def load_subject_profile(self, path: str) -> dict[str, Any]:
+        """Load subject profile document from persistent storage.
+
+        .. deprecated:: Use :meth:`load_profile` instead.
+        """
+
+    @abstractmethod
+    def save_subject_profile(self, path: str, data: dict[str, Any]) -> None:
+        """Persist a subject profile document (atomic write).
+
+        .. deprecated:: Use :meth:`save_profile` instead.
+        """
+
+    # ── Key-based profile persistence ────────────────────────
+
+    @abstractmethod
+    def load_profile(self, user_id: str, domain_key: str) -> dict[str, Any] | None:
+        """Load a user profile by composite key. Returns None if not found."""
+
+    @abstractmethod
+    def save_profile(self, user_id: str, domain_key: str, data: dict[str, Any]) -> None:
+        """Persist a user profile by composite key (upsert)."""
+
+    @abstractmethod
+    def list_profiles(self, user_id: str) -> list[str]:
+        """Return domain_key values for which profiles exist for this user."""
+
+    @abstractmethod
+    def delete_profile(self, user_id: str, domain_key: str) -> bool:
+        """Delete a profile. Returns True if it existed."""
+
+    # ── Domain / module tier log paths ───────────────────────
+
+    @abstractmethod
+    def get_domain_ledger_path(self, domain_id: str) -> str:
+        """Return the ledger path for a domain-tier log (RBAC, escalations, commits).
+
+        Layout: ``domains/{domain}/domain.jsonl``
+        """
+
+    @abstractmethod
+    def get_module_ledger_path(self, domain_id: str, module_id: str) -> str:
+        """Return the ledger path for a module-tier log (student ops, assignments).
+
+        Layout: ``domains/{domain}/modules/{module_id}.jsonl``
+        """
+
+    # ── Module state persistence ─────────────────────────────
+
+    @abstractmethod
+    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
+        """Load opaque per-actor per-module state blob, or None if not found."""
+
+    @abstractmethod
+    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
+        """Persist opaque per-actor per-module state blob (upsert)."""
+
+    @abstractmethod
+    def list_module_states(self, user_id: str) -> list[str]:
+        """Return module_key values for which state exists for this user."""
+
+    @abstractmethod
+    def delete_module_state(self, user_id: str, module_key: str) -> bool:
+        """Delete a module state entry. Returns True if it existed."""
+
+
+class PersistenceAdapter(SystemPersistence, DomainPersistence):
+    """Full persistence interface combining system and domain tiers.
+
+    Concrete adapters (Filesystem, SQLite) implement this.  The global
+    ``PERSISTENCE`` singleton in ``config.py`` is typed as this.
+
+    Domain-pack handlers should receive a ``ScopedPersistenceAdapter``
+    instead, which enforces HMVC isolation by blocking system methods
+    and scoping domain methods to the handler's domain_id.
+    """
+
+    # ── Shared / cross-cutting methods ───────────────────────
+    # These span both tiers and are available to all callers.
+
+    @abstractmethod
+    def get_log_ledger_path(self, session_id: str, domain_id: str | None = None) -> str:
+        """Return a stable ledger path for a given session.
+
+        When *domain_id* is provided, the path is scoped to that domain
+        context (e.g. ``session-{sid}-{domain_id}.jsonl``).  Use
+        ``domain_id="_meta"`` for the session meta-ledger.
+
+        .. deprecated:: Use the tier-specific methods instead.
+        """
+
+    @abstractmethod
+    def append_log_record(self, session_id: str, record: dict[str, Any], ledger_path: str | None = None) -> None:
+        """Append one System Log record for the session."""
+
+    @abstractmethod
+    def load_session_state(self, session_id: str) -> dict[str, Any] | None:
+        """Load persisted session metadata if present."""
+
+    @abstractmethod
+    def save_session_state(self, session_id: str, state: dict[str, Any]) -> None:
+        """Persist session metadata."""
+
+    @abstractmethod
+    def list_log_session_ids(self) -> list[str]:
+        """Return known System Log session IDs for the current backend."""
+
+    @abstractmethod
+    def validate_log_chain(self, session_id: str | None = None) -> dict[str, Any]:
+        """Validate System Log hash-chain integrity for one session or all sessions."""
+
+    @abstractmethod
+    def has_policy_commitment(
+        self,
+        subject_id: str,
+        subject_version: str | None,
+        subject_hash: str,
+    ) -> bool:
+        """Return True when System Log contains a matching policy CommitmentRecord."""
+
     @abstractmethod
     def query_log_records(
         self,
@@ -230,34 +305,6 @@ class PersistenceAdapter(ABC):
     @abstractmethod
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:
         """Query CommitmentRecords for a given subject_id."""
-
-    # ── User-level consent persistence ────────────────────────
-
-    @abstractmethod
-    def set_user_consent(self, user_id: str, accepted: bool, timestamp: float) -> bool:
-        """Persist consent acceptance for a user. Returns True on success."""
-
-    @abstractmethod
-    def get_user_consent(self, user_id: str) -> dict[str, Any] | None:
-        """Return ``{accepted: bool, timestamp: float}`` or None if no record."""
-
-    # ── Module state persistence (domain-agnostic) ────────────
-
-    @abstractmethod
-    def load_module_state(self, user_id: str, module_key: str) -> dict[str, Any] | None:
-        """Load opaque per-actor per-module state blob, or None if not found."""
-
-    @abstractmethod
-    def save_module_state(self, user_id: str, module_key: str, state: dict[str, Any]) -> None:
-        """Persist opaque per-actor per-module state blob (upsert)."""
-
-    @abstractmethod
-    def list_module_states(self, user_id: str) -> list[str]:
-        """Return module_key values for which state exists for this user."""
-
-    @abstractmethod
-    def delete_module_state(self, user_id: str, module_key: str) -> bool:
-        """Delete a module state entry. Returns True if it existed."""
 
 
 class NullPersistenceAdapter(PersistenceAdapter):

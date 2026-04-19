@@ -108,11 +108,47 @@ def test_scoped_blocks_system_log_write(scoped: ScopedPersistenceAdapter) -> Non
 
 @pytest.mark.unit
 def test_scoped_delegates_non_log_methods(scoped: ScopedPersistenceAdapter, fs_adapter: FilesystemPersistenceAdapter) -> None:
-    """Non-log methods like create_user proxy through to the inner adapter."""
+    """User reads are allowed but password_hash is stripped."""
     fs_adapter.create_user("u1", "alice", "salt:hash", "user", [])
     user = scoped.get_user("u1")
     assert user is not None
     assert user["username"] == "alice"
+    assert "password_hash" not in user
+
+
+@pytest.mark.unit
+def test_scoped_strips_password_hash_get_user_by_username(scoped: ScopedPersistenceAdapter, fs_adapter: FilesystemPersistenceAdapter) -> None:
+    fs_adapter.create_user("u2", "bob", "salt:hash", "user", [])
+    user = scoped.get_user_by_username("bob")
+    assert user is not None
+    assert user["username"] == "bob"
+    assert "password_hash" not in user
+
+
+@pytest.mark.unit
+def test_scoped_blocks_create_user(scoped: ScopedPersistenceAdapter) -> None:
+    with pytest.raises(PermissionError):
+        scoped.create_user("u1", "alice", "hash", "user", [])
+
+
+@pytest.mark.unit
+def test_scoped_blocks_deactivate_user(scoped: ScopedPersistenceAdapter, fs_adapter: FilesystemPersistenceAdapter) -> None:
+    fs_adapter.create_user("u1", "alice", "salt:hash", "user", [])
+    with pytest.raises(PermissionError):
+        scoped.deactivate_user("u1")
+
+
+@pytest.mark.unit
+def test_scoped_blocks_update_user_password(scoped: ScopedPersistenceAdapter, fs_adapter: FilesystemPersistenceAdapter) -> None:
+    fs_adapter.create_user("u1", "alice", "salt:hash", "user", [])
+    with pytest.raises(PermissionError):
+        scoped.update_user_password("u1", "new_hash")
+
+
+@pytest.mark.unit
+def test_scoped_blocks_unknown_method(scoped: ScopedPersistenceAdapter) -> None:
+    with pytest.raises(AttributeError):
+        scoped.totally_made_up_method()
 
 
 # ── Tier isolation: records land in correct files ────────────

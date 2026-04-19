@@ -230,7 +230,8 @@ def _build_domain_context(
         # Role-based module routing when profile has no explicit domain_id
         _eff_role = _domain_role
         if not _eff_role:
-            _eff_role = _cfg._SYSTEM_ROLE_TO_DOMAIN_ROLE.get(user.get("role", ""))
+            _pack_role_map = (runtime.get("ui_manifest") or {}).get("system_role_to_domain_role") or {}
+            _eff_role = _pack_role_map.get(user.get("role", "")) or _cfg._SYSTEM_ROLE_TO_DOMAIN_ROLE.get(user.get("role", ""))
         _r2m = runtime.get("role_to_default_module") or {}
         _role_mod = _r2m.get(_eff_role or "")
         if _role_mod and _role_mod in _module_map:
