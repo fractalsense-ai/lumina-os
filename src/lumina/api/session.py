@@ -249,7 +249,7 @@ def _build_domain_context(
     _mod_entry = _module_map.get(_resolved_module_key or "") or {}
     state_builder = _mod_entry.get("state_builder_fn") or runtime["state_builder_fn"]
     domain_step = _mod_entry.get("domain_step_fn") or runtime["domain_step_fn"]
-    domain_params = dict(runtime["domain_step_params"])
+    domain_params = dict(_mod_entry.get("domain_step_params") or runtime.get("domain_step_params") or {})
 
     _sb_sig = inspect.signature(state_builder)
     _sb_kwargs: dict[str, Any] = {}
@@ -297,7 +297,7 @@ def _build_domain_context(
         system_physics_hash=_cfg.SYSTEM_PHYSICS_HASH,
     )
 
-    default_task_spec = dict(runtime["default_task_spec"])
+    default_task_spec = dict(runtime.get("default_task_spec") or {})
     # Prefer module-level default_task_spec declared in runtime-config.yaml
     # (e.g. pre-algebra sets nominal_difficulty: 0.15).
     _mod_task = _mod_entry.get("default_task_spec")

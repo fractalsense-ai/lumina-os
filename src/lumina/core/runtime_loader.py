@@ -131,7 +131,6 @@ def _validate_runtime_config(repo_root: Path, cfg: dict[str, Any], cfg_path: str
         "turn_interpretation_prompt_path",
         "domain_physics_path",
         "subject_profile_path",
-        "default_task_spec",
     ]
     for key in required_runtime_keys:
         _require_key(runtime_cfg, key, "runtime")
@@ -143,9 +142,6 @@ def _validate_runtime_config(repo_root: Path, cfg: dict[str, Any], cfg_path: str
     _require_file(repo_root, _require_str(runtime_cfg["turn_interpretation_prompt_path"], "runtime.turn_interpretation_prompt_path"), "runtime.turn_interpretation_prompt_path")
     _require_file(repo_root, _require_str(runtime_cfg["domain_physics_path"], "runtime.domain_physics_path"), "runtime.domain_physics_path")
     _require_file(repo_root, _require_str(runtime_cfg["subject_profile_path"], "runtime.subject_profile_path"), "runtime.subject_profile_path")
-
-    if not isinstance(runtime_cfg["default_task_spec"], dict):
-        raise RuntimeError("'runtime.default_task_spec' must be a mapping/dict")
 
     deterministic_templates = runtime_cfg.get("deterministic_templates", {})
     if deterministic_templates is not None and not isinstance(deterministic_templates, dict):
@@ -383,21 +379,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if slm_weight_overrides and not isinstance(slm_weight_overrides, dict):
         raise RuntimeError("'runtime.slm_weight_overrides' must be a mapping/dict when provided")
 
-    # Load world_sim config and eagerly resolve mud-world template list so that
-    # generate_mud_world() receives a pre-populated cfg["templates"] list at
-    # session initialisation time (avoids a file-read per state-builder call).
-    _world_sim_cfg: dict[str, Any] | None = runtime_cfg.get("world_sim") or None
-    if _world_sim_cfg is not None:
-        import copy as _copy
-        _world_sim_cfg = _copy.deepcopy(_world_sim_cfg)
-        _mud_builder = _world_sim_cfg.get("mud_world_builder") or {}
-        _tpl_rel = _mud_builder.get("templates_path", "")
-        if _tpl_rel and not _mud_builder.get("templates"):
-            _tpl_path = repo_root / _tpl_rel
-            if _tpl_path.exists():
-                _tpl_data = load_yaml(_tpl_path)
-                _mud_builder["templates"] = _tpl_data.get("templates") or []
-                _world_sim_cfg["mud_world_builder"] = _mud_builder
+    _world_sim_cfg = runtime_cfg.get("world_sim") or None
 
     ctx = {
         "domain_physics_path": str(domain_physics_path),

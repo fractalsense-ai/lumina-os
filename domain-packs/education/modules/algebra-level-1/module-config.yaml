@@ -32,6 +32,21 @@ default_task_spec:
   task_id: algebra-level-1-basics-001
   nominal_difficulty: 0.45
 
+domain_step_params:
+  min_challenge: 0.3
+  max_challenge: 0.7
+  drift_window_turns: 10
+  minor_drift_threshold: 0.3
+  major_drift_threshold: 0.5
+  persistence_required: 3
+  fluency_monitor:
+    target_consecutive_successes: 3
+    time_threshold_seconds: 120
+    tier_progression:
+      - tier_1
+      - tier_2
+      - tier_3
+
 adapters:
   task_initializer:
     module_path: domain-packs/education/modules/algebra-level-1/problem_generator.py
@@ -39,3 +54,16 @@ adapters:
 
 ui_overrides:
   subtitle: "Algebra Level 1 — Foundations"
+
+turn_input_schema:
+  equivalence_preserved:
+    type: bool
+  substitution_check:
+    type: bool
+    default: false
+  method_recognized:
+    type: bool
+    default: false
+  illegal_operations:
+    type: list
+    default: []

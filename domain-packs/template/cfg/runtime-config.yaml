@@ -7,7 +7,6 @@
 #   - turn_interpretation_prompt_path
 #   - domain_physics_path
 #   - subject_profile_path
-#   - default_task_spec
 #
 # REQUIRED ADAPTERS (must appear in the top-level `adapters:` block):
 #   - state_builder   — builds initial session state from a profile
@@ -73,8 +72,7 @@ runtime:
   #   - domain_system_prompt_path  (optional — module-specific persona)
   #   - turn_interpretation_prompt_path (optional — module-specific schema)
   #   - initial_module_state       (optional — default state for new sessions)
-  #   - default_task_spec          (optional — module-level task spec)
-  #   - turn_input_defaults        (optional — fallback evidence values)
+  #   - default_task_spec          (optional — module-level task spec)#   - domain_step_params          (optional — passed to domain_step as params dict)  #   - turn_input_defaults        (optional — fallback evidence values)
   #   - adapters                   (optional — override any of the 3 required + optional adapters)
   #   - ui_overrides               (optional — frontend display customisation)
   #   - local_only                 (optional — true for admin/governance modules)
@@ -98,22 +96,24 @@ runtime:
       - qa
       - user
 
-  # ── Default Task Spec ─────────────────────────────────────────────
+  # ── Default Task Spec (OPTIONAL — prefer per-module) ─────────────────
   # Fallback task spec when a module doesn't declare its own.
+  # Prefer adding default_task_spec to each module-config.yaml instead.
   # TODO: Replace with a meaningful task for your domain.
-  default_task_spec:
-    task_id: example-task-001
-    nominal_difficulty: 0.4
-    skills_required:
-      - observe
-      - report
+  # default_task_spec:
+  #   task_id: example-task-001
+  #   nominal_difficulty: 0.4
+  #   skills_required:
+  #     - observe
+  #     - report
 
-  # ── Domain Step Parameters ────────────────────────────────────────
+  # ── Domain Step Parameters (OPTIONAL — prefer per-module) ─────────────
   # Passed to your domain_step callable in the `params` dict.
+  # Prefer adding domain_step_params to each module-config.yaml instead.
   # TODO: Adjust to your domain's needs.
-  domain_step_params:
-    window_turns: 5
-    drift_threshold: 0.4
+  # domain_step_params:
+  #   window_turns: 5
+  #   drift_threshold: 0.4
 
   # ── Turn Input Schema ─────────────────────────────────────────────
   # Documents the evidence fields your turn interpreter emits.

@@ -229,7 +229,6 @@ class TestRuntimeConfig:
             "turn_interpretation_prompt_path",
             "domain_physics_path",
             "subject_profile_path",
-            "default_task_spec",
         ]
         for key in required:
             assert key in runtime, f"Missing required key: {key}"

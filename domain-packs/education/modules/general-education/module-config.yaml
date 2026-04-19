@@ -23,6 +23,10 @@ initial_module_state:
     last_measured_utc: null
     session_history: []
 
+default_task_spec:
+  task_id: student-commons-freeform-001
+  nominal_difficulty: 0.0
+
 turn_input_defaults:
   intent_type: "journaling"
   off_task_ratio: 0.0
