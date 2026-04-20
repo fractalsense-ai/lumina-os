@@ -79,6 +79,23 @@ domains:
       - domain pack
       - domain authority
 
+  assistant:
+    runtime_config_path: domain-packs/assistant/cfg/runtime-config.yaml
+    label: Assistant — General Purpose
+    description: General-purpose conversational assistant with intent-based per-turn module routing, tool-call governance, and task tracking.
+    module_prefix: asst
+    keywords:
+      - assistant
+      - help
+      - chat
+      - weather
+      - calendar
+      - search
+      - write
+      - plan
+      - task
+      - general
+
   # ── Template domain (commented out) ──────────────────────────────
   # Uncomment and customise when building a new domain from the template.
   # See: domain-packs/template/README.md

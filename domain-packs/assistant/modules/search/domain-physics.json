@@ -1,0 +1,82 @@
+{
+  "id": "domain/asst/search/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Search task module — handles web searches, factual lookups, and information queries. Enforces tool-result grounding and source citation. One-shot to short multi-turn shape.",
+  "department": "Tasks",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "tool_result_grounded",
+      "description": "All factual information presented must originate from a search tool result. The LLM must not fabricate search results.",
+      "severity": "warning",
+      "check": "search_data_source == 'tool'",
+      "standing_order_on_violation": "requery_search_tool"
+    },
+    {
+      "id": "source_cited",
+      "description": "Search results must include source attribution when presenting factual claims.",
+      "severity": "warning",
+      "check": "sources_cited == true",
+      "standing_order_on_violation": "cite_sources"
+    },
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate — immediate escalation on harmful content.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "requery_search_tool",
+      "action": "requery_search_tool",
+      "trigger_condition": "tool_result_grounded",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Re-call the search tool if the LLM attempted to fabricate results."
+    },
+    {
+      "id": "cite_sources",
+      "action": "cite_sources",
+      "trigger_condition": "source_cited",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Add source citations to the response."
+    },
+    {
+      "id": "safety_intervene",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true,
+      "description": "Immediately escalate on safety violation."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (content_safety_hard).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/asst/search-api/v1"
+  ],
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0},
+      "queries_completed": {"type": "integer", "default": 0}
+    }
+  }
+}

@@ -1,0 +1,55 @@
+# ─── Search API Tool Adapter — Assistant Domain ──────────────────────
+# SCHEMA: standards/tool-adapter-schema-v1.json
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+id: adapter/asst/search-api/v1
+version: "1.0.0"
+tool_name: "Web Search"
+description: >
+  Performs web searches and returns structured results with titles,
+  snippets, URLs, and relevance scores. Stub for v1.
+
+domain_id: domain/asst/search/v1
+
+call_types:
+  - llm_visible
+
+input_schema:
+  type: object
+  required:
+    - query
+  properties:
+    query:
+      type: string
+      description: "Search query string."
+    max_results:
+      type: integer
+      minimum: 1
+      maximum: 10
+      default: 5
+      description: "Maximum number of results to return."
+
+output_schema:
+  type: object
+  properties:
+    results:
+      type: array
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+          snippet:
+            type: string
+          url:
+            type: string
+          relevance:
+            type: number
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - entity
+  requires_entity_consent: false

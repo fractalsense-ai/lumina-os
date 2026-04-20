@@ -1,0 +1,56 @@
+# ─── Calendar API Tool Adapter — Assistant Domain ────────────────────
+# SCHEMA: standards/tool-adapter-schema-v1.json
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+id: adapter/asst/calendar-api/v1
+version: "1.0.0"
+tool_name: "Calendar API"
+description: >
+  Manages calendar events — create, read, update, and delete operations.
+  Supports date range queries and availability checks. Stub for v1.
+
+domain_id: domain/asst/calendar/v1
+
+call_types:
+  - stateful
+  - llm_visible
+
+input_schema:
+  type: object
+  required:
+    - action
+  properties:
+    action:
+      type: string
+      enum: [query, create, update, delete]
+      description: "Calendar operation to perform."
+    date_start:
+      type: string
+      description: "Start date (ISO 8601)."
+    date_end:
+      type: string
+      description: "End date (ISO 8601)."
+    event_title:
+      type: string
+      description: "Title for the event (create/update)."
+    event_id:
+      type: string
+      description: "Event ID (update/delete)."
+
+output_schema:
+  type: object
+  properties:
+    events:
+      type: array
+      description: "List of calendar events."
+    confirmation:
+      type: string
+      description: "Confirmation message for write operations."
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - entity
+  requires_entity_consent: true

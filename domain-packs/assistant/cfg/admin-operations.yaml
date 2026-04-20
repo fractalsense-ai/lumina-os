@@ -1,0 +1,131 @@
+# ─────────────────────────────────────────────────────────────
+# Admin Operations Schema — Assistant Domain
+# ─────────────────────────────────────────────────────────────
+#
+# Assistant-specific subset of admin operations with descriptions
+# tailored for general-purpose chat contexts.  Referenced by the SLM
+# command translator when operating in the assistant domain.
+#
+# Inherits execution semantics (RBAC gates, HITL staging, etc.)
+# from the system-level admin pipeline.
+#
+# See: docs/7-concepts/command-execution-pipeline.md
+# See: docs/7-concepts/domain-adapter-pattern.md
+# See: docs/7-concepts/nlp-semantic-router.md
+# ─────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+operations:
+
+  # ── Read-only / informational (HITL-exempt) ──────────────
+  - name: list_commands
+    description: "List available admin commands for the assistant domain."
+    params:
+      include_details: "boolean — true (default) for full details, false for names only"
+
+  - name: list_users
+    description: "List users in the assistant domain. Domain authorities see all users."
+    params:
+      role: "string — filter by system role (optional)"
+      domain_id: "string — defaults to 'assistant'"
+
+  - name: list_modules
+    description: "List assistant modules (conversation, weather, calendar, search, creative-writing, planning)."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+
+  - name: list_escalations
+    description: "List open escalation events for assistant modules (typically safety escalations)."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+      status: "string — filter by status (optional, default: open)"
+
+  - name: module_status
+    description: "Show the current status of an assistant module."
+    params:
+      module_id: "string — assistant module identifier"
+      domain_id: "string — defaults to 'assistant'"
+
+  - name: get_domain_physics
+    description: "Retrieve the current domain physics for an assistant module."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+      module_id: "string — specific module (optional, returns conversation if omitted)"
+
+  - name: list_domain_rbac_roles
+    description: "List assistant-specific roles (user, domain_authority)."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+
+  - name: get_domain_module_manifest
+    description: "Retrieve the assistant domain's full module manifest."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+
+  - name: explain_reasoning
+    description: "Explain why the system made a specific decision — e.g. why a safety escalation was triggered or why a tool call was denied."
+    params:
+      event_id: "string — System Log record ID or escalation ID to explain"
+
+  - name: view_my_profile
+    description: "Show the calling user's own profile summary — display name, preferences, and session statistics. Available to all roles."
+    params:
+      domain_id: "string — defaults to 'assistant'"
+
+  # ── Task management (user-accessible) ───────────────────
+  - name: list_tasks
+    description: "List the user's tracked tasks (active, completed, deferred, abandoned)."
+    params:
+      status: "string — filter by status (optional)"
+      limit: "integer — max results (optional, default: 20)"
+
+  - name: view_task_history
+    description: "View turn-by-turn history for a specific task."
+    params:
+      task_id: "string — task identifier"
+
+  - name: clear_task_history
+    description: "Clear completed and abandoned tasks from the user's task list."
+    params:
+      confirm: "boolean — must be true to proceed"
+
+  # ── User management (DA-scoped) ─────────────────────────
+  - name: invite_user
+    description: "Invite a new user to the assistant domain."
+    params:
+      username: "string — the new user's display name"
+      role: "string — system role: user or guest"
+      domain_id: "string — defaults to 'assistant'"
+      email: "string — email address (optional)"
+
+  - name: assign_domain_role
+    description: "Assign an assistant role (user, domain_authority) to a user."
+    params:
+      user_id: "string — target user identifier"
+      domain_role: "string — assistant role to assign"
+
+  - name: revoke_domain_role
+    description: "Remove a user's assistant role."
+    params:
+      user_id: "string — target user identifier"
+
+  # ── Physics / governance (DA-only, staged) ──────────────
+  - name: stage_physics_edit
+    description: "Stage a modification to an assistant module's domain physics. Queued for DA review."
+    params:
+      module_id: "string — assistant module identifier"
+      field_path: "string — dot-path to the field (e.g. invariants.0.severity)"
+      new_value: "string — proposed new value"
+      justification: "string — brief explanation for the change"
+
+  - name: approve_staged_edit
+    description: "Approve a staged physics edit and commit it to the active physics."
+    params:
+      proposal_id: "string — proposal identifier from the staging queue"
+
+  - name: reject_staged_edit
+    description: "Reject a staged physics edit with a reason."
+    params:
+      proposal_id: "string — proposal identifier"
+      reason: "string — reason for rejection"

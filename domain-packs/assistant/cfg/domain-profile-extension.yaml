@@ -1,0 +1,39 @@
+# ─── Assistant Domain — Domain Profile Extension ─────────────────────
+# Layer 2 of the hierarchical profile system (Base → Domain → Role).
+#
+# Fields defined here are shared by ALL roles in this domain.
+# Merged on top of the base entity profile (Layer 1) and
+# underneath the role-specific profile (Layer 3).
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+# ── Consent tracking ────────────────────────────────────────────────
+consent:
+  accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+
+# ── Session history ─────────────────────────────────────────────────
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# ── Task history ────────────────────────────────────────────────────
+task_history:
+  total_tasks: 0
+  completed_tasks: 0
+  abandoned_tasks: 0
+  deferred_tasks: 0
+  last_task_utc: null
+
+# ── Intent distribution ────────────────────────────────────────────
+intent_distribution:
+  general: 0
+  weather: 0
+  calendar: 0
+  search: 0
+  creative: 0
+  planning: 0

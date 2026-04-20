@@ -1,0 +1,27 @@
+# version: 0.1.0
+# last_updated: 2026-04-20
+#
+# Module: conversation (Commons — free-form chat landing zone)
+# Intent-based routing hub. Aggregates all user-module tools.
+
+domain_physics_path: domain-packs/assistant/modules/conversation/domain-physics.json
+
+initial_module_state:
+  turn_count: 0
+  idle_turn_count: 0
+  last_intent_type: general
+
+default_task_spec:
+  task_id: conversation-freeform-001
+  nominal_difficulty: 0.0
+
+turn_input_defaults:
+  intent_type: general
+  task_status: "n/a"
+  tool_call_requested: false
+  off_task_ratio: 0.0
+  response_latency_sec: 5.0
+  satisfaction_signal: unknown
+
+ui_overrides:
+  subtitle: "Conversation"

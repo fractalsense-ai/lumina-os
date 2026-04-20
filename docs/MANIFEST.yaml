@@ -1,5 +1,5 @@
 schema_version: 1.0.0
-last_updated: 2026-04-19
+last_updated: 2026-04-20
 artifacts:
 - path: docs/1-commands/README.md
   type: doc
@@ -745,6 +745,18 @@ artifacts:
   status: active
   last_updated: 2026-06-15
   sha256: 4e9fae537d4c643a4b673dd2f2e107141643139def6f2073afba26c8fc517a3d
+- path: standards/assistant-task-record-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 5c2790556896e3066f48d9d48bc9276b3b26a5b6da044780ce2f001aac8e7b03
+- path: standards/assistant-profile-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 8451f720e683d5eb6081e0d66208c0e364ea1d9c0fb76782c8a44aa163eb8c7a
 - path: standards/admin-command-schemas/approve-interpretation.json
   type: schema
   doc_version: 1.0.0
@@ -1363,6 +1375,108 @@ artifacts:
   status: active
   last_updated: 2026-04-04
   sha256: 08baab90e60c42b314963f039043778c2d082bccf6e7aef132a8896a18e5e0d5
+- path: domain-packs/assistant/pack.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 5306936737c1bfff6a9e8a65b2fe1f50f0cf51418def219a7299c7b4d53d0444
+- path: domain-packs/assistant/cfg/runtime-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 1657af86cfe27a925338f53b52cdda87e78a5c1bb8a20d13f0a3971c639391c0
+- path: domain-packs/assistant/cfg/admin-operations.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: b8b9840d31afacd7506d2e621f9ee3b5a02ec1888d9ce524fdfce6bba3a6021b
+- path: domain-packs/assistant/cfg/ui-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 7ba2cd79df413343b4db22dad50a144ef0411e1d8d445e7cac2099001e7cb680
+- path: domain-packs/assistant/cfg/domain-profile-extension.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 9a930984b1b22ef6e846938cb873fc33011fc78cf6386a0c573ffe2263b69604
+- path: domain-packs/assistant/profiles/entity.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 459daa9252a432e84c5bfb1b8e773c5de0cbfe1cd0ba9a01d2481c46df34a4d5
+- path: domain-packs/assistant/modules/conversation/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 07542eb66be79240ef044cde24de1608587b6b3506ace409202dd860d6fef694
+- path: domain-packs/assistant/modules/weather/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: b2c73543895eef277d267ffc9ae022ec11cec89673f9cfda44443f0911ec9d49
+- path: domain-packs/assistant/modules/weather/tool-adapters/weather-api-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 2606217ed917154e47883f026dd4e1fdcae3a69eebb90d3eac0a00aef263d2ac
+- path: domain-packs/assistant/modules/calendar/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 5a8131dd58b006c7e04c489f94ef64832e65fcbdb080e122336258889ff7e3e3
+- path: domain-packs/assistant/modules/calendar/tool-adapters/calendar-api-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 5dee95a6546d52053a00d4ca167109e38cb997365e5179c36ed3ba35ec0442d2
+- path: domain-packs/assistant/modules/search/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: ce54e5d8581207974048b7f19fe16450034240513c83cdb01db8cad0bc31d44e
+- path: domain-packs/assistant/modules/search/tool-adapters/search-api-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: b25041bf5e5aa34e2eb21fac8ae1b026fae2be46363b0b1ab2a8dc2f8edbf7cc
+- path: domain-packs/assistant/modules/creative-writing/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 464529ec43d2ae894bb2f522ceceba34d541ad6eae887f5d5e2489df0a498bdc
+- path: domain-packs/assistant/modules/planning/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 85277a991c05dac8a339ddd72e3672df60404c1dd9360ab47e689e5c8965b48a
+- path: domain-packs/assistant/modules/planning/tool-adapters/planning-tools-adapter-v1.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: b430d612f7fa751feaee8f4a94d359048a1425c9a336fd975d804d9d1e894c8f
+- path: domain-packs/assistant/modules/domain-authority/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 858c89f0b770cb5c34a16304a9bb59c42f0f64a48741795c905224d40260c4a6
 - path: examples/escalation-example-packet.yaml
   type: doc
   doc_version: 1.0.0

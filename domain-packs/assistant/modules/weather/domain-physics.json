@@ -1,0 +1,83 @@
+{
+  "id": "domain/asst/weather/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Weather task module — handles weather lookups, forecasts, and condition queries. Enforces tool-result grounding and location resolution. One-shot turn shape.",
+  "department": "Tasks",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "tool_result_grounded",
+      "description": "All weather information presented to the user must originate from a tool call result. The LLM must not fabricate weather data.",
+      "severity": "warning",
+      "check": "weather_data_source == 'tool'",
+      "standing_order_on_violation": "requery_weather_tool"
+    },
+    {
+      "id": "location_resolved",
+      "description": "A weather query must have a resolved location before the tool is called. If the user's location is ambiguous, ask for clarification.",
+      "severity": "warning",
+      "check": "location_resolved == true",
+      "standing_order_on_violation": "request_location_clarification"
+    },
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate — immediate escalation on harmful content.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "requery_weather_tool",
+      "action": "requery_weather_tool",
+      "trigger_condition": "tool_result_grounded",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Re-call the weather tool if the LLM attempted to fabricate weather data."
+    },
+    {
+      "id": "request_location_clarification",
+      "action": "request_location_clarification",
+      "trigger_condition": "location_resolved",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Ask the user to clarify which location they mean."
+    },
+    {
+      "id": "safety_intervene",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true,
+      "description": "Immediately escalate on safety violation."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (content_safety_hard).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/asst/weather-api/v1"
+  ],
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0},
+      "queries_completed": {"type": "integer", "default": 0},
+      "last_location": {"type": "string", "default": null}
+    }
+  }
+}

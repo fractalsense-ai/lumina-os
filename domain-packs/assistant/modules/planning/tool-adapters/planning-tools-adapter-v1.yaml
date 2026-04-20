@@ -1,0 +1,64 @@
+# ─── Planning Tools Adapter — Assistant Domain ───────────────────────
+# SCHEMA: standards/tool-adapter-schema-v1.json
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+id: adapter/asst/planning-tools/v1
+version: "1.0.0"
+tool_name: "Planning Tools"
+description: >
+  Manages plans, to-do lists, and task tracking — create, list, update,
+  and complete operations. Stub for v1.
+
+domain_id: domain/asst/planning/v1
+
+call_types:
+  - stateful
+  - llm_visible
+
+input_schema:
+  type: object
+  required:
+    - action
+  properties:
+    action:
+      type: string
+      enum: [create, list, update, complete, delete]
+      description: "Planning operation to perform."
+    plan_id:
+      type: string
+      description: "Plan ID (for update/complete/delete)."
+    title:
+      type: string
+      description: "Plan or task title."
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          description:
+            type: string
+          priority:
+            type: string
+            enum: [low, medium, high]
+          deadline:
+            type: string
+      description: "List of plan items."
+
+output_schema:
+  type: object
+  properties:
+    plan_id:
+      type: string
+    plans:
+      type: array
+      description: "List of plans (for list action)."
+    confirmation:
+      type: string
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - entity
+  requires_entity_consent: false

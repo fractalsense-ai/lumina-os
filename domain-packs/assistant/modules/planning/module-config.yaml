@@ -1,0 +1,27 @@
+# version: 0.1.0
+# last_updated: 2026-04-20
+#
+# Module: planning (Task planning — extended multi-turn)
+
+domain_physics_path: domain-packs/assistant/modules/planning/domain-physics.json
+
+initial_module_state:
+  turn_count: 0
+  plans_created: 0
+  active_plan_id: null
+  constraints_gathered: false
+
+default_task_spec:
+  task_id: planning-task-001
+  nominal_difficulty: 0.4
+
+turn_input_defaults:
+  intent_type: planning
+  task_status: open
+  tool_call_requested: false
+  off_task_ratio: 0.0
+  response_latency_sec: 5.0
+  satisfaction_signal: unknown
+
+ui_overrides:
+  subtitle: "Planning"

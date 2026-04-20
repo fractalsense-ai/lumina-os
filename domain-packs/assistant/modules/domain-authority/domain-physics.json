@@ -1,0 +1,134 @@
+{
+  "id": "domain/asst/domain-authority/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Domain Authority governance module — operational physics for domain-level administrators who manage the assistant domain. Covers physics staging, escalation oversight, module management, and domain-wide telemetry review. Local-only module (not accessible to regular users).",
+  "department": "Governance",
+  "lumina_core_version": "1.0.0",
+  "local_only": true,
+  "invariants": [
+    {
+      "id": "role_assignment_audit_trail",
+      "description": "Every role assignment or revocation must produce an auditable log entry.",
+      "severity": "critical",
+      "check": "audit_record_exists"
+    },
+    {
+      "id": "physics_change_staged",
+      "description": "All domain-physics modifications must pass through the staging workflow before commit. Direct edits to active physics are forbidden.",
+      "severity": "critical",
+      "check": "staging_gate_passed",
+      "standing_order_on_violation": "reject_direct_physics_edit"
+    },
+    {
+      "id": "escalation_sla_compliance",
+      "description": "All escalation packets routed to the domain authority must be acknowledged within the configured SLA window. Breaches are logged and forwarded to root.",
+      "severity": "warning",
+      "check": "sla_within_window",
+      "standing_order_on_violation": "flag_sla_breach"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "reject_direct_physics_edit",
+      "action": "reject_direct_physics_edit",
+      "trigger_condition": "physics_change_staged",
+      "max_attempts": 1,
+      "escalation_on_exhaust": false,
+      "description": "Block the edit and notify the requester that physics changes must go through the staging workflow."
+    },
+    {
+      "id": "flag_sla_breach",
+      "action": "flag_sla_breach",
+      "trigger_condition": "escalation_sla_compliance",
+      "max_attempts": 1,
+      "escalation_on_exhaust": true,
+      "description": "Log the SLA breach, notify the domain authority, and if unresolved escalate to root."
+    },
+    {
+      "id": "review_pending_escalations",
+      "action": "review_pending_escalations",
+      "trigger_condition": "escalation_queue_nonempty",
+      "max_attempts": 3,
+      "escalation_on_exhaust": true,
+      "description": "Present the oldest pending escalation packet for DA review. If not resolved after 3 prompts, forward to root."
+    },
+    {
+      "id": "review_physics_proposal",
+      "action": "review_physics_proposal",
+      "trigger_condition": "staged_physics_pending",
+      "max_attempts": 2,
+      "escalation_on_exhaust": false,
+      "description": "Present a staged physics diff for DA approval or rejection."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "sla_breach_alert",
+      "condition": "An escalation packet has exceeded its SLA window without acknowledgment.",
+      "target_role": "root",
+      "sla_minutes": 60
+    },
+    {
+      "id": "physics_integrity_violation",
+      "condition": "A physics commit was attempted that would violate structural integrity.",
+      "target_role": "root",
+      "sla_minutes": 30
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/asst/physics-staging/v1"
+  ],
+  "domain_roles": {
+    "schema_version": "1.0",
+    "roles": [
+      {
+        "role_id": "domain_authority",
+        "role_name": "Domain Authority",
+        "hierarchy_level": 0,
+        "description": "Domain-level administrator with full oversight of the assistant domain.",
+        "maps_to_system_role": "domain_authority",
+        "default_access": "rwx",
+        "may_assign_domain_roles": true,
+        "max_assignable_level": 1,
+        "scoped_capabilities": {
+          "receive_escalations": true,
+          "modify_standing_orders": true,
+          "view_all_entity_telemetry": true,
+          "trigger_logic_scrape": true
+        }
+      },
+      {
+        "role_id": "user",
+        "role_name": "User",
+        "hierarchy_level": 1,
+        "description": "Standard user of the assistant domain.",
+        "maps_to_system_role": "entity",
+        "default_access": "r",
+        "may_assign_domain_roles": false,
+        "max_assignable_level": 0,
+        "scoped_capabilities": {
+          "receive_escalations": false,
+          "modify_standing_orders": false,
+          "view_all_entity_telemetry": false,
+          "trigger_logic_scrape": false
+        }
+      }
+    ]
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "pending_escalations": {"type": "integer", "default": 0},
+      "staged_proposals": {"type": "integer", "default": 0},
+      "sla_breaches_total": {"type": "integer", "default": 0}
+    }
+  }
+}

@@ -11,9 +11,10 @@ DOMAIN_PACKS = REPO_ROOT / "domain-packs"
 SYSTEM_PACK = DOMAIN_PACKS / "system"
 EDUCATION_PACK = DOMAIN_PACKS / "education"
 AGRICULTURE_PACK = DOMAIN_PACKS / "agriculture"
+ASSISTANT_PACK = DOMAIN_PACKS / "assistant"
 
-ALL_PACKS = [SYSTEM_PACK, EDUCATION_PACK, AGRICULTURE_PACK]
-PACK_IDS = ["system", "education", "agriculture"]
+ALL_PACKS = [SYSTEM_PACK, EDUCATION_PACK, AGRICULTURE_PACK, ASSISTANT_PACK]
+PACK_IDS = ["system", "education", "agriculture", "assistant"]
 
 
 class TestReferenceDirectoryExists:

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/assistant/assistant-profile-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-20",
+  "title": "Assistant Domain Profile Schema V1",
+  "description": "JSON Schema for assistant domain profile extensions (Layer 2 and Layer 3 fields).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "consent": {
+      "type": "object",
+      "properties": {
+        "accepted": {
+          "type": "boolean",
+          "description": "Whether the user has accepted the assistant domain's consent agreement."
+        },
+        "timestamp": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 timestamp of consent acceptance."
+        }
+      }
+    },
+    "session_history": {
+      "type": "object",
+      "properties": {
+        "total_sessions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of sessions."
+        },
+        "total_turns": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Cumulative turn count across all sessions."
+        },
+        "last_session_date": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 date of the last session."
+        }
+      }
+    },
+    "task_history": {
+      "type": "array",
+      "items": {
+        "$ref": "assistant-task-record-schema-v1.json"
+      },
+      "description": "Array of task records tracked across sessions."
+    },
+    "intent_distribution": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "description": "Map of intent_type → cumulative count."
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "response_style": {
+          "type": "string",
+          "enum": ["concise", "detailed", "balanced"],
+          "description": "Preferred response verbosity."
+        },
+        "default_units": {
+          "type": "string",
+          "enum": ["metric", "imperial"],
+          "description": "Preferred measurement units."
+        },
+        "timezone": {
+          "type": ["string", "null"],
+          "description": "IANA timezone string."
+        }
+      }
+    },
+    "entity_state": {
+      "type": "object",
+      "properties": {
+        "active_task_id": {
+          "type": ["string", "null"],
+          "description": "Currently active task ID."
+        },
+        "active_task_type": {
+          "type": ["string", "null"],
+          "description": "Intent type of the currently active task."
+        }
+      }
+    }
+  }
+}

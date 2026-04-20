@@ -1,0 +1,24 @@
+# ─── Assistant Domain — Default Entity Profile ───────────────────────
+# Layer 3 of the hierarchical profile system (Base → Domain → Role).
+#
+# Default profile for users in the assistant domain.
+# The runtime merges profiles in order:
+#   1. base-entity-profile.yaml     (system pack — universal fields)
+#   2. domain-profile-extension.yaml (this domain — shared domain fields)
+#   3. THIS FILE                     (role-specific fields)
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+# ── Preferences ──────────────────────────────────────────────────────
+preferences:
+  explanation_style: standard
+  response_verbosity: normal
+
+# ── Domain-specific state ────────────────────────────────────────────
+entity_state:
+  active_task_id: null
+  active_task_type: null
+  total_sessions: 0
+  last_session_utc: null

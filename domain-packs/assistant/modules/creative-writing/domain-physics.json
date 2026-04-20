@@ -1,0 +1,59 @@
+{
+  "id": "domain/asst/creative-writing/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Creative writing task module — handles stories, poems, brainstorming, rephrasing, and other creative text generation. Pure LLM module with no tool adapters. Only content safety invariants apply (no style filters). Iterative multi-turn shape.",
+  "department": "Tasks",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate — immediate escalation on harmful content. This is the ONLY invariant for creative writing. No style or quality filters.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "safety_intervene",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true,
+      "description": "Immediately escalate on safety violation."
+    },
+    {
+      "id": "respect_creative_intent",
+      "action": "respect_creative_intent",
+      "trigger_condition": "always",
+      "max_attempts": 0,
+      "escalation_on_exhaust": false,
+      "description": "Match the user's requested tone, style, and format. Do not impose the assistant's own creative preferences. Ask for clarification if the creative brief is ambiguous."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (content_safety_hard).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [],
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0},
+      "pieces_generated": {"type": "integer", "default": 0},
+      "active_genre": {"type": "string", "default": null}
+    }
+  }
+}

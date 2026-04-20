@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/standards/assistant/task-record-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-20",
+  "title": "Assistant Task Record Schema V1",
+  "description": "JSON Schema for task records tracked by the assistant domain's task_tracker.",
+  "type": "object",
+  "required": ["task_id", "intent_type", "status", "turn_count", "created_at", "updated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier."
+    },
+    "intent_type": {
+      "type": "string",
+      "enum": ["general", "weather", "calendar", "search", "creative", "planning"],
+      "description": "The intent category that created this task."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "completed", "abandoned", "deferred", "continued"],
+      "description": "Current lifecycle status of the task."
+    },
+    "turn_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of turns spent on this task."
+    },
+    "created_at": {
+      "type": "number",
+      "description": "Unix timestamp when the task was created."
+    },
+    "updated_at": {
+      "type": "number",
+      "description": "Unix timestamp of the last status update."
+    }
+  }
+}

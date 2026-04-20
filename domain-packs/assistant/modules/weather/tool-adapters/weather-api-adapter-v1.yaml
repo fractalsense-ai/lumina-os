@@ -1,0 +1,61 @@
+# ─── Weather API Tool Adapter — Assistant Domain ─────────────────────
+# SCHEMA: standards/tool-adapter-schema-v1.json
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+id: adapter/asst/weather-api/v1
+version: "1.0.0"
+tool_name: "Weather API Lookup"
+description: >
+  Fetches current weather conditions and forecasts for a specified location.
+  Returns structured weather data including temperature, conditions,
+  humidity, and wind speed. Stub implementation for v1.
+
+domain_id: domain/asst/weather/v1
+
+call_types:
+  - llm_visible
+
+input_schema:
+  type: object
+  required:
+    - location
+  properties:
+    location:
+      type: string
+      description: "Location to query weather for (city name, zip code, or coordinates)."
+    forecast_days:
+      type: integer
+      minimum: 1
+      maximum: 7
+      default: 1
+      description: "Number of forecast days to return."
+
+output_schema:
+  type: object
+  properties:
+    location:
+      type: string
+      description: "Resolved location name."
+    temperature_c:
+      type: number
+      description: "Current temperature in Celsius."
+    conditions:
+      type: string
+      description: "Current weather conditions (e.g. 'Sunny', 'Partly Cloudy')."
+    humidity_pct:
+      type: number
+      description: "Relative humidity percentage."
+    wind_speed_kph:
+      type: number
+      description: "Wind speed in km/h."
+    forecast:
+      type: array
+      description: "Daily forecast entries."
+
+authorization:
+  who_may_call:
+    - orchestrator
+    - entity
+  requires_entity_consent: false

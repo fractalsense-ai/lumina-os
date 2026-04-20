@@ -1,0 +1,82 @@
+{
+  "id": "domain/asst/conversation/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Conversation Commons — the free-form landing zone for the assistant domain. Users arrive here by default. All tools from sibling user modules are accessible. Intent classification routes turns to specialized modules when appropriate. Only hard-safety invariants trigger escalation.",
+  "department": "General",
+  "lumina_core_version": "1.0.0",
+  "auto_freeze_on_escalation": true,
+  "greeting": {
+    "enabled": true,
+    "style": "slm_generated",
+    "fallback_message": "Hello! I'm your assistant. I can help with weather lookups, calendar management, web searches, creative writing, and planning. What would you like to do?"
+  },
+  "invariants": [
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate: any message containing indicators of self-harm, violence, abuse, or illegal activity must be immediately escalated. This is the only invariant in the conversation commons.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "safety_intervene",
+      "description": "Immediately escalate to domain authority when hard-safety content is detected.",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true
+    },
+    {
+      "id": "idle_prompt_offer",
+      "description": "After 3 turns without a clear goal, gently offer to help with a specific task category.",
+      "action": "idle_prompt_offer",
+      "style": "hybrid",
+      "passive_turns_before_prompt": 3,
+      "categories": ["weather", "calendar", "search", "creative_writing", "planning"]
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (content_safety_hard).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/asst/weather-api/v1",
+    "adapter/asst/calendar-api/v1",
+    "adapter/asst/search-api/v1",
+    "adapter/asst/planning-tools/v1"
+  ],
+  "domain_step_params": {
+    "window_turns": 10,
+    "drift_threshold": 0.5
+  },
+  "subsystem_configs": {
+    "governance": {
+      "domain_role_aliases": {
+        "domain_authority": "domain_authority",
+        "user": "user"
+      }
+    }
+  },
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0},
+      "idle_turn_count": {"type": "integer", "default": 0},
+      "last_intent_type": {"type": "string", "default": "general"}
+    }
+  }
+}

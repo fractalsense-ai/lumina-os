@@ -1,0 +1,56 @@
+# ─── Assistant Domain Pack Manifest ───────────────────────────────────
+# HMVC identity card — declares what this pack is, what it owns,
+# and how its components map to the Model / Controller / View layers.
+# See docs/7-concepts/hmvc-heritage.md for the architectural rationale.
+# ──────────────────────────────────────────────────────────────────────
+
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+pack_id: assistant
+version: "0.1.0"
+description: "General-purpose assistant domain pack — intent-based conversational AI with per-task-type module routing, tool-call governance, and task tracking."
+
+# ── HMVC Layer Map ────────────────────────────────────────────────────
+layers:
+  model:
+    - modules/*/domain-physics.json
+    - domain-lib/
+  controller:
+    - controllers/runtime_adapters.py
+    - controllers/nlp_pre_interpreter.py
+    - controllers/assistant_operations.py
+    - controllers/assistant_escalation_context.py
+    - controllers/tool_adapters.py
+    - modules/*/tool-adapters/*.yaml
+  domain_lib:
+    - domain-lib/reference/turn-interpretation-spec-v1.md
+    - domain-lib/reference/weather-task-spec-v1.md
+    - domain-lib/reference/calendar-task-spec-v1.md
+    - domain-lib/reference/search-task-spec-v1.md
+    - domain-lib/reference/creative-writing-task-spec-v1.md
+    - domain-lib/reference/planning-task-spec-v1.md
+    - domain-lib/task_tracker.py
+  view:
+    - prompts/domain-persona-v1.md
+  docs:
+    - docs/
+
+# ── Modules ───────────────────────────────────────────────────────────
+modules:
+  - conversation
+  - weather
+  - calendar
+  - search
+  - creative-writing
+  - planning
+  - domain-authority
+
+default_module: conversation
+
+# ── Entry Points ──────────────────────────────────────────────────────
+entry_points:
+  runtime_config: cfg/runtime-config.yaml
+  ui_config: cfg/ui-config.yaml
+  runtime_adapter: controllers/runtime_adapters.py
+  nlp_pre_interpreter: controllers/nlp_pre_interpreter.py
