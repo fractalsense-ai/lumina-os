@@ -1,0 +1,77 @@
+# Framework Tier Defaults — Project Lumina
+#
+# Defines the built-in privilege tier ladder that every domain pack inherits.
+# Domain packs declare their own role aliases in their runtime-config
+# domain_roles block, mapping pack-local names onto these tier IDs.
+#
+# Design principle (IRC model): the framework owns the tier ladder; each
+# domain pack owns its own governance declaration. No domain pack role name
+# leaks into another pack or into the framework itself.
+#
+# tier_level: lower = more privileged (0 = highest)
+# default_access: permission chars (r=read, w=write, x=execute, i=ingest)
+#
+# version: 2.0.0
+# last_updated: 2026-04-21
+
+framework_tier_defaults:
+  - role_id: root
+    label: Root
+    tier_level: 0
+    description: >
+      OS-level administrator. Full system access; bypasses all permission
+      checks. Manages users, roles, domain registries, and system
+      configuration. Equivalent to the UNIX superuser.
+    default_access: rwxi
+
+  - role_id: super_admin
+    label: Super Admin
+    tier_level: 1
+    description: >
+      Elevated operator with broad administrative rights across the
+      framework. Can manage users, restart services, and act on behalf of
+      the platform. Scoped below root; cannot override system invariants.
+    default_access: rwxi
+
+  - role_id: admin
+    label: Admin
+    tier_level: 2
+    description: >
+      Domain-scoped authority. Has authoring rights over the modules they
+      govern within a specific domain pack. Bound to a governed_modules
+      JWT claim; cannot reach outside their declared scope.
+    default_access: rwx
+
+  - role_id: operator
+    label: Operator
+    tier_level: 3
+    description: >
+      Active participant with execution and contribution rights. Can run
+      sessions, submit artefacts, and trigger tool adapters on permitted
+      modules. Write access is granted only where explicitly declared.
+    default_access: rx
+
+  - role_id: half_operator
+    label: Half Operator
+    tier_level: 4
+    description: >
+      Elevated participant with read and limited interaction rights.
+      Cannot write or ingest without explicit ACL grant. Suitable for
+      roles that need visibility without authoring capability.
+    default_access: rx
+
+  - role_id: user
+    label: User
+    tier_level: 5
+    description: >
+      Standard authenticated end-user. Can execute sessions on modules
+      they are permitted to access. No write or ingest access by default.
+    default_access: rx
+
+  - role_id: guest
+    label: Guest
+    tier_level: 6
+    description: >
+      Unauthenticated or unregistered visitor. Minimal read-only access,
+      subject to each domain pack's min_tier and guest_access policy.
+    default_access: r

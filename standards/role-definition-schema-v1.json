@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://projectlumina.org/standards/role-definition-schema-v1.json",
-  "schema_version": "1.1.0",
-  "last_updated": "2026-04-11",
+  "schema_version": "1.2.0",
+  "last_updated": "2026-04-21",
   "title": "Lumina Role Definition Schema V1",
-  "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical system-track and user-track role. Domain authority is on a separate parallel track; see domain-authority-track-schema-v1.json.",
+  "description": "JSON Schema for Project Lumina RBAC role records. Defines the structure for each canonical framework tier. The tier ladder is generic (root / super_admin / admin / operator / half_operator / user / guest) — not tied to organisational job titles. Domain packs declare their own role aliases that map onto these tiers.",
   "type": "object",
   "required": [
     "role_id",
@@ -19,13 +19,14 @@
       "type": "string",
       "enum": [
         "root",
-        "it_support",
-        "qa",
-        "auditor",
+        "super_admin",
+        "admin",
+        "operator",
+        "half_operator",
         "user",
         "guest"
       ],
-      "description": "Unique canonical identifier for a system-track or user-track role. Domain authority is NOT in this enum — it lives on the domain track."
+      "description": "Canonical framework tier identifier. The ladder is: root (0) > super_admin (1) > admin (2) > operator (3) > half_operator (4) > user (5) > guest (6). Domain pack roles map onto these tiers via their runtime-config domain_roles block."
     },
     "role_name": {
       "type": "string",
@@ -34,8 +35,8 @@
     "hierarchy_level": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 4,
-      "description": "Position in the role hierarchy. 0 = highest (root), 3 = lowest (user). Peers share the same level."
+      "maximum": 6,
+      "description": "Position in the role hierarchy. 0 = highest (root), 6 = lowest (guest). Each tier has a unique level."
     },
     "description": {
       "type": "string",
@@ -44,7 +45,7 @@
     "default_module_mode": {
       "type": "string",
       "pattern": "^[0-7]{3}$",
-      "description": "Recommended default octal mode when this role owns a module. Only applicable to roles that can own modules (root, domain_authority)."
+      "description": "Recommended default octal mode when this role owns a module. Only applicable to roles that can own modules (root, admin)."
     },
     "bypass_permissions": {
       "type": "boolean",

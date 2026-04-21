@@ -1,13 +1,13 @@
 ---
-version: "1.1.0"
-last_updated: "2026-03-15"
+version: "2.0.0"
+last_updated: "2026-04-21"
 ---
 
-# Role-Based Access Control (RBAC) Specification — V1
+# Role-Based Access Control (RBAC) Specification — V2
 
-**Version:** 1.1.0
+**Version:** 2.0.0
 **Status:** Active
-**Last updated:** 2026-03-15
+**Last updated:** 2026-04-21
 
 ---
 
@@ -17,33 +17,91 @@ This specification defines the access control model for Project Lumina. The syst
 
 Every domain-pack module declares a `permissions` block that gates read, write, and execute access. The runtime enforces these permissions on every API request via JWT-authenticated identity and role claims.
 
+### Design principle — the IRC model
+
+Lumina's governance follows the same model as IRC: the **server** (framework) owns the tier ladder; each **channel** (domain pack) owns its own governance declaration. This means:
+
+- The framework defines a fixed, generic tier ladder (`root → super_admin → admin → operator → half_operator → user → guest`). Tier names are **not** organisational job titles.
+- Each domain pack declares its own role aliases in its `runtime-config.yaml` `domain_roles` block. For example, the education pack maps `teacher → admin`, `student → user`.
+- No domain pack role name leaks into another pack or into the framework. A `teacher` in the education pack has no meaning in the agriculture pack.
+- Access control on each module is declared via `min_tier:` — a single tier threshold that implicitly allows all tiers at that level and above (more privileged). This is analogous to IRC's channel mode `+m` where the threshold is voiced-or-above.
+
 ---
 
 ## Roles
 
-Lumina defines six canonical roles. Each role has a fixed position in the hierarchy and a default permission posture.
+Lumina defines seven canonical framework tiers. Each tier has a fixed position in the hierarchy. Tier names are generic — domain packs map their own vocabulary onto these tiers.
 
-| Role | ID | Hierarchy | Description |
-|------|----|-----------|-------------|
-| **Root** | `root` | 0 (highest) | OS-level administrator. Full system access. Bypasses all permission checks. Manages users, roles, and system configuration. |
-| **Domain Authority** | `domain_authority` | 1 | Subject-matter expert with authoring rights over governed modules. Scoped to specific domain packs. |
-| **IT Support** | `it_support` | 2 | Tier-1 technical support. Diagnostics, session monitoring, and runtime troubleshooting. |
-| **Quality Assurance** | `qa` | 2 | Test harness execution, conformance validation, and regression testing on assigned modules. |
-| **Auditor** | `auditor` | 2 | Compliance and audit role. Read-only access to System Log records, audit logs, and session traces within scope. |
-| **Standard User** | `user` | 3 (lowest) | End-user / session participant. May execute sessions on modules they are permitted to access. |
+| Tier | ID | Level | JWT Track | Description |
+|------|----|-------|-----------|-------------|
+| **Root** | `root` | 0 (highest) | admin | Full system access. Bypasses all permission checks. Manages users, roles, and system configuration. |
+| **Super Admin** | `super_admin` | 1 | admin | Elevated operator with broad administrative rights. Can manage users and act on behalf of the platform. |
+| **Admin** | `admin` | 2 | domain | Domain-scoped authority. Authoring rights over governed modules within a specific domain pack. |
+| **Operator** | `operator` | 3 | user | Active participant with execution and contribution rights on permitted modules. |
+| **Half Operator** | `half_operator` | 4 | user | Elevated participant with read and limited interaction rights. |
+| **User** | `user` | 5 | user | Standard authenticated end-user. Can execute sessions on permitted modules. |
+| **Guest** | `guest` | 6 (lowest) | user | Unauthenticated or unregistered visitor. Subject to each pack's `min_tier` policy. |
 
-Hierarchy level determines tie-breaking and scope inheritance:
+The JWT track determines which signing secret and issuer are used:
 
-- A role at level $N$ may be granted access to resources governed by roles at level $N$ or below, subject to explicit permission grants.
+| JWT Track | Issuer | Tiers |
+|-----------|--------|-------|
+| admin | `lumina-admin` | `root`, `super_admin` |
+| domain | `lumina-domain` | `admin` |
+| user | `lumina-user` | `operator`, `half_operator`, `user`, `guest` |
+
+Hierarchy level determines access resolution:
+
 - `root` (level 0) bypasses all checks — equivalent to the UNIX superuser.
-- Roles at the same hierarchy level (e.g., `it_support`, `qa`, `auditor`) are peers with distinct default access patterns.
+- `min_tier` enforcement is based on level: a user at level $N$ satisfies `min_tier: T` if $N \le T$ (the user is at least as privileged as the threshold).
 
 ### Role Inheritance
 
-Roles do **not** inherit permissions from other roles. Each role has its own default access pattern. However:
+Tiers do **not** inherit permissions from each other. Each tier has its own default access pattern.
 
-- A user with the `domain_authority` role inherits read access to modules governed by their Meta Authority chain (upward visibility for context).
-- A user may hold exactly one role at any time. Role changes require a System Log `CommitmentRecord`.
+- A user with the `admin` tier inherits read access to modules governed by their Meta Authority chain (upward visibility for context).
+- A user may hold exactly one framework tier at any time. Tier changes require a System Log `CommitmentRecord`.
+
+### Domain Role Aliases
+
+Each domain pack maps its local vocabulary to framework tiers in its `runtime-config.yaml`:
+
+```yaml
+# domain-packs/education/cfg/runtime-config.yaml (excerpt)
+domain_roles:
+  teacher:    admin
+  ta:         half_operator
+  student:    user
+  observer:   guest
+```
+
+The mapping is **one-way**: the pack's `teacher` becomes an `admin` for permission resolution purposes. The word `teacher` never appears in the framework or in any other pack.
+
+---
+
+## Access Control — `min_tier`
+
+Each module's `access_control` block in `runtime-config.yaml` declares the minimum tier required to access the module:
+
+```yaml
+access_control:
+  min_tier: user        # user, half_operator, operator, admin, super_admin, root
+```
+
+The runtime resolves access as:
+
+```
+if tier_level(user.role) <= tier_level(min_tier):
+    → ALLOW (proceed to permission check)
+else:
+    → DENY (403 before reaching permission evaluation)
+```
+
+Because lower level = more privilege, `min_tier: user` means "anyone at user-level or above" (operator, half_operator, admin, super_admin, root all pass).
+
+`min_tier: guest` is effectively open to all authenticated users.
+
+The `min_tier` check is a **pre-filter** before the octal permission check. Both must pass.
 
 ---
 
@@ -84,7 +142,7 @@ These are the **recommended** defaults when a Domain Authority creates a new mod
 
 | Role Context | Default Mode | Symbolic | Rationale |
 |-------------|-------------|----------|-----------|
-| Domain Authority (owner) | `750` | `rwxr-x---` | Full access for owner; group members (other domain authorities) can read and execute; others denied |
+| Admin (owner) | `750` | `rwxr-x---` | Full access for owner; group members (other admins) can read and execute; others denied |
 | Shared module (cross-domain) | `755` | `rwxr-xr-x` | Owner full, group and others can read and execute |
 | Restricted module (sensitive) | `700` | `rwx------` | Owner-only access |
 | Open module (public training) | `755` | `rwxr-xr-x` | Broadly accessible |
@@ -111,13 +169,13 @@ Every domain-physics document must include a `permissions` block:
 ```yaml
 permissions:
   mode: "750"
-  owner: "da_algebra_lead_001"    # pseudonymous_id of the owning Domain Authority
-  group: "domain_authority"       # role name that maps to the group bits
+  owner: "da_algebra_lead_001"    # pseudonymous_id of the owning Admin
+  group: "admin"                  # tier that maps to the group bits
   acl:                            # optional extended ACL entries
-    - role: qa
-      access: rx                  # read + execute for QA testers
+    - role: operator
+      access: rx                  # read + execute for operators
       scope: "evaluation_only"    # optional scope qualifier
-    - role: auditor
+    - role: half_operator
       access: r                   # read-only for auditors
       scope: "log_records_only"
 ```
@@ -128,7 +186,7 @@ The `acl` array provides fine-grained overrides beyond the owner/group/others mo
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `role` | string | yes | One of the six canonical role IDs |
+| `role` | string | yes | One of the seven canonical tier IDs |
 | `access` | string | yes | Combination of `r`, `w`, `x` characters |
 | `scope` | string | no | Optional scope qualifier limiting what the access applies to. Values are module-defined (e.g., `evaluation_only`, `log_records_only`, `read_physics_only`). When omitted, access applies to the full module. |
 
@@ -186,29 +244,29 @@ All authenticated requests carry a JWT in the `Authorization: Bearer <token>` he
 ```json
 {
   "sub": "<pseudonymous_id>",
-  "role": "domain_authority",
+  "role": "admin",
   "governed_modules": [
     "domain/edu/algebra-level-1/v1",
     "domain/edu/geometry-level-1/v1"
   ],
   "iat": 1741500000,
   "exp": 1741503600,
-  "iss": "lumina"
+  "iss": "lumina-domain"
 }
 ```
 
 | Claim | Type | Description |
 |-------|------|-------------|
 | `sub` | string | Pseudonymous user ID (32-character hex token). Matches `actor_id` in System Log records. |
-| `role` | string | One of the six canonical role IDs |
-| `governed_modules` | string[] | Module IDs this user has explicit governance over. Only meaningful for `domain_authority`; empty for other roles. |
+| `role` | string | One of the seven canonical tier IDs |
+| `governed_modules` | string[] | Module IDs this user has explicit governance over. Only meaningful for `admin`; empty for other tiers. |
 | `iat` | integer | Issued-at timestamp (UNIX epoch) |
 | `exp` | integer | Expiration timestamp (UNIX epoch) |
-| `iss` | string | Issuer — always `"lumina"` for the built-in auth service |
+| `iss` | string | Issuer — one of `lumina-admin`, `lumina-domain`, `lumina-user` depending on JWT track |
 
 ### Token Lifecycle
 
-1. **Registration** — `POST /api/auth/register` creates a user record. The first registered user receives the `root` role automatically (bootstrap mode). Subsequent registrations require an authenticated `root` or `domain_authority` caller.
+1. **Registration** — `POST /api/auth/register` creates a user record. The first registered user receives the `root` tier automatically (bootstrap mode). Subsequent registrations require an authenticated `root` or `admin` caller.
 2. **Login** — `POST /api/auth/login` validates credentials and returns an access token.
 3. **Refresh** — `POST /api/auth/refresh` issues a new token before the current one expires.
 4. **Revocation** — `POST /api/auth/revoke` invalidates a token. Only `root` or the token owner may revoke.
@@ -220,15 +278,15 @@ On first startup with no users in the system, `LUMINA_AUTH_BOOTSTRAP=true` (defa
 
 ---
 
-## Domain Authority Scoping
+## Admin Scoping
 
-A `domain_authority` user is scoped to specific modules via the `governed_modules` claim in their JWT:
+An `admin`-tier user is scoped to specific modules via the `governed_modules` claim in their JWT:
 
 - **Write** — only on modules listed in `governed_modules`
 - **Read** — on governed modules plus modules governed by their Meta Authority chain (upward context visibility)
 - **Execute** — on governed modules
 
-An English teacher with `governed_modules: ["domain/edu/algebra-level-1/v1"]` cannot access `domain/edu/biology-level-1/v1` unless that module's ACL explicitly grants access.
+An admin with `governed_modules: ["domain/edu/algebra-level-1/v1"]` cannot access `domain/edu/biology-level-1/v1` unless that module's ACL explicitly grants access.
 
 ### Module Isolation Example
 
@@ -237,18 +295,18 @@ domain/edu/algebra-level-1/v1
   permissions:
     mode: "750"
     owner: da_algebra_lead_001
-    group: domain_authority
+    group: admin
 
 domain/edu/biology-level-1/v1
   permissions:
     mode: "750"
     owner: da_biology_lead_001
-    group: domain_authority
+    group: admin
 ```
 
 User `da_algebra_lead_001`:
 - algebra module: **OWNER** → rwx (full access) ✓
-- biology module: **GROUP** (same role `domain_authority`) → r-x (read + execute) ✓
+- biology module: **GROUP** (same tier `admin`) → r-x (read + execute) ✓
 - biology module write: → **DENIED** (group has no write bit) ✗
 
 This ensures subject-matter experts can observe peer modules but cannot modify them.
@@ -273,7 +331,7 @@ All System Log records created during an authenticated session include the JWT-d
 
 ### Role Change Auditing
 
-When a user's role is changed (e.g., promoted from `user` to `domain_authority`), a `CommitmentRecord` is appended to the System Logs:
+When a user's role is changed (e.g., promoted from `user` to `admin`), a `CommitmentRecord` is appended to the System Logs:
 
 ```json
 {
@@ -284,7 +342,7 @@ When a user's role is changed (e.g., promoted from `user` to `domain_authority`)
   "subject_id": "<user whose role changed>",
   "metadata": {
     "previous_role": "user",
-    "new_role": "domain_authority",
+    "new_role": "admin",
     "governed_modules": ["domain/edu/algebra-level-1/v1"]
   }
 }
@@ -306,18 +364,17 @@ When a user's role is changed (e.g., promoted from `user` to `domain_authority`)
 
 ## Mapping to Governance Hierarchy
 
-The system RBAC roles map to the existing four-level governance hierarchy. Domain roles (defined in each domain's `domain_roles` block) provide finer granularity within levels 2-4:
+The framework tiers map to the existing four-level governance hierarchy. Domain roles (defined in each domain's `domain_roles` block in `runtime-config.yaml`) provide domain-vocabulary labels that map onto these tiers:
 
-| Governance Level | Governance Title | RBAC Role(s) | Domain Roles (examples) | Notes |
-|-----------------|-----------------|--------------|------------------------|-------|
+| Governance Level | Governance Title | Framework Tier | Domain Role Examples | Notes |
+|-----------------|-----------------|----------------|---------------------|-------|
 | 1 — Macro | School Board / Admin | `root` | — | Institution-wide system administration |
-| 2 — Meso | Department Head | `domain_authority` (with Meta Authority scope) | — | Governs multiple modules and subordinate authorities |
-| 3 — Micro | Teacher / Operator | `domain_authority` (with module scope) | `teacher`, `site_manager` | Governs specific modules; can assign sub-roles |
-| 3b — Support | Teaching Assistant / Field Operator | `user` + domain role | `teaching_assistant`, `field_operator` | Support staff with enhanced access via domain role |
-| 4 — Subject | Student / Patient | `user` + domain role | `student`, `observer` | Session participant |
-| (cross-cutting) | IT Support | `it_support` | — | Technical operations across domains |
-| (cross-cutting) | QA Tester | `qa` | — | Conformance testing across assigned modules |
-| (cross-cutting) | Compliance Officer | `auditor` | — | Audit trail review within scope |
+| 1b — Platform | Platform Operations | `super_admin` | — | Cross-domain technical operations and user management |
+| 2 — Meso | Department Head | `admin` (Meta Authority scope) | — | Governs multiple modules and subordinate authorities |
+| 3 — Micro | Teacher / Site Manager | `admin` (module scope) | `teacher`, `site_manager` | Governs specific modules; declared per pack |
+| 3b — Support | Teaching Assistant / Field Operator | `half_operator` | `ta`, `field_operator` | Support staff with elevated visibility |
+| 4 — Subject | Student / Observer | `user` | `student`, `observer` | Session participant |
+| 4b — Visitor | Guest / Prospective | `guest` | `guest` | Read-only visitor |
 
 ---
 
@@ -325,7 +382,7 @@ The system RBAC roles map to the existing four-level governance hierarchy. Domai
 
 ### Overview
 
-Each domain can define its own role hierarchy beneath the Domain Authority ceiling via an optional `domain_roles` block in its domain-physics document. Domain roles are an additive overlay on top of the 7 system-level roles — they can grant additional access within a domain but cannot revoke access already granted by the system-level permission resolution.
+Each domain can define its own role hierarchy beneath the Admin tier ceiling via an optional `domain_roles` block in its `runtime-config.yaml`. Domain roles are a vocabulary overlay on top of the 7 framework tiers — they declare what local names map to which tier.
 
 ### Domain Role Definition
 
@@ -335,9 +392,9 @@ Each domain role declares:
 |-------|----------|-------------|
 | `role_id` | yes | Unique identifier within the domain (lowercase_snake_case) |
 | `role_name` | yes | Human-readable display name |
-| `hierarchy_level` | yes | Position in hierarchy (1-10; DA is implicit 0) |
+| `hierarchy_level` | yes | Position in hierarchy (1-10; Admin is implicit 0) |
 | `description` | yes | Purpose and responsibilities |
-| `maps_to_system_role` | yes | System role ceiling: `domain_authority`, `user`, or `guest` |
+| `maps_to_tier` | yes | Framework tier ceiling: `admin`, `operator`, `half_operator`, `user`, or `guest` |
 | `default_access` | yes | Default `rwxi` permissions in this domain |
 | `may_assign_domain_roles` | no | Whether this role can assign domain roles (default: false) |
 | `max_assignable_level` | no | Lowest privilege level this role can assign |
@@ -412,7 +469,7 @@ ACL entries in the `permissions.acl` array can now reference domain roles via a 
 
 ```yaml
 acl:
-  - role: qa              # system role entry (existing)
+  - role: operator       # tier entry (existing)
     access: rx
   - domain_role: teacher  # domain role entry (new)
     access: rwx
@@ -426,7 +483,6 @@ Each ACL entry must have exactly one of `role` or `domain_role`, never both.
 
 - [`rbac-permission-schema-v1.json`](../standards/rbac-permission-schema-v1.json) — JSON schema for module permission blocks
 - [`role-definition-schema-v1.json`](../standards/role-definition-schema-v1.json) — JSON schema for role records
+- [`framework-tier-defaults.yaml`](../standards/framework-tier-defaults.yaml) — canonical framework tier definitions
 - [`domain-role-schema-v1.json`](../standards/domain-role-schema-v1.json) — JSON schema for domain-scoped role definitions
-- [`domain-authority-roles.md`](../governance/domain-authority-roles.md) — Domain Authority governance definitions
-- [`meta-authority-policy-template.yaml`](../governance/meta-authority-policy-template.yaml) — Meta Authority policy template
 - [`lumina-core-v1.md`](../standards/lumina-core-v1.md) — core conformance requirements
