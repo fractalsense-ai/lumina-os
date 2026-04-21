@@ -33,7 +33,7 @@
     "actor_role": {
       "type": "string",
       "description": "RBAC role of the staging actor.",
-      "enum": ["root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"]
+      "enum": ["root", "admin", "super_admin", "operator", "half_operator", "user", "guest"]
     },
     "payload": {
       "type": "object",

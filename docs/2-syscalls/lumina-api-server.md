@@ -193,7 +193,7 @@ Invoke a domain tool adapter.
 
 Validate System Log hash-chain integrity. Optional `session_id` query parameter.
 
-**Auth:** Optional Bearer token. When provided, requires role: `root`, `domain_authority`, `qa`, or `auditor`.
+**Auth:** Optional Bearer token. When provided, requires role: `root`, `admin`, `operator`, or `half_operator`.
 
 ---
 
@@ -201,7 +201,7 @@ Validate System Log hash-chain integrity. Optional `session_id` query parameter.
 
 List System Log commitment records. Query parameters: `session_id`, `record_type`, `limit`, `offset`.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`.
 
 ---
 
@@ -209,7 +209,7 @@ List System Log commitment records. Query parameters: `session_id`, `record_type
 
 List session IDs that have System Log records.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`.
 
 ---
 
@@ -217,7 +217,7 @@ List session IDs that have System Log records.
 
 Retrieve a single System Log commitment record by ID.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`.
 
 ---
 
@@ -225,7 +225,7 @@ Retrieve a single System Log commitment record by ID.
 
 List escalation records. Query parameters: `status`, `domain_id`, `limit`, `offset`.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`, `domain_authority` (scoped to governed modules).
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`, `admin` (scoped to governed modules).
 
 ---
 
@@ -235,7 +235,7 @@ Retrieve a single escalation record by ID.
 
 **Response:** Full `EscalationRecord` dict.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`, `domain_authority` (scoped to governed domains).
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`, `admin` (scoped to governed domains).
 
 ---
 
@@ -255,7 +255,7 @@ Resolve an open escalation with a decision.
 
 **Response:** `{record_id, escalation_id, decision}` plus `unlock_pin` (6-digit string) when `generate_pin=true`.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+**Auth:** Bearer token required. Roles: `root`, `admin`.
 
 **Notes:** Setting `generate_pin=true` both generates the PIN (stored in memory, TTL from `LUMINA_UNLOCK_PIN_TTL_SECONDS`) and atomically sets `SessionContainer.frozen=True` for the session. The teacher delivers the PIN to the student out-of-band. See [escalation-pin-unlock](../8-admin/escalation-pin-unlock.md) for the full workflow.
 
@@ -281,7 +281,7 @@ Unfreeze a frozen session by submitting the OTP PIN issued during escalation res
 
 Return audit log entries. Query parameters: `actor_id`, `record_type`, `domain_id`, `limit`, `offset`.
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`, `qa`, `auditor`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`, `operator`, `half_operator`.
 
 ---
 
@@ -291,7 +291,7 @@ Verify that all artifacts listed in `docs/MANIFEST.yaml` have matching sha256 di
 
 **Response:** `ManifestCheckResponse` — `ok`, `mismatches` (list of `{path, expected, actual}`).
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`.
 
 ---
 
@@ -313,7 +313,7 @@ Parse and stage a natural-language admin instruction via the SLM. Returns a `sta
 
 **Response:** `staged_id`, `staged_command` (parsed operation dict), `original_instruction`, `expires_at`, `log_stage_record_id`
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`.
 
 **Notes:** Staged commands expire after `LUMINA_STAGED_CMD_TTL_SECONDS` seconds. Each staging is recorded in the admin System Log ledger before the response is returned.
 
@@ -325,7 +325,7 @@ Accept, reject, or modify a previously staged admin command.
 
 **Request:** `CommandResolveRequest` — `action` (`accept` | `reject` | `modify`), `override_params` (optional)
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`. Non-root users may only resolve their own staged commands.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`. Non-root users may only resolve their own staged commands.
 
 ---
 
@@ -379,7 +379,7 @@ Return the profile of the currently authenticated user.
 
 List all registered users (password hashes excluded).
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`.
 
 ---
 
@@ -423,11 +423,11 @@ Reset a user's password. Root may reset any user; non-root may only reset their 
 
 Create a pending user and return a single-use setup link. Optionally sends the link by email when SMTP is configured.
 
-**Request:** `InviteUserRequest` — `username`, `role` (default `user`), `governed_modules` (required for `domain_authority`), `email` (optional; used only for SMTP dispatch, never persisted)
+**Request:** `InviteUserRequest` — `username`, `role` (default `user`), `governed_modules` (required for `admin`), `email` (optional; used only for SMTP dispatch, never persisted)
 
 **Response:** `UserInvitationResponse` — `user_id`, `username`, `role`, `governed_modules`, `setup_token`, `setup_url`, `email_sent`
 
-**Auth:** Bearer token required. Roles: `root`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `super_admin`.
 
 **Notes:**
 - The created user has `active=false` until `POST /api/auth/setup-password` completes successfully.
@@ -457,7 +457,7 @@ Activate a pending user account by setting their password using the one-time inv
 
 Commit a domain-physics hash to the System Logs, establishing the authoritative version for a domain.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
+**Auth:** Bearer token required. Roles: `root`, `admin` (governed domain only).
 
 ---
 
@@ -465,7 +465,7 @@ Commit a domain-physics hash to the System Logs, establishing the authoritative 
 
 Return the System Logs commitment history for a domain's physics hash.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `qa`, `auditor`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `operator`, `half_operator`.
 
 ---
 
@@ -473,7 +473,7 @@ Return the System Logs commitment history for a domain's physics hash.
 
 Apply a live patch to a domain's physics document and auto-commit a new System Log record.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority` (governed domain only).
+**Auth:** Bearer token required. Roles: `root`, `admin` (governed domain only).
 
 ---
 
@@ -481,7 +481,7 @@ Apply a live patch to a domain's physics document and auto-commit a new System L
 
 Explicitly close a session, flushing its System Log ledger and releasing memory.
 
-**Auth:** Bearer token required. Users may close their own sessions; `root` and `it_support` may close any session.
+**Auth:** Bearer token required. Users may close their own sessions; `root` and `super_admin` may close any session.
 
 ---
 
@@ -491,7 +491,7 @@ Upload a document artifact and open an ingestion record.
 
 **Response:** `ingestion_id`, `status: pending`
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`.
 
 ---
 
@@ -507,7 +507,7 @@ Return the status and metadata for an ingestion record.
 
 Trigger SLM-based entity and glossary extraction from the uploaded document.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+**Auth:** Bearer token required. Roles: `root`, `admin`.
 
 ---
 
@@ -517,7 +517,7 @@ Submit a human review decision on extracted content before commit.
 
 **Request:** `IngestionReviewRequest` — `approved_entries`, `rejected_entries`, `notes`
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+**Auth:** Bearer token required. Roles: `root`, `admin`.
 
 ---
 
@@ -525,7 +525,7 @@ Submit a human review decision on extracted content before commit.
 
 Finalize an ingestion: write approved entries to the domain physics and record the System Logs commitment.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`.
+**Auth:** Bearer token required. Roles: `root`, `admin`.
 
 ---
 
@@ -533,7 +533,7 @@ Finalize an ingestion: write approved entries to the domain physics and record t
 
 List ingestion records. Query parameters: `domain_id`, `status`, `limit`, `offset`.
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`, `qa`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`, `operator`.
 
 ---
 
@@ -541,7 +541,7 @@ List ingestion records. Query parameters: `domain_id`, `status`, `limit`, `offse
 
 Return per-domain summary telemetry (turn count, escalation rate, last active timestamp).
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`.
 
 ---
 
@@ -549,7 +549,7 @@ Return per-domain summary telemetry (turn count, escalation rate, last active ti
 
 Return aggregate system telemetry (active sessions, pending escalations, ingestion queue depth, last daemon batch run).
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `it_support`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `super_admin`.
 
 ---
 
@@ -593,7 +593,7 @@ Issue a short-lived (5 min) single-use SSE token. The token is SHA-256 hashed se
 
 **Response:** `{"token": "<urlsafe_string>", "expires_in": 300}`
 
-**Auth:** Bearer token required. Roles: `root`, `domain_authority`, `auditor`, `it_support`, `qa`.
+**Auth:** Bearer token required. Roles: `root`, `admin`, `half_operator`, `super_admin`, `operator`.
 
 **Notes:** `EventSource` cannot set HTTP headers, so a separate token exchange is required. Tokens are consumed on first use by the stream endpoint.
 
@@ -609,8 +609,8 @@ Server-Sent Events stream of real-time log-bus events. Query parameter: `token` 
 
 **RBAC filtering:**
 - `root` — receives all events
-- `domain_authority` — receives events for governed domains only
-- `auditor`, `it_support`, `qa` — receives warning-level and above events
+- `admin` — receives events for governed domains only
+- `half_operator`, `super_admin`, `operator` — receives warning-level and above events
 
 **Heartbeat:** An empty SSE comment line (`:heartbeat`) is sent every 30 seconds to keep the TCP connection alive through proxies.
 

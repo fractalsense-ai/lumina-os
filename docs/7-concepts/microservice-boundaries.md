@@ -52,7 +52,7 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 | DELETE | `/api/auth/users/{user_id}` | user (root) | Deactivate |
 | POST | `/api/auth/revoke` | user | Revoke own token |
 | POST | `/api/auth/password-reset` | user | Change own password |
-| POST | `/api/auth/invite` | user (root/it_support) | Generate invite token |
+| POST | `/api/auth/invite` | user (root/super_admin) | Generate invite token |
 | POST | `/api/auth/setup-password` | none → scoped | Activate invited account |
 | POST | `/api/admin/auth/login` | none → admin | System-track login |
 | POST | `/api/admin/auth/refresh` | admin | |
@@ -78,12 +78,12 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
-| GET | `/api/system-log/records` | user (root/qa/auditor) | Query log records |
-| GET | `/api/system-log/sessions` | user (root/qa/auditor) | List log sessions |
-| GET | `/api/system-log/records/{record_id}` | user (root/qa/auditor) | Single record |
-| GET | `/api/system-log/warnings` | user (root/qa/auditor) | |
-| GET | `/api/system-log/alerts` | user (root/qa/auditor) | |
-| GET | `/api/system-log/validate` | any (root/da/qa/auditor) | Hash-chain validation |
+| GET | `/api/system-log/records` | user (root/operator/half_operator) | Query log records |
+| GET | `/api/system-log/sessions` | user (root/operator/half_operator) | List log sessions |
+| GET | `/api/system-log/records/{record_id}` | user (root/operator/half_operator) | Single record |
+| GET | `/api/system-log/warnings` | user (root/operator/half_operator) | |
+| GET | `/api/system-log/alerts` | user (root/operator/half_operator) | |
+| GET | `/api/system-log/validate` | any (root/da/operator/half_operator) | Hash-chain validation |
 | GET | `/api/audit/log` | any | Scoped by role |
 | GET | `/api/events/token` | user | SSE token |
 | GET | `/api/events/stream` | SSE token | Server-sent events |
@@ -134,9 +134,9 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
 | POST | `/api/domain-pack/commit` | domain/admin (root/da) | Commit domain pack changes |
-| GET | `/api/domain-pack/{domain_id}/history` | any (root/da/qa/auditor) | Pack commit history |
+| GET | `/api/domain-pack/{domain_id}/history` | any (root/da/operator/half_operator) | Pack commit history |
 | PATCH | `/api/domain-pack/{domain_id}/physics` | domain/admin (root/da) | Update domain physics |
-| GET | `/api/domain-pack/{domain_id}/sessions` | any (root/da/qa/auditor) | List domain sessions |
+| GET | `/api/domain-pack/{domain_id}/sessions` | any (root/da/operator/half_operator) | List domain sessions |
 | POST | `/api/domain-pack/{domain_id}/commit` | domain/admin (root/da) | Close and commit session |
 | GET | `/api/domain-roles/defaults` | any | List default roles |
 | GET | `/api/domain-roles/{module_id}` | any | Get module roles |
@@ -160,10 +160,10 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
-| GET | `/api/escalations` | admin (root/it_support/da) | List escalations |
-| GET | `/api/escalations/{escalation_id}` | admin (root/it_support) | Detail |
+| GET | `/api/escalations` | admin (root/super_admin/da) | List escalations |
+| GET | `/api/escalations/{escalation_id}` | admin (root/super_admin) | Detail |
 | DELETE | `/api/escalations/stale` | admin (root) | Purge stale |
-| POST | `/api/escalations/{escalation_id}/resolve` | admin (root/it_support) | Resolve |
+| POST | `/api/escalations/{escalation_id}/resolve` | admin (root/super_admin) | Resolve |
 | POST | `/api/admin/command` | admin (root) | Stage admin command |
 | GET | `/api/admin/command/staged` | admin (root) | List staged commands |
 | POST | `/api/admin/command/{staged_id}/resolve` | admin (root) | Execute staged command |
@@ -214,8 +214,8 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
-| GET | `/api/dashboard/domains` | user (root/da/qa/auditor) | Domain overview |
-| GET | `/api/dashboard/telemetry` | user (root/qa/auditor) | Telemetry summary |
+| GET | `/api/dashboard/domains` | user (root/da/operator/half_operator) | Domain overview |
+| GET | `/api/dashboard/telemetry` | user (root/operator/half_operator) | Telemetry summary |
 
 **Source routes:** `routes/dashboard.py`
 
@@ -232,7 +232,7 @@ gateway for metric submission and a growth dashboard.
 |--------|------|------------|-------|
 | POST | `/api/admin/command` | user (root/da) | Daemon ops via `operation` field |
 | POST | `/api/user/{user_id}/vocabulary-metric` | user | Submit vocab metric |
-| GET | `/api/dashboard/education/vocabulary-growth` | user (root/da/qa/auditor) | Growth dashboard |
+| GET | `/api/dashboard/education/vocabulary-growth` | user (root/da/operator/half_operator) | Growth dashboard |
 
 ---
 

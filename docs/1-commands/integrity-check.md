@@ -66,8 +66,8 @@ this tool. See `system-log-validator(1)`.
 
 | Context | Details |
 |---------|---------|
-| Allowed roles | `root`, `domain_authority`, `qa`, `auditor` |
-| Denied roles | `it_support`, `user` |
+| Allowed roles | `root`, `admin`, `operator`, `half_operator` |
+| Denied roles | `super_admin`, `user` |
 | API endpoint | `GET /api/manifest/check` |
 | Auth required | Yes (JWT) |
 
@@ -75,7 +75,7 @@ This is a read-only operation. It does not modify `docs/MANIFEST.yaml` or any ar
 Auditors may use this tool to verify manifest integrity as part of compliance reviews, consistent
 with their read-only access to System Log records and audit logs.
 
-The `user` and `it_support` roles are excluded — manifest inspection is a governance-level read.
+The `user` and `super_admin` roles are excluded — manifest inspection is a governance-level read.
 
 ## ENVIRONMENT
 

@@ -35,7 +35,7 @@ The response contains the full simulation result alongside a physics diff, live-
 | Role | Access |
 |------|--------|
 | `root` | Full access — can simulate any domain |
-| `domain_authority` | Scoped access — can only simulate domains in their `governed_modules` list |
+| `admin` | Scoped access — can only simulate domains in their `governed_modules` list |
 | `user` and all other roles | 403 Forbidden |
 
 Role checks are enforced at the route level before any processing occurs.

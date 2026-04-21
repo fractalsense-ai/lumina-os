@@ -155,7 +155,7 @@ Full endpoint documentation: [`POST /api/sessions/{session_id}/unlock`](../2-sys
 
 | Operation | Required Role |
 |-----------|--------------|
-| Resolve escalation with `generate_pin: true` | `root`, `domain_authority` |
+| Resolve escalation with `generate_pin: true` | `root`, `admin` |
 | `POST /api/sessions/{session_id}/unlock` | Any authenticated user |
 | Chat-path PIN entry | No token required (mirrors `/api/chat` auth) |
 

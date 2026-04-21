@@ -481,12 +481,12 @@
     "group": "educators",
     "acl": [
       {
-        "role": "qa",
+        "role": "operator",
         "access": "rx",
         "scope": "evaluation_only"
       },
       {
-        "role": "auditor",
+        "role": "half_operator",
         "access": "rx",
         "scope": "log_records_only"
       },

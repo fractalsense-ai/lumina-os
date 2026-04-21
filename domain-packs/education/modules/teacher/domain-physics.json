@@ -140,7 +140,7 @@
     "group": "classroom_staff",
     "acl": [
       { "role": "domain_authority", "access": "rwx", "scope": "full" },
-      { "role": "auditor", "access": "rx", "scope": "log_records_only" }
+      { "role": "half_operator", "access": "rx", "scope": "log_records_only" }
     ]
   },
   "execution_policy": {

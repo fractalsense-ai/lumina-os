@@ -18,9 +18,9 @@ runtime:
     required_role: user
     allowed_roles:
       - root
-      - domain_authority
-      - it_support
-      - qa
+      - admin
+      - super_admin
+      - operator
       - user
 
   default_task_spec:
@@ -96,12 +96,12 @@ runtime:
       - id: yield_variance
         label: "Yield Variance"
         endpoint: "/api/dashboard/agriculture/yield-variance"
-        roles: [root, domain_authority]
+        roles: [root, admin]
         type: chart
       - id: field_signals
         label: "Field Signals"
         endpoint: "/api/dashboard/agriculture/field-signals"
-        roles: [root, domain_authority, it_support]
+        roles: [root, admin, super_admin]
         type: table
 
     role_layouts:

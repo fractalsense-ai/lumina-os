@@ -40,7 +40,7 @@ const SYSTEM_COMMANDS: SlashCommandDef[] = [
     operation: 'explain_reasoning',
     description: 'Explain reasoning for a log event',
     args: ['event_id'],
-    allowedRoles: ['domain_authority', 'qa'],
+    allowedRoles: ['admin', 'operator'],
     aliases: ['explain_reasoning'],
     tier: 'user',
   },
@@ -59,37 +59,37 @@ const SYSTEM_DASHBOARD_TABS: DashboardTabDef[] = [
   {
     id: 'escalations',
     label: 'Escalations',
-    roles: ['root', 'domain_authority', 'it_support', 'qa', 'auditor'],
+    roles: ['root', 'admin', 'super_admin', 'operator', 'half_operator'],
     component: EscalationQueue,
   },
   {
     id: 'commands',
     label: 'Commands',
-    roles: ['root', 'domain_authority', 'it_support'],
+    roles: ['root', 'admin', 'super_admin'],
     component: StagedCommandsPanel,
   },
   {
     id: 'ingestions',
     label: 'Ingestions',
-    roles: ['root', 'domain_authority'],
+    roles: ['root', 'admin'],
     component: IngestionReview,
   },
   {
     id: 'logs',
     label: 'System Log',
-    roles: ['root', 'domain_authority', 'qa', 'auditor'],
+    roles: ['root', 'admin', 'operator', 'half_operator'],
     component: SystemLogPanel,
   },
   {
     id: 'daemon',
     label: 'Daemon',
-    roles: ['root', 'auditor'],
+    roles: ['root', 'half_operator'],
     component: DaemonPanel,
   },
   {
     id: 'daemon-monitor',
     label: 'Monitor',
-    roles: ['root', 'it_support', 'auditor'],
+    roles: ['root', 'super_admin', 'half_operator'],
     component: DaemonMonitorPanel,
   },
 ]
@@ -103,7 +103,7 @@ export const systemPlugin: DomainPlugin = {
     reg.addDashboardTabs(SYSTEM_DASHBOARD_TABS)
     reg.addSidebarPanels(SYSTEM_SIDEBAR_PANELS)
     reg.addRoleEquivalences({
-      system_admin: 'domain_authority',
+      system_admin: 'admin',
       system_operator: 'teacher',
     })
   },

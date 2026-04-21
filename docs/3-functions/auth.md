@@ -59,7 +59,7 @@ algorithm from the stored format — no configuration needed for verification.
 
 ## CONSTANTS
 
-- `VALID_ROLES` — `frozenset({"root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"})`
+- `VALID_ROLES` — `frozenset({"root", "admin", "super_admin", "operator", "half_operator", "user", "guest"})`
 
 ## EXCEPTIONS
 

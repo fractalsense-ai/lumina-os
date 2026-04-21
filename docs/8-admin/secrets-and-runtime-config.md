@@ -36,16 +36,16 @@ Lumina uses a **three-track JWT architecture** separating admin, domain, and use
 | Variable | Required when | Description |
 |----------|---------------|-------------|
 | `LUMINA_JWT_SECRET` | Always | Legacy shared secret; fallback when track-specific secrets are absent |
-| `LUMINA_ADMIN_JWT_SECRET` | Production (admin track) | Signs tokens for `root`, `it_support`; `iss: lumina-admin` |
-| `LUMINA_DOMAIN_JWT_SECRET` | Production (domain track) | Signs tokens for `domain_authority`; `iss: lumina-domain` |
-| `LUMINA_USER_JWT_SECRET` | Production (user track) | Signs tokens for `user`, `qa`, `auditor`, `guest`; `iss: lumina-user` |
+| `LUMINA_ADMIN_JWT_SECRET` | Production (admin track) | Signs tokens for `root`, `super_admin`; `iss: lumina-admin` |
+| `LUMINA_DOMAIN_JWT_SECRET` | Production (domain track) | Signs tokens for `admin`; `iss: lumina-domain` |
+| `LUMINA_USER_JWT_SECRET` | Production (user track) | Signs tokens for `user`, `operator`, `half_operator`, `guest`; `iss: lumina-user` |
 
 #### JWT air-gap setup
 
 When all three track-specific secrets are set, the tracks are cryptographically
 isolated:
 
-- Admin roles (`root`, `it_support`) authenticate via `POST /api/admin/auth/login` —
+- Admin roles (`root`, `super_admin`) authenticate via `POST /api/admin/auth/login` —
   tokens carry `iss: lumina-admin` and are validated against `LUMINA_ADMIN_JWT_SECRET`.
 - Domain authorities authenticate via `POST /api/domain/auth/login` — tokens carry
   `iss: lumina-domain` and are validated against `LUMINA_DOMAIN_JWT_SECRET`.

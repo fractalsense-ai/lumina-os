@@ -41,7 +41,7 @@ invite_request:
     Authorization: "Bearer eyJhbGciOiJIUzI1NiIs..."
   body:
     username: alice-math
-    role: domain_authority
+    role: admin
     governed_modules:
       - "domain/edu/algebra-level-1/v1"
     email: null   # optional — omit if no email relay configured
@@ -51,7 +51,7 @@ invite_response:
   body:
     user_id: "a1b2c3d4-e5f6-4000-8000-000000000001"
     username: alice-math
-    role: domain_authority
+    role: admin
     governed_modules:
       - "domain/edu/algebra-level-1/v1"
     setup_token: "inv_a1b2c3d4e5f6..."   # one-time token (HMAC-signed)
@@ -109,9 +109,9 @@ verify_login_response:
 #   → 409 Conflict (username already taken)
 #
 # DA without governed_modules:
-#   POST /api/auth/invite {username: "bob", role: "domain_authority"}
-#   → 400 Bad Request (governed_modules required for domain_authority)
+#   POST /api/auth/invite {username: "bob", role: "admin"}
+#   → 400 Bad Request (governed_modules required for admin)
 #
 # Unprivileged user invites:
 #   POST /api/auth/invite (with user-role JWT)
-#   → 403 Forbidden (requires root or it_support)
+#   → 403 Forbidden (requires root or super_admin)

@@ -21,8 +21,8 @@ the tracks never merge.
 
 ## Problem
 
-A hierarchical role ladder (root → domain_authority → it_support → user) creates an
-implicit escalation pathway. If `domain_authority` is a rung on the same ladder as `root`,
+A hierarchical role ladder (root → admin → super_admin → user) creates an
+implicit escalation pathway. If `admin` is a rung on the same ladder as `root`,
 the architecture allows — at least conceptually — for a role to be promoted up the chain.
 Even with enforcement code preventing it, the *model* permits it. A department head and a
 senior sysadmin hold equal authority in different scopes; one should never be able to become
@@ -38,9 +38,9 @@ Tokens from one track are cryptographically invalid on the others.
 
 | Track | Roles | JWT Secret | Issuer | `token_scope` | Scope |
 |-------|-------|------------|--------|---------------|-------|
-| **System** | `root`, `it_support` | `LUMINA_ADMIN_JWT_SECRET` | `lumina-admin` | `"admin"` | Full system — all modules, all users, all configuration |
-| **Domain** | `domain_authority` | `LUMINA_DOMAIN_JWT_SECRET` | `lumina-domain` | `"domain"` | Governed modules only — bounded by `governed_modules` JWT claim |
-| **User** | `user`, `qa`, `auditor`, `guest` | `LUMINA_USER_JWT_SECRET` | `lumina-user` | `"user"` | Session-scoped — execute within assigned modules |
+| **System** | `root`, `super_admin` | `LUMINA_ADMIN_JWT_SECRET` | `lumina-admin` | `"admin"` | Full system — all modules, all users, all configuration |
+| **Domain** | `admin` | `LUMINA_DOMAIN_JWT_SECRET` | `lumina-domain` | `"domain"` | Governed modules only — bounded by `governed_modules` JWT claim |
+| **User** | `user`, `operator`, `half_operator`, `guest` | `LUMINA_USER_JWT_SECRET` | `lumina-user` | `"user"` | Session-scoped — execute within assigned modules |
 
 ### Token Anatomy
 
@@ -64,7 +64,7 @@ Tokens from one track are cryptographically invalid on the others.
 ```json
 {
   "sub": "da-algebra-001",
-  "role": "domain_authority",
+  "role": "admin",
   "governed_modules": ["domain/edu/algebra-level-1/v1"],
   "iss": "lumina-domain",
   "token_scope": "domain",
@@ -140,7 +140,7 @@ through:
    which rejects any token where `token_scope != "domain"`. There is no "any scope accepted" path
    for privileged operations.
 
-4. **No role promotion pathway.** `domain_authority` is not in the system role enum. It exists
+4. **No role promotion pathway.** `admin` is not in the system role enum. It exists
    only on the domain track. There is no API endpoint that accepts a domain-track token and
    returns a system-track token. The tracks do not share an identity store for role promotion.
 
@@ -162,13 +162,13 @@ verified and the track is established:
 ### Environment Variables
 
 ```bash
-# System track (root, it_support)
+# System track (root, super_admin)
 export LUMINA_ADMIN_JWT_SECRET=$(python -c "import secrets; print(secrets.token_hex(32))")
 
-# Domain track (domain_authority)
+# Domain track (admin)
 export LUMINA_DOMAIN_JWT_SECRET=$(python -c "import secrets; print(secrets.token_hex(32))")
 
-# User track (user, qa, auditor, guest)
+# User track (user, operator, half_operator, guest)
 export LUMINA_USER_JWT_SECRET=$(python -c "import secrets; print(secrets.token_hex(32))")
 
 # Legacy fallback (backward compatibility during migration)

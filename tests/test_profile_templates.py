@@ -189,8 +189,8 @@ class TestEnsureUserProfile:
             "educator_state": {"assigned_students": []},
         }), encoding="utf-8")
 
-        domain_authority = layers / "domain_authority.yaml"
-        domain_authority.write_text(yaml.safe_dump({
+        admin_tmpl = layers / "admin.yaml"
+        admin_tmpl.write_text(yaml.safe_dump({
             "educator_state": {"assigned_students": []},
             "management_state": {"domain_overview_enabled": True},
         }), encoding="utf-8")
@@ -207,7 +207,7 @@ class TestEnsureUserProfile:
             "domain": str(domain_ext),
             "student": str(student),
             "teacher": str(teacher),
-            "admin": str(domain_authority),
+            "admin": str(admin_tmpl),
             "flat_template": str(flat_template),
         }
 
@@ -269,7 +269,7 @@ class TestEnsureUserProfile:
             runtime=runtime, domain_role=None, system_role="admin",
         )
         profile = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-        # domain_authority maps to domain_authority profile
+        # admin maps to admin profile
         assert "educator_state" in profile
         assert "management_state" in profile
         assert "learning_state" not in profile

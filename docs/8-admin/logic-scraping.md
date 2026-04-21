@@ -103,7 +103,7 @@ When `logic_scraping` is omitted or `enabled: false`, the tool is unavailable fo
 
 ```
 POST /api/admin/logic-scrape
-Authorization: Bearer <domain_authority_token>
+Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {

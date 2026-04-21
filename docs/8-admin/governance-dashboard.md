@@ -13,13 +13,13 @@ last_updated: 2026-06-15
 
 ## Overview
 
-The Governance Dashboard is a React SPA route within the Lumina web interface, accessible only to users with `root` or `domain_authority` roles. It provides a centralized view for managing domain governance operations: reviewing escalations, monitoring ingestions, overseeing daemon batch proposals, and observing system telemetry.
+The Governance Dashboard is a React SPA route within the Lumina web interface, accessible only to users with `root` or `admin` roles. It provides a centralized view for managing domain governance operations: reviewing escalations, monitoring ingestions, overseeing daemon batch proposals, and observing system telemetry.
 
 Since v1.1.0 the dashboard uses a **dynamic tab manifest** that filters visible tabs by the authenticated user's RBAC role. Since the HMVC frontend decomposition, dashboard tabs are no longer hardcoded in a `TAB_MANIFEST` array — they are contributed at runtime by each domain pack's web plugin via the `PluginRegistry.addDashboardTabs()` API. The framework's `DashboardPage.tsx` reads registered tabs from the `PluginRegistry` and filters them by role. Real-time events are delivered via the SSE event stream (`GET /api/events/stream`).
 
 ## Access Control
 
-The dashboard navigation toggle is visible in the application header only when the authenticated user has the `root` or `domain_authority` role. Other roles (learner, guest, auditor, it_support) see only the chat interface.
+The dashboard navigation toggle is visible in the application header only when the authenticated user has the `root` or `admin` role. Other roles (learner, guest, half_operator, super_admin) see only the chat interface.
 
 A notification badge appears on the Dashboard button in the chat view, showing the count of unread SSE events received while the user is in the chat interface. Navigating to the dashboard clears the unread count.
 
@@ -97,7 +97,7 @@ Data sources:
 Displays the Resource Monitor Daemon status: load score (progress bar with green/yellow/red thresholds), daemon state badge, current task, poll interval, and idle-since timestamp. Auto-refreshes every 15 seconds.
 
 Data sources:
-- `GET /api/health/load` (root, auditor)
+- `GET /api/health/load` (root, half_operator)
 - `GET /api/health` (fallback)
 
 ## Chat Action Cards

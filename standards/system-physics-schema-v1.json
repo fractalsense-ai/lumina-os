@@ -340,7 +340,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Alternate forms an administrator or auditor might use."
+          "description": "Alternate forms an administrator or half_operator might use."
         },
         "related_terms": {
           "type": "array",

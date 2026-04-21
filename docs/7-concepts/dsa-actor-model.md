@@ -127,7 +127,7 @@ Actor groups and RBAC permission groups serve different purposes:
 | **Purpose** | Classify evidence-producing entities by operational context | Control access to domain modules and operations |
 | **Enforced by** | Domain lib and orchestrator routing | `permissions.py` RBAC engine |
 
-A `domain_authority` is always an implicit member of every permission group (see
+A `admin` is always an implicit member of every permission group (see
 [`rbac-spec-v1`](../../specs/rbac-spec-v1.md)). There is no equivalent implicit
 membership for Actor groups — membership is always explicit.
 

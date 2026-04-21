@@ -49,9 +49,9 @@ or approval.
 
 ## RBAC
 
-Requires one of: `root`, `domain_authority`, `it_support`.
+Requires one of: `root`, `admin`, `super_admin`.
 
-A `domain_authority` can only list modules for domains they govern.
+A `admin` can only list modules for domains they govern.
 
 ## RESPONSE
 

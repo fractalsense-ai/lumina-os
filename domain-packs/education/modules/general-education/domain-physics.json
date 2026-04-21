@@ -51,10 +51,10 @@
   "subsystem_configs": {
     "governance": {
       "domain_role_aliases": {
-        "domain_authority": "domain_authority",
+        "domain_authority": "admin",
         "student": "user",
-        "teacher": "it_support",
-        "teaching_assistant": "it_support",
+        "teacher": "super_admin",
+        "teaching_assistant": "super_admin",
         "parent": "user",
         "observer": "guest"
       }

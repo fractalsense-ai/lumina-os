@@ -66,11 +66,11 @@ entry_points:
 # Overrides the generic framework defaults with education-specific roles.
 # When a JWT has no explicit domain_roles claim for this domain, the
 # system role is mapped through this table to determine the effective
-# domain role (e.g. "user" → "student", "it_support" → "teacher").
+# domain role (e.g. "user" → "student", "super_admin" → "teacher").
 system_role_to_domain_role:
   root: domain_authority
-  domain_authority: domain_authority
-  it_support: teacher
-  qa: student
-  auditor: student
+  admin: domain_authority
+  super_admin: teacher
+  operator: student
+  half_operator: student
   user: student

@@ -33,11 +33,11 @@ operations:
       domain_id: "string — target domain identifier"
 
   - name: update_user_role
-    description: "Change a user's role. When promoting to domain_authority, include governed_modules."
+    description: "Change a user's role. When promoting to admin, include governed_modules."
     params:
       user_id: "string — target user identifier"
-      new_role: "string — one of: root, domain_authority, it_support, qa, auditor, user"
-      governed_modules: "array of strings — domain module IDs required when new_role is domain_authority (e.g. ['domain/edu/algebra-level-1/v1']). Omit for other roles."
+      new_role: "string — one of: root, admin, super_admin, operator, half_operator, user"
+      governed_modules: "array of strings — domain module IDs required when new_role is admin (e.g. ['domain/edu/algebra-level-1/v1']). Omit for other roles."
 
   - name: deactivate_user
     description: "Deactivate a user account (revokes all access)."
@@ -130,11 +130,11 @@ operations:
     description: "Create and invite a NEW user to the platform. Domain authorities may invite users with 'user' or 'guest' role within their governed modules. Use this when someone asks to add, create, or invite a new user."
     params:
       username: "string — the new user's display name"
-      role: "string — system role: root, domain_authority, it_support, qa, auditor, user, guest"
+      role: "string — system role: root, admin, super_admin, operator, half_operator, user, guest"
       intended_domain_role: "string — domain-specific role name such as student, teacher, field_operator (optional, advisory field preserved for downstream domain-role assignment)"
       domain_id: "string — target domain identifier (e.g. education, agriculture). Used to auto-resolve governed_modules and pre-assign domain roles. Set when the user mentions a domain."
       email: "string — email address (optional)"
-      governed_modules: "array of strings — domain module IDs, required when role is domain_authority. Omit for other roles."
+      governed_modules: "array of strings — domain module IDs, required when role is admin. Omit for other roles."
 
   - name: list_commands
     description: "List available admin commands with descriptions, HITL status, and required roles. Use this when someone asks to see or list commands."

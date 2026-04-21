@@ -315,11 +315,11 @@ def test_wrong_owner_cannot_resolve(client: TestClient, api_module) -> None:
     token1 = _register_root(client)           # root (first registered → root)
     token2 = _register_user(client, "it_user", "super_admin")
 
-    # it_support stages a command.
+    # super_admin stages a command.
     parsed = {"operation": "resolve_escalation", "target": "esc99", "params": {"escalation_id": "esc99", "resolution": "approved", "rationale": "test"}}
     staged_id = _stage_via_module(client, api_module, token2, parsed)
 
-    # A different it_support user tries to resolve it.
+    # A different super_admin user tries to resolve it.
     token3 = _register_user(client, "it_user2", "super_admin")
     resp = client.post(
         f"/api/admin/command/{staged_id}/resolve",

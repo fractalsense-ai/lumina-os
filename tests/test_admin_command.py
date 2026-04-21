@@ -283,7 +283,7 @@ def test_resolve_escalation_dispatches(client: TestClient, api_module) -> None:
 
 @pytest.mark.integration
 def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
-    """Only root can call update_user_role — domain_authority gets 403 immediately (HITL-exempt)."""
+    """Only root can call update_user_role — admin gets 403 immediately (HITL-exempt)."""
     _register_root(client)
     da_token = _register_user(client, "da_user", "admin")
 
@@ -297,10 +297,10 @@ def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
         patch.object(api_module, "slm_parse_admin_command", return_value=parsed),
     ):
         # update_user_role now goes through HITL staging.
-        # domain_authority can stage the command via domain tier; role check happens at approval.
+        # admin can stage the command via domain tier; role check happens at approval.
         resp = client.post(
             "/api/domain/command",
-            json={"instruction": "change someone's role to auditor"},
+            json={"instruction": "change someone's role to half_operator"},
             headers=_auth_header(da_token),
         )
     assert resp.status_code == 200

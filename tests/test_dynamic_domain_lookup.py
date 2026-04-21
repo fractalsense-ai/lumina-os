@@ -295,7 +295,7 @@ def test_domain_physics_hitl_exempt_complete() -> None:
 
 @pytest.mark.unit
 def test_domain_physics_min_role_for_sensitive_ops() -> None:
-    """list_users and invite_user require domain_authority; get_domain_physics requires domain_authority."""
+    """list_users and invite_user require admin; get_domain_physics requires admin."""
     dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     min_role = dp["subsystem_configs"]["governance"]["min_role_policy"]
@@ -603,7 +603,7 @@ def test_governed_modules_stripped_for_non_da() -> None:
 
 @pytest.mark.unit
 def test_governed_modules_kept_for_da() -> None:
-    """_normalize_slm_command preserves governed_modules for domain_authority."""
+    """_normalize_slm_command preserves governed_modules for admin."""
     from lumina.api.routes.admin import _normalize_slm_command
     cmd = {
         "operation": "invite_user",
@@ -620,7 +620,7 @@ def test_governed_modules_kept_for_da() -> None:
 
 @pytest.mark.unit
 def test_governed_modules_null_accepted_for_da() -> None:
-    """invite_user handler accepts governed_modules=None for domain_authority."""
+    """invite_user handler accepts governed_modules=None for admin."""
     from lumina.api.routes.admin import _execute_admin_operation
     from lumina.api import config as _cfg
     import asyncio
@@ -918,7 +918,7 @@ def test_check_permission_teacher_gets_group_access() -> None:
 
 @pytest.mark.unit
 def test_domain_authority_always_group_member() -> None:
-    """domain_authority is always treated as a group member."""
+    """admin is always treated as a group member."""
     from lumina.core.permissions import check_permission, Operation
 
     module_permissions = {

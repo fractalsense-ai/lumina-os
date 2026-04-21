@@ -2,11 +2,11 @@
 
 **Version:** 1.0.0  
 **Status:** Active  
-**Access:** `root` and `it_support` roles only
+**Access:** `root` and `super_admin` roles only
 
 ---
 
-The system domain pack (`domain-packs/system/`) provides Lumina's internal administration session interface.  It is the default routing destination for `root` and `it_support` users when no explicit `domain_id` is given in a request and NLP routing does not confidently match another domain.
+The system domain pack (`domain-packs/system/`) provides Lumina's internal administration session interface.  It is the default routing destination for `root` and `super_admin` users when no explicit `domain_id` is given in a request and NLP routing does not confidently match another domain.
 
 ## Structure
 
@@ -27,7 +27,7 @@ domain-packs/system/
 
 ## Access Control
 
-Session execution is restricted to principals with `root` or `it_support` roles.  The domain-physics permission block uses mode `"770"` — owner/group have full rwx, all others have no access.  Regular `user`, `qa`, `auditor`, and `domain_authority` principals who attempt to chat in the system domain will receive a `403 Module access denied` response.
+Session execution is restricted to principals with `root` or `super_admin` roles.  The domain-physics permission block uses mode `"770"` — owner/group have full rwx, all others have no access.  Regular `user`, `operator`, `half_operator`, and `admin` principals who attempt to chat in the system domain will receive a `403 Module access denied` response.
 
 ## Role-Based Default Routing
 

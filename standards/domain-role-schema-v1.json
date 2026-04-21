@@ -19,7 +19,7 @@
     "role_id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]{1,47}$",
-      "description": "Domain-scoped role identifier. Unique within the domain-physics document. lowercase_snake_case, 2-48 characters. Must not collide with system role IDs (root, domain_authority, it_support, qa, auditor, user, guest)."
+      "description": "Domain-scoped role identifier. Unique within the domain-physics document. lowercase_snake_case, 2-48 characters. Must not collide with system role IDs (root, admin, super_admin, operator, half_operator, user, guest)."
     },
     "role_name": {
       "type": "string",
@@ -41,11 +41,11 @@
     "maps_to_system_role": {
       "type": "string",
       "enum": [
-        "domain_authority",
+        "admin",
         "user",
         "guest"
       ],
-      "description": "The system-level role this domain role maps to for permission ceiling enforcement. Determines the maximum possible permissions this domain role can be granted. Cross-cutting system roles (root, it_support, qa, auditor) cannot be used here."
+      "description": "The system-level role this domain role maps to for permission ceiling enforcement. Determines the maximum possible permissions this domain role can be granted. Cross-cutting system roles (root, super_admin, operator, half_operator) cannot be used here."
     },
     "default_access": {
       "type": "string",

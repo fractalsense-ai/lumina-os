@@ -15,10 +15,10 @@ runtime:
   admin_operations_schema_path: domain-packs/system/cfg/admin-operations.yaml
 
   access_control:
-    required_role: it_support
+    required_role: super_admin
     allowed_roles:
       - root
-      - it_support
+      - super_admin
 
   # System domain never routes to an external LLM.  All turn interpretation
   # and response generation uses the local SLM (Ollama) only, with deterministic

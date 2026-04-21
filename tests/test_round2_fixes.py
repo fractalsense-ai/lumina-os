@@ -338,7 +338,7 @@ class TestRosterGrantsDomainRoles:
             ctx=ctx,
         )
 
-        # Should NOT overwrite the existing domain_authority role
+        # Should NOT overwrite the existing admin role
         assert profiles["teacher1"]["domain_roles"]["domain/edu/pre-algebra/v1"] == "admin"
 
 

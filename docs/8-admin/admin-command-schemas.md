@@ -24,7 +24,7 @@ loads them on first use and exposes:
 ```python
 from lumina.middleware.command_schema_registry import validate_command
 
-approved, violations = validate_command("update_user_role", {"user_id": "alice", "new_role": "qa"})
+approved, violations = validate_command("update_user_role", {"user_id": "alice", "new_role": "operator"})
 ```
 
 ## Integration Point
@@ -74,26 +74,26 @@ Key invariants:
 
 | Operation | Required Params | Role(s) |
 |---|---|---|
-| `update_domain_physics` | `domain_id`, `updates` | `root`, `domain_authority` |
-| `commit_domain_physics` | `domain_id` | `root`, `domain_authority` |
+| `update_domain_physics` | `domain_id`, `updates` | `root`, `admin` |
+| `commit_domain_physics` | `domain_id` | `root`, `admin` |
 | `update_user_role` | `user_id`, `new_role` | `root` |
 | `deactivate_user` | `user_id` | `root` |
-| `assign_domain_role` | `user_id`, `module_id`, `domain_role` | `root`, `domain_authority` |
-| `revoke_domain_role` | `user_id`, `module_id` | `root`, `domain_authority` |
-| `resolve_escalation` | `escalation_id`, `resolution`, `rationale` | `root`, `domain_authority` |
-| `review_ingestion` | `ingestion_id` | `root`, `domain_authority` |
-| `approve_interpretation` | `ingestion_id`, `interpretation_id` | `root`, `domain_authority` |
-| `reject_ingestion` | `ingestion_id`, `reason` | `root`, `domain_authority` |
-| `trigger_daemon_task` | *(none)* | `root`, `domain_authority` |
-| `review_proposals` | *(none)* | `root`, `domain_authority` |
+| `assign_domain_role` | `user_id`, `module_id`, `domain_role` | `root`, `admin` |
+| `revoke_domain_role` | `user_id`, `module_id` | `root`, `admin` |
+| `resolve_escalation` | `escalation_id`, `resolution`, `rationale` | `root`, `admin` |
+| `review_ingestion` | `ingestion_id` | `root`, `admin` |
+| `approve_interpretation` | `ingestion_id`, `interpretation_id` | `root`, `admin` |
+| `reject_ingestion` | `ingestion_id`, `reason` | `root`, `admin` |
+| `trigger_daemon_task` | *(none)* | `root`, `admin` |
+| `review_proposals` | *(none)* | `root`, `admin` |
 | `invite_user` | `username`, `role` | `root` |
-| `list_escalations` | *(none)* | `root`, `domain_authority`, `it_support` |
-| `list_ingestions` | *(none)* | `root`, `domain_authority`, `it_support` |
-| `module_status` | `domain_id` | `root`, `domain_authority`, `it_support` |
-| `explain_reasoning` | `event_id` | `root`, `domain_authority`, `qa`, `auditor` |
-| `daemon_status` | *(none)* | `root`, `domain_authority`, `it_support` |
-| `list_domain_rbac_roles` | `domain_id` | `root`, `domain_authority`, `it_support` |
-| `get_domain_module_manifest` | `domain_id` | `root`, `domain_authority`, `it_support` |
+| `list_escalations` | *(none)* | `root`, `admin`, `super_admin` |
+| `list_ingestions` | *(none)* | `root`, `admin`, `super_admin` |
+| `module_status` | `domain_id` | `root`, `admin`, `super_admin` |
+| `explain_reasoning` | `event_id` | `root`, `admin`, `operator`, `half_operator` |
+| `daemon_status` | *(none)* | `root`, `admin`, `super_admin` |
+| `list_domain_rbac_roles` | `domain_id` | `root`, `admin`, `super_admin` |
+| `get_domain_module_manifest` | `domain_id` | `root`, `admin`, `super_admin` |
 
 ## Adding a New Operation
 

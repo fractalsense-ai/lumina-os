@@ -48,21 +48,21 @@ def test_root_role_returns_system(registry: DomainRegistry) -> None:
 
 @pytest.mark.unit
 def test_it_support_role_returns_system(registry: DomainRegistry) -> None:
-    """it_support role -> system domain (via role_defaults)."""
+    """super_admin role -> system domain (via role_defaults)."""
     user = {"sub": "its_001", "role": "super_admin", "governed_modules": []}
     assert registry.resolve_default_for_user(user) == "system"
 
 
 @pytest.mark.unit
 def test_qa_role_returns_global_default(registry: DomainRegistry) -> None:
-    """qa role is not in role_defaults -> falls through to global default (education)."""
+    """operator role is not in role_defaults -> falls through to global default (education)."""
     user = {"sub": "qa_001", "role": "operator", "governed_modules": []}
     assert registry.resolve_default_for_user(user) == "education"
 
 
 @pytest.mark.unit
 def test_auditor_role_returns_global_default(registry: DomainRegistry) -> None:
-    """auditor role is not in role_defaults -> falls through to global default (education)."""
+    """half_operator role is not in role_defaults -> falls through to global default (education)."""
     user = {"sub": "aud_001", "role": "half_operator", "governed_modules": []}
     assert registry.resolve_default_for_user(user) == "education"
 
@@ -76,7 +76,7 @@ def test_user_role_returns_global_default(registry: DomainRegistry) -> None:
 
 @pytest.mark.unit
 def test_domain_authority_with_edu_module_returns_education(registry: DomainRegistry) -> None:
-    """domain_authority with a domain/edu/... module -> education domain."""
+    """admin with a domain/edu/... module -> education domain."""
     user = {
         "sub": "da_001",
         "role": "admin",
@@ -87,7 +87,7 @@ def test_domain_authority_with_edu_module_returns_education(registry: DomainRegi
 
 @pytest.mark.unit
 def test_domain_authority_with_agri_module_returns_agriculture(registry: DomainRegistry) -> None:
-    """domain_authority with a domain/agri/... module -> agriculture domain."""
+    """admin with a domain/agri/... module -> agriculture domain."""
     user = {
         "sub": "da_agri_001",
         "role": "admin",
@@ -100,7 +100,7 @@ def test_domain_authority_with_agri_module_returns_agriculture(registry: DomainR
 def test_domain_authority_empty_governed_modules_returns_global_default(
     registry: DomainRegistry,
 ) -> None:
-    """domain_authority with empty governed_modules cannot infer prefix -> global default."""
+    """admin with empty governed_modules cannot infer prefix -> global default."""
     user = {"sub": "da_002", "role": "admin", "governed_modules": []}
     assert registry.resolve_default_for_user(user) == "education"
 
@@ -109,7 +109,7 @@ def test_domain_authority_empty_governed_modules_returns_global_default(
 def test_domain_authority_unknown_prefix_returns_global_default(
     registry: DomainRegistry,
 ) -> None:
-    """domain_authority with an unregistered module prefix -> global default."""
+    """admin with an unregistered module prefix -> global default."""
     user = {
         "sub": "da_003",
         "role": "admin",

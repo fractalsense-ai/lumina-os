@@ -124,8 +124,8 @@ Incoming message / signal
                  ▼
 ┌──────────────────────────────────────┐
 │ Stage 3: Role-Based Default          │  resolve_default_for_user(user)
-│ (domain_registry.py)                 │  root/it_support → system
-│                                      │  domain_authority → governed domain
+│ (domain_registry.py)                 │  root/super_admin → system
+│                                      │  admin → governed domain
 └────────────────┬─────────────────────┘
                  │ (role not in role_defaults, or unauthenticated)
                  ▼
@@ -143,7 +143,7 @@ When NLP classification does not find a confident match, authenticated users may
 ```yaml
 role_defaults:
   root: system
-  it_support: system
+  super_admin: system
 ```
 
 **`module_prefix`** per domain entry — enables reverse-mapping a module path to a domain:
@@ -161,12 +161,12 @@ domains:
 
 1. `user is None` (unauthenticated) → Stage 4 global default
 2. `role` found in `role_defaults` → that domain (e.g. `root` → `system`)
-3. `role == domain_authority` and `governed_modules` non-empty → extract prefix from first module path (`domain/<prefix>/…`) and look up in `module_prefix` reverse map
+3. `role == admin` and `governed_modules` non-empty → extract prefix from first module path (`domain/<prefix>/…`) and look up in `module_prefix` reverse map
 4. Fallthrough → Stage 4 global default
 
-**Design rationale:** The global `default_domain` is deliberately set to `education` (a domain-level domain) to ensure that system internals remain invisible to unauthenticated users and domain-level roles. System operators (`root`, `it_support`) who send a message with no explicit domain receive the system domain, which is their natural working context. Domain authorities land in the domain they govern.
+**Design rationale:** The global `default_domain` is deliberately set to `education` (a domain-level domain) to ensure that system internals remain invisible to unauthenticated users and domain-level roles. System operators (`root`, `super_admin`) who send a message with no explicit domain receive the system domain, which is their natural working context. Domain authorities land in the domain they govern.
 
-**Roles not in `role_defaults`:** `qa`, `auditor`, and `user` are cross-cutting readers; they are not operators of any specific domain by default, so they fall through to the global default (education). They can reach any domain they have permission for by specifying `domain_id` explicitly.
+**Roles not in `role_defaults`:** `operator`, `half_operator`, and `user` are cross-cutting readers; they are not operators of any specific domain by default, so they fall through to the global default (education). They can reach any domain they have permission for by specifying `domain_id` explicitly.
 
 ### Stage 2 + Stage 3 interaction: accessible domain filtering
 

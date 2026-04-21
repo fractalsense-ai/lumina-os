@@ -106,10 +106,10 @@ async def health() -> dict[str, Any]:
 async def health_load(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
-    """Return current load snapshot.  Requires root or auditor role."""
+    """Return current load snapshot.  Requires root or half_operator role."""
     user = await get_current_user(credentials)
     if user is not None:
-        require_role(user, "root", "auditor")
+        require_role(user, "root", "half_operator")
     from lumina.daemon.resource_monitor import get_status as _daemon_status
     return _daemon_status()
 

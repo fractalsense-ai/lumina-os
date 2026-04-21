@@ -251,7 +251,7 @@ call_types:
   - reject_ingestion
 authorization:
   allowed_roles:
-    - domain_authority
+    - admin
     - teacher
 ```
 

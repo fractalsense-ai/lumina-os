@@ -64,7 +64,7 @@ async def execute(
         raise ctx.HTTPException(status_code=422, detail="username required")
     if role not in VALID_ROLES:
         raise ctx.HTTPException(status_code=400, detail=f"Invalid role: {role}")
-    # domain_authority with governed_modules=None means access to ALL
+    # admin with governed_modules=None means access to ALL
     # modules in their domain. This is intentional — DAs are the
     # subject-matter experts / domain administrators.
     # An explicit empty list [] is rejected — use None for "all".

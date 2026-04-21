@@ -25,9 +25,9 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Symbol | Meaning |
 |--------|---------|
-| **system** | Requires `LUMINA_ADMIN_JWT_SECRET`-signed token (`iss: lumina-admin`). Roles: `root`, `it_support` |
-| **domain** | Requires `LUMINA_DOMAIN_JWT_SECRET`-signed token (`iss: lumina-domain`). Roles: `domain_authority` |
-| **user** | Requires `LUMINA_USER_JWT_SECRET`-signed token (`iss: lumina-user`). Roles: `user`, `qa`, `auditor`, `guest` |
+| **system** | Requires `LUMINA_ADMIN_JWT_SECRET`-signed token (`iss: lumina-admin`). Roles: `root`, `super_admin` |
+| **domain** | Requires `LUMINA_DOMAIN_JWT_SECRET`-signed token (`iss: lumina-domain`). Roles: `admin` |
+| **user** | Requires `LUMINA_USER_JWT_SECRET`-signed token (`iss: lumina-user`). Roles: `user`, `operator`, `half_operator`, `guest` |
 | **any** | Any valid token from any track |
 | **none** | No authentication required |
 | **sse** | SSE token issued by `/api/events/token` (query parameter, not Bearer header) |
@@ -48,12 +48,12 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 | GET | `/api/auth/guest-token` | none → user | — | Issue ephemeral guest JWT (30 min TTL) |
 | POST | `/api/auth/refresh` | user | any | Refresh current token |
 | GET | `/api/auth/me` | user | any | Current user profile |
-| GET | `/api/auth/users` | user | root, it_support | List all users |
+| GET | `/api/auth/users` | user | root, super_admin | List all users |
 | PATCH | `/api/auth/users/{user_id}` | user | root | Update role / governed_modules |
 | DELETE | `/api/auth/users/{user_id}` | user | root | Deactivate user |
 | POST | `/api/auth/revoke` | user | any | Revoke own token |
 | POST | `/api/auth/password-reset` | user | any | Reset password (root: any user; others: self only) |
-| POST | `/api/auth/invite` | user | root, it_support | Create pending user + invite link |
+| POST | `/api/auth/invite` | user | root, super_admin | Create pending user + invite link |
 | POST | `/api/auth/setup-password` | none | — | Activate pending account via invite token |
 
 #### POST `/api/auth/register`
@@ -84,9 +84,9 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| POST | `/api/admin/auth/login` | none → system | — | System-track login (root, it_support only) |
-| POST | `/api/admin/auth/refresh` | system | root, it_support | Refresh admin token |
-| GET | `/api/admin/auth/me` | system | root, it_support | Admin profile |
+| POST | `/api/admin/auth/login` | none → system | — | System-track login (root, super_admin only) |
+| POST | `/api/admin/auth/refresh` | system | root, super_admin | Refresh admin token |
+| GET | `/api/admin/auth/me` | system | root, super_admin | Admin profile |
 
 #### POST `/api/admin/auth/login`
 
@@ -98,9 +98,9 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| POST | `/api/domain/auth/login` | none → domain | — | Domain-track login (domain_authority only) |
-| POST | `/api/domain/auth/refresh` | domain | domain_authority | Refresh domain token |
-| GET | `/api/domain/auth/me` | domain | domain_authority | Domain authority profile |
+| POST | `/api/domain/auth/login` | none → domain | — | Domain-track login (admin only) |
+| POST | `/api/domain/auth/refresh` | domain | admin | Refresh domain token |
+| GET | `/api/domain/auth/me` | domain | admin | Domain authority profile |
 
 #### POST `/api/domain/auth/login`
 
@@ -119,12 +119,12 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/system-log/records` | user | root, qa, auditor | Query log records |
-| GET | `/api/system-log/sessions` | user | root, qa, auditor | List session IDs with records |
-| GET | `/api/system-log/records/{record_id}` | user | root, qa, auditor | Single record by ID |
-| GET | `/api/system-log/warnings` | user | root, qa, auditor | Warning-level records |
-| GET | `/api/system-log/alerts` | user | root, qa, auditor | Alert-level records |
-| GET | `/api/system-log/validate` | any | root, da, qa, auditor | Hash-chain validation |
+| GET | `/api/system-log/records` | user | root, operator, half_operator | Query log records |
+| GET | `/api/system-log/sessions` | user | root, operator, half_operator | List session IDs with records |
+| GET | `/api/system-log/records/{record_id}` | user | root, operator, half_operator | Single record by ID |
+| GET | `/api/system-log/warnings` | user | root, operator, half_operator | Warning-level records |
+| GET | `/api/system-log/alerts` | user | root, operator, half_operator | Alert-level records |
+| GET | `/api/system-log/validate` | any | root, da, operator, half_operator | Hash-chain validation |
 
 #### GET `/api/system-log/records`
 
@@ -140,14 +140,14 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/events/token` | user | root, da, auditor, it_support, qa | Issue short-lived SSE token (5 min) |
+| GET | `/api/events/token` | user | root, da, half_operator, super_admin, operator | Issue short-lived SSE token (5 min) |
 | GET | `/api/events/stream` | sse | — | Server-Sent Events stream |
 
 #### GET `/api/events/stream`
 
 **Query params:** `token` (required)
 **Response:** `text/event-stream` — JSON frames: `{type, level, category, domain_id, summary, timestamp}`
-**RBAC filtering:** root → all events; DA → governed domains; auditor/it_support/qa → warning+ only
+**RBAC filtering:** root → all events; DA → governed domains; half_operator/super_admin/operator → warning+ only
 **Heartbeat:** `:heartbeat` comment every 30s
 
 ---
@@ -161,8 +161,8 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| POST | `/api/ingest/upload` | user | root, da, it_support | Upload document |
-| GET | `/api/ingest` | user | root, da, it_support, qa | List ingestions |
+| POST | `/api/ingest/upload` | user | root, da, super_admin | Upload document |
+| GET | `/api/ingest` | user | root, da, super_admin, operator | List ingestions |
 | GET | `/api/ingest/{ingestion_id}` | user | any | Single ingestion status |
 | POST | `/api/ingest/{ingestion_id}/extract` | user | root, da | Run SLM extraction |
 | POST | `/api/ingest/{ingestion_id}/review` | user | root, da | Submit review decision |
@@ -196,9 +196,9 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
 | POST | `/api/domain-pack/commit` | domain / system | root, da | Commit physics hash to System Log |
-| GET | `/api/domain-pack/{domain_id}/history` | any | root, da, qa, auditor | Physics commitment history |
+| GET | `/api/domain-pack/{domain_id}/history` | any | root, da, operator, half_operator | Physics commitment history |
 | PATCH | `/api/domain-pack/{domain_id}/physics` | domain / system | root, da | Live-patch domain physics |
-| POST | `/api/session/{session_id}/close` | user / system | owner, root, it_support | Close session |
+| POST | `/api/session/{session_id}/close` | user / system | owner, root, super_admin | Close session |
 | POST | `/api/session/{session_id}/handoff` | domain / system | root, da | Handoff session to another authority |
 | POST | `/api/session/{session_id}/resume` | domain / system | root, da | Resume handed-off session |
 
@@ -234,8 +234,8 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/escalations` | any | root, it_support, da, qa, auditor | List escalations (DA scoped to governed modules) |
-| GET | `/api/escalations/{escalation_id}` | any | root, it_support, qa, auditor | Single escalation |
+| GET | `/api/escalations` | any | root, super_admin, da, operator, half_operator | List escalations (DA scoped to governed modules) |
+| GET | `/api/escalations/{escalation_id}` | any | root, super_admin, operator, half_operator | Single escalation |
 | DELETE | `/api/escalations/stale` | system | root | Purge stale escalations |
 | POST | `/api/escalations/{escalation_id}/resolve` | any | root, da | Resolve with decision |
 
@@ -251,22 +251,22 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/audit/log` | any | root, it_support, qa, auditor | Scoped audit log entries |
+| GET | `/api/audit/log` | any | root, super_admin, operator, half_operator | Scoped audit log entries |
 
 ### Manifest Integrity
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/manifest/check` | any | root, it_support | Verify artifact SHA-256 hashes |
+| GET | `/api/manifest/check` | any | root, super_admin | Verify artifact SHA-256 hashes |
 | POST | `/api/manifest/regen` | system | root | Regenerate manifest hashes |
 
 ### HITL Admin Commands
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| POST | `/api/admin/command` | system | root, da, it_support | Parse + stage admin command (SLM) |
-| GET | `/api/admin/command/staged` | system | root, da, it_support | List staged commands |
-| POST | `/api/admin/command/{staged_id}/resolve` | system | root, da, it_support | Execute / reject staged command |
+| POST | `/api/admin/command` | system | root, da, super_admin | Parse + stage admin command (SLM) |
+| GET | `/api/admin/command/staged` | system | root, da, super_admin | List staged commands |
+| POST | `/api/admin/command/{staged_id}/resolve` | system | root, da, super_admin | Execute / reject staged command |
 
 #### Admin Command Operations
 
@@ -324,8 +324,8 @@ Dispatched via `POST /api/admin/command` with a natural-language `instruction`. 
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| GET | `/api/dashboard/domains` | user | root, da, it_support | Per-domain summary telemetry |
-| GET | `/api/dashboard/telemetry` | user | root, da, it_support | Aggregate system telemetry |
+| GET | `/api/dashboard/domains` | user | root, da, super_admin | Per-domain summary telemetry |
+| GET | `/api/dashboard/telemetry` | user | root, da, super_admin | Aggregate system telemetry |
 
 #### GET `/api/dashboard/domains`
 
@@ -366,7 +366,7 @@ Dispatched via `POST /api/admin/command` with a natural-language `instruction`. 
 | GET | `/api/domains` | any | any | List registered domains |
 | GET | `/api/domain-info` | any | any | Domain metadata + UI manifest |
 | POST | `/api/tool/{tool_id}` | user | any | Invoke domain tool adapter |
-| GET | `/api/system-log/validate` | any | root, da, qa, auditor | Hash-chain validation |
+| GET | `/api/system-log/validate` | any | root, da, operator, half_operator | Hash-chain validation |
 
 ### Consent
 
@@ -416,7 +416,7 @@ See Section 1 (Admin) for the admin command endpoint specification.
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
 | POST | `/api/user/{user_id}/vocabulary-metric` | user | any | Submit vocabulary metric |
-| GET | `/api/dashboard/education/vocabulary-growth` | user | root, da, qa, auditor | Vocabulary growth dashboard |
+| GET | `/api/dashboard/education/vocabulary-growth` | user | root, da, operator, half_operator | Vocabulary growth dashboard |
 
 #### POST `/api/user/{user_id}/vocabulary-metric`
 

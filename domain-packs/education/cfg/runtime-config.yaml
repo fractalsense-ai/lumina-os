@@ -65,9 +65,9 @@ runtime:
     required_role: user
     allowed_roles:
       - root
-      - domain_authority
-      - it_support
-      - qa
+      - admin
+      - super_admin
+      - operator
       - user
 
   additional_specs:
@@ -328,7 +328,7 @@ adapters:
       method: GET
       module_path: domain-packs/education/controllers/api_handlers.py
       callable: dashboard_vocabulary_growth
-      roles: [root, domain_authority, teacher]
+      roles: [root, admin, teacher]
     # ── Escalation management (domain-owned) ──────────────────
     list_escalations:
       path: /api/escalations

@@ -185,7 +185,7 @@ adapters:
       method: GET
       module_path: domain-packs/{domain}/controllers/api_handlers.py
       callable: dashboard_my_metric
-      roles: [root, domain_authority]
+      roles: [root, admin]
 ```
 
 Handlers receive injected dependencies (`persistence`, `user_data`, `body`) and return

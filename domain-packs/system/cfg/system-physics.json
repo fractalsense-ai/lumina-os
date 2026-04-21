@@ -181,7 +181,7 @@
         "trace_event",
         "escalation_record"
       ],
-      "example_in_context": "An auditor can replay the full system_logs for a session to reconstruct every orchestrator decision from first principles."
+      "example_in_context": "A half_operator can replay the full system_logs for a session to reconstruct every orchestrator decision from first principles."
     },
     {
       "term": "system_physics",
@@ -207,7 +207,7 @@
       "related_terms": [
         "system_physics",
         "domain_pack",
-        "domain_authority"
+        "admin"
       ],
       "example_in_context": "The education domain_physics defines the scaffolding_only invariant; if violated the standing order apply_zpdcorrection fires."
     },
@@ -258,7 +258,7 @@
         "meta_authority",
         "standing_order"
       ],
-      "example_in_context": "The escalation_trigger repeated_invariant_violation fires when max_attempts is exhausted and targets the domain_authority role."
+      "example_in_context": "The escalation_trigger repeated_invariant_violation fires when max_attempts is exhausted and targets the admin role."
     },
     {
       "term": "policy_commitment_gate",
@@ -284,13 +284,13 @@
       ],
       "related_terms": [
         "domain_physics",
-        "domain_authority",
+        "admin",
         "domain_registry"
       ],
       "example_in_context": "The domain-packs/education/ folder is the education domain_pack; it contains the full physics, tools, and runtime config for the tutoring domain."
     },
     {
-      "term": "domain_authority",
+      "term": "admin",
       "definition": "The human expert role (teacher, agronomist, clinician, operator) who authors a domain pack and owns its domain physics.  The Domain Authority is the ultimate decision-maker for their domain's rules.",
       "aliases": [
         "domain authority",
@@ -301,7 +301,7 @@
         "domain_pack",
         "domain_physics"
       ],
-      "example_in_context": "The domain_authority for the education pack may update the ZPD thresholds in domain-physics.yaml; the change must be committed to the System Logs before it takes effect."
+      "example_in_context": "The admin for the education pack may update the ZPD thresholds in domain-physics.yaml; the change must be committed to the System Logs before it takes effect."
     },
     {
       "term": "meta_authority",
@@ -311,7 +311,7 @@
         "MA"
       ],
       "related_terms": [
-        "domain_authority",
+        "admin",
         "escalation_record",
         "escalation_trigger"
       ],
@@ -346,7 +346,7 @@
     },
     {
       "term": "rbac",
-      "definition": "Role-Based Access Control.  Lumina uses a chmod-style octal permission model (rwx / owner / group / others) enforced on every API request via JWT role claims.  Six roles: root, domain_authority, it_support, qa, auditor, user.",
+      "definition": "Role-Based Access Control.  Lumina uses a chmod-style octal permission model (rwx / owner / group / others) enforced on every API request via JWT role claims.  Six roles: root, admin, super_admin, operator, half_operator, user.",
       "aliases": [
         "role-based access control",
         "permissions",
@@ -354,10 +354,10 @@
       ],
       "related_terms": [
         "pseudonymous_id",
-        "domain_authority",
+        "admin",
         "meta_authority"
       ],
-      "example_in_context": "An auditor role has read-only rbac permissions on System Log entries but cannot activate or roll back domain physics."
+      "example_in_context": "A half_operator role has read-only rbac permissions on System Log entries but cannot activate or roll back domain physics."
     },
     {
       "term": "tool_adapter",
@@ -430,7 +430,7 @@
       "related_terms": [
         "novel_synthesis",
         "escalation_trigger",
-        "domain_authority",
+        "admin",
         "commitment_record"
       ],
       "example_in_context": "After the orchestrator flags a novel synthesis, an escalation record is created for domain authority review. The domain authority resolves it with a novel_synthesis_verified or novel_synthesis_rejected commitment record, completing the two-key gate."
@@ -553,7 +553,7 @@
       "related_terms": [
         "slm",
         "rbac",
-        "domain_authority"
+        "admin"
       ],
       "example_in_context": "A domain authority says \"update the coefficient threshold in algebra to 0.8\". The SLM translates this to {operation: update_domain_physics, target: algebra, params: {updates: {coefficient_threshold: 0.8}}}. The update endpoint then checks can_govern_domain() before executing."
     },

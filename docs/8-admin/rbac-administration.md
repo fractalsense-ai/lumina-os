@@ -23,19 +23,19 @@ for the full concept.
 
 | Track | Roles | JWT Issuer | Login Endpoint |
 |-------|-------|------------|----------------|
-| **System** | `root`, `it_support` | `lumina-admin` | `POST /api/admin/auth/login` |
-| **Domain** | `domain_authority` | `lumina-domain` | `POST /api/domain/auth/login` |
-| **User** | `user`, `qa`, `auditor`, `guest` | `lumina-user` | `POST /api/auth/login` |
+| **System** | `root`, `super_admin` | `lumina-admin` | `POST /api/admin/auth/login` |
+| **Domain** | `admin` | `lumina-domain` | `POST /api/domain/auth/login` |
+| **User** | `user`, `operator`, `half_operator`, `guest` | `lumina-user` | `POST /api/auth/login` |
 
 ## Roles
 
 | Role | ID | Track | Default Mode | Description |
 |------|----|-------|--------------|-------------|
 | Root / OS Admin | `root` | System | 777 | Full system access, bypasses all permission checks |
-| IT Support | `it_support` | System | 644 | System configuration and user management |
-| Domain Authority | `domain_authority` | Domain | 750 | Owns and manages domain pack modules within governed_modules |
-| Quality Assurance | `qa` | User | 644 | Evaluation access, read-only to modules |
-| Auditor | `auditor` | User | 644 | System Log and compliance read access |
+| IT Support | `super_admin` | System | 644 | System configuration and user management |
+| Domain Authority | `admin` | Domain | 750 | Owns and manages domain pack modules within governed_modules |
+| Quality Assurance | `operator` | User | 644 | Evaluation access, read-only to modules |
+| half_operator | `half_operator` | User | 644 | System Log and compliance read access |
 | Standard User | `user` | User | 644 | Session execution only |
 
 ## Permission Model
@@ -48,10 +48,10 @@ permissions:
   owner: "da_lead_001"  # pseudonymous ID of owning domain authority
   group: "educators"    # references a named group defined in the groups block
   acl:
-    - role: qa
+    - role: operator
       access: rx
       scope: evaluation_only
-    - role: auditor
+    - role: half_operator
       access: r
       scope: log_records_only
 ```
@@ -120,15 +120,15 @@ curl -X POST /api/auth/register \
 
 # Login — each track has its own endpoint
 curl -X POST /api/auth/login         # user track
-curl -X POST /api/admin/auth/login   # system track (root, it_support)
-curl -X POST /api/domain/auth/login  # domain track (domain_authority)
+curl -X POST /api/admin/auth/login   # system track (root, super_admin)
+curl -X POST /api/domain/auth/login  # domain track (admin)
 
 # View profile — use the endpoint matching your track
 curl -H "Authorization: Bearer <token>" /api/auth/me           # user
 curl -H "Authorization: Bearer <token>" /api/admin/auth/me     # system
 curl -H "Authorization: Bearer <token>" /api/domain/auth/me    # domain
 
-# List users (root/it_support only — system track)
+# List users (root/super_admin only — system track)
 curl -H "Authorization: Bearer <admin-token>" /api/auth/users
 ```
 
@@ -142,10 +142,10 @@ Domain Authority accounts **must** be created via the invite flow — not self-r
 ### Invite Flow Summary
 
 ```
-root/it_support                           new Domain Authority
+root/super_admin                           new Domain Authority
       │                                          │
       │──POST /api/auth/invite──────────────────►│  (setup_url returned)
-      │  {username, role: domain_authority,       │
+      │  {username, role: admin,       │
       │   governed_modules: [...]}                │
       │                                           │
       │  (optional: SMTP sends setup_url by email)│
@@ -165,7 +165,7 @@ curl -X POST /api/auth/invite \
   -H "Content-Type: application/json" \
   -d '{
     "username": "dr-chen",
-    "role": "domain_authority",
+    "role": "admin",
     "governed_modules": ["domain/edu/algebra-level-1/v1"],
     "email": "dr.chen@example.com"
   }'
@@ -184,7 +184,7 @@ curl -X POST /api/auth/setup-password \
 
 - The invite token is **single-use** and expires after `LUMINA_INVITE_TOKEN_TTL_SECONDS` (default 24 h).
 - The user record is marked `active=false` until the password is set. Authentication attempts on an inactive account return 403.
-- `governed_modules` is **required** for `role: domain_authority` and must be a non-empty list of valid module IDs.
+- `governed_modules` is **required** for `role: admin` and must be a non-empty list of valid module IDs.
 - SMTP delivery failure is non-blocking — the `setup_url` is always returned in the API response.
 - The `invite_user` admin operation also triggers HITL staging (via `POST /api/admin/command`) so that an operator can approve DA creation before it executes. See [escalation-pin-unlock](./escalation-pin-unlock.md) for the staged-command resolve flow.
 
@@ -246,12 +246,12 @@ permission model. These are system-level operations that act on `docs/MANIFEST.y
 
 | Operation | API Endpoint | Permission | Allowed Roles |
 |-----------|--------------|------------|---------------|
-| Check integrity (read) | `GET /api/manifest/check` | Read (r) | `root`, `domain_authority`, `qa`, `auditor` |
-| Regenerate hashes (write) | `POST /api/manifest/regen` | Write (w) | `root`, `domain_authority` |
+| Check integrity (read) | `GET /api/manifest/check` | Read (r) | `root`, `admin`, `operator`, `half_operator` |
+| Regenerate hashes (write) | `POST /api/manifest/regen` | Write (w) | `root`, `admin` |
 
-The `auditor` role may inspect the manifest (read) but may **not** regenerate hashes (write). Regen
+The `half_operator` role may inspect the manifest (read) but may **not** regenerate hashes (write). Regen
 is a write operation that modifies `docs/MANIFEST.yaml` — it is restricted to roles with authoring
-authority (`root` and `domain_authority`).
+authority (`root` and `admin`).
 
 All `POST /api/manifest/regen` calls are recorded as a System Log `TraceEvent` on the `_admin` ledger for
 full auditability.
@@ -260,11 +260,11 @@ From the command line, any authenticated user in an allowed role may also invoke
 directly:
 
 ```bash
-# Check (auditor-accessible)
+# Check (half_operator-accessible)
 lumina-integrity-check
 python -m lumina.systools.manifest_integrity check
 
-# Regen (root / domain_authority only)
+# Regen (root / admin only)
 lumina-manifest-regen
 python -m lumina.systools.manifest_integrity regen
 ```
@@ -276,8 +276,8 @@ inventory without HITL staging:
 
 | Operation       | Command                      | RBAC                                |
 |----------------|------------------------------|-------------------------------------|
-| `list_domains`  | "list domains"               | root, domain_authority, it_support  |
-| `list_modules`  | "list modules for education" | root, domain_authority*, it_support |
+| `list_domains`  | "list domains"               | root, admin, super_admin  |
+| `list_modules`  | "list modules for education" | root, admin*, super_admin |
 
 \* Domain Authority sees only modules for domains they govern.
 
@@ -304,7 +304,7 @@ to root for every new user.
 Users with a domain role that has `receive_escalations: true` in their
 module's domain-physics can resolve escalations for that module.  This
 extends the default RBAC check (which allows only `root` and
-`domain_authority`) to include teachers and other instructional staff.
+`admin`) to include teachers and other instructional staff.
 
 The resolution is scoped: the user can only resolve escalations whose
 `domain_pack_id` matches a module where they hold an escalation-capable

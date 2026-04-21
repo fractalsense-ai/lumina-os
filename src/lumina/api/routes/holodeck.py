@@ -125,11 +125,11 @@ async def holodeck_simulate(
     if user is None or user.get("role") not in _HOLODECK_ROLES:
         raise HTTPException(
             status_code=403,
-            detail="Holodeck simulation is restricted to root and domain_authority roles.",
+            detail="Holodeck simulation is restricted to root and admin roles.",
         )
 
     # ── Domain authority scope check ──
-    if user["role"] == "domain_authority" and not can_govern_domain(user, req.domain_id):
+    if user["role"] == "admin" and not can_govern_domain(user, req.domain_id):
         raise HTTPException(
             status_code=403,
             detail="Not authorized to simulate physics for this domain.",

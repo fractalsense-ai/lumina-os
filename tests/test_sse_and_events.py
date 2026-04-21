@@ -106,7 +106,7 @@ def test_sse_token_issued_for_domain_authority(client: TestClient, api_module) -
 
 @pytest.mark.integration
 def test_sse_token_issued_for_auditor(client: TestClient, api_module) -> None:
-    """Auditor can obtain an SSE token."""
+    """half_operator can obtain an SSE token."""
     _register_root(client)
     aud_token = _register_user(client, username="auditor_user", role="half_operator")
     resp = client.get("/api/events/token", headers=_auth_header(aud_token))

@@ -1258,7 +1258,7 @@ function App() {
   const [domainId, setDomainId] = useState<string | undefined>(undefined)
   const [domainKey, setDomainKey] = useState<string | undefined>(undefined)
   const [view, setView] = useState<'chat' | 'dashboard'>('chat')
-  const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'domain_authority')
+  const showDashboard = auth !== null && (auth.role === 'root' || auth.role === 'admin')
   const hasDomainRoles = auth !== null && !!auth.domainRoles && Object.keys(auth.domainRoles).length > 0
 
   // Escalation events for domain-role holders (teachers)
@@ -1338,7 +1338,7 @@ function App() {
     return <LoginScreen manifest={manifest} onAuth={handleAuth} />
   }
 
-  const isGovernanceRole = ['root', 'domain_authority', 'it_support', 'qa', 'auditor'].includes(auth.role)
+  const isGovernanceRole = ['root', 'admin', 'super_admin', 'operator', 'half_operator'].includes(auth.role)
   if (!consentGiven && !isGovernanceRole) {
     return (
       <ConsentScreen

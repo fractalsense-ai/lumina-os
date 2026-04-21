@@ -39,7 +39,7 @@ or approval.  No System Log record is written for read-only queries.
 
 ## RBAC
 
-Requires one of: `root`, `domain_authority`, `it_support`.
+Requires one of: `root`, `admin`, `super_admin`.
 
 ## RESPONSE
 

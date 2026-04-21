@@ -96,13 +96,13 @@ const systemPlugin: DomainPlugin = {
         operation: 'explain_reasoning',
         description: 'Explain reasoning for a log event',
         args: ['event_id'],
-        allowedRoles: ['domain_authority', 'qa'],
+        allowedRoles: ['admin', 'operator'],
         aliases: ['explain_reasoning'],
         tier: 'user',
       },
     ])
     reg.addRoleEquivalences({
-      system_admin: 'domain_authority',
+      system_admin: 'admin',
       system_operator: 'teacher',
     })
   },
@@ -256,9 +256,9 @@ describe('parseSlashCommand — new HITL-required operations', () => {
   })
 
   it('/update_role <user_id> <new_role>', () => {
-    const result = parseSlashCommand('/update_role user-123 domain_authority')
+    const result = parseSlashCommand('/update_role user-123 admin')
     expect(result!.operation).toBe('update_user_role')
-    expect(result!.params).toEqual({ user_id: 'user-123', new_role: 'domain_authority' })
+    expect(result!.params).toEqual({ user_id: 'user-123', new_role: 'admin' })
   })
 
   it('/deactivate <user_id>', () => {
@@ -383,8 +383,8 @@ describe('getCommandsForRole', () => {
     expect(names).not.toContain('deactivate')
   })
 
-  it('domain_authority sees DA-level commands', () => {
-    const cmds = getCommandsForRole('domain_authority')
+  it('admin sees DA-level commands', () => {
+    const cmds = getCommandsForRole('admin')
     const names = cmds.map((c) => c.name)
     expect(names).toContain('assign_role')
     expect(names).toContain('revoke_role')
@@ -416,7 +416,7 @@ describe('getCommandsForRole', () => {
     expect(names).toContain('help')
   })
 
-  it('system_admin maps to domain_authority via plugin role equivalences', () => {
+  it('system_admin maps to admin via plugin role equivalences', () => {
     const cmds = getCommandsForRole('system_admin')
     const names = cmds.map((c) => c.name)
     expect(names).toContain('domains')
@@ -506,7 +506,7 @@ describe('getCommandsForRole — domain scoping', () => {
   })
 
   it('commands without domainScope are visible on any domain', () => {
-    const eduCmds = getCommandsForRole('domain_authority', undefined, 'education')
+    const eduCmds = getCommandsForRole('admin', undefined, 'education')
     const sysCmds = getCommandsForRole('system_admin', undefined, 'system')
     const eduNames = eduCmds.map((c) => c.name)
     const sysNames = sysCmds.map((c) => c.name)
@@ -522,14 +522,14 @@ describe('getCommandsForRole — domain scoping', () => {
 
 describe('generateHelpText', () => {
   it('includes arg hints for parameterised commands', () => {
-    const text = generateHelpText('domain_authority', undefined, 'education')
+    const text = generateHelpText('admin', undefined, 'education')
     expect(text).toContain('`/resolve <escalation_id> <resolution> <rationale>`')
     expect(text).toContain('`/reject <ingestion_id> <reason>`')
     expect(text).toContain('`/assign_role <user_id> <module_id> <domain_role>`')
   })
 
   it('shows aliases', () => {
-    const text = generateHelpText('domain_authority', undefined, 'education')
+    const text = generateHelpText('admin', undefined, 'education')
     expect(text).toContain('also: /resolve_escalation')
     expect(text).toContain('also: /reject_ingestion')
   })

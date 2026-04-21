@@ -42,7 +42,7 @@ operation first, then use the returned values in subsequent commands.
   Examples: "create user Matt", "add a new user", "invite someone", "onboard a new person".
   NEVER use update_user_role to create a new user.
 - update_user_role = CHANGE an **existing** user's system role (promote, demote, change role).
-  Examples: "promote user42 to root", "change Matt's role to it_support".
+  Examples: "promote user42 to root", "change Matt's role to super_admin".
   Only use when the user *already exists* and the intent is to change their role.
 - assign_domain_role = GRANT a user access to a specific domain module.
 - revoke_domain_role = REVOKE a user's access to a specific domain module.
@@ -97,8 +97,8 @@ When the operation is `invite_user`, use this exact structure:
   Use the plain registry key: `"education"`, `"agriculture"`, `"system"`.
   The system uses it to auto-resolve `governed_modules` for the user.
   If no domain is mentioned, omit or set to null.
-- `governed_modules` is ONLY needed when `role` is "domain_authority".
-  For domain_authority, `governed_modules` may be null — this means
+- `governed_modules` is ONLY needed when `role` is "admin".
+  For admin, `governed_modules` may be null — this means
   access to ALL modules in the domain (DAs are domain-level admins).
   Do NOT include `governed_modules` for non-authority roles — they
   will be auto-assigned to the domain's default staging module.
@@ -107,22 +107,22 @@ When the operation is `invite_user`, use this exact structure:
 
 **IMPORTANT**: `intended_domain_role` is for domain-specific roles only
 (any role not in the seven system roles). System roles like
-`domain_authority`, `user`, `root` MUST NEVER appear in
+`admin`, `user`, `root` MUST NEVER appear in
 `intended_domain_role`. When the user says "domain authority", set
-`role: "domain_authority"` and leave `intended_domain_role` null —
-domain_authority is a system role, not a domain role.
+`role: "admin"` and leave `intended_domain_role` null —
+admin is a system role, not a domain role.
 
 | User instruction | Correct params |
 |---|---|
 | "create user Clanker4 as a student in the education domain" | `{"username": "Clanker4", "role": "user", "intended_domain_role": "student", "domain_id": "education"}` |
 | "invite Alice as a teacher in edu" | `{"username": "Alice", "role": "user", "intended_domain_role": "teacher", "domain_id": "education"}` |
 | "add a new user Bob" | `{"username": "Bob", "role": "user"}` |
-| "create a domain authority for agriculture" | `{"username": "...", "role": "domain_authority", "domain_id": "agriculture"}` |
-| "create TestAuthority as a domain authority in education" | `{"username": "TestAuthority", "role": "domain_authority", "domain_id": "education"}` |
+| "create a domain authority for agriculture" | `{"username": "...", "role": "admin", "domain_id": "agriculture"}` |
+| "create TestAuthority as a domain authority in education" | `{"username": "TestAuthority", "role": "admin", "domain_id": "education"}` |
 
 ## governed_modules resolution
 
-When creating or promoting a user to domain_authority:
+When creating or promoting a user to admin:
 - If the user says "all modules" or just names a domain with no specific
   modules, set `governed_modules` to null. This grants access to all
   modules in that domain (DAs are domain-level administrators).
@@ -150,8 +150,8 @@ field names.
 
 ## Role vs. Domain
 
-- `role` (or `new_role`) is always a SYSTEM role: root, domain_authority,
-  it_support, qa, auditor, user, guest.
+- `role` (or `new_role`) is always a SYSTEM role: root, admin,
+  super_admin, operator, half_operator, user, guest.
 - `intended_domain_role` is a DOMAIN-SPECIFIC role name. It is NOT a
   domain name like "education" or "agriculture".
 - When the user mentions a DOMAIN NAME (e.g. "education", "agriculture"),
@@ -159,7 +159,7 @@ field names.
 
 ## Role mapping
 
-- Valid system roles: root, domain_authority, it_support, qa, auditor, user, guest.
+- Valid system roles: root, admin, super_admin, operator, half_operator, user, guest.
 - Any role name NOT in the above list is treated as a domain-specific role.
   Set `role` to "user" and preserve the original name in `intended_domain_role`.
 - Use `list_domain_rbac_roles` to discover valid domain-specific roles

@@ -14,14 +14,14 @@ last_updated: 2026-03-20
 Operational reference for the Project Lumina system domain: both the machine-readable
 policy layer (`cfg/system-physics.yaml`) that governs the Conversational Interface
 across all domains, and the live system domain pack (`domain-packs/system/`) that
-provides an administration session interface for `root` and `it_support` users.
+provides an administration session interface for `root` and `super_admin` users.
 
 ---
 
 ## A — System domain overview
 
 The **system domain** is a full named domain pack located at `domain-packs/system/`.
-It is the default routing destination for `root` and `it_support` users when no
+It is the default routing destination for `root` and `super_admin` users when no
 explicit `domain_id` is provided and NLP routing does not confidently match another
 domain (see `cfg/domain-registry.yaml` → `role_defaults`).
 
@@ -42,17 +42,17 @@ domain (see `cfg/domain-registry.yaml` → `role_defaults`).
 ### Access control
 
 Session execution in the system domain is restricted to principals with `root` or
-`it_support` roles.  The domain-physics permission block uses mode `"770"` — owner
+`super_admin` roles.  The domain-physics permission block uses mode `"770"` — owner
 and group have full rwx, all others have no access.
 
-`qa`, `auditor`, `domain_authority`, and `user` principals that attempt a session
+`operator`, `half_operator`, `admin`, and `user` principals that attempt a session
 in the system domain receive `403 Module access denied`.  They may still see the
 `system` domain listed in `/api/domains` because it is a registered registry entry,
 but they cannot execute sessions.
 
 ### Role-based default routing
 
-`root` and `it_support` users who send a chat message with no `domain_id` and whose
+`root` and `super_admin` users who send a chat message with no `domain_id` and whose
 message does not confidently match another domain via NLP are routed to the system
 domain automatically.  This is controlled by `role_defaults` in
 `cfg/domain-registry.yaml` and implemented in
@@ -185,16 +185,16 @@ See `governance/audit-and-rollback.md` for the full rollback policy.
 
 ---
 
-## D — Auditor read scope
+## D — half_operator read scope
 
-Roles with `auditor` or above may read the system log and all physics files.
+Roles with `half_operator` or above may read the system log and all physics files.
 No role below `root` may edit system physics without a CommitmentRecord being
 appended first (policy gate enforced at startup).
 
 | Operation | Minimum role |
 |-----------|-------------|
-| Read `cfg/system-physics.json` | `auditor` |
-| Read system System Log ledger | `auditor` |
+| Read `cfg/system-physics.json` | `half_operator` |
+| Read system System Log ledger | `half_operator` |
 | Activate new system physics | `root` |
 | Roll back system physics | `root` |
 | Edit `standards/system-physics-schema-v1.json` | `root` |
@@ -219,7 +219,7 @@ domain.
 ### Routing surface
 
 `classify_domain()` uses the `keywords:` list from the `system:` entry in
-`cfg/domain-registry.yaml` to route admin and auditor queries.  Example
+`cfg/domain-registry.yaml` to route admin and half_operator queries.  Example
 terms that trigger system-domain routing: `ctl`, `ledger`, `invariant`,
 `standing order`, `tool adapter`, `domain physics`, `rbac`, `orchestrator`.
 
@@ -252,6 +252,6 @@ The following 19 terms are defined in `cfg/system-physics.yaml` v1.1.0:
 `commitment_record` · `trace_event` · `escalation_record` ·
 `system_logs` · `system_physics` · `domain_physics` ·
 `prompt_contract` · `standing_order` · `invariant` · `escalation_trigger` ·
-`policy_commitment_gate` · `domain_pack` · `domain_authority` ·
+`policy_commitment_gate` · `domain_pack` · `admin` ·
 `meta_authority` · `domain_registry` · `pseudonymous_id` · `rbac` ·
 `tool_adapter` · `orchestrator` · `domain_lib`

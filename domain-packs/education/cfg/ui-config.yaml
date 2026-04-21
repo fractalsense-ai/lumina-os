@@ -25,27 +25,27 @@ ui_manifest:
   # defaults so that system roles map to education domain roles.
   system_role_to_domain_role:
     root: domain_authority
-    domain_authority: domain_authority
-    it_support: teacher
-    qa: student
-    auditor: student
+    admin: domain_authority
+    super_admin: teacher
+    operator: student
+    half_operator: student
     user: student
 
   panels:
     - id: zpd_distribution
       label: "ZPD Distribution"
       endpoint: "/api/dashboard/education/zpd-distribution"
-      roles: [root, domain_authority, qa]
+      roles: [root, admin, operator]
       type: chart
     - id: step_completion
       label: "Step Completion"
       endpoint: "/api/dashboard/education/step-completion"
-      roles: [root, domain_authority]
+      roles: [root, admin]
       type: metric
     - id: vocabulary_growth
       label: "Vocabulary Growth"
       endpoint: "/api/dashboard/education/vocabulary-growth"
-      roles: [root, domain_authority, teacher]
+      roles: [root, admin, teacher]
       type: chart
 
   # ── Role-based UI layouts ──────────────────────────────────

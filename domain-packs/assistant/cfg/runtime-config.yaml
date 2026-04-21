@@ -56,9 +56,9 @@ runtime:
     required_role: user
     allowed_roles:
       - root
-      - domain_authority
-      - it_support
-      - qa
+      - admin
+      - super_admin
+      - operator
       - user
 
   # ── Turn Input Schema ─────────────────────────────────────────────

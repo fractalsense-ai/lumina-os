@@ -35,12 +35,12 @@ function roleBadgeClass(role: string): string {
   switch (role) {
     case 'root':
       return 'bg-red-500/10 text-red-600'
-    case 'domain_authority':
+    case 'admin':
       return 'bg-purple-500/10 text-purple-600'
-    case 'it_support':
+    case 'super_admin':
       return 'bg-blue-500/10 text-blue-600'
-    case 'qa':
-    case 'auditor':
+    case 'operator':
+    case 'half_operator':
       return 'bg-amber-500/10 text-amber-600'
     case 'guest':
       return 'bg-gray-500/10 text-gray-500'

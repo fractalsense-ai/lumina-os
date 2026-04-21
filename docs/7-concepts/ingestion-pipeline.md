@@ -13,7 +13,7 @@ last_updated: 2026-03-20
 
 ## Overview
 
-The document ingestion pipeline enables domain authorities (DAs) to upload external content — PDFs, DOCX files, Markdown, CSV, JSON, and YAML — and transform it into structured domain-physics YAML via SLM-driven interpretation. The pipeline is RBAC-gated: only `root`, `domain_authority`, and `it_support` roles may upload; the `guest` role is explicitly excluded.
+The document ingestion pipeline enables domain authorities (DAs) to upload external content — PDFs, DOCX files, Markdown, CSV, JSON, and YAML — and transform it into structured domain-physics YAML via SLM-driven interpretation. The pipeline is RBAC-gated: only `root`, `admin`, and `super_admin` roles may upload; the `guest` role is explicitly excluded.
 
 ## Lifecycle
 
@@ -73,8 +73,8 @@ The ingestion pipeline uses the `INGEST` permission (octal bit 8) which is ACL-o
 | Role             | Upload | Extract | Review | Commit |
 |------------------|--------|---------|--------|--------|
 | root             | ✅      | ✅       | ✅      | ✅      |
-| domain_authority | ✅      | ✅       | ✅      | ✅      |
-| it_support       | ✅      | ✅       | ❌      | ❌      |
+| admin | ✅      | ✅       | ✅      | ✅      |
+| super_admin       | ✅      | ✅       | ❌      | ❌      |
 | learner          | ❌      | ❌       | ❌      | ❌      |
 | guest            | ❌      | ❌       | ❌      | ❌      |
 

@@ -5,7 +5,7 @@
     "prev_record_hash": "genesis",
     "timestamp_utc": "2026-03-02T10:00:00Z",
     "actor_id": "da_algebra_lead_001",
-    "actor_role": "domain_authority",
+    "actor_role": "admin",
     "commitment_type": "session_open",
     "subject_id": "session-a3f8c2e1-0001-4000-8000-000000000042",
     "subject_version": null,

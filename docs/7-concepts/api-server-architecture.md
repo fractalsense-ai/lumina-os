@@ -168,7 +168,7 @@ adapters:
       method: GET
       module_path: domain-packs/education/controllers/api_handlers.py
       callable: dashboard_vocabulary_growth
-      roles: [root, domain_authority, teacher]
+      roles: [root, admin, teacher]
 ```
 
 ### Loading pipeline

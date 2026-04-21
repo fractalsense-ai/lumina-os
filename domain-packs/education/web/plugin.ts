@@ -39,7 +39,7 @@ const EDUCATION_DASHBOARD_TABS: DashboardTabDef[] = [
   {
     id: 'teacher-overview',
     label: 'Teachers',
-    roles: ['root', 'domain_authority'],
+    roles: ['root', 'admin'],
     component: TeacherOverview,
     order: 110,
   },

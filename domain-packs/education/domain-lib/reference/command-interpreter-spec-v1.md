@@ -43,7 +43,7 @@ operation first, then use the returned values in subsequent commands.
   NEVER use invite_user when both users already exist — use assign_student or
   request_teacher_assignment instead.
 - update_user_role = CHANGE an **existing** user's system role (promote, demote, change role).
-  Examples: "promote user42 to domain_authority", "change Matt's system role".
+  Examples: "promote user42 to admin", "change Matt's system role".
   Only use when the user *already exists* and the intent is to change their system role.
 - assign_student = ASSIGN an **existing** student to an **existing** teacher's roster.
   Sets the student's escalation route so incidents go to the assigned teacher.
@@ -145,17 +145,17 @@ When the operation is `invite_user`, use this exact structure:
 | "create student Matt" | `{"username": "Matt", "role": "user", "intended_domain_role": "student", "domain_id": "education"}` |
 | "invite Alice as a teacher in algebra" | `{"username": "Alice", "role": "user", "intended_domain_role": "teacher", "domain_id": "education"}` |
 | "add a new TA named Sam" | `{"username": "Sam", "role": "user", "intended_domain_role": "teaching_assistant", "domain_id": "education"}` |
-| "create a DA for education" | `{"username": "...", "role": "domain_authority", "domain_id": "education"}` |
+| "create a DA for education" | `{"username": "...", "role": "admin", "domain_id": "education"}` |
 
 ## Education role mapping
 
-- Valid system roles: root, domain_authority, it_support, qa, auditor, user, guest.
+- Valid system roles: root, admin, super_admin, operator, half_operator, user, guest.
 - Education domain roles: student, teacher, teaching_assistant, guardian.
 - Education domain roles are NOT system roles. When a user mentions "student",
   "teacher", "TA", or "guardian", set `role` to "user" and put the education
   role in `intended_domain_role`.
-- Domain Authority is a **system** role (`"role": "domain_authority"`), NOT
-  an education domain role. Never put "domain_authority" in `intended_domain_role`.
+- Admin is a **system** role (`"role": "admin"`), NOT
+  an education domain role. Never put "admin" in `intended_domain_role`.
 
 ## User discovery
 

@@ -41,7 +41,7 @@ def normalize_slm_command(
     original_instruction:
         The raw teacher/admin instruction text (used for fuzzy inference).
     valid_roles:
-        Set of valid *system* roles (e.g. ``{"user", "domain_authority", ...}``).
+        Set of valid *system* roles (e.g. ``{"user", "admin", ...}``).
     domain_role_aliases:
         Mapping of domain-specific role names to system roles, loaded
         dynamically from domain-physics.json by the system layer.

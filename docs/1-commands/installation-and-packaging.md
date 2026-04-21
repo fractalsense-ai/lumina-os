@@ -203,18 +203,18 @@ admin, domain, and user tokens. Four environment variables control JWT signing:
 | Variable | Required | Signed roles | `iss` claim |
 |----------|----------|--------------|-------------|
 | `LUMINA_JWT_SECRET` | Always | Legacy fallback for all tokens | `lumina` |
-| `LUMINA_ADMIN_JWT_SECRET` | Production admin track | `root`, `it_support` | `lumina-admin` |
-| `LUMINA_DOMAIN_JWT_SECRET` | Production domain track | `domain_authority` | `lumina-domain` |
-| `LUMINA_USER_JWT_SECRET` | Production user track | `user`, `qa`, `auditor`, `guest` | `lumina-user` |
+| `LUMINA_ADMIN_JWT_SECRET` | Production admin track | `root`, `super_admin` | `lumina-admin` |
+| `LUMINA_DOMAIN_JWT_SECRET` | Production domain track | `admin` | `lumina-domain` |
+| `LUMINA_USER_JWT_SECRET` | Production user track | `user`, `operator`, `half_operator`, `guest` | `lumina-user` |
 
 When the three track-specific secrets are set, each track has its own login
 endpoint and cryptographically isolated token:
 
 | Track | Login endpoint | Roles |
 |-------|----------------|-------|
-| Admin | `POST /api/admin/auth/login` | `root`, `it_support` |
-| Domain | `POST /api/domain/auth/login` | `domain_authority` |
-| User | `POST /api/auth/login` | `user`, `qa`, `auditor`, `guest` |
+| Admin | `POST /api/admin/auth/login` | `root`, `super_admin` |
+| Domain | `POST /api/domain/auth/login` | `admin` |
+| User | `POST /api/auth/login` | `user`, `operator`, `half_operator`, `guest` |
 
 The `iss` claim in each token selects the correct secret for validation — the
 three tracks are cryptographically separated. The frontend handles track
@@ -331,7 +331,7 @@ With Ollama running and `gemma3:4b` pulled, start the API server and send a glos
 lumina-api
 
 # Terminal 2 — log in and capture the token (use the endpoint matching your role)
-# Admin (root / it_support):
+# Admin (root / super_admin):
 $response = Invoke-RestMethod -Uri 'http://localhost:8000/api/admin/auth/login' `
   -Method POST -ContentType 'application/json' `
   -Body '{"username":"admin","password":"<pw>"}'

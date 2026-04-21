@@ -375,7 +375,7 @@ glossary:
       - trace_event
       - escalation_record
     example_in_context: >-
-      An auditor can replay the full system_logs for a session to
+      A half_operator can replay the full system_logs for a session to
       reconstruct every orchestrator decision from first principles.
 
   - term: system_physics
@@ -406,7 +406,7 @@ glossary:
     related_terms:
       - system_physics
       - domain_pack
-      - domain_authority
+      - admin
     example_in_context: >-
       The education domain_physics defines the scaffolding_only invariant;
       if violated the standing order apply_zpdcorrection fires.
@@ -467,7 +467,7 @@ glossary:
       - standing_order
     example_in_context: >-
       The escalation_trigger repeated_invariant_violation fires when
-      max_attempts is exhausted and targets the domain_authority role.
+      max_attempts is exhausted and targets the admin role.
 
   - term: policy_commitment_gate
     definition: >-
@@ -497,14 +497,14 @@ glossary:
       - domain module
     related_terms:
       - domain_physics
-      - domain_authority
+      - admin
       - domain_registry
     example_in_context: >-
       The domain-packs/education/ folder is the education domain_pack;
       it contains the full physics, tools, and runtime config for the
       tutoring domain.
 
-  - term: domain_authority
+  - term: admin
     definition: >-
       The human expert role (teacher, agronomist, clinician, operator) who
       authors a domain pack and owns its domain physics.  The Domain Authority
@@ -517,7 +517,7 @@ glossary:
       - domain_pack
       - domain_physics
     example_in_context: >-
-      The domain_authority for the education pack may update the ZPD
+      The admin for the education pack may update the ZPD
       thresholds in domain-physics.json; the change must be committed to
       the System Logs before it takes effect.
 
@@ -530,7 +530,7 @@ glossary:
       - meta authority
       - MA
     related_terms:
-      - domain_authority
+      - admin
       - escalation_record
       - escalation_trigger
     example_in_context: >-
@@ -574,18 +574,18 @@ glossary:
     definition: >-
       Role-Based Access Control.  Lumina uses a chmod-style octal permission
       model (rwx / owner / group / others) enforced on every API request via
-      JWT role claims.  Six roles: root, domain_authority, it_support, qa,
-      auditor, user.
+      JWT role claims.  Six roles: root, admin, super_admin, operator,
+      half_operator, user.
     aliases:
       - role-based access control
       - permissions
       - roles
     related_terms:
       - pseudonymous_id
-      - domain_authority
+      - admin
       - meta_authority
     example_in_context: >-
-      An auditor role has read-only rbac permissions on System Log entries but
+      A half_operator role has read-only rbac permissions on System Log entries but
       cannot activate or roll back domain physics.
 
   - term: tool_adapter
@@ -677,7 +677,7 @@ glossary:
     related_terms:
       - novel_synthesis
       - escalation_trigger
-      - domain_authority
+      - admin
       - commitment_record
     example_in_context: >-
       After the orchestrator flags a novel synthesis, an escalation record
@@ -836,7 +836,7 @@ glossary:
     related_terms:
       - slm
       - rbac
-      - domain_authority
+      - admin
     example_in_context: >-
       A domain authority says "update the coefficient threshold in algebra
       to 0.8". The SLM translates this to {operation: update_domain_physics,
@@ -870,3 +870,5 @@ slm_config:
   local_endpoint: "http://localhost:11434"
   admin_command_translation: true
   timeout_seconds: 60
+
+

@@ -96,7 +96,7 @@ def _find_panel_config(
 
 
 def _resolve_da_governed(user_data: dict[str, Any]) -> set[str] | None:
-    """Return the effective governed-module set for a domain_authority.
+    """Return the effective governed-module set for an admin.
 
     Returns ``None`` for non-DA roles (meaning no filtering needed).
     Unrestricted DAs (empty ``governed_modules`` *and* empty
@@ -281,8 +281,8 @@ async def _resolve_domain_overview(
 ) -> dict[str, Any]:
     """Domain inventory — shape varies by role.
 
-    System-track (root / it_support): domain-centric with domain_count.
-    Domain-track (domain_authority): module-centric with module_count,
+    System-track (root / super_admin): domain-centric with domain_count.
+    Domain-track (admin): module-centric with module_count,
     active student and staff counts.
     """
     if user_data.get("role") not in ("root", "admin", "super_admin"):
@@ -423,11 +423,11 @@ async def _resolve_escalation_queue(
     domain_id = _cfg.DOMAIN_REGISTRY.resolve_default_for_user(user_data)
 
     # Determine which modules the caller can receive escalations for.
-    # Domain-role holders (teacher, domain_authority) see escalations for
+    # Domain-role holders (teacher, admin) see escalations for
     # their assigned modules; system admins see everything.
     domain_roles_map = user_data.get("domain_roles") or {}
     governed = _resolve_da_governed(user_data)
-    system_admin = user_data.get("role") in ("root", "it_support", "qa", "auditor")
+    system_admin = user_data.get("role") in ("root", "super_admin", "operator", "half_operator")
 
     if not system_admin and not governed and not domain_roles_map:
         raise HTTPException(status_code=403, detail="Insufficient permissions")

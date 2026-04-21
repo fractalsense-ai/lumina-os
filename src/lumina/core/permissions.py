@@ -72,7 +72,7 @@ def _is_group_member(
     """Check whether the user is a member of the named group.
 
     Resolution order:
-    0. ``domain_authority`` is always a group member — they are the
+    0. ``admin`` is always a group member — they are the
        domain-level administrator regardless of group definition.
     1. If *groups_config* contains *group_name*, check its ``members``
        block against the user's system role and optional domain role.
@@ -135,7 +135,7 @@ def check_permission(
         document.  Maps group names to membership criteria.
     governed_modules:
         Optional list of module IDs from the DA's JWT ``governed_modules``
-        claim.  When the user is a ``domain_authority``, access is denied
+        claim.  When the user is an ``admin``, access is denied
         outright for modules outside this list (no fallback to group/others).
     module_id:
         The ID of the module being accessed.  Used together with
@@ -150,8 +150,8 @@ def check_permission(
     if user_role == "root":
         return True
 
-    # Step 1b: domain_authority — scope-bounded access
-    # DA has owner-level access within governed_modules; denied outright
+    # Step 1b: admin — scope-bounded access
+    # Admin has owner-level access within governed_modules; denied outright
     # for anything outside their scope.  See parallel-authority-tracks.md.
     if user_role == "admin":
         if governed_modules is not None and module_id is not None:

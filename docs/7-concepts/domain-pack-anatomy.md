@@ -318,7 +318,7 @@ The three currently active domain packs illustrate this:
 | **Tool adapters** | algebra-parser, substitution-checker, calculator | system ctl tools | operations tool adapters |
 | **Domain library components** | ZPD monitor, fluency tracker, fatigue estimator | Turn interpretation spec, command interpreter spec, sensor probes | Turn interpretation spec, sensor normalisation |
 | **World-sim enabled** | Yes (space, nature, sports, general_math themes) | No | No |
-| **Access roles** | user, domain_authority, it_support, qa, root | it_support, root | domain-specific |
+| **Access roles** | user, admin, super_admin, operator, root | super_admin, root | domain-specific |
 | **LLM vs SLM routing** | LLM (external permitted) | SLM-only (`local_only: true`) | LLM (external permitted) |
 | **Module structure** | Multiple algebra modules; module_map routes by student domain_id | Single system-core module | Single operations-level-1 module |
 
@@ -365,8 +365,8 @@ Commands route through one of three endpoints based on the caller's required acc
 | Endpoint | Gate | Who can reach it |
 |---|---|---|
 | `POST /api/command` | Any authenticated user | Students, teachers, all roles |
-| `POST /api/domain/command` | `domain_authority`, `root`, `it_support` | Domain administrators and above |
-| `POST /api/admin/command` | `root`, `it_support` | System-level operators only |
+| `POST /api/domain/command` | `admin`, `root`, `super_admin` | Domain administrators and above |
+| `POST /api/admin/command` | `root`, `super_admin` | System-level operators only |
 
 The frontend slash command registry (`src/web/services/slashCommands.ts`) assigns each
 command a `tier` that maps to one of these endpoints via `tierEndpoint()`. When adding a new
@@ -426,7 +426,7 @@ The deterministic parts of the pipeline that **should** be covered by direct-dis
 | **Operation routing** | Known operation returns 200; unknown returns 422 | `"operation": "assign_student"` → 200 |
 | **HITL exemption** | Exempt ops execute immediately (`staged_id: null`); non-exempt ops return a `staged_id` | `hitl_exempt: true` in runtime-config → `resp.json()["staged_id"] is None` |
 | **Tier gate enforcement** | Wrong role at wrong endpoint returns 403 | User token at `/api/domain/command` → 403 |
-| **min_role enforcement** | Operation rejects callers below its declared min_role | `min_role: domain_authority` + user token → 403 |
+| **min_role enforcement** | Operation rejects callers below its declared min_role | `min_role: admin` + user token → 403 |
 | **domain_id injection** | `domain_id` from request body propagates into `params` | Send `"domain_id": "education"` in body, verify handler receives it |
 | **Parameter normalisation** | `_normalize_slm_command` coerces types correctly | `governed_modules: "single"` → `["single"]` |
 | **Handler return value** | The operation's result dict contains expected fields | `resp.json()["result"]["students"]` is a list |

@@ -726,7 +726,7 @@ async def _dispatch_command(
 # Commands are split into three tiers by access level:
 #   /api/command        — any authenticated user
 #   /api/domain/command — domain authority + root
-#   /api/admin/command  — root / it_support only
+#   /api/admin/command  — root / super_admin only
 #
 # All three share _dispatch_command(); per-operation min_role checks
 # still enforce fine-grained RBAC within each tier.

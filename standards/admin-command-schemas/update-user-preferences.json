@@ -4,7 +4,7 @@
   "schema_version": "1.0.0",
   "last_updated": "2026-04-08",
   "type": "object",
-  "description": "Update a user's preferences. Self-service for any authenticated user; elevated system roles (domain_authority, it_support, root) can update on behalf of another user. Domain packs declare which preference keys are meaningful.",
+  "description": "Update a user's preferences. Self-service for any authenticated user; elevated system roles (admin, super_admin, root) can update on behalf of another user. Domain packs declare which preference keys are meaningful.",
   "properties": {
     "operation": {
       "const": "update_user_preferences"

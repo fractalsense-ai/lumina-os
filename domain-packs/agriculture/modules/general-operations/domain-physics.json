@@ -21,7 +21,7 @@
     "governance": {
       "domain_role_aliases": {
         "field_operator": "user",
-        "site_manager": "it_support",
+        "site_manager": "super_admin",
         "observer": "guest"
       }
     }

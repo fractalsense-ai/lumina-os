@@ -111,7 +111,7 @@ Define who gets notified when things go wrong:
 escalation_triggers:
   - id: unresolved_violation
     condition: "Standing order exhausted without resolution."
-    target_role: domain_authority
+    target_role: admin
     sla_minutes: 30
 ```
 

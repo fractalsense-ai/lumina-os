@@ -42,7 +42,7 @@ class DomainRegistry:
         self._multi_domain = False
         # Role-based defaults: maps role name → domain_id
         self._role_defaults: dict[str, str] = {}
-        # module_prefix → domain_id reverse map (for domain_authority resolution)
+        # module_prefix → domain_id reverse map (for admin resolution)
         self._prefix_to_domain: dict[str, str] = {}
         # Landing domain for unauthenticated sessions (distinct from default_domain)
         self._unauthenticated_domain: str | None = None
@@ -221,7 +221,7 @@ class DomainRegistry:
         1. If user is None (unauthenticated) → unauthenticated_domain, then
            global default_domain.
         2. If user role is listed in role_defaults → that domain.
-        3. If user role is domain_authority and governed_modules is non-empty →
+        3. If user role is admin and governed_modules is non-empty →
            extract the module-prefix segment from the first module path
            (``domain/<prefix>/…``) and map to the corresponding domain_id.
         4. Fallthrough → global default_domain.

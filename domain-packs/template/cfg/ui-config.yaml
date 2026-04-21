@@ -27,7 +27,7 @@ ui_manifest:
     # - id: overview
     #   label: "Overview"
     #   endpoint: "/api/dashboard/template/overview"
-    #   roles: [root, domain_authority]
+    #   roles: [root, admin]
     #   type: chart
 
   role_layouts: {}

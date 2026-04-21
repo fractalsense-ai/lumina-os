@@ -136,10 +136,10 @@ Project Lumina defines six operational roles for runtime access control. These r
 | Role | ID | Hierarchy Level | Default Module Mode | Description |
 |------|----|----------------|--------------------:|-------------|
 | **Root** | `root` | 0 | `777` | OS-level administrator. Bypasses all permission checks. User management, system configuration, institution-wide policy. Maps to **Macro Authority**. |
-| **Domain Authority** | `domain_authority` | 1 | `750` | Subject-matter expert. Authors and governs domain packs. Scoped to specific modules via `governed_modules` JWT claim. Maps to **Meso** or **Micro Authority**. |
-| **IT Support** | `it_support` | 2 | — | Tier-1 technical support. Diagnostics, runtime monitoring, session troubleshooting. Cross-cutting role. |
-| **Quality Assurance** | `qa` | 2 | — | Conformance testing. Runs evaluation harness, regression tests on assigned modules. Cross-cutting role. |
-| **Auditor** | `auditor` | 2 | — | Compliance / audit officer. Read-only access to System Log records, audit logs, and session traces within scope. Cross-cutting role. |
+| **Domain Authority** | `admin` | 1 | `750` | Subject-matter expert. Authors and governs domain packs. Scoped to specific modules via `governed_modules` JWT claim. Maps to **Meso** or **Micro Authority**. |
+| **IT Support** | `super_admin` | 2 | — | Tier-1 technical support. Diagnostics, runtime monitoring, session troubleshooting. Cross-cutting role. |
+| **Quality Assurance** | `operator` | 2 | — | Conformance testing. Runs evaluation harness, regression tests on assigned modules. Cross-cutting role. |
+| **half_operator** | `half_operator` | 2 | — | Compliance / audit officer. Read-only access to System Log records, audit logs, and session traces within scope. Cross-cutting role. |
 | **Standard User** | `user` | 3 | — | Session participant (student, patient, operator). Execute-only access on permitted modules. Maps to **Subject/Target**. |
 
 ### Role-to-Governance Mapping
@@ -147,12 +147,12 @@ Project Lumina defines six operational roles for runtime access control. These r
 | Governance Level | Governance Title | RBAC Role(s) |
 |-----------------|-----------------|--------------|
 | 1 — Macro | School Board / Admin | `root` |
-| 2 — Meso | Department Head | `domain_authority` (Meta Authority scope) |
-| 3 — Micro | Teacher / Operator | `domain_authority` (module scope) |
+| 2 — Meso | Department Head | `admin` (Meta Authority scope) |
+| 3 — Micro | Teacher / Operator | `admin` (module scope) |
 | 4 — Subject | Student / Patient | `user` |
-| (cross-cutting) | IT Support | `it_support` |
-| (cross-cutting) | QA Tester | `qa` |
-| (cross-cutting) | Compliance | `auditor` |
+| (cross-cutting) | IT Support | `super_admin` |
+| (cross-cutting) | operator Tester | `operator` |
+| (cross-cutting) | Compliance | `half_operator` |
 
 ### Permission Model (chmod)
 

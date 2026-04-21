@@ -44,7 +44,7 @@ or approval.  No System Log record is written for read-only queries.
 
 ## RBAC
 
-Requires one of: `root`, `domain_authority`, `it_support`.
+Requires one of: `root`, `admin`, `super_admin`.
 
 ## RESPONSE
 
@@ -59,7 +59,7 @@ Requires one of: `root`, `domain_authority`, `it_support`.
         "name": "commit_domain_physics",
         "description": "Commit the current domain-physics hash ...",
         "hitl_exempt": false,
-        "min_role": "domain_authority"
+        "min_role": "admin"
       }
     ],
     "count": 21

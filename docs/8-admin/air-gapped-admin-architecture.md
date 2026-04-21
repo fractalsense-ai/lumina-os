@@ -17,9 +17,9 @@ Project Lumina separates authentication into three parallel tracks:
 
 | Track | Roles | JWT Issuer | Secret Env Var |
 |-------|-------|-----------|----------------|
-| **System** | root, it_support | `lumina-admin` | `LUMINA_ADMIN_JWT_SECRET` |
-| **Domain** | domain_authority | `lumina-domain` | `LUMINA_DOMAIN_JWT_SECRET` |
-| **User** | user, qa, auditor, guest | `lumina-user` | `LUMINA_USER_JWT_SECRET` |
+| **System** | root, super_admin | `lumina-admin` | `LUMINA_ADMIN_JWT_SECRET` |
+| **Domain** | admin | `lumina-domain` | `LUMINA_DOMAIN_JWT_SECRET` |
+| **User** | user, operator, half_operator, guest | `lumina-user` | `LUMINA_USER_JWT_SECRET` |
 
 Tokens from one track are cryptographically invalid on the others — each track uses a separate signing secret. This architectural separation is designed to evolve into full physical isolation (separate auth services per track, network boundaries) without application-level changes.
 
@@ -47,7 +47,7 @@ Scoped tokens include a `token_scope` claim:
 ```json
 {
   "sub": "da-algebra-001",
-  "role": "domain_authority",
+  "role": "admin",
   "governed_modules": ["domain/edu/algebra-level-1/v1"],
   "iat": 1718438400,
   "exp": 1718442000,
@@ -89,7 +89,7 @@ The `iss` claim distinguishes token provenance:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/admin/auth/login` | System-track login — requires root or it_support role |
+| `POST` | `/api/admin/auth/login` | System-track login — requires root or super_admin role |
 | `POST` | `/api/admin/auth/refresh` | Refresh system-track token |
 | `GET` | `/api/admin/auth/me` | System-track profile from token |
 
@@ -97,7 +97,7 @@ The `iss` claim distinguishes token provenance:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/domain/auth/login` | Domain-track login — requires domain_authority role |
+| `POST` | `/api/domain/auth/login` | Domain-track login — requires admin role |
 | `POST` | `/api/domain/auth/refresh` | Refresh domain-track token |
 | `GET` | `/api/domain/auth/me` | Domain-track profile from token |
 

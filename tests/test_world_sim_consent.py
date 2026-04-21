@@ -181,7 +181,7 @@ class TestConsentGate:
 
     @pytest.mark.integration
     def test_domain_authority_bypasses_consent(self, client: TestClient) -> None:
-        """domain_authority role should bypass consent gate."""
+        """admin role should bypass consent gate."""
         token = _make_token("admin")
         resp = client.post(
             "/api/chat",
@@ -368,7 +368,7 @@ class TestPhysicsHolodeck:
 
     @pytest.mark.integration
     def test_holodeck_as_domain_authority_returns_evidence(self, client: TestClient) -> None:
-        """domain_authority can also use holodeck mode."""
+        """admin can also use holodeck mode."""
         token = _make_token("admin")
         resp = client.post(
             "/api/chat",

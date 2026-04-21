@@ -160,7 +160,7 @@ def test_domain_prefix_stripped(api_module) -> None:
 def test_governed_modules_all_expansion(api_module, monkeypatch: pytest.MonkeyPatch) -> None:
     """governed_modules: 'all' should expand to actual module IDs from the registry.
 
-    Only domain_authority may carry governed_modules; non-DA roles have it
+    Only admin may carry governed_modules; non-DA roles have it
     stripped by _normalize_slm_command (Phase 6).
     """
     from lumina.api import config as _cfg

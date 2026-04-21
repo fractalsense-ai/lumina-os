@@ -402,7 +402,7 @@
     "/api/auth/invite": {
       "post": {
         "summary": "Invite User",
-        "description": "Create a pending user account and return a one-time setup URL.\n\nThe invited user follows the setup URL to choose their own password and\nactivate the account.  No password is accepted in this request.\n\nRequired roles: ``root``, ``it_support``.\n``governed_modules`` is optional for domain_authority (null = all modules).",
+        "description": "Create a pending user account and return a one-time setup URL.\n\nThe invited user follows the setup URL to choose their own password and\nactivate the account.  No password is accepted in this request.\n\nRequired roles: ``root``, ``super_admin``.\n``governed_modules`` is optional for admin (null = all modules).",
         "operationId": "invite_user_api_auth_invite_post",
         "requestBody": {
           "content": {
@@ -505,7 +505,7 @@
     "/api/health/load": {
       "get": {
         "summary": "Health Load",
-        "description": "Return current load snapshot.  Requires root or auditor role.",
+        "description": "Return current load snapshot.  Requires root or half_operator role.",
         "operationId": "health_load_api_health_load_get",
         "responses": {
           "200": {
@@ -2257,7 +2257,7 @@
     "/api/admin/auth/login": {
       "post": {
         "summary": "Admin Login",
-        "description": "Authenticate a system-track user and issue a scoped admin token.\n\nOnly ``root`` and ``it_support`` may use this endpoint.\nDomain authorities must use ``/api/domain/auth/login`` instead.",
+        "description": "Authenticate a system-track user and issue a scoped admin token.\n\nOnly ``root`` and ``super_admin`` may use this endpoint.\nDomain authorities must use ``/api/domain/auth/login`` instead.",
         "operationId": "admin_login_api_admin_auth_login_post",
         "requestBody": {
           "content": {
@@ -2346,7 +2346,7 @@
     "/api/domain/auth/login": {
       "post": {
         "summary": "Domain Login",
-        "description": "Authenticate a domain authority and issue a domain-scoped token.\n\nOnly users with the ``domain_authority`` role may use this endpoint.\nSystem-track users must use ``/api/admin/auth/login``;\nregular users must use ``/api/auth/login``.",
+        "description": "Authenticate a domain authority and issue a domain-scoped token.\n\nOnly users with the ``admin`` role may use this endpoint.\nSystem-track users must use ``/api/admin/auth/login``;\nregular users must use ``/api/auth/login``.",
         "operationId": "domain_login_api_domain_auth_login_post",
         "requestBody": {
           "content": {

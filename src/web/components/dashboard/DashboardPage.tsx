@@ -49,7 +49,7 @@ interface UiManifest {
 }
 
 const TAB_MANIFEST: TabDef[] = [
-  { id: 'overview',   label: 'Overview',     roles: ['root', 'domain_authority'] },
+  { id: 'overview',   label: 'Overview',     roles: ['root', 'admin'] },
 ]
 
 function getApiBase(): string {

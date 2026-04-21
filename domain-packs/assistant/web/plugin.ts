@@ -56,7 +56,7 @@ const ASSISTANT_DASHBOARD_TABS: DashboardTabDef[] = [
   {
     id: 'intent-distribution',
     label: 'Intents',
-    roles: ['root', 'domain_authority'],
+    roles: ['root', 'admin'],
     // Placeholder component — renders a simple summary until a
     // dedicated React component is built in a future iteration.
     component: () => null,

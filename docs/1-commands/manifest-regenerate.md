@@ -65,13 +65,13 @@ tool. Do not use this script to manage System Log ledger integrity.
 
 | Context | Details |
 |---------|---------|
-| Allowed roles | `root`, `domain_authority` |
-| Denied roles | `it_support`, `qa`, `auditor`, `user` |
+| Allowed roles | `root`, `admin` |
+| Denied roles | `super_admin`, `operator`, `half_operator`, `user` |
 | API endpoint | `POST /api/manifest/regen` |
 | Auth required | Yes (JWT) |
 
 This is a write operation that modifies `docs/MANIFEST.yaml` in-place. It is restricted to roles
-that carry authoring authority over repository artifacts. Auditors and QA personnel may inspect
+that carry authoring authority over repository artifacts. Auditors and operator personnel may inspect
 the manifest via `integrity-check(1)` (`GET /api/manifest/check`) but may not rewrite it.
 
 All API invocations are recorded as a System Log `TraceEvent` on the `_admin` ledger for auditability.

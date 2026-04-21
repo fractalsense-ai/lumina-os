@@ -68,7 +68,7 @@ output_schema:
 # Authorization: who may invoke this tool.
 #   orchestrator      — called automatically during turn processing
 #   entity            — the domain subject may request it
-#   domain_authority  — admin may invoke it
+#   admin             — admin may invoke it
 authorization:
   who_may_call:
     - orchestrator

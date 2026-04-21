@@ -317,7 +317,7 @@ def test_root_defaults_to_system_domain(multi_client: TestClient) -> None:
 
 @pytest.mark.integration
 def test_it_support_defaults_to_system_domain(multi_client: TestClient) -> None:
-    """Authenticated it_support user with no domain_id routes to the system domain."""
+    """Authenticated super_admin user with no domain_id routes to the system domain."""
     token = _make_token(None, "super_admin")
     resp = multi_client.post(
         "/api/chat",
@@ -333,7 +333,7 @@ def test_it_support_defaults_to_system_domain(multi_client: TestClient) -> None:
 
 @pytest.mark.integration
 def test_qa_defaults_to_global_default_domain(multi_client: TestClient) -> None:
-    """Authenticated qa user with no domain_id falls back to global default (education)."""
+    """Authenticated operator user with no domain_id falls back to global default (education)."""
     token = _make_token(None, "operator")
     resp = multi_client.post(
         "/api/chat",
@@ -358,7 +358,7 @@ def test_qa_defaults_to_global_default_domain(multi_client: TestClient) -> None:
 
 @pytest.mark.integration
 def test_auditor_defaults_to_global_default_domain(multi_client: TestClient) -> None:
-    """Authenticated auditor user with no domain_id falls back to global default (education)."""
+    """Authenticated half_operator user with no domain_id falls back to global default (education)."""
     token = _make_token(None, "half_operator")
     resp = multi_client.post(
         "/api/chat",
@@ -383,7 +383,7 @@ def test_auditor_defaults_to_global_default_domain(multi_client: TestClient) -> 
 
 @pytest.mark.integration
 def test_domain_authority_defaults_to_governed_domain(multi_client: TestClient) -> None:
-    """domain_authority user routes to the domain matching their governed_modules."""
+    """admin user routes to the domain matching their governed_modules."""
     token = _make_token(None, "admin", governed_modules=["domain/edu/algebra-level-1/v1"])
     resp = multi_client.post(
         "/api/chat",
@@ -408,7 +408,7 @@ def test_domain_authority_defaults_to_governed_domain(multi_client: TestClient) 
 
 @pytest.mark.integration
 def test_domain_authority_no_governed_modules_uses_global_default(multi_client: TestClient) -> None:
-    """domain_authority with empty governed_modules falls back to global default."""
+    """admin with empty governed_modules falls back to global default."""
     token = _make_token(None, "admin", governed_modules=[])
     resp = multi_client.post(
         "/api/chat",

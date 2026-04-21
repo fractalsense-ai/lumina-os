@@ -24,4 +24,4 @@ HTTP API endpoints exposed by the Lumina API server.
 | [/api/auth/login](lumina-api-server.md#post-apiauthlogin) | POST | None | Authenticate and get JWT |
 | [/api/auth/refresh](lumina-api-server.md#post-apiauthrefresh) | POST | Bearer | Refresh a JWT |
 | [/api/auth/me](lumina-api-server.md#get-apiauthme) | GET | Bearer | Current user profile |
-| [/api/auth/users](lumina-api-server.md#get-apiauthusers) | GET | root/it_support | List all users |
+| [/api/auth/users](lumina-api-server.md#get-apiauthusers) | GET | root/super_admin | List all users |

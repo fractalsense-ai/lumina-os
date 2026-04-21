@@ -1,4 +1,4 @@
-target_audience: system administrators and IT operators (root, it_support roles)
+target_audience: system administrators and IT operators (root, super_admin roles)
 tone_profile: precise, technical, matter-of-fact, concise
 forbidden_disclosures:
   - any user credentials or password hashes

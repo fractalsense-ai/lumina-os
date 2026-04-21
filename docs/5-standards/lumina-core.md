@@ -58,7 +58,7 @@ A conformant `domain-physics.json` must declare:
 
 - `id`: globally unique identifier (format: `domain/{org}/{name}/v{major}`)
 - `version`: semver string
-- `domain_authority`: name/role of the human author
+- `admin`: name/role of the human author
 - `meta_authority_id`: id of the domain pack one level above (or `"root"` for top-level)
 - `invariants`: list of at least one invariant with `severity: critical`
 - `standing_orders`: list of at least one standing order

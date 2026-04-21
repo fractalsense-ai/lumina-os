@@ -77,7 +77,7 @@ export function ActionCard({ card, token, userRole, onResolved }: ActionCardProp
 
   // Only governance roles can resolve action cards (approve/reject/defer).
   // Students and other non-governance roles see the card as read-only.
-  const GOVERNANCE_ROLES = ['root', 'domain_authority', 'it_support', 'qa', 'auditor', 'teacher']
+  const GOVERNANCE_ROLES = ['root', 'admin', 'super_admin', 'operator', 'half_operator', 'teacher']
   const canResolve = !userRole || GOVERNANCE_ROLES.includes(userRole)
 
   const handleAction = async (action: ActionCardAction) => {

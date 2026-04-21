@@ -455,7 +455,7 @@ class TestAuditLogScoping:
     def test_da_without_governed_modules_gets_403(self, client: TestClient) -> None:
         root_token = _register_root(client)
         user = _register_user(client, "da-user")
-        # Promote to domain_authority with NO governed_modules
+        # Promote to admin with NO governed_modules
         client.patch(
             f"/api/auth/users/{user['user_id']}",
             json={"role": "admin"},

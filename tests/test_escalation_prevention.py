@@ -313,7 +313,7 @@ class TestTokenScopeTampering:
 
 @pytest.mark.integration
 class TestHolodeckRoleGate:
-    """Only root and domain_authority can use holodeck mode."""
+    """Only root and admin can use holodeck mode."""
 
     def test_user_cannot_use_holodeck(self, client: TestClient) -> None:
         _register_root(client)

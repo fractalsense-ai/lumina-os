@@ -21,27 +21,27 @@ ui_manifest:
   # ── System-role → Domain-role mapping ──────────────────────
   system_role_to_domain_role:
     root: domain_authority
-    domain_authority: domain_authority
-    it_support: domain_authority
-    qa: user
-    auditor: user
+    admin: domain_authority
+    super_admin: domain_authority
+    operator: user
+    half_operator: user
     user: user
 
   panels:
     - id: intent_distribution
       label: "Intent Distribution"
       endpoint: "/api/dashboard/assistant/intent-distribution"
-      roles: [root, domain_authority]
+      roles: [root, admin]
       type: chart
     - id: task_completion
       label: "Task Completion"
       endpoint: "/api/dashboard/assistant/task-completion"
-      roles: [root, domain_authority]
+      roles: [root, admin]
       type: metric
     - id: satisfaction_trend
       label: "Satisfaction Trend"
       endpoint: "/api/dashboard/assistant/satisfaction-trend"
-      roles: [root, domain_authority]
+      roles: [root, admin]
       type: chart
 
   # ── Role-based UI layouts ──────────────────────────────────

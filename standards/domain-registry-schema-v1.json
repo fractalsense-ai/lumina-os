@@ -49,7 +49,7 @@
           },
           "module_prefix": {
             "type": "string",
-            "description": "Short identifier that appears as the second path segment in module IDs (e.g. 'edu' in 'domain/edu/algebra-level-1/v1'). Used to infer the domain for domain_authority users from their governed_modules JWT claim."
+            "description": "Short identifier that appears as the second path segment in module IDs (e.g. 'edu' in 'domain/edu/algebra-level-1/v1'). Used to infer the domain for admin users from their governed_modules JWT claim."
           },
           "keywords": {
             "type": "array",

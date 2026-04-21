@@ -48,7 +48,7 @@ Records a deliberate commitment by a Domain Authority (human or system acting un
   "prev_record_hash": "<sha256-hex>",
   "timestamp_utc": "<ISO-8601>",
   "actor_id": "<pseudonymous-token>",
-  "actor_role": "domain_authority | meta_authority | orchestrator",
+  "actor_role": "admin | meta_authority | orchestrator",
   "commitment_type": "domain_pack_activation | policy_change | escalation_resolution | session_open | session_close",
   "subject_id": "<uuid-of-subject-domain-pack-or-session>",
   "subject_version": "<semver>",

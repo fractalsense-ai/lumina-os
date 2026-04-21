@@ -104,7 +104,7 @@ auth_policy:
 # Map pseudonymous IDs to operational roles and module scopes.
 role_assignments:
   - pseudonymous_id: "<32-char hex token>"
-    role: "domain_authority"             # One of: root, domain_authority, it_support, qa, auditor, user
+    role: "admin"             # One of: root, admin, super_admin, operator, half_operator, user
     governed_modules:
       - "domain/org/algebra-level-1/v1"
     granted_by: "<root or meta authority pseudonymous_id>"

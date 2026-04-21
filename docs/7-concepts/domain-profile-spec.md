@@ -40,7 +40,7 @@ Write `domain-physics.json` following the structure below. The JSON file is the 
 id: domain/org/subject-level/v1
 version: "0.1.0"
 
-domain_authority:
+admin:
   name: "Jane Smith"
   role: "Lead Algebra Teacher"
 
@@ -225,12 +225,12 @@ Every domain-physics document must include a `permissions` block that controls w
 permissions:
   mode: "750"                          # rwxr-x---
   owner: "da_algebra_lead_001"         # pseudonymous_id of owning Domain Authority
-  group: "domain_authority"            # role receiving group-level bits
+  group: "admin"            # role receiving group-level bits
   acl:                                 # optional extended ACL
-    - role: qa
+    - role: operator
       access: rx
       scope: evaluation_only
-    - role: auditor
+    - role: half_operator
       access: r
       scope: log_records_only
     - role: user
@@ -256,9 +256,9 @@ access_control:
   required_role: user
   allowed_roles:
     - root
-    - domain_authority
-    - it_support
-    - qa
+    - admin
+    - super_admin
+    - operator
     - user
 ```
 

@@ -94,7 +94,7 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
             if not params.get("username") and target:
                 params["username"] = target
 
-        # ── new_role / role normalisation: "Domain Authority" → "domain_authority" ──
+        # ── new_role / role normalisation: "Domain Authority" → "admin" ──
         role_key = "new_role" if operation == "update_user_role" else "role"
         raw_role = params.get(role_key, "")
         if raw_role and not re.fullmatch(r"[a-z_]+", raw_role):

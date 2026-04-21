@@ -182,7 +182,7 @@ class TestCheckPermissionWithGroups:
         ) is False
 
     def test_system_role_group_member(self):
-        """it_support is in 'ops' group → gets group bits (7 = rwx)."""
+        """super_admin is in 'ops' group → gets group bits (7 = rwx)."""
         assert check_permission(
             "it_001", "super_admin", OPS_PERMS, Operation.WRITE,
             groups_config=GROUPS_CONFIG,

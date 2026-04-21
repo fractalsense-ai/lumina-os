@@ -22,12 +22,12 @@ default_domain: education
 # users with these roles are routed to the specified domain instead of the global
 # default_domain.  Roles not listed fall through to default_domain.
 #
-# Design rationale: system-level operators (root, it_support) should land in the
+# Design rationale: system-level operators (root, super_admin) should land in the
 # system domain so they can query Lumina internals without being dropped into a
 # domain-specific session (e.g. education).  The global default_domain is kept
 # as education to mask system internals from domain-level users.
 #
-# domain_authority users are routed to the domain matching their first
+# admin users are routed to the domain matching their first
 # governed_modules entry (via module_prefix resolution), so a teacher whose JWT
 # carries domain/edu/… lands in education, not the system domain.
 role_defaults:
@@ -64,7 +64,7 @@ domains:
   system:
     runtime_config_path: domain-packs/system/cfg/runtime-config.yaml
     label: System — Lumina Infrastructure
-    description: System domain for Project Lumina infrastructure queries. Routes admin and operator questions about System Log records, domain physics, RBAC, policy gates, and Lumina operational concepts. Only root and it_support roles may execute sessions in this domain.
+    description: System domain for Project Lumina infrastructure queries. Routes admin and operator questions about System Log records, domain physics, RBAC, policy gates, and Lumina operational concepts. Only root and super_admin roles may execute sessions in this domain.
     module_prefix: sys
     keywords:
       - ctl

@@ -14,12 +14,12 @@ last_updated: 2026-03-20
 ## Overview
 
 > **Note:** System-level roles are organized into three parallel authority tracks, not a
-> single hierarchy. `root` and `it_support` operate on the **system track**;
-> `domain_authority` operates on the **domain track**; all other roles operate on the
+> single hierarchy. `root` and `super_admin` operate on the **system track**;
+> `admin` operates on the **domain track**; all other roles operate on the
 > **user track**. Domain roles described here are an additive overlay within the user
 > track. See [parallel-authority-tracks](parallel-authority-tracks.md) for the full model.
 
-Domain Role Hierarchy is an extension to Lumina's RBAC system that allows each domain to define its own role tiers beneath the Domain Authority ceiling. While the 7 system-level roles (`root`, `domain_authority`, `it_support`, `qa`, `auditor`, `user`, `guest`) provide coarse-grained access control across the entire system, domain roles provide fine-grained access control *within* a specific domain.
+Domain Role Hierarchy is an extension to Lumina's RBAC system that allows each domain to define its own role tiers beneath the Domain Authority ceiling. While the 7 system-level roles (`root`, `admin`, `super_admin`, `operator`, `half_operator`, `user`, `guest`) provide coarse-grained access control across the entire system, domain roles provide fine-grained access control *within* a specific domain.
 
 **Problem:** In an education deployment, a department head (Domain Authority), teachers, teaching assistants, and students all need different levels of access to the same domain module. The system-level `user` role treats them all identically. An enterprise deployment has the same challenge with managers, team leads, and employees.
 
@@ -55,7 +55,7 @@ Domain roles are declared in the `domain_roles` block of a domain-physics docume
         "role_name": "Teacher",
         "hierarchy_level": 1,
         "description": "Instructor with full domain access.",
-        "maps_to_system_role": "domain_authority",
+        "maps_to_system_role": "admin",
         "default_access": "rwx",
         "may_assign_domain_roles": true,
         "max_assignable_level": 2,
@@ -100,7 +100,7 @@ Domain roles are declared in the `domain_roles` block of a domain-physics docume
 | `role_name` | yes | Human-readable display name |
 | `hierarchy_level` | yes | Position in hierarchy (1-10, DA is implicit 0) |
 | `description` | yes | Purpose and responsibilities |
-| `maps_to_system_role` | yes | System role ceiling (`domain_authority`, `user`, or `guest`) |
+| `maps_to_system_role` | yes | System role ceiling (`admin`, `user`, or `guest`) |
 | `default_access` | yes | Default `rwxi` permissions within the domain |
 | `may_assign_domain_roles` | no | Can this role assign domain roles to others? (default: false) |
 | `max_assignable_level` | no | Lowest privilege level this role can assign (only when `may_assign_domain_roles` is true) |
@@ -112,11 +112,11 @@ Each domain role maps to a system role via `maps_to_system_role`. This determine
 
 | System Role | Use For | Ceiling |
 |-------------|---------|---------|
-| `domain_authority` | Sub-DA roles like teachers, managers | Full rwx possible |
+| `admin` | Sub-DA roles like teachers, managers | Full rwx possible |
 | `user` | Operational roles like TAs, field operators | Based on module ACL |
 | `guest` | Limited-access domain roles | Read and/or execute only |
 
-Cross-cutting system roles (`root`, `it_support`, `qa`, `auditor`) cannot be used as mappings because they have independent system-wide scope.
+Cross-cutting system roles (`root`, `super_admin`, `operator`, `half_operator`) cannot be used as mappings because they have independent system-wide scope.
 
 ### JWT Integration
 
@@ -162,8 +162,8 @@ Domain roles are purely additive. They can grant access that the system role alo
 
 | Domain Role | Level | System Mapping | Access | Description |
 |-------------|-------|----------------|--------|-------------|
-| *(Domain Authority)* | *0* | *domain_authority* | *rwx* | Department head — implicit ceiling |
-| `teacher` | 1 | `domain_authority` | rwx | Instructor; receives escalations; can assign TAs and students; may freeze/unfreeze student sessions via PIN unlock |
+| *(Domain Authority)* | *0* | *admin* | *rwx* | Department head — implicit ceiling |
+| `teacher` | 1 | `admin` | rwx | Instructor; receives escalations; can assign TAs and students; may freeze/unfreeze student sessions via PIN unlock |
 | `teaching_assistant` | 2 | `user` | rx | Support staff, can view student progress and issue hints |
 | `student` | 3 | `user` | x | Learner, execute sessions only |
 
@@ -171,8 +171,8 @@ Domain roles are purely additive. They can grant access that the system role alo
 
 | Domain Role | Level | System Mapping | Access | Description |
 |-------------|-------|----------------|--------|-------------|
-| *(Domain Authority)* | *0* | *domain_authority* | *rwx* | Lead operations manager — implicit ceiling |
-| `site_manager` | 1 | `domain_authority` | rwx | On-site manager, can assign operators and observers |
+| *(Domain Authority)* | *0* | *admin* | *rwx* | Lead operations manager — implicit ceiling |
+| `site_manager` | 1 | `admin` | rwx | On-site manager, can assign operators and observers |
 | `field_operator` | 2 | `user` | rx | Field workers who execute procedures and log observations |
 | `observer` | 3 | `user` | r | Read-only observers |
 
@@ -180,8 +180,8 @@ Domain roles are purely additive. They can grant access that the system role alo
 
 | Domain Role | Level | System Mapping | Access | Description |
 |-------------|-------|----------------|--------|-------------|
-| *(Domain Authority)* | *0* | *domain_authority* | *rwx* | VP / Director — implicit ceiling |
-| `manager` | 1 | `domain_authority` | rwx | Department managers |
+| *(Domain Authority)* | *0* | *admin* | *rwx* | VP / Director — implicit ceiling |
+| `manager` | 1 | `admin` | rwx | Department managers |
 | `team_lead` | 2 | `user` | rx | Team leads with monitoring access |
 | `employee` | 3 | `user` | x | Standard employees |
 
@@ -189,9 +189,9 @@ Domain roles are purely additive. They can grant access that the system role alo
 
 | Domain Role | Level | System Mapping | Access | Description |
 |-------------|-------|----------------|--------|-------------|
-| *(Domain Authority)* | *0* | *domain_authority* | *rwx* | Chief physician — implicit ceiling |
-| `attending_physician` | 1 | `domain_authority` | rwx | Lead physician with full clinical authority |
-| `resident` | 2 | `domain_authority` | rx | Physicians in training |
+| *(Domain Authority)* | *0* | *admin* | *rwx* | Chief physician — implicit ceiling |
+| `attending_physician` | 1 | `admin` | rwx | Lead physician with full clinical authority |
+| `resident` | 2 | `admin` | rx | Physicians in training |
 | `nurse` | 3 | `user` | rx | Nursing staff |
 | `patient` | 4 | `user` | x | Patients in guided interactions |
 
@@ -243,23 +243,23 @@ A role can only assign roles at or below its `max_assignable_level`. For example
 
 ## System Roles and Domain Default Routing
 
-Cross-cutting system roles (`root`, `it_support`, `qa`, `auditor`) operate across all domains and are outside the domain role hierarchy.  However, they interact with domain routing in two specific ways:
+Cross-cutting system roles (`root`, `super_admin`, `operator`, `half_operator`) operate across all domains and are outside the domain role hierarchy.  However, they interact with domain routing in two specific ways:
 
 ### role_defaults
 
-`root` and `it_support` users have a **default domain** of `system` when no explicit `domain_id` is provided in a request and NLP routing does not confidently match another domain.  This is declared in `cfg/domain-registry.yaml`:
+`root` and `super_admin` users have a **default domain** of `system` when no explicit `domain_id` is provided in a request and NLP routing does not confidently match another domain.  This is declared in `cfg/domain-registry.yaml`:
 
 ```yaml
 role_defaults:
   root: system
-  it_support: system
+  super_admin: system
 ```
 
-All other system roles (`qa`, `auditor`, `user`), as well as unauthenticated users, fall through to the global `default_domain` (currently `education`), masking system internals from domain-level users by default.
+All other system roles (`operator`, `half_operator`, `user`), as well as unauthenticated users, fall through to the global `default_domain` (currently `education`), masking system internals from domain-level users by default.
 
-### domain_authority governed_modules inference
+### admin governed_modules inference
 
-`domain_authority` users do not appear in `role_defaults` because they are domain-affiliated, not system operators.  Instead, when NLP routing finds no confident match, their default domain is **inferred from their `governed_modules` JWT claim**:
+`admin` users do not appear in `role_defaults` because they are domain-affiliated, not system operators.  Instead, when NLP routing finds no confident match, their default domain is **inferred from their `governed_modules` JWT claim**:
 
 The system extracts the module-prefix segment from the first module path (`domain/<prefix>/…`) and looks it up in the `module_prefix` reverse map in the registry.  A teacher with `governed_modules: ["domain/edu/algebra-level-1/v1"]` defaults to `education`; an agriculture domain authority with `governed_modules: ["domain/agri/operations-level-1/v1"]` defaults to `agriculture`.
 

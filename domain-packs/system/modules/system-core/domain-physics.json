@@ -33,7 +33,7 @@
     "log_review",
     "session_diagnostics",
     "user_management",
-    "domain_authority_onboarding",
+    "admin_onboarding",
     "escalation_review"
   ],
 
@@ -43,7 +43,7 @@
       "label": "User Management SOP",
       "description": "Standard operating procedure for creating and onboarding Lumina users without exposing passwords over the admin interface.",
       "steps": [
-        "1. Admin issues POST /api/auth/invite with username, role, and (if domain_authority) governed_modules.",
+        "1. Admin issues POST /api/auth/invite with username, role, and (if admin) governed_modules.",
         "2. System creates the account in pending (active=false) state with no password.",
         "3. A one-time setup_url is returned in the API response.  Admin delivers this URL to the user out-of-band (copy from response, or let SMTP dispatch it if configured).",
         "4. User visits the setup_url and submits POST /api/auth/setup-password with the token and their chosen password.",
@@ -57,12 +57,12 @@
       ]
     },
     {
-      "id": "domain_authority_onboarding_sop",
-      "label": "Domain Authority Onboarding SOP",
-      "description": "Standard operating procedure for creating a Domain Authority account with explicit module-boundary definition.",
+      "id": "admin_onboarding_sop",
+      "label": "Admin Onboarding SOP",
+      "description": "Standard operating procedure for creating an admin account with explicit module-boundary definition.",
       "steps": [
-        "1. Root or it_support identifies the module IDs the DA will govern (e.g. domain/edu/algebra-level-1/v1).",
-        "2. Issue POST /api/auth/invite with role=domain_authority and governed_modules=[list of module IDs].  The request is rejected (400) if governed_modules is absent or empty.",
+        "1. Root or super_admin identifies the module IDs the admin will govern (e.g. domain/edu/algebra-level-1/v1).",
+        "2. Issue POST /api/auth/invite with role=admin and governed_modules=[list of module IDs].  The request is rejected (400) if governed_modules is absent or empty.",
         "3. Deliver the setup_url to the incoming DA via the user_management_sop flow.",
         "4. After the DA activates their account, optionally assign domain-scoped roles via PATCH /api/auth/users/{id} with domain_roles.",
         "5. Confirm module access by asking the DA to run a GET /api/admin/command (module_status) for each governed module.",
@@ -82,7 +82,7 @@
       "steps": [
         "1. When the user specifies a domain-specific role (student, teacher, teaching_assistant, parent, observer, field_operator, site_manager), map it to the system role 'user' and preserve the original name in the 'intended_domain_role' field.",
         "2. Strip domain prefixes from role names: 'education_user' → 'user', 'agriculture_field_operator' → 'field_operator' → 'user'.",
-        "3. Valid system roles are: root, domain_authority, it_support, qa, auditor, user, guest.",
+        "3. Valid system roles are: root, admin, super_admin, operator, half_operator, user, guest.",
         "4. If governed_modules is 'all' or omitted, attempt to resolve the target domain from context (e.g. 'add a student to education' → domain=education) and list concrete module IDs.",
         "5. If the domain is ambiguous, request clarification — do not guess.",
         "6. For discovery queries (list domains, list modules, module status), produce the matching operation directly — these are HITL-exempt and execute immediately."
@@ -139,10 +139,10 @@
   "escalation_triggers": [
     {
       "id": "da_invite_missing_governed_modules",
-      "condition": "A domain_authority role invite was attempted without providing governed_modules, indicating an incomplete onboarding setup that would leave the DA unable to govern any module.",
+      "condition": "An admin role invite was attempted without providing governed_modules, indicating an incomplete onboarding setup that would leave the admin unable to govern any module.",
       "target_role": "root",
       "sla_minutes": 60,
-      "recommended_action": "Re-issue the invite with an explicit governed_modules list following the domain_authority_onboarding_sop."
+      "recommended_action": "Re-issue the invite with an explicit governed_modules list following the admin_onboarding_sop."
     },
     {
       "id": "invite_execution_failed",
@@ -211,7 +211,7 @@
     { "term": "system_physics",     "definition": "The machine-readable global invariant layer (cfg/system-physics.yaml / .json) that constrains every domain session regardless of which domain is active." },
     { "term": "domain_physics",     "definition": "A domain-pack JSON file defining the module's topics, glossary, standing orders, escalation conditions, and artifacts." },
     { "term": "domain_pack",        "definition": "A self-contained module bundle (cfg, prompts, domain-lib, controllers, modules) that implants a domain into the Lumina runtime." },
-    { "term": "domain_authority",   "definition": "A role with authoring rights over one or more governed modules; highest ceiling for domain-scoped operations." },
+    { "term": "admin",              "definition": "A role with authoring rights over one or more governed modules; highest ceiling for domain-scoped operations." },
     { "term": "meta_authority",     "definition": "The cross-domain governance layer above a Domain Authority; approves cross-domain synthesis and standing-order conflicts." },
     { "term": "policy_gate",        "definition": "A hard invariant in system physics that cannot be overridden by any domain pack; violated by a session → escalation." },
     { "term": "hash_chain",         "definition": "The linked sequence of record_hash values in the System Logs that provides tamper-evidence across all ledger entries." },
@@ -224,14 +224,14 @@
     { "term": "domain_lib",         "definition": "A domain-pack library of pure functions available to controller adapters without LLM involvement." },
     { "term": "pseudonymous_id",    "definition": "The opaque, non-reversible identifier stored in the System Logs in place of a real user identifier." },
     { "term": "ingestion_pipeline", "definition": "The upload → extract → SLM-interpret → DA-review → commit workflow for importing external content into a domain pack." },
-    { "term": "governed_modules",   "definition": "The list of module IDs (e.g. domain/edu/algebra-level-1/v1) that a domain_authority has authoring and approval rights over.  Required at invite time; cannot be empty for the domain_authority role." },
+    { "term": "governed_modules",   "definition": "The list of module IDs (e.g. domain/edu/algebra-level-1/v1) that an admin has authoring and approval rights over.  Required at invite time; cannot be empty for the admin role." },
     { "term": "invite_token",       "definition": "A single-use, URL-safe token generated when an admin invites a new user.  Embedded in the setup_url; consumed by POST /api/auth/setup-password to activate the account.  Expires after LUMINA_INVITE_TOKEN_TTL_SECONDS (default 24 h)." },
     { "term": "pending_user",       "definition": "A user account that has been created by invitation but not yet activated.  active=false, password_hash is empty.  Cannot log in until POST /api/auth/setup-password is called with a valid invite_token." },
     { "term": "user_management_sop","definition": "The standing order defining the invite → setup-link → password-set → active account workflow.  Ensures passwords are never transmitted over the admin interface." },
-    { "term": "domain_authority_onboarding_sop", "definition": "The standing order for creating domain_authority accounts with explicit governed_modules definitions before the invite is issued." },
+    { "term": "admin_onboarding_sop", "definition": "The standing order for creating admin accounts with explicit governed_modules definitions before the invite is issued." },
     { "term": "escalation_review_sop", "definition": "The standing order for reviewing, resolving, and optionally PIN-unlocking sessions tied to open escalation events." },
     { "term": "domain_role",          "definition": "A role defined in a module's domain-physics.json (e.g. student, teacher, parent) that is scoped to that domain.  Domain roles are not system roles; they map to the system role 'user' via maps_to_system_role.  Domain roles carry module-specific capabilities and access levels." },
-    { "term": "system_role",          "definition": "One of the seven RBAC roles recognised by the Lumina kernel: root, domain_authority, it_support, qa, auditor, user, guest.  System roles are stored in the user record and govern API-level access.  Domain roles are assigned separately within a module context." },
+    { "term": "system_role",          "definition": "One of the seven RBAC roles recognised by the Lumina kernel: root, admin, super_admin, operator, half_operator, user, guest.  System roles are stored in the user record and govern API-level access.  Domain roles are assigned separately within a module context." },
     { "term": "intended_domain_role", "definition": "An advisory field set during SLM command normalisation when the user requests a domain-specific role (e.g. 'student').  The system role is set to 'user' and the original domain role name is preserved in this field for downstream domain-role assignment." }
   ],
 

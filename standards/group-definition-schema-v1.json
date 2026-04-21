@@ -25,10 +25,10 @@
             "type": "string",
             "enum": [
               "root",
-              "domain_authority",
-              "it_support",
-              "qa",
-              "auditor",
+              "admin",
+              "super_admin",
+              "operator",
+              "half_operator",
               "user",
               "guest"
             ]

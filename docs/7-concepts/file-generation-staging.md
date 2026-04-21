@@ -80,7 +80,7 @@ Each staged file is persisted as a JSON envelope:
   "staged_id": "uuid-v4",
   "template_id": "domain-physics",
   "actor_id": "user-pseudonymous-id",
-  "actor_role": "domain_authority",
+  "actor_role": "admin",
   "payload": { ... },
   "staged_at": "2026-03-20T04:00:00+00:00",
   "approval_status": "pending",
@@ -97,11 +97,11 @@ Schema: `standards/staged-file-schema-v1.json`
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| POST | `/api/staging/create` | root, domain_authority | Stage a new file |
-| GET | `/api/staging/pending` | root, domain_authority, qa | List pending files |
-| GET | `/api/staging/{staged_id}` | root, domain_authority, qa | Get one staged file |
-| POST | `/api/staging/{staged_id}/approve` | root, domain_authority | Approve and write |
-| POST | `/api/staging/{staged_id}/reject` | root, domain_authority | Reject staged file |
+| POST | `/api/staging/create` | root, admin | Stage a new file |
+| GET | `/api/staging/pending` | root, admin, operator | List pending files |
+| GET | `/api/staging/{staged_id}` | root, admin, operator | Get one staged file |
+| POST | `/api/staging/{staged_id}/approve` | root, admin | Approve and write |
+| POST | `/api/staging/{staged_id}/reject` | root, admin | Reject staged file |
 
 ## System Log Integration
 
