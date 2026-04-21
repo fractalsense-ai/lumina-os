@@ -191,6 +191,8 @@ This boundary is not an accident. The domain authority does not want the student
 
 ## SEE ALSO
 
+- [`context-is-not-conversation(7)`](context-is-not-conversation.md) — foundational thesis for structured context assembly
+- [`ai-governance-principles(7)`](ai-governance-principles.md) — governance constraints implemented by the packet pipeline
 - [`README.md`](../../README.md) — top-level packet assembly diagram and TCP/IP metaphor
 - [`specs/dsa-framework-v1.md`](../../specs/dsa-framework-v1.md) — D.S.A. structural schema (Domain, State, Actor pillars) and turn sequence that PPA assembles into each prompt packet
 - [`docs/7-concepts/domain-adapter-pattern.md`](domain-adapter-pattern.md) — Phase A/ Phase B authoring contract; engine contract field reference

@@ -1,9 +1,9 @@
 ---
 version: 1.0.1
-last_updated: 2026-04-16
+last_updated: 2026-04-21
 ---
 
-# Concept — Telemetry Sliding Window & Conversation Black Box
+# Telemetry Sliding Window & Conversation Black Box
 
 **Version:** 1.0.1  
 **Status:** Active  
@@ -15,7 +15,7 @@ last_updated: 2026-04-16
 
 telemetry-and-blackbox — Sliding-window telemetry, conversation ring buffer, and black-box snapshot system.
 
-## SYNOPSIS
+## Overview
 
 Three interconnected subsystems that give Lumina a historical view of system behaviour and the ability to freeze diagnostic context when things go wrong:
 
@@ -157,6 +157,8 @@ blackbox:
 
 ## SEE ALSO
 
+- [`context-is-not-conversation(7)`](context-is-not-conversation.md) — why behavioral state compression replaces transcript replay
+- [`ai-governance-principles(7)`](ai-governance-principles.md) — principles 2 and 5 applied to telemetry and session memory boundaries
 - [memory-spec](memory-spec.md) — explains why conversation content is not normally stored
 - [resource-monitor-daemon](resource-monitor-daemon.md) — the daemon that polls telemetry
 - [system-log-micro-router](system-log-micro-router.md) — trace events and escalation records

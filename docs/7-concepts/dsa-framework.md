@@ -208,3 +208,9 @@ Earlier documents may use `sensor` where this spec now uses `domain lib`. In thi
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — Domain schema
 - [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example)
 - [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py) — education domain lib reference implementation (example)
+
+## SEE ALSO
+
+- [`context-is-not-conversation(7)`](context-is-not-conversation.md) — why Domain, State, and Actor are maintained as separate structures
+- [`ai-governance-principles(7)`](ai-governance-principles.md) — governing constraints that D.S.A. satisfies structurally
+- [`prompt-packet-assembly(7)`](prompt-packet-assembly.md) — runtime assembly pipeline that consumes D.S.A. structures each turn

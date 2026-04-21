@@ -1,9 +1,9 @@
 ---
 version: 1.0.0
-last_updated: 2026-03-28
+last_updated: 2026-04-21
 ---
 
-# Concept — Compressed State Pattern
+# Compressed State Pattern
 
 **Version:** 1.0.0  
 **Status:** Active  
@@ -15,9 +15,9 @@ last_updated: 2026-03-28
 
 compressed-state-pattern — the design philosophy of passing deterministically-compressed historical state, rather than raw data, into SLM and LLM context.
 
-## SYNOPSIS
+## Overview
 
-Lumina deliberately does not give language models raw data. Every piece of context that reaches a model has been compressed by deterministic code into a structured summary that encodes not just a current value but its *trajectory* — where things came from and where they are headed. This removes a class of ambiguity that forces models to fabricate direction (hallucination), shrinks the input surface available to adversarial manipulation (prompt injection), and tends to produce more novel and appropriate outcomes because the model reasons over a meaningful curve rather than an isolated point.
+Lumina passes compressed historical state, not raw data, into language model context. Each context element is a deterministic summary that includes trajectory alongside current value, reducing ambiguity the model would otherwise need to infer.
 
 ---
 
@@ -191,6 +191,8 @@ The compressed state pattern provides a meaningful security benefit alongside it
 
 ## SEE ALSO
 
+- [`context-is-not-conversation(7)`](context-is-not-conversation.md) — why deterministic compression closes the context gap
+- [`ai-governance-principles(7)`](ai-governance-principles.md) — principles 3 and 5 implemented: deterministic gates and behavioral state
 - [`telemetry-and-blackbox(7)`](telemetry-and-blackbox.md) — full technical detail on the sliding window implementation
 - [`prompt-packet-assembly(7)`](prompt-packet-assembly.md) — the nine-layer prompt assembly stack
 - [`slm-compute-distribution(7)`](slm-compute-distribution.md) — SLM's role in context compression (Layer 2½)
