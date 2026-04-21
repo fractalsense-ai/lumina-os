@@ -84,17 +84,21 @@ runtime:
       # Any keys set inline here take precedence over the sidecar file.
       module_path: domain-packs/template/modules/example-module
 
+  # ── Domain Roles ─────────────────────────────────────────────────
+  # Declare pack-local roles and map them to framework tier names.
+  # TODO: Replace these with your domain's actual roles.
+  domain_roles:
+    domain_authority: { tier: admin,    label: "Domain Authority" }
+    supervisor:       { tier: operator, label: "Supervisor",   may_assign: [member] }
+    member:           { tier: user,     label: "Member" }
+    observer:         { tier: guest,    label: "Observer" }
+
   # ── Access Control ────────────────────────────────────────────────
   # System-level RBAC gate.  The runtime checks this before routing.
-  # TODO: Adjust roles to match your deployment.
+  # TODO: Set min_tier to the lowest tier that may access this domain.
   access_control:
     required_role: user
-    allowed_roles:
-      - root
-      - admin
-      - super_admin
-      - operator
-      - user
+    min_tier: user
 
   # ── Default Task Spec (OPTIONAL — prefer per-module) ─────────────────
   # Fallback task spec when a module doesn't declare its own.

@@ -1,5 +1,5 @@
 schema_version: 1.0.0
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 artifacts:
 - path: docs/1-commands/README.md
   type: doc
@@ -1070,7 +1070,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-04
-  sha256: 1fd1c516d1318d528f5826213fc5302fda1d93fba272ca808e02d1f82844ed7a
+  sha256: 356e919bfb2f077f7243205101dcab53bb46f21dd0e1a3486f34bf26d44ec8c8
 - path: domain-packs/system/cfg/ui-config.yaml
   type: config
   doc_version: 1.0.0
@@ -1082,7 +1082,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-19
-  sha256: 691b8e93c55cf2b74316bfa12df30a434a7dd86904de5d48cb9f5ef282db709e
+  sha256: 8454f6b1b78415efb48dfd44cb6dfdede1f6bdc46e57d80e0dcec106adace5f3
 - path: domain-packs/education/cfg/ui-config.yaml
   type: config
   doc_version: 1.0.0
@@ -1106,7 +1106,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-04
-  sha256: 2e866b06be803b494448eb026774dab325846be038e2da72b98caa6ceca9f565
+  sha256: da95021c7ae214ccdc871f4f032ec8b927ed876fb9fd53d3954e4ae5d4fdee20
 - path: domain-packs/education/modules/general-education/module-config.yaml
   type: config
   doc_version: 1.0.0
@@ -1346,7 +1346,7 @@ artifacts:
   doc_version: 0.1.0
   status: active
   last_updated: 2026-04-19
-  sha256: 7c7e058a72a99b0c479de5916065b5795032ec6ea8932db0a500cb23dfa556bd
+  sha256: 404b7c005c6aaefc376c613974f05f52fe9d2779a25bb05c089a874b68e935fa
 - path: domain-packs/template/cfg/ui-config.yaml
   type: config
   doc_version: 0.1.0
@@ -1400,7 +1400,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-01
-  sha256: 1657af86cfe27a925338f53b52cdda87e78a5c1bb8a20d13f0a3971c639391c0
+  sha256: ec9bb3fd3a240116aac96b0a8c61f4100fbd1e7751497421ecfe50f44c376b05
 - path: domain-packs/assistant/cfg/admin-operations.yaml
   type: config
   doc_version: 1.0.0
