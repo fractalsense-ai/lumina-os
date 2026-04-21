@@ -194,10 +194,11 @@ class DocEmbedder:
     # internal body-size limit and returns HTTP 400.
     _OLLAMA_BATCH_SIZE: int = 32
 
-    # all-minilm (and most small Ollama embedding models) have a 512-token
-    # context window (~4 chars/token).  Truncate at 1800 chars to stay safely
-    # inside that limit regardless of tokenisation details.
-    _OLLAMA_MAX_CHARS: int = 1800
+    # all-minilm has a 256-token context window.  Dense JSON/YAML content
+    # can tokenise at ~2 chars/token, so 256 tokens ≈ 512 chars.  Truncate
+    # conservatively at 500 chars to stay inside the limit for all content
+    # types regardless of tokenisation.
+    _OLLAMA_MAX_CHARS: int = 500
 
     def _embed_ollama(self, texts: list[str]) -> NDArray[np.float32]:
         import httpx

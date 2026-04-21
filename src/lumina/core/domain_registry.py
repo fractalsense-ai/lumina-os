@@ -221,9 +221,10 @@ class DomainRegistry:
         1. If user is None (unauthenticated) → unauthenticated_domain, then
            global default_domain.
         2. If user role is listed in role_defaults → that domain.
-        3. If user role is admin and governed_modules is non-empty →
-           extract the module-prefix segment from the first module path
-           (``domain/<prefix>/…``) and map to the corresponding domain_id.
+        3. If user has governed_modules (any role) → extract the module-prefix
+           segment from the first module path (``domain/<prefix>/…``) and map
+           to the corresponding domain_id.  This ensures invited users land in
+           the domain they were onboarded to regardless of their system role.
         4. Fallthrough → global default_domain.
         """
         if not self._multi_domain:
@@ -242,18 +243,17 @@ class DomainRegistry:
         if role in self._role_defaults:
             return self._role_defaults[role]
 
-        # Step 3 — admin: infer from governed_modules
-        if role == "admin":
-            governed: list[str] = user.get("governed_modules") or []
-            if governed:
-                # Module paths are shaped like "domain/<prefix>/…".
-                # Split out the prefix segment (index 1).
-                parts = governed[0].strip("/").split("/")
-                if len(parts) >= 2:
-                    prefix = parts[1]
-                    inferred = self._prefix_to_domain.get(prefix)
-                    if inferred:
-                        return inferred
+        # Step 3 — infer from governed_modules (works for any role)
+        governed: list[str] = user.get("governed_modules") or []
+        if governed:
+            # Module paths are shaped like "domain/<prefix>/…".
+            # Split out the prefix segment (index 1).
+            parts = governed[0].strip("/").split("/")
+            if len(parts) >= 2:
+                prefix = parts[1]
+                inferred = self._prefix_to_domain.get(prefix)
+                if inferred:
+                    return inferred
 
         # Step 4 — global fallback
         return self._default_domain or next(iter(self._domains))
