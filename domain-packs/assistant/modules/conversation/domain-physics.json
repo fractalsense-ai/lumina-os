@@ -62,14 +62,6 @@
     "window_turns": 10,
     "drift_threshold": 0.5
   },
-  "subsystem_configs": {
-    "governance": {
-      "domain_role_aliases": {
-        "domain_authority": "domain_authority",
-        "user": "user"
-      }
-    }
-  },
   "module_state_schema": {
     "mastery_dimensions": [],
     "tracked_subsystems": [],

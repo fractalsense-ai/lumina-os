@@ -51,15 +51,15 @@ runtime:
     user: domain/asst/conversation/v1
     domain_authority: domain/asst/domain-authority/v1
 
-  # ── Access Control ────────────────────────────────────────────────
+  # ── Domain Roles ─────────────────────────────────────────────
+  domain_roles:
+    domain_authority: { tier: admin, label: "Assistant Domain Authority" }
+    user:             { tier: user,  label: "User" }
+
+  # ── Access Control ────────────────────────────────────────
   access_control:
     required_role: user
-    allowed_roles:
-      - root
-      - admin
-      - super_admin
-      - operator
-      - user
+    min_tier: user
 
   # ── Turn Input Schema ─────────────────────────────────────────────
   turn_input_schema:

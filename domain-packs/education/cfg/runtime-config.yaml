@@ -61,14 +61,17 @@ runtime:
     student: domain/edu/general-education/v1
     parent: domain/edu/guardian/v1
 
+  domain_roles:
+    domain_authority: { tier: admin,          label: "Education Domain Lead" }
+    teacher:          { tier: operator,        label: "Teacher",               may_assign: [student, parent] }
+    teaching_assistant: { tier: half_operator, label: "Teaching Assistant" }
+    student:          { tier: user,            label: "Student" }
+    parent:           { tier: half_operator,   label: "Guardian/Parent" }
+    observer:         { tier: guest,           label: "Observer" }
+
   access_control:
     required_role: user
-    allowed_roles:
-      - root
-      - admin
-      - super_admin
-      - operator
-      - user
+    min_tier: guest
 
   additional_specs:
     - domain-packs/education/world-sim/magic-circle-consent-v1.md

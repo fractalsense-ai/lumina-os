@@ -49,16 +49,6 @@
     "drift_threshold": 0.5
   },
   "subsystem_configs": {
-    "governance": {
-      "domain_role_aliases": {
-        "domain_authority": "admin",
-        "student": "user",
-        "teacher": "super_admin",
-        "teaching_assistant": "super_admin",
-        "parent": "user",
-        "observer": "guest"
-      }
-    },
     "journaling": {
       "enabled": true,
       "style": "hybrid",

@@ -14,11 +14,13 @@ runtime:
   # Path to the admin operations schema consumed by slm_parse_admin_command.
   admin_operations_schema_path: domain-packs/system/cfg/admin-operations.yaml
 
+  domain_roles:
+    system_operator: { tier: super_admin, label: "System Operator" }
+    auditor:         { tier: half_operator, label: "Auditor" }
+
   access_control:
     required_role: super_admin
-    allowed_roles:
-      - root
-      - super_admin
+    min_tier: super_admin
 
   # System domain never routes to an external LLM.  All turn interpretation
   # and response generation uses the local SLM (Ollama) only, with deterministic

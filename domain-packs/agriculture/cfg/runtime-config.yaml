@@ -14,14 +14,15 @@ runtime:
     domain/agri/operations-level-1/v1:
       domain_physics_path: domain-packs/agriculture/modules/operations-level-1/domain-physics.json
 
+  domain_roles:
+    domain_authority: { tier: admin,    label: "Agriculture Domain Authority" }
+    site_manager:     { tier: operator, label: "Site Manager" }
+    field_operator:   { tier: user,     label: "Field Operator" }
+    observer:         { tier: guest,    label: "Observer" }
+
   access_control:
     required_role: user
-    allowed_roles:
-      - root
-      - admin
-      - super_admin
-      - operator
-      - user
+    min_tier: user
 
   default_task_spec:
     task_id: operations-signal-001

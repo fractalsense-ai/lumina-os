@@ -16,14 +16,5 @@
   "domain_step_params": {
     "window_turns": 10,
     "drift_threshold": 0.5
-  },
-  "subsystem_configs": {
-    "governance": {
-      "domain_role_aliases": {
-        "field_operator": "user",
-        "site_manager": "super_admin",
-        "observer": "guest"
-      }
-    }
   }
 }
