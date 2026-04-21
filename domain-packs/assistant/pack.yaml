@@ -30,7 +30,10 @@ layers:
     - domain-lib/reference/search-task-spec-v1.md
     - domain-lib/reference/creative-writing-task-spec-v1.md
     - domain-lib/reference/planning-task-spec-v1.md
+    - domain-lib/reference/persona-craft-spec-v1.md
     - domain-lib/task_tracker.py
+    - domain-lib/affect_monitor.py
+    - domain-lib/persona_engine.py
   view:
     - prompts/domain-persona-v1.md
   docs:
@@ -45,6 +48,7 @@ modules:
   - creative-writing
   - planning
   - domain-authority
+  - persona-craft
 
 default_module: conversation
 

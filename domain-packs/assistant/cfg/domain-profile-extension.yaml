@@ -37,3 +37,9 @@ intent_distribution:
   search: 0
   creative: 0
   planning: 0
+  persona: 0
+
+# ── Persona active flag ─────────────────────────────────────────────
+# True once the actor has completed the persona-craft setup flow.
+# Other modules read this to decide whether to apply persona overlay.
+persona_active: false

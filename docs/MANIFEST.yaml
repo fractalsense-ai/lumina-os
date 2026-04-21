@@ -1417,6 +1417,18 @@ artifacts:
   status: active
   last_updated: 2026-07-01
   sha256: 126c2efb379bf24b3801a1e2dad01a14508e97958916d167a648af8254c54e05
+- path: domain-packs/assistant/domain-lib/persona_engine.py
+  type: code
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-15
+  sha256: 360fd8c8b105686838ea66e93a9a1286cfc0a6226a97bf12d3043a477a5c91c9
+- path: domain-packs/assistant/domain-lib/reference/persona-craft-spec-v1.md
+  type: doc
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-15
+  sha256: 2b5ffe8659367c7444404a6d63cb0268ac58f1a7aadd6ac3e172c3b7b11016f3
 - path: domain-packs/assistant/modules/conversation/module-config.yaml
   type: config
   doc_version: 1.0.0
@@ -1483,6 +1495,18 @@ artifacts:
   status: active
   last_updated: 2026-07-01
   sha256: 858c89f0b770cb5c34a16304a9bb59c42f0f64a48741795c905224d40260c4a6
+- path: domain-packs/assistant/modules/persona-craft/module-config.yaml
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-15
+  sha256: 9088998a644067bb5b3afde34a5ebffe52a74c4a5d24ff36d03c609dbe518fdd
+- path: domain-packs/assistant/modules/persona-craft/domain-physics.json
+  type: config
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-15
+  sha256: 2d2b69e780f827a652728498660ff20b67a84a40114fc6c74d4f0fd3a2a9d580
 - path: examples/escalation-example-packet.yaml
   type: doc
   doc_version: 1.0.0

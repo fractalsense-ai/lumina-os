@@ -1,0 +1,56 @@
+{
+  "id": "domain/asst/persona-craft/v1",
+  "version": "0.1.0",
+  "description": "Persona builder — conversational interface for shaping the AI's personality and tone. Stores the resulting PersonaState on the actor profile. After setup, the persona overlay is injected into every subsequent response across all modules.",
+
+  "notes": [
+    "Safety floor: content_safety_hard covers actual harm (violence, self-harm, abuse, illegal activity).",
+    "Tone latitude is uncapped above the floor: trash talk, sarcasm, ribbing, dark humor are all permitted.",
+    "The persona_safe invariant operates on persona *definitions*, not generated responses.",
+    "This module is the prototype for the education domain world-builder (antagonist/protagonist/narrator pattern)."
+  ],
+
+  "invariants": [
+    {
+      "id": "content_safety_hard",
+      "severity": "critical",
+      "description": "Hard safety gate — self-harm, violence, abuse, or illegal activity incitement triggers immediate escalation regardless of persona settings.",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    },
+    {
+      "id": "persona_safe",
+      "severity": "critical",
+      "description": "Proposed persona must pass the is_safe_persona() deterministic check. Rejects persona definitions that target self-harm or abuse vectors. Trash talk, sarcasm, and ribbing pass freely.",
+      "check": "persona_safety_check == true",
+      "standing_order_on_violation": "reject_unsafe_persona"
+    }
+  ],
+
+  "standing_orders": [
+    {
+      "id": "reject_unsafe_persona",
+      "action": "reject_unsafe_persona",
+      "description": "Inform the user that the proposed persona cannot be saved and invite them to adjust it. Non-escalating.",
+      "max_attempts": 3,
+      "escalation_on_exhaust": false
+    },
+    {
+      "id": "safety_intervene",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true
+    }
+  ],
+
+  "tool_adapters": [],
+
+  "module_state_schema": {
+    "custom_fields": {
+      "turn_count": {"type": "integer", "default": 0},
+      "last_persona_update_turn": {"type": "integer", "default": null},
+      "setup_step": {"type": "string", "default": null}
+    }
+  }
+}

@@ -106,6 +106,7 @@ class TestAssistantPackStructure:
         "creative-writing",
         "planning",
         "domain-authority",
+        "persona-craft",
     ]
 
     @pytest.mark.parametrize("module_name", EXPECTED_MODULES)
@@ -148,6 +149,7 @@ class TestAssistantDomainLibReference:
         "search-task-spec-v1.md",
         "creative-writing-task-spec-v1.md",
         "planning-task-spec-v1.md",
+        "persona-craft-spec-v1.md",
     ]
 
     @pytest.mark.parametrize("spec_name", EXPECTED_SPECS)
@@ -852,3 +854,414 @@ class TestAssistantInDomainRegistry:
         domains = registry.get("domains", {})
         assert "assistant" in domains
         assert domains["assistant"]["module_prefix"] == "asst"
+
+
+# ════════════════════════════════════════════════════════════
+# 8. Persona Engine
+# ════════════════════════════════════════════════════════════
+
+
+class TestPersonaEngine:
+    """Tests for domain-lib/persona_engine.py — PersonaState, PersonaOverlay,
+    build_overlay(), update_persona(), apply_intensity_cap(), is_safe_persona()."""
+
+    @pytest.fixture(autouse=True)
+    def _import(self):
+        import importlib
+        _DOMAIN_LIB_DIR = str(PACK / "domain-lib")
+        saved = sys.modules.pop("persona_engine", _SENTINEL)
+        if _DOMAIN_LIB_DIR not in sys.path:
+            sys.path.insert(0, _DOMAIN_LIB_DIR)
+        mod = importlib.import_module("persona_engine")
+        if saved is _SENTINEL:
+            sys.modules.pop("persona_engine", None)
+        else:
+            sys.modules["persona_engine"] = saved
+        self.PersonaState = mod.PersonaState
+        self.PersonaOverlay = mod.PersonaOverlay
+        self.ARCHETYPES = mod.ARCHETYPES
+        self.build_overlay = mod.build_overlay
+        self.update_persona = mod.update_persona
+        self.apply_intensity_cap = mod.apply_intensity_cap
+        self.is_safe_persona = mod.is_safe_persona
+
+    # ── PersonaState basics ───────────────────────────────────────
+
+    def test_persona_state_defaults(self):
+        p = self.PersonaState()
+        assert p.archetype == "neutral"
+        assert p.intensity == 0.0
+        assert p.name is None
+        assert p.traits == []
+        assert p.allowed_behaviors == []
+        assert p.hard_limits == []
+        assert p.setup_complete is False
+        assert p.last_updated_utc is None
+
+    def test_persona_state_intensity_clamped(self):
+        p = self.PersonaState(intensity=5.0)
+        assert p.intensity == 1.0
+        p2 = self.PersonaState(intensity=-1.0)
+        assert p2.intensity == 0.0
+
+    def test_persona_state_unknown_archetype_falls_back_to_neutral(self):
+        p = self.PersonaState(archetype="does_not_exist")
+        assert p.archetype == "neutral"
+
+    def test_persona_state_to_dict_roundtrip(self):
+        p = self.PersonaState(
+            archetype="gremlin",
+            intensity=0.8,
+            name="Rex",
+            traits=["chaotic", "loves puns"],
+            allowed_behaviors=["trash_talk"],
+            hard_limits=["no_family_insults"],
+            setup_complete=True,
+            last_updated_utc="2026-04-21T00:00:00Z",
+        )
+        d = p.to_dict()
+        p2 = self.PersonaState.from_dict(d)
+        assert p2.archetype == "gremlin"
+        assert abs(p2.intensity - 0.8) < 1e-5
+        assert p2.name == "Rex"
+        assert p2.traits == ["chaotic", "loves puns"]
+        assert p2.allowed_behaviors == ["trash_talk"]
+        assert p2.hard_limits == ["no_family_insults"]
+        assert p2.setup_complete is True
+        assert p2.last_updated_utc == "2026-04-21T00:00:00Z"
+
+    def test_persona_state_from_none_returns_defaults(self):
+        p = self.PersonaState.from_dict(None)
+        assert p.archetype == "neutral"
+        assert p.intensity == 0.0
+
+    def test_all_builtin_archetypes_present(self):
+        for name in ("neutral", "professional", "casual", "sarcastic",
+                     "gremlin", "mentor", "hype", "custom"):
+            assert name in self.ARCHETYPES
+
+    # ── build_overlay ─────────────────────────────────────────────
+
+    def test_neutral_zero_intensity_is_default(self):
+        p = self.PersonaState(archetype="neutral", intensity=0.0)
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is True
+        assert overlay.style_directive == ""
+
+    def test_any_archetype_at_zero_intensity_is_default(self):
+        p = self.PersonaState(archetype="gremlin", intensity=0.0)
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is True
+
+    def test_gremlin_full_intensity_is_not_default(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is False
+        assert overlay.tone_label == "Chaos Gremlin"
+        assert len(overlay.style_directive) > 0
+
+    def test_gremlin_directive_contains_tone_keywords(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        overlay = self.build_overlay(p)
+        directive = overlay.style_directive.lower()
+        assert "trash" in directive or "ribbing" in directive or "chaotic" in directive
+
+    def test_full_intensity_adds_consistency_note(self):
+        p = self.PersonaState(archetype="mentor", intensity=1.0)
+        overlay = self.build_overlay(p)
+        assert "fully" in overlay.style_directive.lower() or "consistently" in overlay.style_directive.lower()
+
+    def test_low_intensity_adds_subtle_note(self):
+        p = self.PersonaState(archetype="sarcastic", intensity=0.3)
+        overlay = self.build_overlay(p)
+        assert "subtly" in overlay.style_directive.lower()
+
+    def test_persona_name_appears_in_directive(self):
+        p = self.PersonaState(archetype="gremlin", intensity=0.8, name="Grim")
+        overlay = self.build_overlay(p)
+        assert '"Grim"' in overlay.style_directive
+
+    def test_custom_archetype_with_traits_is_not_default(self):
+        p = self.PersonaState(
+            archetype="custom",
+            intensity=0.7,
+            traits=["speaks in riddles", "stern dungeon keeper"],
+        )
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is False
+        assert overlay.tone_label == "Custom"
+        assert "riddles" in overlay.style_directive
+
+    def test_custom_archetype_without_traits_is_default(self):
+        p = self.PersonaState(archetype="custom", intensity=0.9, traits=[])
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is True
+
+    def test_neutral_with_traits_is_not_default(self):
+        p = self.PersonaState(archetype="neutral", intensity=0.5, traits=["uses sports metaphors"])
+        overlay = self.build_overlay(p)
+        assert overlay.is_default is False
+        assert "sports metaphors" in overlay.style_directive
+
+    def test_hard_limits_appear_in_directive(self):
+        p = self.PersonaState(
+            archetype="gremlin", intensity=0.8, hard_limits=["no_family_insults"]
+        )
+        overlay = self.build_overlay(p)
+        assert "no_family_insults" in overlay.style_directive
+
+    def test_allowed_behaviors_appear_in_directive(self):
+        p = self.PersonaState(
+            archetype="gremlin", intensity=0.8, allowed_behaviors=["trash_talk"]
+        )
+        overlay = self.build_overlay(p)
+        assert "trash_talk" in overlay.style_directive
+
+    def test_overlay_to_dict_keys(self):
+        p = self.PersonaState(archetype="hype", intensity=0.5)
+        d = self.build_overlay(p).to_dict()
+        assert set(d.keys()) == {"style_directive", "tone_label", "intensity", "is_default"}
+
+    # ── update_persona ────────────────────────────────────────────
+
+    def test_update_persona_changes_archetype(self):
+        p = self.PersonaState(archetype="neutral", intensity=0.0)
+        p2 = self.update_persona(p, {"archetype": "gremlin", "intensity": 0.9})
+        assert p2.archetype == "gremlin"
+        assert abs(p2.intensity - 0.9) < 1e-5
+
+    def test_update_persona_empty_dict_returns_unchanged(self):
+        p = self.PersonaState(archetype="gremlin", intensity=0.7)
+        p2 = self.update_persona(p, {})
+        assert p2 is p
+
+    def test_update_persona_hard_limits_append_only(self):
+        p = self.PersonaState(hard_limits=["no_profanity"])
+        p2 = self.update_persona(p, {"hard_limits": []})
+        # Existing limit must be preserved even when caller passes empty list
+        assert "no_profanity" in p2.hard_limits
+
+    def test_update_persona_new_hard_limit_added(self):
+        p = self.PersonaState(hard_limits=["no_profanity"])
+        p2 = self.update_persona(p, {"hard_limits": ["no_family_insults"]})
+        assert "no_profanity" in p2.hard_limits
+        assert "no_family_insults" in p2.hard_limits
+
+    def test_update_persona_unknown_archetype_ignored(self):
+        p = self.PersonaState(archetype="gremlin", intensity=0.8)
+        p2 = self.update_persona(p, {"archetype": "unicorn_wizard"})
+        assert p2.archetype == "gremlin"
+
+    def test_update_persona_intensity_clamped(self):
+        p = self.PersonaState()
+        p2 = self.update_persona(p, {"intensity": 99.0})
+        assert p2.intensity == 1.0
+
+    def test_update_persona_timestamp_applied(self):
+        p = self.PersonaState()
+        p2 = self.update_persona(p, {"intensity": 0.5}, timestamp_utc="2026-04-21T12:00:00Z")
+        assert p2.last_updated_utc == "2026-04-21T12:00:00Z"
+
+    # ── apply_intensity_cap ───────────────────────────────────────
+
+    def test_apply_intensity_cap_planning_module(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        capped = self.apply_intensity_cap(p, "domain/asst/planning/v1")
+        assert capped.intensity <= 0.6
+
+    def test_apply_intensity_cap_uncapped_module_unchanged(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        same = self.apply_intensity_cap(p, "domain/asst/weather/v1")
+        assert same.intensity == 1.0
+
+    def test_apply_intensity_cap_already_below_cap_unchanged(self):
+        p = self.PersonaState(archetype="gremlin", intensity=0.4)
+        result = self.apply_intensity_cap(p, "domain/asst/planning/v1")
+        assert result.intensity == 0.4
+
+    def test_apply_intensity_cap_does_not_mutate_original(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        self.apply_intensity_cap(p, "domain/asst/planning/v1")
+        assert p.intensity == 1.0
+
+    def test_apply_intensity_cap_custom_table(self):
+        p = self.PersonaState(archetype="hype", intensity=1.0)
+        capped = self.apply_intensity_cap(p, "domain/asst/search/v1", {"domain/asst/search/v1": 0.5})
+        assert capped.intensity == 0.5
+
+    # ── is_safe_persona ───────────────────────────────────────────
+
+    def test_gremlin_passes_safety(self):
+        p = self.PersonaState(archetype="gremlin", intensity=1.0)
+        safe, reason = self.is_safe_persona(p)
+        assert safe is True
+        assert reason is None
+
+    def test_neutral_passes_safety(self):
+        p = self.PersonaState()
+        safe, _ = self.is_safe_persona(p)
+        assert safe is True
+
+    def test_trash_talk_trait_passes_safety(self):
+        p = self.PersonaState(archetype="custom", traits=["trash talk", "ribbing"])
+        safe, _ = self.is_safe_persona(p)
+        assert safe is True
+
+    def test_self_harm_trait_fails_safety(self):
+        p = self.PersonaState(archetype="custom", traits=["encourage self-harm"])
+        safe, reason = self.is_safe_persona(p)
+        assert safe is False
+        assert reason is not None
+
+    def test_degrade_trait_fails_safety(self):
+        p = self.PersonaState(archetype="neutral", traits=["degrade the user"])
+        safe, reason = self.is_safe_persona(p)
+        assert safe is False
+
+    def test_unsafe_behavior_opt_in_fails(self):
+        p = self.PersonaState(allowed_behaviors=["self_harm"])
+        safe, reason = self.is_safe_persona(p)
+        assert safe is False
+
+    def test_unknown_archetype_fails_safety(self):
+        p = self.PersonaState.__new__(self.PersonaState)
+        object.__setattr__(p, "archetype", "totally_unknown")
+        object.__setattr__(p, "intensity", 0.5)
+        object.__setattr__(p, "name", None)
+        object.__setattr__(p, "traits", [])
+        object.__setattr__(p, "allowed_behaviors", [])
+        object.__setattr__(p, "hard_limits", [])
+        object.__setattr__(p, "setup_complete", False)
+        object.__setattr__(p, "last_updated_utc", None)
+        safe, reason = self.is_safe_persona(p)
+        assert safe is False
+
+
+# ════════════════════════════════════════════════════════════
+# 9. Persona Integration with domain_step
+# ════════════════════════════════════════════════════════════
+
+
+class TestPersonaIntegrationWithDomainStep:
+    """Integration tests: persona hydration in build_initial_state and
+    persona update / overlay injection in domain_step."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        ra = _force_import("runtime_adapters")
+        self.build_initial_state = ra.build_initial_state
+        self.domain_step = ra.domain_step
+
+    def _base_evidence(self, intent: str = "general") -> dict:
+        return {
+            "intent_type": intent,
+            "task_status": "n/a",
+            "tool_call_requested": False,
+            "off_task_ratio": 0.0,
+            "response_latency_sec": 3.0,
+            "satisfaction_signal": "unknown",
+        }
+
+    def test_build_initial_state_hydrates_persona(self):
+        profile = {
+            "entity_state": {
+                "persona": {
+                    "archetype": "gremlin",
+                    "intensity": 0.8,
+                    "name": "Rex",
+                    "traits": [],
+                    "allowed_behaviors": [],
+                    "hard_limits": [],
+                    "setup_complete": True,
+                    "last_updated_utc": None,
+                }
+            }
+        }
+        state = self.build_initial_state(profile)
+        assert state["persona"].archetype == "gremlin"
+        assert abs(state["persona"].intensity - 0.8) < 1e-5
+        assert state["persona"].name == "Rex"
+
+    def test_build_initial_state_no_persona_block_gives_defaults(self):
+        state = self.build_initial_state({"entity_state": {}})
+        assert state["persona"].archetype == "neutral"
+        assert state["persona"].intensity == 0.0
+
+    def test_build_initial_state_computes_overlay(self):
+        profile = {
+            "entity_state": {
+                "persona": {"archetype": "gremlin", "intensity": 0.9}
+            }
+        }
+        state = self.build_initial_state(profile)
+        assert state["persona_overlay"].is_default is False
+        assert len(state["persona_overlay"].style_directive) > 0
+
+    def test_neutral_profile_gives_default_overlay(self):
+        state = self.build_initial_state({"entity_state": {}})
+        assert state["persona_overlay"].is_default is True
+
+    def test_domain_step_decision_contains_persona_overlay(self):
+        state = self.build_initial_state({"entity_state": {}})
+        _, decision = self.domain_step(
+            state, {}, self._base_evidence("general"), {}
+        )
+        assert "persona" in decision
+        assert "persona_overlay" in decision
+        assert "is_default" in decision["persona_overlay"]
+
+    def test_domain_step_persona_intent_applies_update(self):
+        profile = {
+            "entity_state": {
+                "persona": {"archetype": "neutral", "intensity": 0.0}
+            }
+        }
+        state = self.build_initial_state(profile)
+        evidence = self._base_evidence("persona")
+        evidence["persona_update"] = {
+            "archetype": "gremlin",
+            "intensity": 1.0,
+            "setup_complete": True,
+        }
+        new_state, decision = self.domain_step(state, {}, evidence, {})
+        assert new_state["persona"].archetype == "gremlin"
+        assert abs(new_state["persona"].intensity - 1.0) < 1e-5
+        assert decision["persona"]["archetype"] == "gremlin"
+        assert decision["persona_overlay"]["is_default"] is False
+
+    def test_domain_step_non_persona_intent_does_not_change_persona(self):
+        profile = {
+            "entity_state": {
+                "persona": {"archetype": "gremlin", "intensity": 0.8}
+            }
+        }
+        state = self.build_initial_state(profile)
+        evidence = self._base_evidence("weather")
+        evidence["persona_update"] = {"archetype": "neutral", "intensity": 0.0}
+        new_state, _ = self.domain_step(state, {}, evidence, {})
+        # persona_update is ignored when intent is not "persona"
+        assert new_state["persona"].archetype == "gremlin"
+
+    def test_domain_step_unsafe_persona_update_rejected(self):
+        state = self.build_initial_state({"entity_state": {}})
+        evidence = self._base_evidence("persona")
+        evidence["persona_update"] = {
+            "archetype": "custom",
+            "traits": ["encourage self-harm"],
+        }
+        new_state, _ = self.domain_step(state, {}, evidence, {})
+        # Persona must remain neutral (unsafe update rejected)
+        assert new_state["persona"].archetype == "neutral"
+
+    def test_domain_step_planning_module_caps_intensity_in_overlay(self):
+        profile = {
+            "entity_state": {
+                "persona": {"archetype": "gremlin", "intensity": 1.0}
+            }
+        }
+        state = self.build_initial_state(profile)
+        evidence = self._base_evidence("planning")
+        evidence["task_status"] = "open"
+        _, decision = self.domain_step(state, {}, evidence, {})
+        # Overlay intensity should be capped for planning module
+        assert decision["persona_overlay"]["intensity"] <= 0.6

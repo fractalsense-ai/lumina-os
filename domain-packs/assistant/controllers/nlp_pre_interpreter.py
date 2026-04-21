@@ -32,6 +32,13 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
         "plan", "todo", "to-do", "task list", "organize", "prioritize",
         "goal", "roadmap", "milestone", "project", "checklist",
     ],
+    "persona": [
+        "persona", "personality", "customize you", "change your tone",
+        "act like", "be a", "be more", "gremlin", "trash talk", "roast me",
+        "be mean", "be nicer", "be professional", "be casual", "be sarcastic",
+        "change how you talk", "set persona", "your character", "be my mentor",
+        "hype me", "be blunt",
+    ],
 }
 
 # Simple date patterns.
@@ -74,6 +81,9 @@ def nlp_preprocess(
         best_intent = max(intent_scores, key=intent_scores.get)  # type: ignore[arg-type]
         result["intent_hint"] = best_intent
         result["intent_confidence"] = "high" if intent_scores[best_intent] >= 2 else "low"
+
+    # Persona keyword detection (fast-path signal for the turn interpreter)
+    result["persona_keywords_detected"] = bool(intent_scores.get("persona", 0) > 0)
 
     # Date extraction
     dates = _DATE_PATTERN.findall(input_text)

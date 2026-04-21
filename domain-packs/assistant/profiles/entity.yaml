@@ -37,3 +37,20 @@ entity_state:
     prev_valence: 0.0
     prev_arousal: 0.5
     per_module: {}               # {module_id: {salience, valence, arousal, delta_from_baseline, sample_count}}
+
+  # ── Persona (persistent style contract, evolves via persona-craft) ──
+  # archetype: key into ARCHETYPES (neutral | professional | casual |
+  #   sarcastic | gremlin | mentor | hype | custom)
+  # intensity: 0.0 = neutral behavior, 1.0 = full character
+  # traits: free-form style descriptors; primary source for custom
+  #   archetype and the education world-builder's narrator voice
+  # hard_limits: append-only — existing limits cannot be removed
+  persona:
+    archetype: neutral
+    intensity: 0.0
+    name: null
+    traits: []
+    allowed_behaviors: []
+    hard_limits: []
+    last_updated_utc: null
+    setup_complete: false

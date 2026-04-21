@@ -43,6 +43,8 @@ runtime:
       module_path: domain-packs/assistant/modules/planning
     domain/asst/domain-authority/v1:
       module_path: domain-packs/assistant/modules/domain-authority
+    domain/asst/persona-craft/v1:
+      module_path: domain-packs/assistant/modules/persona-craft
 
   # ── Role-based default modules ────────────────────────────────────
   role_to_default_module:
@@ -71,6 +73,7 @@ runtime:
         - creative
         - planning
         - governance
+        - persona
       default: general
       description: "Classified intent of the user's turn."
     task_status:

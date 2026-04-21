@@ -30,6 +30,14 @@ from affect_monitor import (  # noqa: E402
     update_baseline,
     compute_drift,
 )
+from persona_engine import (  # noqa: E402
+    PersonaState,
+    PersonaOverlay,
+    build_overlay,
+    update_persona,
+    apply_intensity_cap,
+    is_safe_persona,
+)
 
 # Intent → module ID mapping for routing decisions.
 INTENT_TO_MODULE: dict[str, str] = {
@@ -40,6 +48,7 @@ INTENT_TO_MODULE: dict[str, str] = {
     "creative": "domain/asst/creative-writing/v1",
     "planning": "domain/asst/planning/v1",
     "governance": "domain/asst/domain-authority/v1",
+    "persona": "domain/asst/persona-craft/v1",
 }
 
 
@@ -68,6 +77,10 @@ def build_initial_state(profile: dict[str, Any]) -> dict[str, Any]:
             arousal=float(affect_data.get("arousal", 0.5)),
         ),
         "affect_baseline": AffectBaseline.from_dict(affect_data),
+        "persona": PersonaState.from_dict(entity_state.get("persona")),
+        "persona_overlay": build_overlay(
+            PersonaState.from_dict(entity_state.get("persona"))
+        ),
     }
 
 
@@ -168,6 +181,26 @@ def domain_step(
         tier = "ok"
         action = None
 
+    # ── Persona Update (if intent is persona, apply update_dict) ────
+    current_persona = new_state.get("persona")
+    if not isinstance(current_persona, PersonaState):
+        current_persona = PersonaState()
+
+    persona_update = evidence.get("persona_update")
+    if intent == "persona" and persona_update:
+        safe, _ = is_safe_persona(
+            PersonaState.from_dict({**current_persona.to_dict(), **persona_update})
+        )
+        if safe:
+            current_persona = update_persona(current_persona, persona_update)
+
+    # Re-cap intensity for the active module
+    module_persona = apply_intensity_cap(current_persona, target_module)
+    persona_overlay = build_overlay(module_persona)
+
+    new_state["persona"] = current_persona
+    new_state["persona_overlay"] = persona_overlay
+
     return new_state, {
         "tier": tier,
         "action": action,
@@ -176,6 +209,8 @@ def domain_step(
         "intent_type": intent,
         "affect": new_affect.to_dict(),
         "drift": drift.to_dict(),
+        "persona": current_persona.to_dict(),
+        "persona_overlay": persona_overlay.to_dict(),
     }
 
 
@@ -232,7 +267,7 @@ def interpret_turn_input(
             evidence[key] = default_val
 
     # Validate intent_type
-    valid_intents = {"general", "weather", "calendar", "search", "creative", "planning", "governance"}
+    valid_intents = {"general", "weather", "calendar", "search", "creative", "planning", "governance", "persona"}
     if evidence.get("intent_type") not in valid_intents:
         evidence["intent_type"] = "general"
 
