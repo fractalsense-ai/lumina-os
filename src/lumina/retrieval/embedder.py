@@ -194,13 +194,20 @@ class DocEmbedder:
     # internal body-size limit and returns HTTP 400.
     _OLLAMA_BATCH_SIZE: int = 32
 
+    # all-minilm (and most small Ollama embedding models) have a 512-token
+    # context window (~4 chars/token).  Truncate at 1800 chars to stay safely
+    # inside that limit regardless of tokenisation details.
+    _OLLAMA_MAX_CHARS: int = 1800
+
     def _embed_ollama(self, texts: list[str]) -> NDArray[np.float32]:
         import httpx
 
         url = f"{self._endpoint}/api/embed"
+        # Truncate individual texts so none exceeds the model context window.
+        safe_texts = [t[: self._OLLAMA_MAX_CHARS] for t in texts]
         all_embeddings: list[list[float]] = []
-        for i in range(0, len(texts), self._OLLAMA_BATCH_SIZE):
-            batch = texts[i : i + self._OLLAMA_BATCH_SIZE]
+        for i in range(0, len(safe_texts), self._OLLAMA_BATCH_SIZE):
+            batch = safe_texts[i : i + self._OLLAMA_BATCH_SIZE]
             payload = {"model": self._model_name, "input": batch}
             resp = httpx.post(url, json=payload, timeout=self._timeout)
             if not resp.is_success:
