@@ -72,7 +72,7 @@ def interpret_turn_input(
     if "call_slm" in _interp_sig.parameters:
         kwargs["call_slm"] = call_slm
     nlp_fn = runtime.get("nlp_pre_interpreter_fn")
-    if nlp_fn is not None:
+    if nlp_fn is not None and "nlp_pre_interpreter_fn" in _interp_sig.parameters:
         kwargs["nlp_pre_interpreter_fn"] = nlp_fn
     if world_sim_theme:
         kwargs["world_sim_theme"] = world_sim_theme
