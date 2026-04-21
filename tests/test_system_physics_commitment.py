@@ -22,7 +22,7 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import REPO_ROOT
+REPO_ROOT = Path(__file__).resolve().parents[1]
 from lumina.persistence.adapter import NullPersistenceAdapter
 from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 

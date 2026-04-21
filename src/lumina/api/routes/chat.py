@@ -168,11 +168,11 @@ async def chat(
 
     # ── Holodeck role gate ──
     if req.holodeck:
-        _holodeck_roles = {"root", "domain_authority"}
+        _holodeck_roles = {"root", "admin"}
         if user is None or user.get("role") not in _holodeck_roles:
             raise HTTPException(
                 status_code=403,
-                detail="Holodeck mode is restricted to root and domain_authority roles.",
+                detail="Holodeck mode is restricted to root and admin roles.",
             )
 
     # ── Log routing decision to meta-ledger ──

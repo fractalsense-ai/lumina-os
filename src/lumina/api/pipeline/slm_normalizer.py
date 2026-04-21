@@ -148,7 +148,7 @@ def _normalize_slm_command(parsed_command: dict[str, Any], original_instruction:
                     pass
 
             # ── Strip governed_modules for non-DA roles ──
-            if params.get(role_key) != "domain_authority":
+            if params.get(role_key) != "admin":
                 params.pop("governed_modules", None)
 
         # ── governed_modules: may appear at top level or inside params ──

@@ -62,7 +62,7 @@ def build_escalation_card(
     trigger = escalation_record.get("trigger", "unknown")
     sla = escalation_record.get("sla_minutes", 30)
     domain_decision = escalation_record.get("domain_lib_decision") or {}
-    target_role = escalation_record.get("target_role", "domain_authority")
+    target_role = escalation_record.get("target_role", "admin")
 
     ctx: dict[str, Any] = {
         "trigger": trigger,

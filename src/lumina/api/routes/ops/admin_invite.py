@@ -33,8 +33,8 @@ async def execute(
 
     # See: docs/7-concepts/domain-role-hierarchy.md
     # See: docs/7-concepts/domain-adapter-pattern.md
-    if user_data["role"] not in ("root", "it_support", "domain_authority"):
-        raise ctx.HTTPException(status_code=403, detail="Only root, it_support, or domain_authority can invite users")
+    if user_data["role"] not in ("root", "super_admin", "admin"):
+        raise ctx.HTTPException(status_code=403, detail="Only root, super_admin, or admin can invite users")
     username = str(params.get("username", target))
     role = str(params.get("role", "user"))
     governed_modules_raw = params.get("governed_modules")
@@ -68,18 +68,18 @@ async def execute(
     # modules in their domain. This is intentional — DAs are the
     # subject-matter experts / domain administrators.
     # An explicit empty list [] is rejected — use None for "all".
-    if role == "domain_authority" and governed_modules is not None and len(governed_modules) == 0:
+    if role == "admin" and governed_modules is not None and len(governed_modules) == 0:
         raise ctx.HTTPException(
             status_code=400,
-            detail="governed_modules is required when role is domain_authority (use null for all modules)",
+            detail="governed_modules is required when role is admin (use null for all modules)",
         )
 
-    # DA-scoped invite: domain_authority can only invite "user" role within their governed modules
-    if user_data["role"] == "domain_authority":
+    # DA-scoped invite: admin can only invite "user" role within their governed modules
+    if user_data["role"] == "admin":
         if role not in ("user", "guest"):
             raise ctx.HTTPException(
                 status_code=403,
-                detail="Domain authority can only invite users with 'user' or 'guest' role",
+                detail="Domain admin can only invite users with 'user' or 'guest' role",
             )
         da_governed = set(user_data.get("governed_modules") or [])
         if governed_modules and not set(governed_modules).issubset(da_governed):
@@ -93,7 +93,7 @@ async def execute(
         raise ctx.HTTPException(status_code=409, detail="Username already taken")
 
     # ── Auto-assign default module for non-DA users without modules ──
-    if role != "domain_authority" and not governed_modules and ctx.domain_registry is not None:
+    if role != "admin" and not governed_modules and ctx.domain_registry is not None:
         _idr = params.get("intended_domain_role", "")
         _domain_hint = params.get("domain_id", "")
         if not _domain_hint and _idr:

@@ -93,7 +93,7 @@
         "role_name": "Domain Authority",
         "hierarchy_level": 0,
         "description": "Domain-level administrator with full oversight of the assistant domain.",
-        "maps_to_system_role": "domain_authority",
+        "maps_to_system_role": "admin",
         "default_access": "rwx",
         "may_assign_domain_roles": true,
         "max_assignable_level": 1,

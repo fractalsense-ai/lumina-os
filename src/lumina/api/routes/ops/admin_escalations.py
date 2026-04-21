@@ -31,7 +31,7 @@ async def execute(
     if operation == "list_escalations":
         domain_id = str(params.get("domain_id", "")) or None
         # DA boundary check: must govern the requested domain
-        if domain_id and user_data["role"] == "domain_authority":
+        if domain_id and user_data["role"] == "admin":
             try:
                 _resolved_esc = ctx.domain_registry.resolve_domain_id(domain_id)
             except DomainNotFoundError as exc:
@@ -41,7 +41,7 @@ async def execute(
         escalations = await ctx.run_in_threadpool(
             ctx.persistence.query_escalations, domain_id=domain_id, status="pending",
         )
-        if user_data["role"] == "domain_authority":
+        if user_data["role"] == "admin":
             governed = user_data.get("governed_modules") or []
             escalations = [e for e in escalations if e.get("domain_pack_id") in governed]
         return {"operation": operation, "count": len(escalations), "escalations": escalations}

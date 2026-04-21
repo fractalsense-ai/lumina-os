@@ -11,7 +11,7 @@
     "group": "ops",
     "acl": [
       { "role": "root",       "access": "rwx" },
-      { "role": "it_support", "access": "rwx" }
+      { "role": "super_admin", "access": "rwx" }
     ]
   },
 
@@ -19,7 +19,7 @@
     "ops": {
       "description": "Operations staff with full system access.",
       "members": {
-        "system_roles": ["root", "it_support"]
+        "system_roles": ["root", "super_admin"]
       }
     }
   },
@@ -398,28 +398,28 @@
     "governance": {
       "role_hierarchy": {
         "root": 100,
-        "it_support": 80,
-        "domain_authority": 60,
-        "qa": 40,
-        "auditor": 40,
+        "super_admin": 80,
+        "admin": 60,
+        "operator": 40,
+        "half_operator": 40,
         "user": 20,
         "guest": 10
       },
       "min_role_policy": {
-        "update_domain_physics": "domain_authority",
-        "commit_domain_physics": "domain_authority",
+        "update_domain_physics": "admin",
+        "commit_domain_physics": "admin",
         "update_user_role": "root",
         "deactivate_user": "root",
-        "assign_domain_role": "domain_authority",
-        "revoke_domain_role": "domain_authority",
-        "resolve_escalation": "domain_authority",
-        "approve_interpretation": "domain_authority",
-        "reject_ingestion": "domain_authority",
-        "trigger_daemon_task": "domain_authority",
-        "invite_user": "domain_authority",
-        "list_users": "domain_authority",
-        "get_domain_physics": "domain_authority",
-        "list_daemon_tasks": "domain_authority",
+        "assign_domain_role": "admin",
+        "revoke_domain_role": "admin",
+        "resolve_escalation": "admin",
+        "approve_interpretation": "admin",
+        "reject_ingestion": "admin",
+        "trigger_daemon_task": "admin",
+        "invite_user": "admin",
+        "list_users": "admin",
+        "get_domain_physics": "admin",
+        "list_daemon_tasks": "admin",
         "view_my_profile": "user",
         "update_user_preferences": "user"
       }

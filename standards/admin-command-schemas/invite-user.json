@@ -34,10 +34,10 @@
           "type": "string",
           "enum": [
             "root",
-            "domain_authority",
-            "it_support",
-            "qa",
-            "auditor",
+            "admin",
+            "super_admin",
+            "operator",
+            "half_operator",
             "user",
             "guest"
           ]
@@ -47,7 +47,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Module IDs the new domain_authority may govern."
+          "description": "Module IDs the new admin may govern."
         },
         "intended_domain_role": {
           "type": "string",

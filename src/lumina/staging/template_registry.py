@@ -43,7 +43,7 @@ def _register(t: Template) -> None:
 _register(Template(
     template_id="domain-physics",
     description="New or updated domain-physics.json file",
-    required_fields=("id", "version", "domain_authority", "invariants",
+    required_fields=("id", "version", "admin", "invariants",
                      "standing_orders", "escalation_triggers", "artifacts"),
     default_structure={
         "meta_authority_id": "",

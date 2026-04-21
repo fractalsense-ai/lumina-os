@@ -52,14 +52,14 @@ async def execute(
         return {"operation": operation, "user_id": target_user_id}
 
     if operation == "assign_domain_role":
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
         target_user_id = str(params.get("user_id", target))
         module_id = str(params.get("module_id", ""))
         domain_role = str(params.get("domain_role", ""))
         if not target_user_id or not module_id or not domain_role:
             raise ctx.HTTPException(status_code=422, detail="user_id, module_id, and domain_role required")
-        if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
+        if user_data["role"] == "admin" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         # Validate role_id against the module's actual domain_roles block
         # and the domain-level domain_roles
@@ -119,13 +119,13 @@ async def execute(
         }
 
     if operation == "revoke_domain_role":
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
         target_user_id = str(params.get("user_id", target))
         module_id = str(params.get("module_id", ""))
         if not target_user_id or not module_id:
             raise ctx.HTTPException(status_code=422, detail="user_id and module_id required")
-        if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
+        if user_data["role"] == "admin" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         target_user = await ctx.run_in_threadpool(ctx.persistence.get_user, target_user_id)
         if target_user is None:

@@ -1,7 +1,7 @@
 {
   "id": "domain/tmpl/example-module/v1",
   "version": "0.1.0",
-  "domain_authority": {
+  "admin": {
     "name": "Domain Lead",
     "role": "Domain Authority",
     "pseudonymous_id": "da_template_001"
@@ -55,13 +55,13 @@
     {
       "id": "standing_order_exhausted",
       "condition": "A standing order reached max_attempts without resolution.",
-      "target_role": "domain_authority",
+      "target_role": "admin",
       "sla_minutes": 30
     },
     {
       "id": "critical_safety_event",
       "condition": "A critical invariant fired (safety_violation).",
-      "target_role": "domain_authority",
+      "target_role": "admin",
       "sla_minutes": 5
     }
   ],

@@ -70,8 +70,8 @@ async def execute(
             resolved = ctx.domain_registry.resolve_domain_id(domain_id)
         except DomainNotFoundError as exc:
             raise ctx.HTTPException(status_code=400, detail=str(exc))
-        # DA scoping: domain_authority sees only governed domain modules
-        if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, resolved, registry=ctx.domain_registry):
+        # DA scoping: admin sees only governed domain modules
+        if user_data["role"] == "admin" and not ctx.can_govern_domain(user_data, resolved, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         modules = ctx.domain_registry.list_modules_for_domain(resolved)
         # Add short_name to each module for user-friendly display
@@ -79,7 +79,7 @@ async def execute(
             parts = m["module_id"].split("/")
             m["short_name"] = parts[-2] if len(parts) >= 3 else m["module_id"]
         # Non-elevated users see only learning modules (exclude local_only role modules)
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             modules = [m for m in modules if not m.get("local_only")]
         return {"operation": operation, "domain_id": resolved, "modules": modules, "count": len(modules)}
 
@@ -184,18 +184,18 @@ async def execute(
             except DomainNotFoundError as exc:
                 raise ctx.HTTPException(status_code=400, detail=str(exc))
             # DA boundary check: must govern the requested domain
-            if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(
+            if user_data["role"] == "admin" and not ctx.can_govern_domain(
                 user_data, resolved_domain, registry=ctx.domain_registry
             ):
                 raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
             domain_modules = ctx.domain_registry.list_modules_for_domain(resolved_domain)
             domain_module_ids = {m["module_id"] for m in domain_modules}
-        elif user_data["role"] == "domain_authority":
+        elif user_data["role"] == "admin":
             # No domain_id given — scope to DA's own governed modules
             pass  # handled below in DA scoping block
 
         # Specific module filter — also enforce DA boundary
-        if module_id_filter and user_data["role"] == "domain_authority":
+        if module_id_filter and user_data["role"] == "admin":
             if not ctx.can_govern_domain(user_data, module_id_filter, registry=ctx.domain_registry):
                 raise ctx.HTTPException(status_code=403, detail="Not authorized for this module")
 
@@ -204,7 +204,7 @@ async def execute(
             users = [u for u in users if u.get("role") == role_filter]
 
         # Domain-scoped filtering: DAs only see users in their governed modules.
-        if user_data["role"] == "domain_authority":
+        if user_data["role"] == "admin":
             da_modules = set(user_data.get("governed_modules") or [])
             da_domain_roles = set((user_data.get("domain_roles") or {}).keys())
             da_scope = da_modules | da_domain_roles
@@ -244,7 +244,7 @@ async def execute(
 
         # ── Hierarchy-based visibility filter ─────────────────────
         _caller_role = user_data.get("role", "")
-        _FULL_VISIBILITY_ROLES = frozenset({"root", "it_support", "domain_authority"})
+        _FULL_VISIBILITY_ROLES = frozenset({"root", "super_admin", "admin"})
         _strip_user_id = False
         if _caller_role not in _FULL_VISIBILITY_ROLES and domain_id_filter:
             caller_domain_roles = user_data.get("domain_roles") or {}
@@ -277,7 +277,7 @@ async def execute(
                                 u_level = _ul if u_level is None else min(u_level, _ul)
                         if u_level is None:
                             u_sys_role = u.get("role", "")
-                            if u_sys_role == "domain_authority":
+                            if u_sys_role == "admin":
                                 u_level = 0
                         if u_level is not None and u_level in _visible_levels:
                             hierarchy_filtered.append(u)

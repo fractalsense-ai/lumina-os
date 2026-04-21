@@ -64,7 +64,7 @@ async def execute(
         if not target_user_id or target_user_id == caller_id:
             target_user_id = caller_id
         else:
-            _ELEVATED_ROLES = ("root", "domain_authority", "it_support")
+            _ELEVATED_ROLES = ("root", "admin", "super_admin")
             if caller_role not in _ELEVATED_ROLES:
                 raise ctx.HTTPException(status_code=403, detail="Elevated system role required to update another user's preferences")
 

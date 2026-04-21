@@ -30,7 +30,7 @@ log = logging.getLogger("lumina-api")
 
 router = APIRouter()
 
-_HOLODECK_ROLES = frozenset({"root", "domain_authority"})
+_HOLODECK_ROLES = frozenset({"root", "admin"})
 
 
 def _canonical_hash(obj: dict[str, Any]) -> str:

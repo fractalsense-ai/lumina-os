@@ -190,6 +190,13 @@ artifacts:
   status: active
   last_updated: 2026-04-16
   sha256: 873ebc4c9361934b90842d5db1c14b2c660f9e280624717744e4d3edf02678b9
+- path: docs/7-concepts/ai-governance-principles.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-21
+  sha256: fd9b145ab46064514c6292d94cad13bab8979f9770bf419c1edea2a5d1b6cda6
 - path: docs/7-concepts/api-server-architecture.md
   type: doc
   section: 7
@@ -197,6 +204,13 @@ artifacts:
   status: active
   last_updated: 2026-03-18
   sha256: b29c30865b590c1621ac24954b9f673c2a113910462eb9f1f12317732a4e04c0
+- path: docs/7-concepts/context-is-not-conversation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-21
+  sha256: f171ffbff0ab6129787098c74207902913628f40a19815c89008825a43ca1ba4
 - path: docs/7-concepts/cross-domain-synthesis.md
   type: doc
   section: 7

@@ -100,13 +100,13 @@ def extract_target_user(input_text: str) -> dict[str, Any]:
 
 # Ordered longest-first so "domain authority" matches before bare "user".
 _ROLE_PHRASES: list[tuple[str, str]] = [
-    ("domain_authority", "domain_authority"),
-    ("domain authority", "domain_authority"),
-    ("it_support", "it_support"),
-    ("it support", "it_support"),
-    ("auditor", "auditor"),
+    ("domain_authority", "admin"),
+    ("domain authority", "admin"),
+    ("it_support", "super_admin"),
+    ("it support", "super_admin"),
+    ("auditor", "half_operator"),
     ("root", "root"),
-    ("qa", "qa"),
+    ("qa", "operator"),
     ("user", "user"),
 ]
 
@@ -138,7 +138,7 @@ def extract_target_role(input_text: str) -> dict[str, Any]:
     # Most specific: "domain authority access to <domain>" / "da <domain>"
     m = _DOMAIN_SCOPED_DA.search(input_text)
     if m:
-        result["target_role"] = "domain_authority"
+        result["target_role"] = "admin"
         result["governed_domains"] = [m.group(1).lower()]
         result["confidence"] = 0.85
         return result
@@ -152,7 +152,7 @@ def extract_target_role(input_text: str) -> dict[str, Any]:
             break
 
     # If DA was matched and there's an "X only" pattern, capture domain scope
-    if result["target_role"] == "domain_authority":
+    if result["target_role"] == "admin":
         m_only = _X_ONLY.search(input_text)
         if m_only:
             result["governed_domains"] = [m_only.group(1).lower()]

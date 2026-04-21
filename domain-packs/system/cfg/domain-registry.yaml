@@ -32,7 +32,7 @@ default_domain: education
 # carries domain/edu/… lands in education, not the system domain.
 role_defaults:
   root: system
-  it_support: system
+  super_admin: system
 
 domains:
   education:

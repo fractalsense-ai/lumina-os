@@ -153,7 +153,7 @@ def check_permission(
     # Step 1b: domain_authority — scope-bounded access
     # DA has owner-level access within governed_modules; denied outright
     # for anything outside their scope.  See parallel-authority-tracks.md.
-    if user_role == "domain_authority":
+    if user_role == "admin":
         if governed_modules is not None and module_id is not None:
             if module_id not in governed_modules:
                 return False

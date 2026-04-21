@@ -34,10 +34,10 @@
           "type": "string",
           "enum": [
             "root",
-            "domain_authority",
-            "it_support",
-            "qa",
-            "auditor",
+            "admin",
+            "super_admin",
+            "operator",
+            "half_operator",
             "user",
             "guest"
           ]
@@ -48,7 +48,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Domain packs the user is authorised to govern (relevant for domain_authority role)."
+          "description": "Domain packs the user is authorised to govern (relevant for admin role)."
         },
         "intended_domain_role": {
           "type": "string",

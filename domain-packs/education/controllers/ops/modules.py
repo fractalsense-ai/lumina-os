@@ -35,8 +35,8 @@ async def assign_module(
         raise ctx.HTTPException(status_code=422, detail="user_id and module_id required")
 
     caller_role = user_data["role"]
-    if caller_role in ("root", "domain_authority"):
-        if caller_role == "domain_authority" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
+    if caller_role in ("root", "admin"):
+        if caller_role == "admin" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorised for this domain/module")
     elif caller_role == "user":
         await require_module_governance(user_data, ctx)
@@ -81,8 +81,8 @@ async def remove_module(
         raise ctx.HTTPException(status_code=422, detail="user_id and module_id required")
 
     caller_role = user_data["role"]
-    if caller_role in ("root", "domain_authority"):
-        if caller_role == "domain_authority" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
+    if caller_role in ("root", "admin"):
+        if caller_role == "admin" and not ctx.can_govern_domain(user_data, module_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorised for this domain/module")
     elif caller_role == "user":
         await require_module_governance(user_data, ctx)
@@ -229,8 +229,8 @@ async def assign_modules(
 
     # RBAC: teacher with assign_modules_to_students capability
     caller_role = user_data["role"]
-    if caller_role in ("root", "domain_authority"):
-        if caller_role == "domain_authority":
+    if caller_role in ("root", "admin"):
+        if caller_role == "admin":
             # DA must govern the education domain
             if not ctx.can_govern_domain(user_data, "education", registry=ctx.domain_registry):
                 raise ctx.HTTPException(status_code=403, detail="Not authorised for education domain")

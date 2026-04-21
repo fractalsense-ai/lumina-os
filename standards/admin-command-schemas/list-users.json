@@ -13,7 +13,7 @@
         "role": {
           "type": "string",
           "description": "Filter by system role (optional).",
-          "enum": ["root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"]
+          "enum": ["root", "admin", "super_admin", "operator", "half_operator", "user", "guest"]
         }
       },
       "additionalProperties": false

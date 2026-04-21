@@ -60,7 +60,7 @@ async def assign_student(
     if caller_role == "user":
         await require_teacher_capability(user_data, ctx)
         teacher_id = user_data["sub"]  # force self
-    elif caller_role in ("root", "domain_authority"):
+    elif caller_role in ("root", "admin"):
         if not teacher_id:
             raise ctx.HTTPException(status_code=422, detail="teacher_id required for domain authorities")
     else:
@@ -71,7 +71,7 @@ async def assign_student(
     teacher = await require_user_exists(ctx, teacher_id, "Teacher")
     teacher_id = teacher["user_id"]  # normalise
 
-    if caller_role == "domain_authority":
+    if caller_role == "admin":
         _teacher_modules = list((teacher.get("domain_roles") or {}).keys())
         if not any(ctx.can_govern_domain(user_data, m, registry=ctx.domain_registry) for m in _teacher_modules):
             raise ctx.HTTPException(status_code=403, detail="Not authorised — teacher is outside your governed modules")
@@ -144,7 +144,7 @@ async def remove_student(
     if caller_role == "user":
         await require_teacher_capability(user_data, ctx)
         teacher_id = user_data["sub"]
-    elif caller_role in ("root", "domain_authority"):
+    elif caller_role in ("root", "admin"):
         if not teacher_id:
             raise ctx.HTTPException(status_code=422, detail="teacher_id required for domain authorities")
     else:
@@ -215,7 +215,7 @@ async def assign_ta(
     caller_role = user_data["role"]
     if caller_role == "user":
         await require_teacher_capability(user_data, ctx)
-    elif caller_role not in ("root", "domain_authority"):
+    elif caller_role not in ("root", "admin"):
         raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
 
     ta_rec = await require_user_exists(ctx, ta_id, "Teaching assistant")
@@ -330,7 +330,7 @@ async def assign_guardian(
         await require_teacher_capability(user_data, ctx)
         if not student_id:
             raise ctx.HTTPException(status_code=422, detail="student_id required for teacher callers")
-    elif caller_role in ("root", "domain_authority"):
+    elif caller_role in ("root", "admin"):
         if not student_id:
             raise ctx.HTTPException(status_code=422, detail="student_id required for domain authorities")
     else:
@@ -405,7 +405,7 @@ async def assign_commons(
         raise ctx.HTTPException(status_code=422, detail="teacher_id required")
 
     caller_role = user_data["role"]
-    if caller_role not in ("root", "domain_authority"):
+    if caller_role not in ("root", "admin"):
         raise ctx.HTTPException(status_code=403, detail="Only DA or root may assign commons oversight")
 
     teacher_rec = await require_user_exists(ctx, teacher_id, "Teacher")

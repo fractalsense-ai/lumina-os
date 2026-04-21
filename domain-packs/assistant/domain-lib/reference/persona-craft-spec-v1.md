@@ -1,5 +1,7 @@
 # Persona-Craft Specification — v1
 
+<!-- version: 0.1.0 -->
+<!-- last_updated: 2026-04-21 -->
 **Module ID**: `domain/asst/persona-craft/v1`
 **Domain**: assistant
 **Version**: 0.1.0

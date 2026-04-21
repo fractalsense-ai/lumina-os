@@ -103,7 +103,7 @@ def _resolve_da_governed(user_data: dict[str, Any]) -> set[str] | None:
     ``domain_roles``) are resolved to *all* modules in their default
     domain so panel resolvers return real data.
     """
-    if user_data.get("role") != "domain_authority":
+    if user_data.get("role") != "admin":
         return None
     governed = set(user_data.get("governed_modules") or [])
     domain_roles = user_data.get("domain_roles") or {}
@@ -285,7 +285,7 @@ async def _resolve_domain_overview(
     Domain-track (domain_authority): module-centric with module_count,
     active student and staff counts.
     """
-    if user_data.get("role") not in ("root", "domain_authority", "it_support"):
+    if user_data.get("role") not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
 
     governed = _resolve_da_governed(user_data)
@@ -317,9 +317,9 @@ async def _resolve_domain_overview(
                 elif rid in ("teacher", "teaching_assistant", "domain_authority"):
                     active_staff += 1
                 break  # count each user once
-        # Also count system-role DAs whose governed scope overlaps
+        # Also count system-role admins whose governed scope overlaps
         for u in (all_users or []):
-            if u.get("role") != "domain_authority":
+            if u.get("role") != "admin":
                 continue
             if u.get("domain_roles"):
                 continue  # already counted above if applicable
@@ -347,7 +347,7 @@ async def _resolve_user_directory(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
     """User directory — requires elevated system role."""
-    if user_data.get("role") not in ("root", "domain_authority", "it_support"):
+    if user_data.get("role") not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
     users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
     return {
@@ -363,7 +363,7 @@ async def _resolve_module_directory(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
     """Module inventory — requires elevated system role."""
-    if user_data.get("role") not in ("root", "domain_authority", "it_support"):
+    if user_data.get("role") not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
     governed = _resolve_da_governed(user_data)
     all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
@@ -457,7 +457,7 @@ async def _resolve_staff_directory(
     user_data: dict[str, Any], profile: dict[str, Any], pcfg: dict[str, Any],
 ) -> dict[str, Any]:
     """Staff visible to the domain authority — teachers, TAs, and DAs."""
-    if user_data.get("role") not in ("root", "domain_authority", "it_support"):
+    if user_data.get("role") not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient system role")
     governed = _resolve_da_governed(user_data)
     all_users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
@@ -482,14 +482,14 @@ async def _resolve_staff_directory(
         uid = u.get("user_id", "")
         if uid in _seen_ids:
             continue
-        if u.get("role") != "domain_authority":
+        if u.get("role") != "admin":
             continue
         u_gov = set(u.get("governed_modules") or [])
         if governed is not None and u_gov and not (u_gov & governed):
             continue  # scoped to a different domain
         staff.append({
             "display_name": u.get("display_name") or u.get("username") or uid,
-            "domain_role": "domain_authority",
+            "domain_role": "admin",
             "module_id": "",
         })
     return {

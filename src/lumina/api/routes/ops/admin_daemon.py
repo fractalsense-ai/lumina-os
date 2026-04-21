@@ -32,7 +32,7 @@ async def execute(
     scheduler = get_daemon_scheduler()
 
     if operation == "trigger_daemon_task":
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
         task_names = params.get("tasks")
         domain_ids = params.get("domain_ids")
@@ -54,7 +54,7 @@ async def execute(
         return {"operation": operation, "proposals": proposals, "count": len(proposals)}
 
     if operation == "resolve_proposal":
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
         proposal_id = params.get("proposal_id") or target
         action = params.get("action")
@@ -67,7 +67,7 @@ async def execute(
         return {"operation": "resolve_proposal", "proposal_id": proposal_id, "status": action}
 
     if operation == "daemon_report":
-        if user_data["role"] not in ("root", "domain_authority"):
+        if user_data["role"] not in ("root", "admin", "super_admin"):
             raise ctx.HTTPException(status_code=403, detail="Insufficient permissions")
         run_id = params.get("run_id") or target
         report = scheduler.get_report(run_id)

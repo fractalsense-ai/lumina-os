@@ -28,7 +28,7 @@ async def execute(
         updates = params.get("updates") or {}
         if not domain_id or not updates:
             raise ctx.HTTPException(status_code=422, detail="domain_id and updates required")
-        if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, domain_id, registry=ctx.domain_registry):
+        if user_data["role"] == "admin" and not ctx.can_govern_domain(user_data, domain_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         try:
             resolved = ctx.domain_registry.resolve_domain_id(domain_id)
@@ -68,7 +68,7 @@ async def execute(
         domain_id = str(params.get("domain_id", target))
         if not domain_id:
             raise ctx.HTTPException(status_code=422, detail="domain_id required")
-        if user_data["role"] == "domain_authority" and not ctx.can_govern_domain(user_data, domain_id, registry=ctx.domain_registry):
+        if user_data["role"] == "admin" and not ctx.can_govern_domain(user_data, domain_id, registry=ctx.domain_registry):
             raise ctx.HTTPException(status_code=403, detail="Not authorized for this domain")
         try:
             resolved = ctx.domain_registry.resolve_domain_id(domain_id)

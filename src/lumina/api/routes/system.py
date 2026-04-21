@@ -249,7 +249,7 @@ async def validate_system_log(
 ) -> SystemLogValidateResponse:
     user = await get_current_user(credentials)
     if user is not None:
-        require_role(user, "root", "domain_authority", "qa", "auditor")
+        require_role(user, "root", "admin", "super_admin", "operator", "half_operator")
     try:
         result = await run_in_threadpool(_cfg.PERSISTENCE.validate_log_chain, session_id)
     except Exception as exc:

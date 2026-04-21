@@ -137,7 +137,7 @@ def check_session_freeze(
 # ---------------------------------------------------------------------------
 
 _GOVERNANCE_ROLES = frozenset(
-    {"root", "domain_authority", "it_support", "qa", "auditor"}
+    {"root", "admin", "super_admin", "operator", "half_operator"}
 )
 
 

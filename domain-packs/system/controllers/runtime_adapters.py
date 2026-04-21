@@ -125,12 +125,12 @@ def _deterministic_command_fallback(
                 "username": target_user,
                 "role": "user",  # safe default
             }
-            if target_role == "domain_authority":
-                params["role"] = "domain_authority"
+            if target_role == "admin":
+                params["role"] = "admin"
                 if governed_domains:
-                    params["governed_modules"] = None  # DA gets all modules in domain
+                    params["governed_modules"] = None  # admin gets all modules in domain
             elif target_role and target_role not in (
-                "root", "domain_authority", "it_support", "qa", "auditor", "user", "guest",
+                "root", "admin", "super_admin", "operator", "half_operator", "user", "guest",
             ):
                 # Domain-scoped role → system role is "user"
                 params["intended_domain_role"] = target_role

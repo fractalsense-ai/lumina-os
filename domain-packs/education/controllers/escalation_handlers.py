@@ -86,11 +86,11 @@ async def list_escalations(
     limit = int(qp.get("limit", 100))
     offset = int(qp.get("offset", 0))
 
-    allowed_roles = ("root", "it_support", "qa", "auditor")
-    is_domain_authority = user_data["role"] == "domain_authority"
+    allowed_roles = ("root", "super_admin", "operator", "half_operator")
+    is_admin = user_data["role"] == "admin"
 
     has_esc_capability = False
-    if user_data["role"] not in allowed_roles and not is_domain_authority:
+    if user_data["role"] not in allowed_roles and not is_admin:
         domain_roles_map = user_data.get("domain_roles") or {}
         for mod_id in domain_roles_map:
             if _has_escalation_capability(user_data, mod_id, domain_registry):
@@ -102,12 +102,12 @@ async def list_escalations(
     records = await run_in_threadpool(
         persistence.query_escalations,
         status=status,
-        domain_id=domain_id if not (is_domain_authority or has_esc_capability) else None,
+        domain_id=domain_id if not (is_admin or has_esc_capability) else None,
         limit=limit,
         offset=offset,
     )
 
-    if is_domain_authority:
+    if is_admin:
         governed = user_data.get("governed_modules") or []
         records = [r for r in records if r.get("domain_pack_id") in governed]
     elif has_esc_capability:
@@ -194,7 +194,7 @@ async def get_escalation_detail(
 
     escalation_id = (path_params or {}).get("escalation_id", "")
 
-    allowed_roles = ("root", "it_support", "qa", "auditor", "domain_authority")
+    allowed_roles = ("root", "super_admin", "operator", "half_operator", "admin")
     quick_pass = user_data["role"] in allowed_roles
 
     if not quick_pass:
@@ -214,7 +214,7 @@ async def get_escalation_detail(
 
     module_id = target.get("domain_pack_id", "")
 
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         if not can_govern_domain(user_data, module_id, registry=domain_registry):
             return {"__status": 403, "detail": "Not authorized for this domain"}
     elif not quick_pass:
@@ -308,7 +308,7 @@ async def resolve_escalation(
         return {"__status": 400, "detail": "decision must be approve, reject, or defer"}
 
     _role = user_data["role"]
-    _quick_pass = _role in ("root", "domain_authority")
+    _quick_pass = _role in ("root", "admin")
 
     all_escalations = await run_in_threadpool(persistence.query_escalations)
     target = None
@@ -322,7 +322,7 @@ async def resolve_escalation(
 
     module_id = target.get("domain_pack_id", "")
 
-    if _role == "domain_authority":
+    if _role == "admin":
         if not can_govern_domain(user_data, module_id, registry=domain_registry):
             return {"__status": 403, "detail": "Not authorized for this domain"}
     elif not _quick_pass:

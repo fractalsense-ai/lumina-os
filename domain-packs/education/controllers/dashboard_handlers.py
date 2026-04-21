@@ -113,7 +113,7 @@ async def roster_status(
     domain_roles = user_data.get("domain_roles") or {}
 
     is_teacher = any(rid == "teacher" for rid in domain_roles.values())
-    is_da = caller_role == "domain_authority"
+    is_da = caller_role == "admin"
     is_root = caller_role == "root"
 
     if not (is_teacher or is_da or is_root):
