@@ -1410,7 +1410,13 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-01
-  sha256: 459daa9252a432e84c5bfb1b8e773c5de0cbfe1cd0ba9a01d2481c46df34a4d5
+  sha256: 3e2c302897f6d942c8dd76252c8c39358fe300d5ed49cc38b9bdf520f895ccf8
+- path: domain-packs/assistant/domain-lib/affect_monitor.py
+  type: code
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-07-01
+  sha256: 126c2efb379bf24b3801a1e2dad01a14508e97958916d167a648af8254c54e05
 - path: domain-packs/assistant/modules/conversation/module-config.yaml
   type: config
   doc_version: 1.0.0

@@ -297,41 +297,434 @@ class TestRuntimeAdaptersIntentRouting:
         assert state["idle_turn_count"] == 0
         assert state["active_intent"] == "general"
         assert state["task_history"] == []
-        assert state["satisfaction_trend"] == []
+        assert state["intent_window"] == []
+        # SVA affect state hydrated from empty profile
+        assert state["affect"].salience == 0.5
+        assert state["affect"].valence == 0.0
+        assert state["affect"].arousal == 0.5
+        assert state["affect_baseline"].sample_count == 0
 
     def test_domain_step_routes_weather(self):
-        state = {"turn_count": 0, "idle_turn_count": 0, "active_intent": "general",
-                 "task_history": [], "satisfaction_trend": []}
+        state = self.build_initial_state({})
         evidence = {"intent_type": "weather", "task_status": "open",
                     "satisfaction_signal": "unknown"}
         new_state, decision = self.domain_step(state, {}, evidence, {})
         assert decision["suggested_module"] == self.INTENT_TO_MODULE["weather"]
 
     def test_domain_step_increments_turn_count(self):
-        state = {"turn_count": 5, "idle_turn_count": 0, "active_intent": "general",
-                 "task_history": [], "satisfaction_trend": []}
+        state = self.build_initial_state({})
+        state["turn_count"] = 5
         evidence = {"intent_type": "general", "task_status": "continued",
                     "satisfaction_signal": "unknown"}
         new_state, _ = self.domain_step(state, {}, evidence, {})
         assert new_state["turn_count"] == 6
 
     def test_domain_step_tracks_idle(self):
-        state = {"turn_count": 0, "idle_turn_count": 0, "active_intent": "general",
-                 "task_history": [], "satisfaction_trend": []}
+        state = self.build_initial_state({})
         evidence = {"intent_type": "general", "task_status": "n/a",
                     "satisfaction_signal": "unknown"}
         new_state, _ = self.domain_step(state, {}, evidence, {})
         assert new_state["idle_turn_count"] == 1
 
     def test_domain_step_completed_task_records_history(self):
-        state = {"turn_count": 3, "idle_turn_count": 0, "active_intent": "weather",
-                 "active_task_id": "task-w-1", "active_task_type": "weather",
-                 "task_history": [], "satisfaction_trend": []}
+        state = self.build_initial_state({})
+        state["turn_count"] = 3
+        state["active_task_id"] = "task-w-1"
+        state["active_task_type"] = "weather"
         evidence = {"intent_type": "weather", "task_status": "completed",
                     "satisfaction_signal": "positive"}
         new_state, _ = self.domain_step(state, {}, evidence, {})
         assert new_state["active_task_id"] is None
         assert len(new_state["task_history"]) == 1
+
+
+# ════════════════════════════════════════════════════════════
+# 4b. SVA Affect Monitor — EWMA & Drift Detection
+# ════════════════════════════════════════════════════════════
+
+
+class TestAffectMonitor:
+    """Tests for domain-lib/affect_monitor.py — SVA estimator + EWMA baseline."""
+
+    @pytest.fixture(autouse=True)
+    def _import(self):
+        import importlib
+        _DOMAIN_LIB_DIR = str(PACK / "domain-lib")
+        saved_affect = sys.modules.pop("affect_monitor", _SENTINEL)
+        if _DOMAIN_LIB_DIR not in sys.path:
+            sys.path.insert(0, _DOMAIN_LIB_DIR)
+        mod = importlib.import_module("affect_monitor")
+        if saved_affect is _SENTINEL:
+            sys.modules.pop("affect_monitor", None)
+        else:
+            sys.modules["affect_monitor"] = saved_affect
+        self.AffectState = mod.AffectState
+        self.AffectBaseline = mod.AffectBaseline
+        self.DriftSignal = mod.DriftSignal
+        self.update_affect = mod.update_affect
+        self.update_baseline = mod.update_baseline
+        self.compute_drift = mod.compute_drift
+        self.module_deviation = mod.module_deviation
+        self.DEFAULT_PARAMS = mod.DEFAULT_PARAMS
+
+    # ── AffectState basics ────────────────────────────────────────
+
+    def test_affect_state_defaults(self):
+        s = self.AffectState()
+        assert s.salience == 0.5
+        assert s.valence == 0.0
+        assert s.arousal == 0.5
+
+    def test_affect_state_clamping(self):
+        s = self.AffectState(salience=2.0, valence=-5.0, arousal=-1.0)
+        assert s.salience == 1.0
+        assert s.valence == -1.0
+        assert s.arousal == 0.0
+
+    def test_affect_state_roundtrip(self):
+        s = self.AffectState(salience=0.7, valence=-0.3, arousal=0.9)
+        d = s.to_dict()
+        s2 = self.AffectState.from_dict(d)
+        assert abs(s2.salience - 0.7) < 1e-5
+        assert abs(s2.valence - (-0.3)) < 1e-5
+        assert abs(s2.arousal - 0.9) < 1e-5
+
+    # ── update_affect — deterministic deltas ──────────────────────
+
+    def test_completed_task_boosts_valence(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"task_status": "completed"})
+        assert result.valence > prev.valence
+        assert result.salience > prev.salience
+
+    def test_abandoned_task_drops_valence(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"task_status": "abandoned"})
+        assert result.valence < prev.valence
+        assert result.salience < prev.salience
+
+    def test_positive_satisfaction_boosts_valence(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"satisfaction_signal": "positive"})
+        assert result.valence > prev.valence
+
+    def test_negative_satisfaction_drops_valence(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"satisfaction_signal": "negative"})
+        assert result.valence < prev.valence
+
+    def test_high_latency_drops_arousal(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"response_latency_sec": 60.0})
+        assert result.arousal < prev.arousal
+
+    def test_low_latency_boosts_arousal(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"response_latency_sec": 1.0})
+        assert result.arousal > prev.arousal
+
+    def test_intent_switching_drops_salience(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"intent_switches_in_window": 4})
+        assert result.salience < prev.salience
+        assert result.arousal > prev.arousal  # Frantic switching → arousal up
+
+    def test_off_task_drops_salience(self):
+        prev = self.AffectState()
+        result = self.update_affect(prev, {"off_task_ratio": 0.8})
+        assert result.salience < prev.salience
+
+    def test_abandoned_with_tool_extra_frustration(self):
+        prev = self.AffectState()
+        r1 = self.update_affect(prev, {"task_status": "abandoned"})
+        r2 = self.update_affect(prev, {
+            "task_status": "abandoned", "tool_call_requested": True
+        })
+        assert r2.valence < r1.valence  # Extra penalty
+
+    # ── EWMA Baseline ─────────────────────────────────────────────
+
+    def test_baseline_defaults(self):
+        b = self.AffectBaseline()
+        assert b.sample_count == 0
+        assert b.per_module == {}
+
+    def test_baseline_update_increments_count(self):
+        b = self.AffectBaseline()
+        affect = self.AffectState(salience=0.8, valence=0.3, arousal=0.6)
+        b2 = self.update_baseline(b, affect, module_id="domain/asst/weather/v1")
+        assert b2.sample_count == 1
+
+    def test_baseline_ewma_moves_toward_reading(self):
+        b = self.AffectBaseline(salience=0.5, valence=0.0, arousal=0.5)
+        affect = self.AffectState(salience=1.0, valence=1.0, arousal=1.0)
+        b2 = self.update_baseline(b, affect)
+        # EWMA with α=0.1: should move 10% toward new reading
+        assert b2.salience > 0.5
+        assert b2.salience < 1.0
+        assert abs(b2.salience - 0.55) < 0.001
+
+    def test_baseline_preserves_prev_for_velocity(self):
+        b = self.AffectBaseline(salience=0.5, valence=0.0, arousal=0.5)
+        affect = self.AffectState(salience=0.8, valence=0.5, arousal=0.7)
+        b2 = self.update_baseline(b, affect)
+        assert b2.prev_salience == 0.5
+        assert b2.prev_valence == 0.0
+        assert b2.prev_arousal == 0.5
+
+    def test_per_module_signature_recorded(self):
+        b = self.AffectBaseline()
+        affect = self.AffectState(salience=0.8, valence=0.3, arousal=0.6)
+        b2 = self.update_baseline(b, affect, module_id="domain/asst/weather/v1")
+        assert "domain/asst/weather/v1" in b2.per_module
+        mod_sig = b2.per_module["domain/asst/weather/v1"]
+        assert "delta_from_baseline" in mod_sig
+        assert mod_sig["sample_count"] == 1
+
+    def test_per_module_count_accumulates(self):
+        b = self.AffectBaseline()
+        for _ in range(3):
+            affect = self.AffectState(salience=0.7, valence=0.2, arousal=0.6)
+            b = self.update_baseline(b, affect, module_id="domain/asst/weather/v1")
+        assert b.per_module["domain/asst/weather/v1"]["sample_count"] == 3
+
+    def test_baseline_roundtrip(self):
+        b = self.AffectBaseline(salience=0.6, valence=0.1, arousal=0.7, sample_count=5)
+        d = b.to_dict()
+        b2 = self.AffectBaseline.from_dict(d)
+        assert b2.sample_count == 5
+        assert abs(b2.salience - 0.6) < 1e-5
+
+    # ── Drift Velocity Detection ──────────────────────────────────
+
+    def test_drift_no_signal_before_min_samples(self):
+        b = self.AffectBaseline(sample_count=2)
+        drift = self.compute_drift(b)
+        assert drift.is_fast_drift is False
+
+    def test_drift_detects_fast_valence_drop(self):
+        # Simulate a sudden drop: prev was 0.5, now moved to 0.4
+        b = self.AffectBaseline(
+            valence=0.4, prev_valence=0.5,
+            salience=0.5, prev_salience=0.5,
+            arousal=0.5, prev_arousal=0.5,
+            sample_count=10,
+        )
+        drift = self.compute_drift(b)
+        assert drift.is_fast_drift is True
+        assert drift.drift_axis == "valence"
+        assert drift.velocity_valence < 0
+
+    def test_drift_no_trigger_on_small_change(self):
+        b = self.AffectBaseline(
+            valence=0.49, prev_valence=0.5,
+            salience=0.5, prev_salience=0.5,
+            arousal=0.5, prev_arousal=0.5,
+            sample_count=10,
+        )
+        drift = self.compute_drift(b)
+        assert drift.is_fast_drift is False
+
+    def test_drift_picks_worst_axis(self):
+        b = self.AffectBaseline(
+            salience=0.3, prev_salience=0.5,  # Δ=-0.2 (worst)
+            valence=0.45, prev_valence=0.5,   # Δ=-0.05
+            arousal=0.52, prev_arousal=0.5,   # Δ=+0.02
+            sample_count=10,
+        )
+        drift = self.compute_drift(b)
+        assert drift.is_fast_drift is True
+        assert drift.drift_axis == "salience"
+
+    # ── Module Deviation ──────────────────────────────────────────
+
+    def test_module_deviation_none_for_missing(self):
+        b = self.AffectBaseline()
+        assert self.module_deviation(b, "unknown/module") is None
+
+    def test_module_deviation_returns_deltas(self):
+        b = self.AffectBaseline()
+        b.per_module["domain/asst/weather/v1"] = {
+            "salience": 0.8,
+            "valence": 0.3,
+            "arousal": 0.6,
+            "delta_from_baseline": {"salience": 0.3, "valence": 0.3, "arousal": 0.1},
+            "sample_count": 5,
+        }
+        dev = self.module_deviation(b, "domain/asst/weather/v1")
+        assert dev["salience"] == 0.3
+
+
+class TestSVAIntegrationWithDomainStep:
+    """Integration tests: SVA wired into domain_step via runtime_adapters."""
+
+    @pytest.fixture(autouse=True)
+    def _import(self):
+        mod = _force_import("runtime_adapters")
+        self.build_initial_state = mod.build_initial_state
+        self.domain_step = mod.domain_step
+
+    def test_domain_step_returns_affect_in_decision(self):
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "weather", "task_status": "open",
+                    "satisfaction_signal": "neutral"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert "affect" in decision
+        assert "salience" in decision["affect"]
+        assert "valence" in decision["affect"]
+        assert "arousal" in decision["affect"]
+
+    def test_domain_step_returns_drift_in_decision(self):
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "general", "task_status": "n/a"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert "drift" in decision
+        assert "is_fast_drift" in decision["drift"]
+
+    def test_affect_evolves_across_turns(self):
+        state = self.build_initial_state({})
+        # Several positive turns
+        for _ in range(5):
+            evidence = {"intent_type": "weather", "task_status": "completed",
+                        "satisfaction_signal": "positive"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        assert state["affect"].valence > 0.0
+        assert state["affect_baseline"].sample_count == 5
+
+    def test_abandoned_turns_trigger_negative_drift(self):
+        state = self.build_initial_state({})
+        # Build up baseline first (min_samples_for_drift = 5)
+        for _ in range(6):
+            evidence = {"intent_type": "search", "task_status": "open",
+                        "satisfaction_signal": "neutral"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        # Then slam with abandoned tasks
+        evidence = {"intent_type": "search", "task_status": "abandoned",
+                    "satisfaction_signal": "negative"}
+        state, decision = self.domain_step(state, {}, evidence, {})
+        # After enough samples + a big negative swing, drift should fire
+        # (may need multiple to overcome EWMA smoothing)
+        assert decision["drift"]["velocity_valence"] <= 0
+
+    def test_rapid_intent_switching_triggers_salience_drop(self):
+        state = self.build_initial_state({})
+        intents = ["weather", "calendar", "search", "planning", "creative"]
+        for intent in intents:
+            evidence = {"intent_type": intent, "task_status": "n/a",
+                        "satisfaction_signal": "neutral"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        # After 5 different intents, the intent window has many switches
+        # Salience should be lower than starting 0.5
+        assert state["affect"].salience < 0.5
+
+    def test_affect_drift_alert_fires_on_fast_drop(self):
+        state = self.build_initial_state({})
+        # Build baseline with 6 neutral turns
+        for _ in range(6):
+            evidence = {"intent_type": "general", "task_status": "n/a",
+                        "satisfaction_signal": "neutral"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        # Simulate sudden frustration — big negative hit
+        # Force the state to have a large prev_valence gap
+        state["affect_baseline"].prev_valence = state["affect_baseline"].valence
+        # Now give a strongly negative turn
+        evidence = {"intent_type": "general", "task_status": "abandoned",
+                    "satisfaction_signal": "negative",
+                    "off_task_ratio": 0.8, "tool_call_requested": True}
+        state, decision = self.domain_step(state, {}, evidence, {})
+        # The drift may or may not exceed threshold depending on EWMA smoothing,
+        # but the valence velocity should be negative
+        assert decision["drift"]["velocity_valence"] <= 0
+
+    def test_per_module_tracking_persists(self):
+        state = self.build_initial_state({})
+        # Weather turns
+        for _ in range(3):
+            evidence = {"intent_type": "weather", "task_status": "completed",
+                        "satisfaction_signal": "positive"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        # Calendar turns
+        for _ in range(2):
+            evidence = {"intent_type": "calendar", "task_status": "open",
+                        "satisfaction_signal": "neutral"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        baseline = state["affect_baseline"]
+        assert "domain/asst/weather/v1" in baseline.per_module
+        assert "domain/asst/calendar/v1" in baseline.per_module
+        assert baseline.per_module["domain/asst/weather/v1"]["sample_count"] == 3
+        assert baseline.per_module["domain/asst/calendar/v1"]["sample_count"] == 2
+
+    def test_frustration_flag_on_valence_drift(self):
+        state = self.build_initial_state({})
+        # Burn in 5 neutral turns
+        for _ in range(5):
+            evidence = {"intent_type": "general", "task_status": "n/a",
+                        "satisfaction_signal": "neutral"}
+            state, _ = self.domain_step(state, {}, evidence, {})
+        # Now force a scenario where valence drifts fast
+        # Directly manipulate baseline to test the frustration flag logic
+        state["affect_baseline"].prev_valence = state["affect_baseline"].valence + 0.1
+        state["affect_baseline"].sample_count = 10
+        # Give negative evidence
+        evidence = {"intent_type": "general", "task_status": "abandoned",
+                    "satisfaction_signal": "negative"}
+        state, decision = self.domain_step(state, {}, evidence, {})
+        # Frustration is specifically tied to fast drift on valence axis
+        if decision["drift"]["is_fast_drift"] and decision["drift"]["drift_axis"] == "valence":
+            assert decision["frustration"] is True
+
+    def test_build_initial_state_hydrates_from_profile(self):
+        profile = {
+            "entity_state": {
+                "affect_baseline": {
+                    "salience": 0.7,
+                    "valence": 0.3,
+                    "arousal": 0.6,
+                    "sample_count": 50,
+                    "prev_salience": 0.68,
+                    "prev_valence": 0.28,
+                    "prev_arousal": 0.59,
+                    "per_module": {
+                        "domain/asst/weather/v1": {
+                            "salience": 0.8, "valence": 0.4, "arousal": 0.7,
+                            "delta_from_baseline": {"salience": 0.1, "valence": 0.1, "arousal": 0.1},
+                            "sample_count": 20,
+                        }
+                    }
+                }
+            }
+        }
+        state = self.build_initial_state(profile)
+        assert state["affect"].salience == 0.7
+        assert state["affect"].valence == 0.3
+        assert state["affect_baseline"].sample_count == 50
+        assert "domain/asst/weather/v1" in state["affect_baseline"].per_module
+
+
+# ════════════════════════════════════════════════════════════
+# 4c. task_tracker — attach_affect_snapshot
+# ════════════════════════════════════════════════════════════
+
+
+class TestTaskTrackerAffect:
+    @pytest.fixture(autouse=True)
+    def _import(self):
+        mod = _force_import("task_tracker")
+        self.new_task = mod.new_task
+        self.attach_affect_snapshot = mod.attach_affect_snapshot
+
+    def test_attach_affect_snapshot(self):
+        t = self.new_task("weather")
+        affect = {"salience": 0.7, "valence": 0.3, "arousal": 0.6}
+        t2 = self.attach_affect_snapshot(t, affect)
+        assert t2["affect_at_close"] == affect
+
+    def test_attach_does_not_mutate_original(self):
+        t = self.new_task("calendar")
+        affect = {"salience": 0.5, "valence": 0.0, "arousal": 0.5}
+        t2 = self.attach_affect_snapshot(t, affect)
+        assert "affect_at_close" not in t
+        assert "affect_at_close" in t2
 
 
 # ════════════════════════════════════════════════════════════

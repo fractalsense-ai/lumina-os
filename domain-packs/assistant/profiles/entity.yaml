@@ -22,3 +22,18 @@ entity_state:
   active_task_type: null
   total_sessions: 0
   last_session_utc: null
+
+  # ── SVA Affect Baseline (floating EWMA, evolves across sessions) ───
+  # Exponential moving average of per-turn affect readings.  Tells the
+  # system whether this actor is engaged, satisfied, and active WITHOUT
+  # needing conversational history.  Drift velocity on these values is
+  # the primary signal that something is changing.
+  affect_baseline:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+    sample_count: 0
+    prev_salience: 0.5
+    prev_valence: 0.0
+    prev_arousal: 0.5
+    per_module: {}               # {module_id: {salience, valence, arousal, delta_from_baseline, sample_count}}

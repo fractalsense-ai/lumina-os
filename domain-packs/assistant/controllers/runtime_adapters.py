@@ -14,7 +14,22 @@ the domain_step shifts the active module accordingly.
 from __future__ import annotations
 
 import json
+import sys
+import os
 from typing import Any, Callable
+
+# Import the affect monitor from domain-lib (sibling directory).
+_DOMAIN_LIB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "domain-lib")
+if _DOMAIN_LIB_DIR not in sys.path:
+    sys.path.insert(0, _DOMAIN_LIB_DIR)
+
+from affect_monitor import (  # noqa: E402
+    AffectState,
+    AffectBaseline,
+    update_affect,
+    update_baseline,
+    compute_drift,
+)
 
 # Intent → module ID mapping for routing decisions.
 INTENT_TO_MODULE: dict[str, str] = {
@@ -37,6 +52,8 @@ def build_initial_state(profile: dict[str, Any]) -> dict[str, Any]:
     argument to every subsequent `domain_step` call.
     """
     entity_state = profile.get("entity_state") or {}
+    affect_data = entity_state.get("affect_baseline") or {}
+
     return {
         "turn_count": 0,
         "idle_turn_count": 0,
@@ -44,7 +61,13 @@ def build_initial_state(profile: dict[str, Any]) -> dict[str, Any]:
         "active_task_id": entity_state.get("active_task_id"),
         "active_task_type": entity_state.get("active_task_type"),
         "task_history": [],
-        "satisfaction_trend": [],
+        "intent_window": [],  # Last N intents for switch-counting
+        "affect": AffectState(
+            salience=float(affect_data.get("salience", 0.5)),
+            valence=float(affect_data.get("valence", 0.0)),
+            arousal=float(affect_data.get("arousal", 0.5)),
+        ),
+        "affect_baseline": AffectBaseline.from_dict(affect_data),
     }
 
 
@@ -59,18 +82,30 @@ def domain_step(
     """Run one domain tick: state × evidence → (new_state, decision).
 
     Intent-based routing: reads intent_type from evidence and decides
-    whether to suggest a module switch. Tracks task lifecycle and
-    idle-turn counting for the idle_prompt_offer standing order.
+    whether to suggest a module switch. Tracks task lifecycle,
+    idle-turn counting, and SVA affect state with EWMA baseline.
+    Drift velocity is the primary escalation signal.
     """
     new_state = dict(state)
     new_state["turn_count"] = new_state.get("turn_count", 0) + 1
 
     intent = str(evidence.get("intent_type", "general"))
     task_status = str(evidence.get("task_status", "n/a"))
-    satisfaction = str(evidence.get("satisfaction_signal", "unknown"))
 
     # Track intent for routing
     new_state["active_intent"] = intent
+
+    # Intent window for switch-counting (last 5 turns)
+    intent_window = list(new_state.get("intent_window") or [])
+    intent_window.append(intent)
+    intent_window = intent_window[-5:]
+    new_state["intent_window"] = intent_window
+
+    # Count intent switches in window
+    switches = sum(
+        1 for i in range(1, len(intent_window))
+        if intent_window[i] != intent_window[i - 1]
+    )
 
     # Idle turn tracking for conversation commons
     if intent == "general" and task_status == "n/a":
@@ -95,30 +130,52 @@ def domain_step(
         new_state["active_task_type"] = intent
         new_state["active_task_id"] = f"task-{intent}-{new_state['turn_count']}"
 
-    # Satisfaction trend (keep last 10)
-    trend = list(new_state.get("satisfaction_trend") or [])
-    trend.append(satisfaction)
-    new_state["satisfaction_trend"] = trend[-10:]
+    # ── SVA Affect Update ────────────────────────────────────────────
+    prev_affect = new_state.get("affect")
+    if not isinstance(prev_affect, AffectState):
+        prev_affect = AffectState()
 
-    # Determine tier
+    # Inject computed intent_switches into evidence for affect estimator
+    affect_evidence = dict(evidence)
+    affect_evidence["intent_switches_in_window"] = switches
+
+    new_affect = update_affect(prev_affect, affect_evidence, params)
+    new_state["affect"] = new_affect
+
+    # ── EWMA Baseline Update ─────────────────────────────────────────
+    baseline = new_state.get("affect_baseline")
+    if not isinstance(baseline, AffectBaseline):
+        baseline = AffectBaseline()
+
+    target_module = INTENT_TO_MODULE.get(intent, "domain/asst/conversation/v1")
+    new_baseline = update_baseline(baseline, new_affect, module_id=target_module, params=params)
+    new_state["affect_baseline"] = new_baseline
+
+    # ── Drift Velocity Detection ─────────────────────────────────────
+    drift = compute_drift(new_baseline, params)
+
+    # Determine tier from idle count + drift velocity
     idle_count = new_state.get("idle_turn_count", 0)
     window = int(params.get("drift_threshold_turns", 3))
-    if idle_count >= window:
+
+    if drift.is_fast_drift:
+        tier = "minor"
+        action = "affect_drift_alert"
+    elif idle_count >= window:
         tier = "minor"
         action = "idle_prompt_offer"
     else:
         tier = "ok"
         action = None
 
-    # Module routing suggestion
-    target_module = INTENT_TO_MODULE.get(intent, "domain/asst/conversation/v1")
-
     return new_state, {
         "tier": tier,
         "action": action,
-        "frustration": False,
+        "frustration": drift.is_fast_drift and drift.drift_axis == "valence",
         "suggested_module": target_module,
         "intent_type": intent,
+        "affect": new_affect.to_dict(),
+        "drift": drift.to_dict(),
     }
 
 

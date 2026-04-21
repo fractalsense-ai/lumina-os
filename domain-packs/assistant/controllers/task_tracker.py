@@ -69,3 +69,18 @@ def is_terminal(task: dict[str, Any]) -> bool:
 def active_tasks(task_history: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Return non-terminal tasks from a history list."""
     return [t for t in task_history if not is_terminal(t)]
+
+
+def attach_affect_snapshot(
+    task: dict[str, Any],
+    affect: dict[str, float],
+) -> dict[str, Any]:
+    """Attach an SVA affect snapshot to a task record at closure.
+
+    Captures the actor's affect state at the moment the task
+    transitions out of 'open'.  This gives retrospective insight
+    into how the actor felt during/at the end of each task WITHOUT
+    needing conversation history.
+    """
+    updated = {**task, "affect_at_close": dict(affect)}
+    return updated
