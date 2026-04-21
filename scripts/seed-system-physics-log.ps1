@@ -153,7 +153,7 @@ with open(ledger_path, 'a', encoding='utf-8') as fh:
     fh.write('\n')
 
 print(f'Status: committed [OK]')
-print(f'record_id: {new_record[\"record_id\"]}')
+print('record_id: ' + new_record['record_id'])
 print(f'ledger:    {ledger_path}')
 "@
 
