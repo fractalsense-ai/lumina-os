@@ -189,20 +189,34 @@ class DocEmbedder:
 
     # ── Ollama backend ───────────────────────────────────────
 
+    # Maximum number of texts per Ollama /api/embed request.  Sending
+    # large domains (200+ chunks) as a single request exceeds Ollama's
+    # internal body-size limit and returns HTTP 400.
+    _OLLAMA_BATCH_SIZE: int = 32
+
     def _embed_ollama(self, texts: list[str]) -> NDArray[np.float32]:
         import httpx
 
         url = f"{self._endpoint}/api/embed"
-        payload = {"model": self._model_name, "input": texts}
-        resp = httpx.post(url, json=payload, timeout=self._timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        embeddings = data.get("embeddings")
-        if embeddings is None:
-            raise RuntimeError(
-                f"Ollama /api/embed response missing 'embeddings' key; got keys: {list(data.keys())}"
-            )
-        return np.asarray(embeddings, dtype=np.float32)
+        all_embeddings: list[list[float]] = []
+        for i in range(0, len(texts), self._OLLAMA_BATCH_SIZE):
+            batch = texts[i : i + self._OLLAMA_BATCH_SIZE]
+            payload = {"model": self._model_name, "input": batch}
+            resp = httpx.post(url, json=payload, timeout=self._timeout)
+            if not resp.is_success:
+                raise httpx.HTTPStatusError(
+                    f"Ollama /api/embed returned {resp.status_code}: {resp.text}",
+                    request=resp.request,
+                    response=resp,
+                )
+            data = resp.json()
+            embeddings = data.get("embeddings")
+            if embeddings is None:
+                raise RuntimeError(
+                    f"Ollama /api/embed response missing 'embeddings' key; got keys: {list(data.keys())}"
+                )
+            all_embeddings.extend(embeddings)
+        return np.asarray(all_embeddings, dtype=np.float32)
 
     # ── Public API ───────────────────────────────────────────
 
