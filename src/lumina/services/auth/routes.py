@@ -29,7 +29,7 @@ from lumina.api.models import (
 from lumina.auth.auth import (
     VALID_ROLES,
     ADMIN_ROLES,
-    DOMAIN_AUTHORITY_ROLES,
+    DOMAIN_ADMIN_ROLES,
     create_jwt,
     create_scoped_jwt,
     hash_password,
@@ -123,7 +123,7 @@ async def login(req: LoginRequest) -> TokenResponse:
             status_code=403,
             detail="System-track users must use /api/admin/auth/login",
         )
-    if user["role"] in DOMAIN_AUTHORITY_ROLES:
+    if user["role"] in DOMAIN_ADMIN_ROLES:
         raise HTTPException(
             status_code=403,
             detail="Domain authorities must use /api/domain/auth/login",
@@ -189,7 +189,7 @@ async def list_all_users(
 ) -> list[UserResponse]:
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "it_support")
+    require_role(user_data, "root", "super_admin")
     users = await run_in_threadpool(_cfg.PERSISTENCE.list_users)
     return [
         UserResponse(
@@ -220,11 +220,11 @@ async def update_user(
     if req.role is not None and req.role not in VALID_ROLES:
         raise HTTPException(status_code=400, detail=f"Invalid role: {req.role}")
 
-    if req.governed_modules is not None and req.role != "domain_authority":
+    if req.governed_modules is not None and req.role != "admin":
         if req.role is not None:
             raise HTTPException(
                 status_code=400,
-                detail="governed_modules can only be set for domain_authority role",
+                detail="governed_modules can only be set for admin role",
             )
 
     target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, user_id)
@@ -349,7 +349,7 @@ async def revoke_token(
     user_data = require_auth(current)
 
     if req.user_id is not None and req.user_id != user_data["sub"]:
-        require_role(user_data, "root", "it_support")
+        require_role(user_data, "root", "super_admin")
 
     jti = user_data.get("jti")
     if jti:
@@ -384,7 +384,7 @@ async def password_reset(
 
     target_user_id = req.user_id or user_data["sub"]
     if target_user_id != user_data["sub"]:
-        require_role(user_data, "root", "it_support")
+        require_role(user_data, "root", "super_admin")
 
     if len(req.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
@@ -426,12 +426,12 @@ async def invite_user(
     The invited user follows the setup URL to choose their own password and
     activate the account.  No password is accepted in this request.
 
-    Required roles: ``root``, ``it_support``.
-    ``governed_modules`` is optional for domain_authority (null = all modules).
+    Required roles: ``root``, ``super_admin``.
+    ``governed_modules`` is optional for admin (null = all modules).
     """
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "it_support")
+    require_role(user_data, "root", "super_admin")
 
     if req.role not in VALID_ROLES:
         raise HTTPException(status_code=400, detail=f"Invalid role: {req.role}")
@@ -439,8 +439,8 @@ async def invite_user(
     if not req.username:
         raise HTTPException(status_code=400, detail="username is required")
 
-    # domain_authority with governed_modules=None means access to ALL
-    # modules in their domain. This is intentional — DAs are the
+    # admin with governed_modules=None means access to ALL
+    # modules in their domain. This is intentional — domain admins are the
     # subject-matter experts / domain administrators.
 
     existing = await run_in_threadpool(_cfg.PERSISTENCE.get_user_by_username, req.username)

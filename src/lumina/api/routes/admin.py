@@ -151,10 +151,10 @@ async def audit_log(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "qa", "auditor")
+    allowed_roles = ("root", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
-        if user_data["role"] == "domain_authority":
-            # DA may only view records for domains they govern
+        if user_data["role"] == "admin":
+            # admin may only view records for domains they govern
             governed = user_data.get("governed_modules") or []
             if not governed:
                 raise HTTPException(status_code=403, detail="No governed modules")
@@ -169,7 +169,7 @@ async def audit_log(
     )
 
     # Scope records based on caller role
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         governed = user_data.get("governed_modules") or []
         records = [
             r for r in records
@@ -219,7 +219,7 @@ async def manifest_check(
 ) -> ManifestCheckResponse:
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "domain_authority", "qa", "auditor")
+    require_role(user_data, "root", "admin", "operator", "half_operator")
     try:
         report = await run_in_threadpool(check_manifest_report, _cfg._REPO_ROOT)
     except Exception as exc:
@@ -235,7 +235,7 @@ async def manifest_regen(
 ) -> ManifestRegenResponse:
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "domain_authority")
+    require_role(user_data, "root", "admin")
     try:
         report = await run_in_threadpool(regen_manifest_report, _cfg._REPO_ROOT)
     except Exception as exc:
@@ -578,7 +578,7 @@ async def list_staged_commands(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority", "it_support"):
+    if user_data["role"] not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     with _STAGED_COMMANDS_LOCK:
@@ -753,7 +753,7 @@ async def domain_command(
     """Domain-tier command endpoint — domain authority and above."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "domain_authority", "root", "it_support")
+    require_role(user_data, "admin", "root", "super_admin")
     return await _dispatch_command(req, user_data)
 
 
@@ -766,7 +766,7 @@ async def admin_command(
     """Admin-tier command endpoint — root / IT support only."""
     current = await get_current_user(credentials)
     user_data = require_auth(current)
-    require_role(user_data, "root", "it_support")
+    require_role(user_data, "root", "super_admin")
     return await _dispatch_command(req, user_data)
 
 
@@ -780,7 +780,7 @@ async def admin_command_resolve(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority", "it_support"):
+    if user_data["role"] not in ("root", "admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     if req.action not in _HITL_VALID_ACTIONS:

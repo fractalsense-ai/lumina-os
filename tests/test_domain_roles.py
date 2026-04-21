@@ -26,10 +26,10 @@ from lumina.core.permissions import Operation, check_permission, check_permissio
 EDU_PERMS = {
     "mode": "750",
     "owner": "da_algebra_lead_001",
-    "group": "domain_authority",
+    "group": "admin",
     "acl": [
-        {"role": "qa", "access": "rx", "scope": "evaluation_only"},
-        {"role": "auditor", "access": "r", "scope": "log_records_only"},
+        {"role": "operator", "access": "rx", "scope": "evaluation_only"},
+        {"role": "half_operator", "access": "r", "scope": "log_records_only"},
         {"role": "user", "access": "x"},
     ],
 }
@@ -42,7 +42,7 @@ EDU_DOMAIN_ROLES = {
             "role_name": "Teacher",
             "hierarchy_level": 1,
             "description": "Instructor with full domain access.",
-            "maps_to_system_role": "domain_authority",
+            "maps_to_system_role": "admin",
             "default_access": "rwx",
             "may_assign_domain_roles": True,
             "max_assignable_level": 2,
@@ -83,7 +83,7 @@ EDU_DOMAIN_ROLES = {
 AGRI_PERMS = {
     "mode": "750",
     "owner": "da_agri_ops_001",
-    "group": "domain_authority",
+    "group": "admin",
     "acl": [
         {"role": "user", "access": "x"},
     ],
@@ -97,7 +97,7 @@ AGRI_DOMAIN_ROLES = {
             "role_name": "Site Manager",
             "hierarchy_level": 1,
             "description": "On-site manager.",
-            "maps_to_system_role": "domain_authority",
+            "maps_to_system_role": "admin",
             "default_access": "rwx",
             "may_assign_domain_roles": True,
             "max_assignable_level": 2,
@@ -188,7 +188,7 @@ class TestDomainRolePermissionGrants:
         """Teacher domain role maps to DA with default_access 'rwx'."""
         for op in (Operation.READ, Operation.WRITE, Operation.EXECUTE):
             assert check_permission(
-                "teacher_001", "domain_authority", EDU_PERMS, op,
+                "teacher_001", "admin", EDU_PERMS, op,
                 domain_role="teacher", domain_roles_config=EDU_DOMAIN_ROLES,
             )
 
@@ -208,12 +208,12 @@ class TestBackwardCompatibility:
 
     def test_system_acl_still_works(self) -> None:
         """System ACL entries work unchanged."""
-        assert check_permission("qa-1", "qa", EDU_PERMS, Operation.READ)
-        assert check_permission("qa-1", "qa", EDU_PERMS, Operation.EXECUTE)
+        assert check_permission("qa-1", "operator", EDU_PERMS, Operation.READ)
+        assert check_permission("qa-1", "operator", EDU_PERMS, Operation.EXECUTE)
 
     def test_owner_still_gets_full(self) -> None:
         assert check_permission(
-            "da_algebra_lead_001", "domain_authority", EDU_PERMS, Operation.WRITE
+            "da_algebra_lead_001", "admin", EDU_PERMS, Operation.WRITE
         )
 
     def test_root_still_bypasses(self) -> None:
@@ -310,7 +310,7 @@ class TestDomainRoleEdgeCases:
         """A user can have different domain roles in different domains."""
         # Teacher in education domain
         assert check_permission(
-            "user_001", "domain_authority", EDU_PERMS, Operation.WRITE,
+            "user_001", "admin", EDU_PERMS, Operation.WRITE,
             domain_role="teacher", domain_roles_config=EDU_DOMAIN_ROLES,
         )
         # Observer in agriculture domain — read only
@@ -361,7 +361,7 @@ class TestAgricultureDomainRoles:
     def test_site_manager_full_access(self) -> None:
         for op in (Operation.READ, Operation.WRITE, Operation.EXECUTE):
             assert check_permission(
-                "mgr_001", "domain_authority", AGRI_PERMS, op,
+                "mgr_001", "admin", AGRI_PERMS, op,
                 domain_role="site_manager",
                 domain_roles_config=AGRI_DOMAIN_ROLES,
             )
@@ -410,7 +410,7 @@ class TestAgricultureDomainRoles:
         perms_no_user_acl = {
             "mode": "750",
             "owner": "da_agri_ops_001",
-            "group": "domain_authority",
+            "group": "admin",
         }
         assert check_permission(
             "obs_001", "user", perms_no_user_acl, Operation.READ,
@@ -824,7 +824,7 @@ class TestJWTDomainRoles:
             "domain/edu/geometry-level-1/v1": "teaching_assistant",
         }
         token = auth.create_jwt(
-            user_id="multi_001", role="domain_authority",
+            user_id="multi_001", role="admin",
             domain_roles=dr, ttl_minutes=5,
         )
         payload = auth.verify_jwt(token)

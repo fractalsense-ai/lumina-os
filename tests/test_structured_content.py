@@ -56,7 +56,7 @@ def test_escalation_card_includes_session_context() -> None:
     record = {
         "record_id": "esc-002",
         "trigger": "off_topic",
-        "target_role": "domain_authority",
+        "target_role": "admin",
     }
     ctx = {
         "domain_id": "education/pre-algebra",

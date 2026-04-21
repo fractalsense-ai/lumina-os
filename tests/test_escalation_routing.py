@@ -103,7 +103,7 @@ def _teacher_user(sub: str = "teacher1") -> dict[str, Any]:
 def _da_user(sub: str = "da1") -> dict[str, Any]:
     return {
         "sub": sub,
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": [_MODULE_ID],
     }
 

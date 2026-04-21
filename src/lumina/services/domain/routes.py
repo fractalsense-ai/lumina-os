@@ -38,9 +38,9 @@ async def domain_pack_commit(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
-    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, req.domain_id):
+    if user_data["role"] == "admin" and not can_govern_domain(user_data, req.domain_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
     try:
@@ -87,9 +87,9 @@ async def domain_pack_history(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "qa", "auditor")
+    allowed_roles = ("root", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
-        if user_data["role"] == "domain_authority" and can_govern_domain(user_data, domain_id):
+        if user_data["role"] == "admin" and can_govern_domain(user_data, domain_id):
             pass
         else:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -118,9 +118,9 @@ async def update_domain_physics(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
-    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, domain_id):
+    if user_data["role"] == "admin" and not can_govern_domain(user_data, domain_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
     try:
@@ -182,8 +182,8 @@ async def close_session(
         raise HTTPException(status_code=404, detail="Session not found or already closed")
 
     is_owner = container.user is not None and container.user.get("sub") == user_data["sub"]
-    is_privileged = user_data["role"] in ("root", "it_support")
-    is_da = user_data["role"] == "domain_authority" and can_govern_domain(
+    is_privileged = user_data["role"] in ("root", "super_admin")
+    is_da = user_data["role"] == "admin" and can_govern_domain(
         user_data, container.active_domain_id
     )
     if not (is_owner or is_privileged or is_da):

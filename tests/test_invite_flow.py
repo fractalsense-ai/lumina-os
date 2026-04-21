@@ -181,7 +181,7 @@ class TestInviteEndpoint:
         root_token = _register_root(client)
         resp = client.post(
             "/api/auth/invite",
-            json={"username": "da-nomod", "role": "domain_authority"},
+            json={"username": "da-nomod", "role": "admin"},
             headers=_auth(root_token),
         )
         assert resp.status_code == 200
@@ -194,14 +194,14 @@ class TestInviteEndpoint:
             "/api/auth/invite",
             json={
                 "username": "da-user",
-                "role": "domain_authority",
+                "role": "admin",
                 "governed_modules": ["domain/edu/algebra-level-1/v1"],
             },
             headers=_auth(root_token),
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["role"] == "domain_authority"
+        assert data["role"] == "admin"
         assert "domain/edu/algebra-level-1/v1" in data["governed_modules"]
 
     def test_invite_rejects_invalid_role(self, client: TestClient) -> None:
@@ -446,7 +446,7 @@ class TestInviteUserHITLCommand:
                     "operation": "invite_user",
                     "params": {
                         "username": "testda-direct",
-                        "role": "domain_authority",
+                        "role": "admin",
                         "governed_modules": ["domain/edu/algebra-level-1/v1"],
                     },
                 },
@@ -464,7 +464,7 @@ class TestInviteUserHITLCommand:
         data = resp.json()
         result = data["result"]
         assert result["operation"] == "invite_user"
-        assert result["role"] == "domain_authority"
+        assert result["role"] == "admin"
         assert "domain/edu/algebra-level-1/v1" in result["governed_modules"]
         assert "setup_url" in result
 
@@ -472,7 +472,7 @@ class TestInviteUserHITLCommand:
         user = api_module.PERSISTENCE.get_user_by_username("testda-direct")
         assert user is not None
         assert user["active"] is False
-        assert user["role"] == "domain_authority"
+        assert user["role"] == "admin"
 
     def test_invite_user_da_without_modules_returns_400(
         self, client: TestClient
@@ -492,7 +492,7 @@ class TestInviteUserHITLCommand:
                     "operation": "invite_user",
                     "params": {
                         "username": "da-no-modules",
-                        "role": "domain_authority",
+                        "role": "admin",
                         "governed_modules": [],
                     },
                 },

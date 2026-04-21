@@ -571,7 +571,7 @@ class TestNlpPreInterpreter:
     @pytest.mark.unit
     def test_domain_authority_with_domain(self) -> None:
         result = extract_target_role("give domain authority access to education")
-        assert result["target_role"] == "domain_authority"
+        assert result["target_role"] == "admin"
         assert result["governed_domains"] == ["education"]
 
     @pytest.mark.unit
@@ -583,7 +583,7 @@ class TestNlpPreInterpreter:
     @pytest.mark.unit
     def test_plain_role_name_auditor(self) -> None:
         result = extract_target_role("promote user Sam to auditor")
-        assert result["target_role"] == "auditor"
+        assert result["target_role"] == "half_operator"
 
     @pytest.mark.unit
     def test_no_role_found(self) -> None:

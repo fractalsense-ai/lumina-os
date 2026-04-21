@@ -22,7 +22,7 @@ def _make_domain(invariants: list[dict], standing_orders: list[dict]) -> dict:
     return {
         "id": "test/domain/v1",
         "version": "1.0.0",
-        "domain_authority": {"name": "Test", "role": "Tester"},
+        "admin": {"name": "Test", "role": "Tester"},
         "invariants": invariants,
         "standing_orders": standing_orders,
     }

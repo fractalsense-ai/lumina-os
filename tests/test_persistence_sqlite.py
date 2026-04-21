@@ -35,9 +35,9 @@ def test_sqlite_user_crud(sqlite_adapter: SQLitePersistenceAdapter) -> None:
     assert listed[0]["username"] == "alice"
     assert "password_hash" not in listed[0]
 
-    updated = sqlite_adapter.update_user_role("u1", "qa", ["m2"])
+    updated = sqlite_adapter.update_user_role("u1", "operator", ["m2"])
     assert updated is not None
-    assert updated["role"] == "qa"
+    assert updated["role"] == "operator"
     assert updated["governed_modules"] == ["m2"]
 
     assert sqlite_adapter.deactivate_user("u1") is True

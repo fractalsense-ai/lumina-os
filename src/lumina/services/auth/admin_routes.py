@@ -1,7 +1,7 @@
 """Admin and domain auth endpoints — separate login/refresh per authority track.
 
 This router provides air-gapped authentication endpoints for:
-- System-level users (root, it_support) via ``/api/admin/auth/*``
+- System-level users (root, super_admin) via ``/api/admin/auth/*``
 - Domain authorities via ``/api/domain/auth/*``
 
 System tokens carry ``iss: "lumina-admin"`` and ``token_scope: "admin"``.
@@ -36,7 +36,7 @@ from lumina.api.domain_middleware import (
 from lumina.api.models import LoginRequest, TokenResponse
 from lumina.auth.auth import (
     ADMIN_ROLES,
-    DOMAIN_AUTHORITY_ROLES,
+    DOMAIN_ADMIN_ROLES,
     create_scoped_jwt,
     verify_password,
 )
@@ -50,8 +50,8 @@ router = APIRouter()
 async def admin_login(req: LoginRequest) -> TokenResponse:
     """Authenticate a system-track user and issue a scoped admin token.
 
-    Only ``root`` and ``it_support`` may use this endpoint.
-    Domain authorities must use ``/api/domain/auth/login`` instead.
+    Only ``root`` and ``super_admin`` may use this endpoint.
+    Domain admins must use ``/api/domain/auth/login`` instead.
     """
     if not req.username or not req.password:
         raise HTTPException(status_code=400, detail="Username and password are required")
@@ -66,7 +66,7 @@ async def admin_login(req: LoginRequest) -> TokenResponse:
     if user["role"] not in ADMIN_ROLES:
         raise HTTPException(
             status_code=403,
-            detail="Admin login requires a system-track role (root, it_support)",
+            detail="Admin login requires a system-track role (root, super_admin)",
         )
 
     token = create_scoped_jwt(
@@ -124,7 +124,7 @@ async def admin_me(
 async def domain_login(req: LoginRequest) -> TokenResponse:
     """Authenticate a domain authority and issue a domain-scoped token.
 
-    Only users with the ``domain_authority`` role may use this endpoint.
+    Only users with the ``admin`` role may use this endpoint.
     System-track users must use ``/api/admin/auth/login``;
     regular users must use ``/api/auth/login``.
     """
@@ -138,10 +138,10 @@ async def domain_login(req: LoginRequest) -> TokenResponse:
     if not user.get("active", True):
         raise HTTPException(status_code=403, detail="Account deactivated")
 
-    if user["role"] not in DOMAIN_AUTHORITY_ROLES:
+    if user["role"] not in DOMAIN_ADMIN_ROLES:
         raise HTTPException(
             status_code=403,
-            detail="Domain login requires the domain_authority role",
+            detail="Domain login requires the admin role",
         )
 
     token = create_scoped_jwt(
@@ -165,8 +165,8 @@ async def domain_refresh(
     if user is None or not user.get("active", True):
         raise HTTPException(status_code=401, detail="User not found or deactivated")
 
-    if user["role"] not in DOMAIN_AUTHORITY_ROLES:
-        raise HTTPException(status_code=403, detail="User is no longer a domain authority")
+    if user["role"] not in DOMAIN_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="User is no longer a domain admin")
 
     token = create_scoped_jwt(
         user_id=user["user_id"],

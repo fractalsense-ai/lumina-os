@@ -80,7 +80,7 @@ def _make_user(
 #   domain_authority (level 0), teacher (level 1),
 #   teaching_assistant (level 2), student (level 3 — from algebra-1)
 _DA = _make_user(
-    "da1", role="domain_authority",
+    "da1", role="admin",
     governed_modules=["domain-authority", "teacher", "teaching-assistant", "guardian", "algebra-1"],
 )
 _TEACHER = _make_user("teacher1", domain_roles={"teacher": "teacher"})
@@ -184,7 +184,7 @@ class TestHierarchyVisibility:
     def test_da_sees_all_governed(self) -> None:
         cfg = _mock_cfg(_ALL_USERS)
         caller = _caller(
-            "da1", "domain_authority",
+            "da1", "admin",
             governed_modules=["domain-authority", "teacher", "teaching-assistant", "guardian", "algebra-1"],
         )
         with patch("lumina.api.routes.admin._cfg", cfg), \

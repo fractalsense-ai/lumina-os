@@ -258,7 +258,7 @@ def _stage_and_build(
 
     # ── Escalation for non-DA physics edits ───────────────────
     _requires_escalation = (
-        _is_physics_edit and actor_role not in ("root", "domain_authority")
+        _is_physics_edit and actor_role not in ("root", "admin")
     )
 
     staged = _stage_command(

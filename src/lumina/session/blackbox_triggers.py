@@ -67,6 +67,6 @@ trigger_registry.register(
     "escalation_severe",
     lambda e: (
         e.get("record_type") == "EscalationRecord"
-        and e.get("target_role") in ("meta_authority", "domain_authority")
+        and e.get("target_role") in ("meta_authority", "admin")
     ),
 )

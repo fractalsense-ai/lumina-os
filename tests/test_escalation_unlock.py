@@ -123,7 +123,7 @@ def _make_esc_record(
         "status": "open",
         "trigger": "frustration_threshold",
         "domain_pack_id": domain_pack_id,
-        "target_role": "domain_authority",
+        "target_role": "admin",
     }
 
 

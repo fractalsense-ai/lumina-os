@@ -28,8 +28,28 @@ class Operation(IntFlag):
 
 # Canonical role set (matches auth.VALID_ROLES)
 _VALID_ROLES: frozenset[str] = frozenset(
-    {"root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"}
+    {"root", "super_admin", "admin", "operator", "half_operator", "user", "guest"}
 )
+
+# Tier hierarchy: lower number = higher privilege
+TIER_LEVELS: dict[str, int] = {
+    "root": 0,
+    "super_admin": 1,
+    "admin": 2,
+    "operator": 3,
+    "half_operator": 4,
+    "user": 5,
+    "guest": 6,
+}
+
+
+def check_min_tier(user_role: str, min_tier: str) -> bool:
+    """Return True if *user_role* meets or exceeds the *min_tier* requirement.
+
+    A role "meets" a tier when its TIER_LEVELS value is less than or equal
+    to the required tier's value (lower number = higher privilege).
+    """
+    return TIER_LEVELS.get(user_role, 99) <= TIER_LEVELS.get(min_tier, 99)
 
 
 def parse_octal(mode: str) -> tuple[int, int, int]:
@@ -61,8 +81,8 @@ def _is_group_member(
        This preserves backward compatibility with modules that set
        ``permissions.group`` to a system role name.
     """
-    # domain_authority governs the domain — always receives group-tier access.
-    if user_role == "domain_authority":
+    # admin governs the domain — always receives group-tier access.
+    if user_role == "admin":
         return True
 
     if groups_config and group_name in groups_config:

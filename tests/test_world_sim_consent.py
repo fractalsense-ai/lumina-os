@@ -182,7 +182,7 @@ class TestConsentGate:
     @pytest.mark.integration
     def test_domain_authority_bypasses_consent(self, client: TestClient) -> None:
         """domain_authority role should bypass consent gate."""
-        token = _make_token("domain_authority")
+        token = _make_token("admin")
         resp = client.post(
             "/api/chat",
             json={"message": "hello", "deterministic_response": True},
@@ -251,7 +251,7 @@ class TestMUDDeterministic:
             return data
         api_module.PERSISTENCE.load_subject_profile = _load_with_algebra
 
-        token = _make_token("qa")  # bypass consent; qa→student→learning adapters
+        token = _make_token("operator")  # bypass consent; qa→student→learning adapters
         # Valid turn data that satisfies domain invariants.
         # Evidence field names must match the check expressions in
         # domain-physics.json, NOT the invariant IDs.  e.g. the
@@ -369,7 +369,7 @@ class TestPhysicsHolodeck:
     @pytest.mark.integration
     def test_holodeck_as_domain_authority_returns_evidence(self, client: TestClient) -> None:
         """domain_authority can also use holodeck mode."""
-        token = _make_token("domain_authority")
+        token = _make_token("admin")
         resp = client.post(
             "/api/chat",
             json={"message": "hello", "deterministic_response": True, "holodeck": True},

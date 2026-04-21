@@ -133,7 +133,7 @@ def test_user_blocked_at_admin_gate(client: TestClient, api_module) -> None:
 def test_da_blocked_at_admin_gate(client: TestClient, api_module) -> None:
     """Domain authority must get 403 at the /api/admin/command endpoint."""
     _register_root(client)
-    token = _register_user(client, "da_blocked", "domain_authority")
+    token = _register_user(client, "da_blocked", "admin")
     resp = client.post(
         "/api/admin/command",
         json={"instruction": "do something"},
@@ -146,7 +146,7 @@ def test_da_blocked_at_admin_gate(client: TestClient, api_module) -> None:
 def test_da_passes_domain_gate(client: TestClient, api_module) -> None:
     """Domain authority passes the /api/domain/command gate."""
     _register_root(client)
-    token = _register_user(client, "da_pass", "domain_authority")
+    token = _register_user(client, "da_pass", "admin")
     resp = client.post(
         "/api/domain/command",
         json={"instruction": "do something"},
@@ -285,12 +285,12 @@ def test_resolve_escalation_dispatches(client: TestClient, api_module) -> None:
 def test_update_user_role_requires_root(client: TestClient, api_module) -> None:
     """Only root can call update_user_role — domain_authority gets 403 immediately (HITL-exempt)."""
     _register_root(client)
-    da_token = _register_user(client, "da_user", "domain_authority")
+    da_token = _register_user(client, "da_user", "admin")
 
     parsed = {
         "operation": "update_user_role",
         "target": "someone",
-        "params": {"user_id": "someone", "new_role": "auditor"},
+        "params": {"user_id": "someone", "new_role": "half_operator"},
     }
     with (
         patch.object(api_module, "slm_available", return_value=True),

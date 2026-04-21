@@ -114,7 +114,7 @@ class StagingService:
         payload: dict[str, Any],
         template_id: str,
         actor_id: str,
-        actor_role: str = "domain_authority",
+        actor_role: str = "admin",
     ) -> StagedFile:
         """Validate and stage a file for review.
 
@@ -211,7 +211,7 @@ class StagingService:
         self,
         staged_id: str,
         approver_id: str,
-        approver_role: str = "domain_authority",
+        approver_role: str = "admin",
         target_overrides: dict[str, str] | None = None,
     ) -> Path:
         """Approve a staged file — write to final destination.
@@ -290,7 +290,7 @@ class StagingService:
         self,
         staged_id: str,
         approver_id: str,
-        approver_role: str = "domain_authority",
+        approver_role: str = "admin",
         reason: str = "",
     ) -> None:
         """Reject a staged file — mark as rejected, write System Log record."""

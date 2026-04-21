@@ -144,7 +144,7 @@ def test_cmd_rollback_confirms_and_appends_record(tmp_path: Path) -> None:
         "subject_id": "edu-algebra",
         "subject_hash": canonical_file_hash(subject),
         "actor_id": "actor-001",
-        "actor_role": "domain_authority",
+        "actor_role": "admin",
     }
     append_record(ledger, prior)
 

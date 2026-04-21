@@ -24,9 +24,9 @@ def test_null_adapter_user_crud_and_deactivate() -> None:
     assert by_username is not None
     assert by_username["user_id"] == "u1"
 
-    updated = adapter.update_user_role("u1", "qa", ["m2"])
+    updated = adapter.update_user_role("u1", "operator", ["m2"])
     assert updated is not None
-    assert updated["role"] == "qa"
+    assert updated["role"] == "operator"
     assert updated["governed_modules"] == ["m2"]
 
     assert adapter.deactivate_user("u1") is True

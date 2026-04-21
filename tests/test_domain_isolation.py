@@ -56,7 +56,7 @@ def _mock_registry(domain_id: str = "education", module_ids: list[str] | None = 
 @pytest.mark.unit
 def test_can_govern_domain_direct_match_still_works() -> None:
     """Backward compat: direct domain names in governed_modules still match."""
-    user = {"role": "domain_authority", "governed_modules": ["education"]}
+    user = {"role": "admin", "governed_modules": ["education"]}
     assert can_govern_domain(user, "education") is True
     assert can_govern_domain(user, "agriculture") is False
 
@@ -75,7 +75,7 @@ def test_can_govern_domain_non_da_rejected() -> None:
 def test_can_govern_domain_module_id_with_registry() -> None:
     """When governed_modules has module IDs, registry resolves the domain."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": ["domain/edu/algebra-level-1/v1"],
     }
     reg = _mock_registry("education", ["domain/edu/algebra-level-1/v1"])
@@ -87,7 +87,7 @@ def test_can_govern_domain_module_id_with_registry() -> None:
 def test_can_govern_domain_module_id_wrong_domain() -> None:
     """DA governing education modules cannot access agriculture."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": ["domain/edu/algebra-level-1/v1"],
     }
     reg = MagicMock()
@@ -102,7 +102,7 @@ def test_can_govern_domain_module_id_wrong_domain() -> None:
 def test_can_govern_domain_without_registry_module_id_fails() -> None:
     """Without registry, module IDs don't match domain names."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": ["domain/edu/algebra-level-1/v1"],
     }
     # No registry — "education" not literally in governed_modules
@@ -113,9 +113,9 @@ def test_can_govern_domain_without_registry_module_id_fails() -> None:
 def test_can_govern_domain_via_domain_roles_direct() -> None:
     """DA with domain_roles key matching domain_id passes without registry."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": [],
-        "domain_roles": {"education": "domain_authority"},
+        "domain_roles": {"education": "admin"},
     }
     assert can_govern_domain(user, "education") is True
     assert can_govern_domain(user, "agriculture") is False
@@ -125,7 +125,7 @@ def test_can_govern_domain_via_domain_roles_direct() -> None:
 def test_can_govern_domain_via_domain_roles_with_registry() -> None:
     """DA with module-level domain_roles keys passes via registry lookup."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": [],
         "domain_roles": {"domain/edu/algebra-level-1/v1": "teacher"},
     }
@@ -142,7 +142,7 @@ def test_can_govern_domain_empty_governed_and_roles() -> None:
     promoted without explicit scope should still be able to govern any domain.
     """
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": [],
         "domain_roles": {},
     }
@@ -153,14 +153,14 @@ def test_can_govern_domain_empty_governed_and_roles() -> None:
 @pytest.mark.unit
 def test_can_govern_domain_unrestricted_da_no_registry() -> None:
     """Unrestricted DA (empty governed + empty domain_roles) passes even without registry."""
-    user = {"role": "domain_authority", "governed_modules": [], "domain_roles": {}}
+    user = {"role": "admin", "governed_modules": [], "domain_roles": {}}
     assert can_govern_domain(user, "anything") is True
 
 
 @pytest.mark.unit
 def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
     """DA with no governed_modules/domain_roles keys at all passes (unrestricted)."""
-    user = {"role": "domain_authority"}
+    user = {"role": "admin"}
     assert can_govern_domain(user, "education") is True
 
 
@@ -168,7 +168,7 @@ def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
 def test_can_govern_domain_scoped_da_wrong_domain() -> None:
     """DA with specific governed_modules cannot access other domains."""
     user = {
-        "role": "domain_authority",
+        "role": "admin",
         "governed_modules": ["agriculture"],
         "domain_roles": {},
     }
@@ -334,7 +334,7 @@ def test_da_list_users_cross_domain_rejected(monkeypatch) -> None:
     try:
         with pytest.raises(HTTPException) as exc_info:
             asyncio.run(_execute_admin_operation(
-                {"sub": "da-edu", "role": "domain_authority",
+                {"sub": "da-edu", "role": "admin",
                  "governed_modules": ["domain/edu/algebra-level-1/v1"]},
                 {"operation": "list_users", "target": "",
                  "params": {"domain_id": "agriculture"}},
@@ -360,7 +360,7 @@ def test_da_list_users_own_domain_allowed(monkeypatch) -> None:
     orig_p, orig_r = _setup_admin_config(monkeypatch, users, registry=reg)
     try:
         result = asyncio.run(_execute_admin_operation(
-            {"sub": "da-edu", "role": "domain_authority",
+            {"sub": "da-edu", "role": "admin",
              "governed_modules": ["domain/edu/algebra-level-1/v1"]},
             {"operation": "list_users", "target": "",
              "params": {"domain_id": "education"}},
@@ -385,7 +385,7 @@ def test_da_list_users_module_cross_domain_rejected(monkeypatch) -> None:
     try:
         with pytest.raises(HTTPException) as exc_info:
             asyncio.run(_execute_admin_operation(
-                {"sub": "da-edu", "role": "domain_authority",
+                {"sub": "da-edu", "role": "admin",
                  "governed_modules": ["domain/edu/algebra-level-1/v1"]},
                 {"operation": "list_users", "target": "",
                  "params": {"module_id": "domain/agri/operations-level-1/v1"}},
@@ -410,7 +410,7 @@ def test_da_list_escalations_cross_domain_rejected(monkeypatch) -> None:
     try:
         with pytest.raises(HTTPException) as exc_info:
             asyncio.run(_execute_admin_operation(
-                {"sub": "da-edu", "role": "domain_authority",
+                {"sub": "da-edu", "role": "admin",
                  "governed_modules": ["domain/edu/algebra-level-1/v1"]},
                 {"operation": "list_escalations", "target": "",
                  "params": {"domain_id": "agriculture"}},

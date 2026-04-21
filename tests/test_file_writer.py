@@ -42,7 +42,7 @@ class TestDeepMerge:
 _PHYSICS_PAYLOAD: dict[str, Any] = {
     "id": "domain/test/demo/v1",
     "version": "1.0.0",
-    "domain_authority": {"name": "Test DA", "role": "domain_authority", "pseudonymous_id": "da-001"},
+    "admin": {"name": "Test DA", "role": "admin", "pseudonymous_id": "da-001"},
     "invariants": [],
     "standing_orders": [],
     "escalation_triggers": [],

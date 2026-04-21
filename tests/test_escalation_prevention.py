@@ -86,7 +86,7 @@ def _make_user_token(user_id: str = "user-001", role: str = "user") -> str:
 def _make_domain_token(user_id: str = "da-001", governed: list[str] | None = None) -> str:
     return create_scoped_jwt(
         user_id=user_id,
-        role="domain_authority",
+        role="admin",
         governed_modules=governed or ["education"],
     )
 
@@ -327,7 +327,7 @@ class TestHolodeckRoleGate:
 
     def test_qa_cannot_use_holodeck(self, client: TestClient) -> None:
         _register_root(client)
-        qa_token = _make_user_token(user_id="qa-1", role="qa")
+        qa_token = _make_user_token(user_id="qa-1", role="operator")
         resp = client.post(
             "/api/chat",
             json={"message": "test", "holodeck": True},
@@ -337,7 +337,7 @@ class TestHolodeckRoleGate:
 
     def test_auditor_cannot_use_holodeck(self, client: TestClient) -> None:
         _register_root(client)
-        auditor_token = _make_user_token(user_id="aud-1", role="auditor")
+        auditor_token = _make_user_token(user_id="aud-1", role="half_operator")
         resp = client.post(
             "/api/chat",
             json={"message": "test", "holodeck": True},

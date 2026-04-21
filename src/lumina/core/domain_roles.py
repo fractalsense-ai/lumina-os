@@ -1,13 +1,13 @@
 """Domain Roles core helper.
 
 Provides:
-- ``get_default_role_defs()`` — load the built-in tier defaults from domain-packs/system/cfg
+- ``get_default_role_defs()`` — load the built-in tier defaults from standards/
 - ``get_domain_role_def()`` — look up a specific role definition by role_id
 - ``check_scoped_capability()`` — verify whether a user's domain role grants
   a specific capability within a module
 
 The default tier hierarchy (Supervisor → Employee → User Member → Guest) is
-defined in ``domain-packs/system/cfg/domain-role-defaults.yaml`` and can be overridden by
+defined in ``standards/framework-tier-defaults.yaml`` and can be overridden by
 domain packs via their ``domain_roles`` block in domain-physics.
 """
 
@@ -23,7 +23,7 @@ from lumina.core.yaml_loader import load_yaml
 # ─────────────────────────────────────────────────────────────
 
 _SRC_ROOT = Path(__file__).resolve().parents[3]  # project-lumina/
-_DEFAULTS_PATH = _SRC_ROOT / "domain-packs" / "system" / "cfg" / "domain-role-defaults.yaml"
+_DEFAULTS_PATH = _SRC_ROOT / "standards" / "framework-tier-defaults.yaml"
 
 _cached_defaults: list[dict[str, Any]] | None = None
 
@@ -33,7 +33,7 @@ def get_default_role_defs(*, reload: bool = False) -> list[dict[str, Any]]:
     global _cached_defaults
     if _cached_defaults is None or reload:
         data = load_yaml(str(_DEFAULTS_PATH))
-        _cached_defaults = data.get("domain_role_defaults") or []
+        _cached_defaults = data.get("framework_tier_defaults") or []
     return list(_cached_defaults)
 
 

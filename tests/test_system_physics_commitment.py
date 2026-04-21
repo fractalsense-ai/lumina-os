@@ -206,7 +206,7 @@ def _minimal_domain() -> dict[str, Any]:
         "invariants": [],
         "standing_orders": [],
         "escalation_triggers": [],
-        "domain_authority": {"pseudonymous_id": "test-actor"},
+        "admin": {"pseudonymous_id": "test-actor"},
     }
 
 

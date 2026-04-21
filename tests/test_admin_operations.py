@@ -105,7 +105,7 @@ def test_build_trace_event_with_evidence_summary() -> None:
 def test_build_commitment_record_minimal() -> None:
     rec = build_commitment_record(
         actor_id="actor-001",
-        actor_role="domain_authority",
+        actor_role="admin",
         commitment_type="domain_pack_activation",
         subject_id="education/algebra-v1",
         summary="Activated algebra module",
@@ -126,7 +126,7 @@ def test_build_commitment_record_all_optional_fields() -> None:
     """All optional fields are included when provided."""
     rec = build_commitment_record(
         actor_id="actor-001",
-        actor_role="domain_authority",
+        actor_role="admin",
         commitment_type="domain_pack_rollback",
         subject_id="education/algebra-v1",
         summary="Rolled back due to defect",
@@ -152,7 +152,7 @@ def test_build_commitment_record_subject_version_only() -> None:
     """subject_version alone (without subject_hash) is included."""
     rec = build_commitment_record(
         actor_id="actor-001",
-        actor_role="domain_authority",
+        actor_role="admin",
         commitment_type="domain_pack_activation",
         subject_id="edu/alg",
         summary="Activated",
@@ -167,7 +167,7 @@ def test_build_commitment_record_subject_hash_only() -> None:
     """subject_hash alone (without subject_version) is included."""
     rec = build_commitment_record(
         actor_id="actor-001",
-        actor_role="domain_authority",
+        actor_role="admin",
         commitment_type="domain_pack_activation",
         subject_id="edu/alg",
         summary="Activated",
@@ -187,7 +187,7 @@ def test_can_govern_domain_root_bypasses_check() -> None:
 
 @pytest.mark.unit
 def test_can_govern_domain_authority_match() -> None:
-    user = {"role": "domain_authority", "governed_modules": ["education", "agriculture"]}
+    user = {"role": "admin", "governed_modules": ["education", "agriculture"]}
     assert can_govern_domain(user, "education") is True
     assert can_govern_domain(user, "other") is False
 
@@ -200,7 +200,7 @@ def test_can_govern_domain_non_authority_role() -> None:
 @pytest.mark.unit
 def test_can_govern_domain_unrestricted_da() -> None:
     """DA with empty governed_modules and no domain_roles has unrestricted access."""
-    user = {"role": "domain_authority", "governed_modules": [], "domain_roles": {}}
+    user = {"role": "admin", "governed_modules": [], "domain_roles": {}}
     assert can_govern_domain(user, "education") is True
     assert can_govern_domain(user, "agriculture") is True
 
@@ -208,7 +208,7 @@ def test_can_govern_domain_unrestricted_da() -> None:
 @pytest.mark.unit
 def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
     """DA with neither governed_modules nor domain_roles keys is unrestricted."""
-    user = {"role": "domain_authority"}
+    user = {"role": "admin"}
     assert can_govern_domain(user, "any-domain") is True
 
 
@@ -218,10 +218,10 @@ def test_can_govern_domain_unrestricted_da_missing_keys() -> None:
 @pytest.mark.unit
 def test_map_role_to_actor_role_known_roles() -> None:
     assert map_role_to_actor_role("root") == "administration"
-    assert map_role_to_actor_role("domain_authority") == "domain_authority"
-    assert map_role_to_actor_role("it_support") == "administration"
-    assert map_role_to_actor_role("qa") == "administration"
-    assert map_role_to_actor_role("auditor") == "administration"
+    assert map_role_to_actor_role("admin") == "domain_authority"
+    assert map_role_to_actor_role("super_admin") == "administration"
+    assert map_role_to_actor_role("operator") == "administration"
+    assert map_role_to_actor_role("half_operator") == "administration"
     assert map_role_to_actor_role("user") == "system"
 
 

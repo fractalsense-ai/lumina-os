@@ -192,7 +192,7 @@ class TestDomainPhysics:
     def test_domain_physics_has_required_fields(self):
         path = _PACK_ROOT / "modules" / "example-module" / "domain-physics.json"
         physics = _load_json(path)
-        required = ["id", "version", "domain_authority", "meta_authority_id",
+        required = ["id", "version", "admin", "meta_authority_id",
                      "invariants", "standing_orders", "escalation_triggers", "artifacts"]
         for field in required:
             assert field in physics, f"Missing required field: {field}"

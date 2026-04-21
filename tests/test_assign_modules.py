@@ -135,7 +135,7 @@ def _teacher_user(sub: str = "teacher1") -> dict[str, Any]:
 def _da_user(sub: str = "da1") -> dict[str, Any]:
     return {
         "sub": sub,
-        "role": "domain_authority",
+        "role": "admin",
         "domain_roles": {},
         "governed_modules": ["domain/edu/general-education/v1"],
     }

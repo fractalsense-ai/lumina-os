@@ -18,7 +18,7 @@ from lumina.auth import auth
 from lumina.auth.auth import (
     ADMIN_JWT_ISSUER,
     ADMIN_ROLES,
-    DOMAIN_AUTHORITY_ROLES,
+    DOMAIN_ADMIN_ROLES,
     DOMAIN_JWT_ISSUER,
     USER_JWT_ISSUER,
     USER_ROLES,
@@ -54,14 +54,14 @@ class TestCreateScopedJwt:
         assert payload["token_scope"] == "admin"
         assert payload["iss"] == ADMIN_JWT_ISSUER
 
-    def test_domain_authority_gets_domain_scope(self):
-        token = create_scoped_jwt(user_id="u2", role="domain_authority")
+    def test_domain_admin_gets_domain_scope(self):
+        token = create_scoped_jwt(user_id="u2", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
         assert payload["iss"] == DOMAIN_JWT_ISSUER
 
-    def test_it_support_gets_admin_scope(self):
-        token = create_scoped_jwt(user_id="u3", role="it_support")
+    def test_super_admin_gets_admin_scope(self):
+        token = create_scoped_jwt(user_id="u3", role="super_admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "admin"
 
@@ -71,13 +71,13 @@ class TestCreateScopedJwt:
         assert payload["token_scope"] == "user"
         assert payload["iss"] == USER_JWT_ISSUER
 
-    def test_qa_gets_user_scope(self):
-        token = create_scoped_jwt(user_id="u5", role="qa")
+    def test_operator_gets_user_scope(self):
+        token = create_scoped_jwt(user_id="u5", role="operator")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "user"
 
-    def test_auditor_gets_user_scope(self):
-        token = create_scoped_jwt(user_id="u6", role="auditor")
+    def test_half_operator_gets_user_scope(self):
+        token = create_scoped_jwt(user_id="u6", role="half_operator")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "user"
 
@@ -103,7 +103,7 @@ class TestCreateScopedJwt:
             assert payload["token_scope"] == "user"
 
     def test_governed_modules_persisted(self):
-        token = create_scoped_jwt(user_id="u", role="domain_authority", governed_modules=["m1"])
+        token = create_scoped_jwt(user_id="u", role="admin", governed_modules=["m1"])
         payload = verify_scoped_jwt(token)
         assert payload["governed_modules"] == ["m1"]
 
@@ -221,7 +221,7 @@ class TestSecretFallback:
 
     def test_no_domain_secret_falls_back_to_jwt_secret(self, monkeypatch):
         monkeypatch.setattr(auth, "DOMAIN_JWT_SECRET", "")
-        token = create_scoped_jwt(user_id="u", role="domain_authority")
+        token = create_scoped_jwt(user_id="u", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
 
@@ -307,17 +307,17 @@ class TestRoleConstants:
 
     def test_domain_roles_are_subset_of_valid_roles(self):
         from lumina.auth.auth import VALID_ROLES
-        assert DOMAIN_AUTHORITY_ROLES <= VALID_ROLES
+        assert DOMAIN_ADMIN_ROLES <= VALID_ROLES
 
     def test_admin_and_user_roles_are_disjoint(self):
         assert ADMIN_ROLES & USER_ROLES == frozenset()
 
     def test_admin_and_domain_roles_are_disjoint(self):
-        assert ADMIN_ROLES & DOMAIN_AUTHORITY_ROLES == frozenset()
+        assert ADMIN_ROLES & DOMAIN_ADMIN_ROLES == frozenset()
 
     def test_user_and_domain_roles_are_disjoint(self):
-        assert USER_ROLES & DOMAIN_AUTHORITY_ROLES == frozenset()
+        assert USER_ROLES & DOMAIN_ADMIN_ROLES == frozenset()
 
     def test_all_three_tracks_cover_all_roles(self):
         from lumina.auth.auth import VALID_ROLES
-        assert ADMIN_ROLES | DOMAIN_AUTHORITY_ROLES | USER_ROLES == VALID_ROLES
+        assert ADMIN_ROLES | DOMAIN_ADMIN_ROLES | USER_ROLES == VALID_ROLES

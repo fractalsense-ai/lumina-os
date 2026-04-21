@@ -369,7 +369,7 @@ class TestPhysicsInterpretation:
                 "escalation_triggers": [{
                     "id": "et1",
                     "condition": "attempts_exhausted",
-                    "target_role": "domain_authority",
+                    "target_role": "admin",
                 }],
             },
         )
@@ -378,7 +378,7 @@ class TestPhysicsInterpretation:
         triggers = user_payload["domain_physics"]["escalation_triggers"]
         assert len(triggers) == 1
         assert triggers[0]["id"] == "et1"
-        assert triggers[0]["target_role"] == "domain_authority"
+        assert triggers[0]["target_role"] == "admin"
 
     @pytest.mark.unit
     @patch("lumina.core.slm.call_slm")

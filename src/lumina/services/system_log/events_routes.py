@@ -61,7 +61,7 @@ async def get_sse_token(
 
     # Governance roles always allowed; domain-role holders (e.g. teachers)
     # are allowed so they can receive real-time escalation events.
-    _governance_roles = {"root", "domain_authority", "auditor", "it_support", "qa"}
+    _governance_roles = {"root", "admin", "half_operator", "super_admin", "operator"}
     if user_data.get("role") not in _governance_roles:
         if not (user_data.get("domain_roles") or {}):
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -126,9 +126,9 @@ def _event_visible_to_user(event: LogEvent, user: dict[str, Any]) -> bool:
     if role == "root":
         return True
 
-    # domain_authority only sees events for governed domains.
+    # admin only sees events for governed domains.
     governed = set(user.get("governed_modules") or [])
-    if role == "domain_authority":
+    if role == "admin":
         event_domain = event.data.get("domain_id", "")
         if event_domain and event_domain not in governed:
             record = event.record or {}
@@ -137,8 +137,8 @@ def _event_visible_to_user(event: LogEvent, user: dict[str, Any]) -> bool:
                 return False
         return True
 
-    # Auditors and IT support see warnings/errors/critical only.
-    if role in ("auditor", "it_support", "qa"):
+    # half_operator and super_admin see warnings/errors/critical only.
+    if role in ("half_operator", "super_admin", "operator"):
         return event.level in (
             LogLevel.WARNING,
             LogLevel.ERROR,

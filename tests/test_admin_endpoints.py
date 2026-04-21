@@ -96,11 +96,11 @@ class TestUpdateUser:
         user = _register_user(client, "bob")
         resp = client.patch(
             f"/api/auth/users/{user['user_id']}",
-            json={"role": "qa"},
+            json={"role": "operator"},
             headers=_auth_header(root_token),
         )
         assert resp.status_code == 200
-        assert resp.json()["role"] == "qa"
+        assert resp.json()["role"] == "operator"
 
     def test_non_root_cannot_update_user(self, client: TestClient) -> None:
         _register_root(client)
@@ -120,7 +120,7 @@ class TestUpdateUser:
         root_token = _register_root(client)
         resp = client.patch(
             "/api/auth/users/nonexistent-id",
-            json={"role": "qa"},
+            json={"role": "operator"},
             headers=_auth_header(root_token),
         )
         assert resp.status_code == 404
@@ -458,7 +458,7 @@ class TestAuditLogScoping:
         # Promote to domain_authority with NO governed_modules
         client.patch(
             f"/api/auth/users/{user['user_id']}",
-            json={"role": "domain_authority"},
+            json={"role": "admin"},
             headers=_auth_header(root_token),
         )
         da_token = client.post(

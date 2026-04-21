@@ -96,11 +96,11 @@ class TestDomainInfoProfileAware:
             "domain_physics_path": "dp/default.json",
             "ui_manifest": {
                 "system_role_to_domain_role": {
-                    "root": "domain_authority",
-                    "domain_authority": "domain_authority",
-                    "it_support": "teacher",
-                    "qa": "student",
-                    "auditor": "student",
+                    "root": "admin",
+                    "admin": "admin",
+                    "super_admin": "teacher",
+                    "operator": "student",
+                    "half_operator": "student",
                     "user": "student",
                 },
             },
@@ -326,7 +326,7 @@ class TestRosterGrantsDomainRoles:
         }
         teacher_profile = {
             "educator_state": {"assigned_students": [], "receive_escalations": True},
-            "domain_roles": {"domain/edu/pre-algebra/v1": "domain_authority"},
+            "domain_roles": {"domain/edu/pre-algebra/v1": "admin"},
         }
         ctx, profiles = _make_roster_ctx(student_profile, teacher_profile)
         user_data = {"sub": "teacher1", "role": "user"}
@@ -339,7 +339,7 @@ class TestRosterGrantsDomainRoles:
         )
 
         # Should NOT overwrite the existing domain_authority role
-        assert profiles["teacher1"]["domain_roles"]["domain/edu/pre-algebra/v1"] == "domain_authority"
+        assert profiles["teacher1"]["domain_roles"]["domain/edu/pre-algebra/v1"] == "admin"
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -58,7 +58,7 @@ async def create_staged_file(
 ):
     """Stage a new file for review."""
     user_data = require_auth(user)
-    require_role(user_data, "root", "domain_authority")
+    require_role(user_data, "root", "admin")
 
     svc = _get_service()
     try:
@@ -66,7 +66,7 @@ async def create_staged_file(
             payload=body.payload,
             template_id=body.template_id,
             actor_id=user_data.get("sub", "unknown"),
-            actor_role=user_data.get("role", "domain_authority"),
+            actor_role=user_data.get("role", "admin"),
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
@@ -86,7 +86,7 @@ async def list_pending(
 ):
     """List all staged files (pending, approved, rejected)."""
     user_data = require_auth(user)
-    require_role(user_data, "root", "domain_authority", "qa")
+    require_role(user_data, "root", "admin", "operator")
 
     svc = _get_service()
 
@@ -110,7 +110,7 @@ async def get_staged_file(
 ):
     """Retrieve a single staged file envelope."""
     user_data = require_auth(user)
-    require_role(user_data, "root", "domain_authority", "qa")
+    require_role(user_data, "root", "admin", "operator")
 
     svc = _get_service()
     envelope = svc.get_staged(staged_id)
@@ -130,14 +130,14 @@ async def approve_staged_file(
 ):
     """Approve a staged file — writes to final destination."""
     user_data = require_auth(user)
-    require_role(user_data, "root", "domain_authority")
+    require_role(user_data, "root", "admin")
 
     svc = _get_service()
     try:
         final_path = svc.approve_staged(
             staged_id=staged_id,
             approver_id=user_data.get("sub", "unknown"),
-            approver_role=user_data.get("role", "domain_authority"),
+            approver_role=user_data.get("role", "admin"),
             target_overrides=body.target_overrides,
         )
     except ValueError as exc:
@@ -160,14 +160,14 @@ async def reject_staged_file(
 ):
     """Reject a staged file."""
     user_data = require_auth(user)
-    require_role(user_data, "root", "domain_authority")
+    require_role(user_data, "root", "admin")
 
     svc = _get_service()
     try:
         svc.reject_staged(
             staged_id=staged_id,
             approver_id=user_data.get("sub", "unknown"),
-            approver_role=user_data.get("role", "domain_authority"),
+            approver_role=user_data.get("role", "admin"),
             reason=body.reason,
         )
     except ValueError as exc:

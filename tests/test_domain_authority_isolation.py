@@ -17,7 +17,7 @@ from lumina.auth import auth
 from lumina.auth.auth import (
     ADMIN_JWT_ISSUER,
     ADMIN_ROLES,
-    DOMAIN_AUTHORITY_ROLES,
+    DOMAIN_ADMIN_ROLES,
     DOMAIN_JWT_ISSUER,
     USER_JWT_ISSUER,
     USER_ROLES,
@@ -46,28 +46,28 @@ def _configure_secrets(monkeypatch):
 
 class TestDomainAuthorityTokenScope:
     def test_da_gets_domain_scope(self):
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        token = create_scoped_jwt(user_id="da1", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
 
     def test_da_gets_domain_issuer(self):
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        token = create_scoped_jwt(user_id="da1", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["iss"] == DOMAIN_JWT_ISSUER
 
     def test_da_not_in_admin_roles(self):
-        assert "domain_authority" not in ADMIN_ROLES
+        assert "admin" not in ADMIN_ROLES
 
     def test_da_not_in_user_roles(self):
-        assert "domain_authority" not in USER_ROLES
+        assert "admin" not in USER_ROLES
 
-    def test_da_in_domain_authority_roles(self):
-        assert "domain_authority" in DOMAIN_AUTHORITY_ROLES
+    def test_da_in_domain_admin_roles(self):
+        assert "admin" in DOMAIN_ADMIN_ROLES
 
     def test_da_governed_modules_in_token(self):
         modules = ["domain/edu/algebra/v1", "domain/edu/geometry/v1"]
         token = create_scoped_jwt(
-            user_id="da1", role="domain_authority", governed_modules=modules,
+            user_id="da1", role="admin", governed_modules=modules,
         )
         payload = verify_scoped_jwt(token)
         assert payload["governed_modules"] == modules
@@ -78,12 +78,12 @@ class TestDomainAuthorityTokenScope:
 
 class TestCrossTrackRejection:
     def test_da_token_rejected_by_admin_scope(self):
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        token = create_scoped_jwt(user_id="da1", role="admin")
         with pytest.raises(TokenInvalidError, match="scope mismatch"):
             verify_scoped_jwt(token, required_scope="admin")
 
     def test_da_token_rejected_by_user_scope(self):
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        token = create_scoped_jwt(user_id="da1", role="admin")
         with pytest.raises(TokenInvalidError, match="scope mismatch"):
             verify_scoped_jwt(token, required_scope="user")
 
@@ -97,8 +97,8 @@ class TestCrossTrackRejection:
         with pytest.raises(TokenInvalidError, match="scope mismatch"):
             verify_scoped_jwt(token, required_scope="domain")
 
-    def test_it_support_token_rejected_by_domain_scope(self):
-        token = create_scoped_jwt(user_id="it1", role="it_support")
+    def test_super_admin_token_rejected_by_domain_scope(self):
+        token = create_scoped_jwt(user_id="it1", role="super_admin")
         with pytest.raises(TokenInvalidError, match="scope mismatch"):
             verify_scoped_jwt(token, required_scope="domain")
 
@@ -108,22 +108,22 @@ class TestCrossTrackRejection:
 
 class TestSigningSecretIsolation:
     def test_da_token_signed_with_domain_secret(self, monkeypatch):
-        """DA token cannot be verified after domain secret changes."""
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        """admin token cannot be verified after domain secret changes."""
+        token = create_scoped_jwt(user_id="da1", role="admin")
         monkeypatch.setattr(auth, "DOMAIN_JWT_SECRET", "rotated-domain-secret")
         with pytest.raises(TokenInvalidError, match="Signature"):
             verify_scoped_jwt(token)
 
     def test_da_token_unaffected_by_admin_secret_rotation(self, monkeypatch):
-        """Rotating admin secret does not break existing DA tokens."""
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        """Rotating admin secret does not break existing admin tokens."""
+        token = create_scoped_jwt(user_id="da1", role="admin")
         monkeypatch.setattr(auth, "ADMIN_JWT_SECRET", "rotated-admin-secret")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
 
     def test_da_token_unaffected_by_user_secret_rotation(self, monkeypatch):
-        """Rotating user secret does not break existing DA tokens."""
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        """Rotating user secret does not break existing admin tokens."""
+        token = create_scoped_jwt(user_id="da1", role="admin")
         monkeypatch.setattr(auth, "USER_JWT_SECRET", "rotated-user-secret")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
@@ -131,7 +131,7 @@ class TestSigningSecretIsolation:
     def test_domain_secret_fallback_to_legacy(self, monkeypatch):
         """If DOMAIN_JWT_SECRET is empty, falls back to JWT_SECRET."""
         monkeypatch.setattr(auth, "DOMAIN_JWT_SECRET", "")
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        token = create_scoped_jwt(user_id="da1", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
 
@@ -148,7 +148,7 @@ class TestGovernedModulesBoundary:
     def test_da_allowed_inside_governed_module(self):
         result = check_permission(
             user_id="da1",
-            user_role="domain_authority",
+            user_role="admin",
             module_permissions=self._make_perms(),
             operation=Operation.READ,
             governed_modules=["domain/edu/algebra/v1"],
@@ -159,7 +159,7 @@ class TestGovernedModulesBoundary:
     def test_da_denied_outside_governed_module(self):
         result = check_permission(
             user_id="da1",
-            user_role="domain_authority",
+            user_role="admin",
             module_permissions=self._make_perms(),
             operation=Operation.READ,
             governed_modules=["domain/edu/algebra/v1"],
@@ -170,7 +170,7 @@ class TestGovernedModulesBoundary:
     def test_da_denied_when_governed_modules_empty(self):
         result = check_permission(
             user_id="da1",
-            user_role="domain_authority",
+            user_role="admin",
             module_permissions=self._make_perms(),
             operation=Operation.READ,
             governed_modules=[],
@@ -195,13 +195,13 @@ class TestGovernedModulesBoundary:
         for mod in modules:
             result = check_permission(
                 user_id="da1",
-                user_role="domain_authority",
+                user_role="admin",
                 module_permissions=self._make_perms(),
                 operation=Operation.READ,
                 governed_modules=modules,
                 module_id=mod,
             )
-            assert result is True, f"DA should have access to governed module {mod}"
+            assert result is True, f"admin should have access to governed module {mod}"
 
 
 # ── No escalation path ───────────────────────────────────────
@@ -209,8 +209,8 @@ class TestGovernedModulesBoundary:
 
 class TestNoEscalationPath:
     def test_da_cannot_mint_admin_token(self):
-        """create_scoped_jwt always routes DA to domain scope."""
-        token = create_scoped_jwt(user_id="da1", role="domain_authority")
+        """create_scoped_jwt always routes admin to domain scope."""
+        token = create_scoped_jwt(user_id="da1", role="admin")
         payload = verify_scoped_jwt(token)
         assert payload["token_scope"] == "domain"
         assert payload["iss"] == DOMAIN_JWT_ISSUER
@@ -220,7 +220,7 @@ class TestNoEscalationPath:
 
     def test_all_three_tracks_use_different_issuers(self):
         admin_token = create_scoped_jwt(user_id="u", role="root")
-        domain_token = create_scoped_jwt(user_id="u", role="domain_authority")
+        domain_token = create_scoped_jwt(user_id="u", role="admin")
         user_token = create_scoped_jwt(user_id="u", role="user")
 
         admin_p = verify_scoped_jwt(admin_token)
@@ -233,7 +233,7 @@ class TestNoEscalationPath:
 
     def test_all_three_tracks_use_different_scopes(self):
         admin_token = create_scoped_jwt(user_id="u", role="root")
-        domain_token = create_scoped_jwt(user_id="u", role="domain_authority")
+        domain_token = create_scoped_jwt(user_id="u", role="admin")
         user_token = create_scoped_jwt(user_id="u", role="user")
 
         scopes = {

@@ -98,7 +98,7 @@ def test_sse_token_issued_for_root(client: TestClient, api_module) -> None:
 def test_sse_token_issued_for_domain_authority(client: TestClient, api_module) -> None:
     """Domain authority can obtain an SSE token."""
     _register_root(client)
-    da_token = _register_user(client, username="da_user", role="domain_authority")
+    da_token = _register_user(client, username="da_user", role="admin")
     resp = client.get("/api/events/token", headers=_auth_header(da_token))
     assert resp.status_code == 200
     assert "token" in resp.json()
@@ -108,7 +108,7 @@ def test_sse_token_issued_for_domain_authority(client: TestClient, api_module) -
 def test_sse_token_issued_for_auditor(client: TestClient, api_module) -> None:
     """Auditor can obtain an SSE token."""
     _register_root(client)
-    aud_token = _register_user(client, username="auditor_user", role="auditor")
+    aud_token = _register_user(client, username="auditor_user", role="half_operator")
     resp = client.get("/api/events/token", headers=_auth_header(aud_token))
     assert resp.status_code == 200
     assert "token" in resp.json()

@@ -242,8 +242,8 @@ class DomainRegistry:
         if role in self._role_defaults:
             return self._role_defaults[role]
 
-        # Step 3 — domain_authority: infer from governed_modules
-        if role == "domain_authority":
+        # Step 3 — admin: infer from governed_modules
+        if role == "admin":
             governed: list[str] = user.get("governed_modules") or []
             if governed:
                 # Module paths are shaped like "domain/<prefix>/…".

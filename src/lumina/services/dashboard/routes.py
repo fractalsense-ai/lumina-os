@@ -25,12 +25,12 @@ async def dashboard_domains(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
-        raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
+    if user_data["role"] not in ("root", "admin"):
+        raise HTTPException(status_code=403, detail="Dashboard requires admin or root role")
 
     all_domains = _cfg.DOMAIN_REGISTRY.list_domains()
 
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         governed = set(user_data.get("governed_modules") or [])
         all_domains = [d for d in all_domains if d.get("domain_id") in governed]
 
@@ -69,8 +69,8 @@ async def dashboard_telemetry(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
-        raise HTTPException(status_code=403, detail="Dashboard requires DA or root role")
+    if user_data["role"] not in ("root", "admin"):
+        raise HTTPException(status_code=403, detail="Dashboard requires admin or root role")
 
     records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records, domain_id=domain_id)
 

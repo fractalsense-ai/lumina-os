@@ -18,7 +18,7 @@ from lumina.staging.staging_service import StagedFile, StagingService
 _PHYSICS_PAYLOAD: dict[str, Any] = {
     "id": "domain/test/demo/v1",
     "version": "1.0.0",
-    "domain_authority": {"name": "Test", "role": "domain_authority", "pseudonymous_id": "da-1"},
+    "admin": {"name": "Test", "role": "admin", "pseudonymous_id": "da-1"},
     "meta_authority_id": "ma-1",
     "invariants": [],
     "standing_orders": [],

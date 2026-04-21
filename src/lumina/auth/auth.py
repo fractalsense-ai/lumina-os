@@ -30,8 +30,8 @@ JWT_TTL_MINUTES: int = int(os.environ.get("LUMINA_JWT_TTL_MINUTES", "60"))
 JWT_ISSUER: str = "lumina"
 
 # ── Parallel authority tracks ──────────────────────────────────
-# Three separate signing secrets and issuers for system (root, it_support),
-# domain (domain_authority), and user (user, qa, auditor, guest) tracks.
+# Three separate signing secrets and issuers for system (root, super_admin),
+# domain (admin), and user (user, operator, half_operator, guest) tracks.
 # See docs/7-concepts/parallel-authority-tracks.md for the design.
 # When a scoped env var is unset, that track falls back to JWT_SECRET.
 
@@ -44,11 +44,11 @@ DOMAIN_JWT_ISSUER: str = "lumina-domain"
 USER_JWT_ISSUER: str = "lumina-user"
 
 # Roles on the system (admin) track — signed with ADMIN_JWT_SECRET.
-ADMIN_ROLES: frozenset[str] = frozenset({"root", "it_support"})
+ADMIN_ROLES: frozenset[str] = frozenset({"root", "super_admin"})
 # Roles on the domain track — signed with DOMAIN_JWT_SECRET.
-DOMAIN_AUTHORITY_ROLES: frozenset[str] = frozenset({"domain_authority"})
+DOMAIN_ADMIN_ROLES: frozenset[str] = frozenset({"admin"})
 # Roles on the user track — signed with USER_JWT_SECRET.
-USER_ROLES: frozenset[str] = frozenset({"user", "qa", "auditor", "guest"})
+USER_ROLES: frozenset[str] = frozenset({"operator", "half_operator", "user", "guest"})
 
 # Password hashing — supported values: "argon2id", "bcrypt", "sha256"
 PASSWORD_HASH_ALGORITHM: str = os.environ.get(
@@ -62,7 +62,7 @@ TRANSCRIPT_HMAC_SECRET: str = os.environ.get("LUMINA_TRANSCRIPT_HMAC_SECRET", ""
 
 # Valid Lumina roles (see docs/5-standards/rbac-spec.md)
 VALID_ROLES: frozenset[str] = frozenset(
-    {"root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"}
+    {"root", "super_admin", "admin", "operator", "half_operator", "user", "guest"}
 )
 
 # In-memory set of revoked token JTIs.  Cleared on server restart
@@ -284,7 +284,7 @@ def create_jwt(
     role:
         One of the six canonical role IDs.
     governed_modules:
-        Module IDs this user governs (only meaningful for ``domain_authority``).
+        Module IDs this user governs (only meaningful for ``admin``).
     domain_roles:
         Mapping of domain module IDs to domain-scoped role IDs
         (e.g. ``{"domain/edu/algebra-level-1/v1": "teaching_assistant"}``).
@@ -409,7 +409,7 @@ def _scope_for_role(role: str) -> str:
     """Return the token scope for a given role."""
     if role in ADMIN_ROLES:
         return "admin"
-    if role in DOMAIN_AUTHORITY_ROLES:
+    if role in DOMAIN_ADMIN_ROLES:
         return "domain"
     return "user"
 
@@ -423,10 +423,10 @@ def create_scoped_jwt(
 ) -> str:
     """Create a JWT with automatic scope based on the role.
 
-    System-track roles (root, it_support) are signed with
+    System-track roles (root, super_admin) are signed with
     ``LUMINA_ADMIN_JWT_SECRET`` and carry ``token_scope: "admin"``.
 
-    Domain-track roles (domain_authority) are signed with
+    Domain-track roles (admin) are signed with
     ``LUMINA_DOMAIN_JWT_SECRET`` and carry ``token_scope: "domain"``.
 
     User-track roles are signed with ``LUMINA_USER_JWT_SECRET`` and carry

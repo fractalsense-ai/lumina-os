@@ -174,7 +174,7 @@ class TestHolodeckSandbox:
     @pytest.mark.integration
     def test_sandbox_domain_authority_succeeds(self, client: TestClient) -> None:
         """domain_authority can simulate physics changes for governed domains."""
-        token = _make_token("domain_authority", governed_modules=["_default"])
+        token = _make_token("admin", governed_modules=["_default"])
         resp = client.post(
             "/api/holodeck/simulate",
             json={

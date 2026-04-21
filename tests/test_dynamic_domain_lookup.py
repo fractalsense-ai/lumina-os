@@ -299,10 +299,10 @@ def test_domain_physics_min_role_for_sensitive_ops() -> None:
     dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     min_role = dp["subsystem_configs"]["governance"]["min_role_policy"]
-    assert min_role["list_users"] == "domain_authority"
-    assert min_role["invite_user"] == "domain_authority"
-    assert min_role["get_domain_physics"] == "domain_authority"
-    assert min_role["list_daemon_tasks"] == "domain_authority"
+    assert min_role["list_users"] == "admin"
+    assert min_role["invite_user"] == "admin"
+    assert min_role["get_domain_physics"] == "admin"
+    assert min_role["list_daemon_tasks"] == "admin"
 
 
 # ── Command interpreter spec references new discovery ops ──────
@@ -610,7 +610,7 @@ def test_governed_modules_kept_for_da() -> None:
         "target": "DAUser",
         "params": {
             "username": "DAUser",
-            "role": "domain_authority",
+            "role": "admin",
             "governed_modules": ["domain/edu/algebra-level-1/v1"],
         },
     }
@@ -638,7 +638,7 @@ def test_governed_modules_null_accepted_for_da() -> None:
         "target": "NewDA",
         "params": {
             "username": "NewDA",
-            "role": "domain_authority",
+            "role": "admin",
         },
     }
 
@@ -792,7 +792,7 @@ def test_check_permission_student_acl_grants_execute() -> None:
         "owner": "da_algebra_lead_001",
         "group": "educators",
         "acl": [
-            {"role": "qa", "access": "rx", "scope": "evaluation_only"},
+            {"role": "operator", "access": "rx", "scope": "evaluation_only"},
             {"domain_role": "student", "access": "x"},
         ],
     }
@@ -930,13 +930,13 @@ def test_domain_authority_always_group_member() -> None:
 
     assert check_permission(
         user_id="some_da",
-        user_role="domain_authority",
+        user_role="admin",
         module_permissions=module_permissions,
         operation=Operation.READ,
     )
     assert check_permission(
         user_id="some_da",
-        user_role="domain_authority",
+        user_role="admin",
         module_permissions=module_permissions,
         operation=Operation.EXECUTE,
     )
@@ -1079,7 +1079,7 @@ def test_dynamic_role_alias_aggregation(registry: DomainRegistry) -> None:
     # All should map to system roles
     for role_id, sys_role in aliases.items():
         assert sys_role in {
-            "root", "domain_authority", "it_support", "qa", "auditor", "user", "guest"
+            "root", "admin", "super_admin", "operator", "half_operator", "user", "guest"
         }, f"{role_id} maps to invalid system role: {sys_role}"
 
 

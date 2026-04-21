@@ -181,7 +181,7 @@ async def ingest_review(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Domain authority required")
 
     svc = _get_ingest_service()
@@ -189,7 +189,7 @@ async def ingest_review(
     if record is None:
         raise HTTPException(status_code=404, detail="Ingestion not found")
 
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         if not can_govern_domain(user_data, record.get("domain_id", "")):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
@@ -221,7 +221,7 @@ async def ingest_commit(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Domain authority required")
 
     svc = _get_ingest_service()
@@ -229,7 +229,7 @@ async def ingest_commit(
     if record is None:
         raise HTTPException(status_code=404, detail="Ingestion not found")
 
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         if not can_govern_domain(user_data, record.get("domain_id", "")):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
@@ -255,7 +255,7 @@ async def list_ingestions(
     svc = _get_ingest_service()
     records = svc.list_records(domain_id=domain_id, status=status, limit=limit, offset=offset)
 
-    if user_data["role"] == "domain_authority":
+    if user_data["role"] == "admin":
         governed = user_data.get("governed_modules") or []
         records = [r for r in records if r.get("domain_id") in governed]
 

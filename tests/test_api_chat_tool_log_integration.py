@@ -55,9 +55,9 @@ def _register_and_login(client: TestClient, username: str, role: str) -> str:
     assert reg.status_code == 200
 
     # Route login to the correct track endpoint
-    if role in ("root", "it_support"):
+    if role in ("root", "super_admin"):
         login_url = "/api/admin/auth/login"
-    elif role == "domain_authority":
+    elif role == "admin":
         login_url = "/api/domain/auth/login"
     else:
         login_url = "/api/auth/login"
@@ -109,7 +109,7 @@ def test_chat_permission_denied_with_token(client: TestClient, api_module) -> No
         "permissions": {
             "mode": "700",
             "owner": "domain_owner_only",
-            "group": "domain_authority",
+            "group": "admin",
         }
     }
 

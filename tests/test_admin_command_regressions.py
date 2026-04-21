@@ -180,7 +180,7 @@ def test_governed_modules_all_expansion(api_module, monkeypatch: pytest.MonkeyPa
         "target": "education",
         "params": {
             "username": "eve",
-            "role": "domain_authority",
+            "role": "admin",
             "governed_modules": "all",
         },
     }
@@ -198,7 +198,7 @@ def test_governed_modules_all_string_coerced_to_list(api_module) -> None:
         "target": "frank",
         "params": {
             "username": "frank",
-            "role": "domain_authority",
+            "role": "admin",
             "governed_modules": "some_module",
         },
     }

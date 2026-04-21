@@ -52,7 +52,7 @@ async def list_default_roles(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority", "it_support", "qa", "auditor"):
+    if user_data["role"] not in ("root", "admin", "super_admin", "operator", "half_operator"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     return get_default_role_defs()
@@ -72,10 +72,10 @@ async def get_module_roles(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority", "it_support", "qa", "auditor"):
+    if user_data["role"] not in ("root", "admin", "super_admin", "operator", "half_operator"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
+    if user_data["role"] == "admin" and not can_govern_domain(user_data, module_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
     try:
@@ -108,10 +108,10 @@ async def assign_domain_role(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
+    if user_data["role"] == "admin" and not can_govern_domain(user_data, module_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
     # Validate that the requested role_id is known for this module
@@ -187,10 +187,10 @@ async def revoke_domain_role(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    if user_data["role"] not in ("root", "domain_authority"):
+    if user_data["role"] not in ("root", "admin"):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    if user_data["role"] == "domain_authority" and not can_govern_domain(user_data, module_id):
+    if user_data["role"] == "admin" and not can_govern_domain(user_data, module_id):
         raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
     target = await run_in_threadpool(_cfg.PERSISTENCE.get_user, user_id)

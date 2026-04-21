@@ -115,7 +115,7 @@ def can_govern_domain(
     *,
     registry: Any | None = None,
 ) -> bool:
-    """Check if a domain_authority user governs a specific domain or module.
+    """Check if an admin-tier user governs a specific domain or module.
 
     Performs a direct membership check first against both ``governed_modules``
     and ``domain_roles`` keys.  When *registry* is supplied and the direct
@@ -131,7 +131,7 @@ def can_govern_domain(
     role = user.get("role", "")
     if role == "root":
         return True
-    if role != "domain_authority":
+    if role != "admin":
         return False
     governed = user.get("governed_modules") or []
     domain_roles = user.get("domain_roles") or {}
@@ -163,10 +163,10 @@ def map_role_to_actor_role(role: str) -> str:
     """Map Lumina RBAC role to System Log actor_role enum value."""
     mapping = {
         "root": "administration",
-        "domain_authority": "domain_authority",
-        "it_support": "administration",
-        "qa": "administration",
-        "auditor": "administration",
+        "admin": "domain_authority",
+        "super_admin": "administration",
+        "operator": "administration",
+        "half_operator": "administration",
         "user": "system",
     }
     return mapping.get(role, "system")

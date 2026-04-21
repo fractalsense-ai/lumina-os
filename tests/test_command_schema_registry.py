@@ -338,13 +338,13 @@ class TestRealSchemaValidation:
 
     def test_update_user_role_valid(self, real_schemas: int):
         approved, violations = validate_command(
-            "update_user_role", {"user_id": "alice", "new_role": "qa"}
+            "update_user_role", {"user_id": "alice", "new_role": "operator"}
         )
         assert approved is True, violations
 
     def test_update_user_role_missing_user_id(self, real_schemas: int):
         approved, violations = validate_command(
-            "update_user_role", {"new_role": "qa"}
+            "update_user_role", {"new_role": "operator"}
         )
         assert approved is False
         assert any("user_id" in v for v in violations)
@@ -358,7 +358,7 @@ class TestRealSchemaValidation:
 
     def test_update_user_role_extra_field(self, real_schemas: int):
         approved, violations = validate_command(
-            "update_user_role", {"user_id": "alice", "new_role": "qa", "hack": 1}
+            "update_user_role", {"user_id": "alice", "new_role": "operator", "hack": 1}
         )
         assert approved is False
         assert any("unexpected" in v for v in violations)

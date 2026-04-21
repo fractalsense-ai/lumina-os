@@ -328,7 +328,7 @@ def md_client(multi_domain_module):
 def _register_da(client: TestClient, username: str = "da_user") -> dict:
     resp = client.post(
         "/api/auth/register",
-        json={"username": username, "password": "test-pass-123", "role": "domain_authority"},
+        json={"username": username, "password": "test-pass-123", "role": "admin"},
     )
     assert resp.status_code == 200
     return resp.json()
@@ -342,7 +342,7 @@ def _fake_users_with_staff():
         {"user_id": "ta1", "username": "ta1", "display_name": "TA One",
          "role": "user", "domain_roles": {"domain/edu/pre-algebra/v1": "teaching_assistant"}},
         {"user_id": "da_sys", "username": "da_sys", "display_name": "DA System",
-         "role": "domain_authority", "governed_modules": [], "domain_roles": {}},
+         "role": "admin", "governed_modules": [], "domain_roles": {}},
         {"user_id": "s1", "username": "student1", "display_name": "Student One",
          "role": "user", "domain_roles": {"domain/edu/algebra-1/v1": "student"}},
         {"user_id": "s2", "username": "student2", "display_name": "Student Two",
@@ -461,7 +461,7 @@ class TestDAPanelData:
         roles = {s["domain_role"] for s in staff}
         assert "teacher" in roles
         assert "teaching_assistant" in roles
-        assert "domain_authority" in roles
+        assert "admin" in roles
         # Students should NOT appear in the staff directory
         names = {s["display_name"] for s in staff}
         assert "Student One" not in names

@@ -53,7 +53,7 @@ def test_load_session_state_returns_copy():
 @pytest.mark.unit
 def test_update_user_role_not_found_returns_none():
     adapter = NullPersistenceAdapter()
-    result = adapter.update_user_role("nonexistent-user", "qa")
+    result = adapter.update_user_role("nonexistent-user", "operator")
     assert result is None
 
 
@@ -61,9 +61,9 @@ def test_update_user_role_not_found_returns_none():
 def test_update_user_role_found_updates_and_returns_record():
     adapter = NullPersistenceAdapter()
     adapter.create_user("u1", "alice", "hash_abc", "learner")
-    result = adapter.update_user_role("u1", "domain_authority", governed_modules=["math"])
+    result = adapter.update_user_role("u1", "admin", governed_modules=["math"])
     assert result is not None
-    assert result["role"] == "domain_authority"
+    assert result["role"] == "admin"
     assert result["governed_modules"] == ["math"]
     assert "password_hash" not in result
 

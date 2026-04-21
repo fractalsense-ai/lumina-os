@@ -43,7 +43,7 @@ def _minimal_domain(standing_orders=None, invariants=None):
     return {
         "id": "test/domain/v1",
         "version": "1.0.0",
-        "domain_authority": {"name": "Test", "role": "Tester"},
+        "admin": {"name": "Test", "role": "Tester"},
         "invariants": invariants or [],
         "standing_orders": standing_orders or [],
     }

@@ -78,7 +78,7 @@ def _register_root(client: TestClient) -> str:
     return resp.json()["access_token"]
 
 
-def _register_user(client: TestClient, username: str, role: str = "it_support") -> str:
+def _register_user(client: TestClient, username: str, role: str = "super_admin") -> str:
     resp = client.post(
         "/api/auth/register",
         json={"username": username, "password": "test-pass-123", "role": role},
@@ -313,14 +313,14 @@ def test_expired_staged_command_returns_410(client: TestClient, api_module) -> N
 def test_wrong_owner_cannot_resolve(client: TestClient, api_module) -> None:
     """A non-root actor cannot resolve another user's staged command."""
     token1 = _register_root(client)           # root (first registered → root)
-    token2 = _register_user(client, "it_user", "it_support")
+    token2 = _register_user(client, "it_user", "super_admin")
 
     # it_support stages a command.
     parsed = {"operation": "resolve_escalation", "target": "esc99", "params": {"escalation_id": "esc99", "resolution": "approved", "rationale": "test"}}
     staged_id = _stage_via_module(client, api_module, token2, parsed)
 
     # A different it_support user tries to resolve it.
-    token3 = _register_user(client, "it_user2", "it_support")
+    token3 = _register_user(client, "it_user2", "super_admin")
     resp = client.post(
         f"/api/admin/command/{staged_id}/resolve",
         json={"action": "accept"},
@@ -333,7 +333,7 @@ def test_wrong_owner_cannot_resolve(client: TestClient, api_module) -> None:
 def test_root_can_resolve_any_staged_command(client: TestClient, api_module) -> None:
     """Root can resolve a staged command that was created by a different actor."""
     root_token = _register_root(client)
-    it_token = _register_user(client, "it_user", "it_support")
+    it_token = _register_user(client, "it_user", "super_admin")
 
     parsed = {"operation": "resolve_escalation", "target": "esc50", "params": {"escalation_id": "esc50", "resolution": "approved", "rationale": "test"}}
     staged_id = _stage_via_module(client, api_module, it_token, parsed, "resolve escalation esc50")

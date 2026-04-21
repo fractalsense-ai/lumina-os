@@ -32,7 +32,7 @@ def _make_domain(
     return {
         "id": "domain/test/novel-synthesis/v1",
         "version": "1.0.0",
-        "domain_authority": {"pseudonymous_id": "da_test_001"},
+        "admin": {"pseudonymous_id": "da_test_001"},
         "invariants": invariants or [],
         "standing_orders": standing_orders or [],
         "escalation_triggers": [],
@@ -200,7 +200,7 @@ class TestNovelSynthesisCommitmentTypes:
             "prev_record_hash": "genesis",
             "timestamp_utc": "2026-03-13T12:00:00+00:00",
             "actor_id": "da_test_001",
-            "actor_role": "domain_authority",
+            "actor_role": "admin",
             "commitment_type": commitment_type,
             "subject_id": "domain/test/novel-synthesis/v1",
             "summary": f"Novel synthesis {commitment_type} for test",

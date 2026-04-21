@@ -207,7 +207,7 @@ class TestEnsureUserProfile:
             "domain": str(domain_ext),
             "student": str(student),
             "teacher": str(teacher),
-            "domain_authority": str(domain_authority),
+            "admin": str(domain_authority),
             "flat_template": str(flat_template),
         }
 
@@ -260,13 +260,13 @@ class TestEnsureUserProfile:
                 "default": profile_env["student"],
                 "student": profile_env["student"],
                 "teacher": profile_env["teacher"],
-                "domain_authority": profile_env["domain_authority"],
+                "admin": profile_env["admin"],
             },
         }
         path = _ensure_user_profile(
             "da_001", "education",
             template_path=profile_env["flat_template"],
-            runtime=runtime, domain_role=None, system_role="domain_authority",
+            runtime=runtime, domain_role=None, system_role="admin",
         )
         profile = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
         # domain_authority maps to domain_authority profile
@@ -375,17 +375,17 @@ class TestRealLayerFiles:
 
 class TestSystemRoleMapping:
     def test_all_system_roles_mapped(self):
-        expected_roles = {"root", "domain_authority", "it_support", "qa", "auditor", "user"}
+        expected_roles = {"root", "admin", "super_admin", "operator", "half_operator", "user"}
         assert set(_SYSTEM_ROLE_TO_DOMAIN_ROLE.keys()) == expected_roles
 
     def test_authority_roles_map_to_domain_authority(self):
-        for role in ("root", "domain_authority"):
-            assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "domain_authority"
+        for role in ("root", "admin"):
+            assert _SYSTEM_ROLE_TO_DOMAIN_ROLE[role] == "admin"
 
     def test_support_roles_map_to_operator(self):
-        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["it_support"] == "operator"
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["super_admin"] == "operator"
 
     def test_regular_roles_map_to_generic_defaults(self):
-        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["qa"] == "participant"
-        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["auditor"] == "observer"
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["operator"] == "participant"
+        assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["half_operator"] == "observer"
         assert _SYSTEM_ROLE_TO_DOMAIN_ROLE["user"] == "participant"

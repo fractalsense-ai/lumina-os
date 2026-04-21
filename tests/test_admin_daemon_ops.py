@@ -40,7 +40,7 @@ def _root_user() -> dict[str, Any]:
 
 
 def _da_user() -> dict[str, Any]:
-    return {"sub": "da-001", "role": "domain_authority"}
+    return {"sub": "da-001", "role": "admin"}
 
 
 def _regular_user() -> dict[str, Any]:

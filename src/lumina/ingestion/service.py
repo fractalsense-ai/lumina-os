@@ -269,7 +269,7 @@ class IngestService:
             from lumina.system_log.admin_operations import build_commitment_record
             commitment = build_commitment_record(
                 actor_id=actor_id,
-                actor_role="domain_authority",
+                actor_role="admin",
                 commitment_type="ingestion_committed",
                 subject_id=ingestion_id,
                 summary=f"Ingestion committed: {record['original_filename']}",

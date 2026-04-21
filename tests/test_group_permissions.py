@@ -33,13 +33,13 @@ GROUPS_CONFIG = {
     "ops": {
         "description": "Operations staff.",
         "members": {
-            "system_roles": ["root", "it_support"],
+            "system_roles": ["root", "super_admin"],
         },
     },
     "mixed": {
         "description": "Group with both system and domain role members.",
         "members": {
-            "system_roles": ["qa"],
+            "system_roles": ["operator"],
             "domain_roles": ["teacher"],
         },
     },
@@ -63,7 +63,7 @@ OPS_PERMS = {
 BACKWARD_COMPAT_PERMS = {
     "mode": "750",
     "owner": "da_owner_001",
-    "group": "domain_authority",
+    "group": "admin",
 }
 
 
@@ -79,13 +79,13 @@ class TestIsGroupMember:
         assert _is_group_member("user", "student", GROUPS_CONFIG, "educators") is False
 
     def test_system_role_match(self):
-        assert _is_group_member("it_support", None, GROUPS_CONFIG, "ops") is True
+        assert _is_group_member("super_admin", None, GROUPS_CONFIG, "ops") is True
 
     def test_system_role_no_match(self):
         assert _is_group_member("user", None, GROUPS_CONFIG, "ops") is False
 
     def test_mixed_group_system_role_match(self):
-        assert _is_group_member("qa", None, GROUPS_CONFIG, "mixed") is True
+        assert _is_group_member("operator", None, GROUPS_CONFIG, "mixed") is True
 
     def test_mixed_group_domain_role_match(self):
         assert _is_group_member("user", "teacher", GROUPS_CONFIG, "mixed") is True
@@ -95,8 +95,8 @@ class TestIsGroupMember:
 
     def test_fallback_no_groups_config(self):
         """No groups_config → fall back to system role string match."""
-        assert _is_group_member("domain_authority", None, None, "domain_authority") is True
-        assert _is_group_member("user", None, None, "domain_authority") is False
+        assert _is_group_member("admin", None, None, "admin") is True
+        assert _is_group_member("user", None, None, "admin") is False
 
     def test_fallback_group_not_in_config(self):
         """Group name not defined in config → fall back to string match."""
@@ -184,7 +184,7 @@ class TestCheckPermissionWithGroups:
     def test_system_role_group_member(self):
         """it_support is in 'ops' group → gets group bits (7 = rwx)."""
         assert check_permission(
-            "it_001", "it_support", OPS_PERMS, Operation.WRITE,
+            "it_001", "super_admin", OPS_PERMS, Operation.WRITE,
             groups_config=GROUPS_CONFIG,
         ) is True
 
@@ -202,7 +202,7 @@ class TestBackwardCompatibility:
     def test_no_groups_config_system_role_match(self):
         """Omitting groups_config → falls back to system role string match."""
         assert check_permission(
-            "da_somebody", "domain_authority",
+            "da_somebody", "admin",
             BACKWARD_COMPAT_PERMS, Operation.READ,
         ) is True
 
@@ -214,7 +214,7 @@ class TestBackwardCompatibility:
 
     def test_groups_config_none_explicit(self):
         assert check_permission(
-            "da_somebody", "domain_authority",
+            "da_somebody", "admin",
             BACKWARD_COMPAT_PERMS, Operation.READ,
             groups_config=None,
         ) is True
@@ -222,7 +222,7 @@ class TestBackwardCompatibility:
     def test_groups_config_empty_dict(self):
         """Empty groups dict → group name not found → fallback to string match."""
         assert check_permission(
-            "da_somebody", "domain_authority",
+            "da_somebody", "admin",
             BACKWARD_COMPAT_PERMS, Operation.READ,
             groups_config={},
         ) is True
@@ -233,7 +233,7 @@ class TestCheckPermissionOrRaiseWithGroups:
 
     def test_allowed(self):
         check_permission_or_raise(
-            "it_001", "it_support", OPS_PERMS, Operation.READ,
+            "it_001", "super_admin", OPS_PERMS, Operation.READ,
             groups_config=GROUPS_CONFIG,
         )
 

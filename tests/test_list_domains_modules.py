@@ -159,9 +159,9 @@ def test_list_modules_da_with_domain_roles(client: TestClient, api_module) -> No
 
     token = create_scoped_jwt(
         user_id="da-edu-001",
-        role="domain_authority",
+        role="admin",
         governed_modules=[],
-        domain_roles={"education": "domain_authority"},
+        domain_roles={"education": "admin"},
     )
     resp = client.post(
         "/api/domain/command",
@@ -191,7 +191,7 @@ def test_list_modules_da_with_governed_modules(client: TestClient, api_module) -
 
     token = create_scoped_jwt(
         user_id="da-edu-002",
-        role="domain_authority",
+        role="admin",
         governed_modules=[first_mod],
     )
     resp = client.post(
@@ -215,9 +215,9 @@ def test_list_modules_da_wrong_domain_403(client: TestClient, api_module) -> Non
 
     token = create_scoped_jwt(
         user_id="da-edu-003",
-        role="domain_authority",
+        role="admin",
         governed_modules=[],
-        domain_roles={"education": "domain_authority"},
+        domain_roles={"education": "admin"},
     )
     resp = client.post(
         "/api/domain/command",

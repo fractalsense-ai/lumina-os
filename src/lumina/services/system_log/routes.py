@@ -31,10 +31,10 @@ async def query_log_records(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "qa", "auditor")
+    allowed_roles = ("root", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
-        if user_data["role"] == "domain_authority":
-            # DA scoping: empty governed_modules = full domain access,
+        if user_data["role"] == "admin":
+            # admin scoping: empty governed_modules = full domain access,
             # non-empty = restricted to those modules.
             governed = user_data.get("governed_modules") or []
             if governed and domain_id:
@@ -64,7 +64,7 @@ async def list_log_sessions(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "domain_authority", "it_support", "qa", "auditor")
+    allowed_roles = ("root", "admin", "super_admin", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -80,9 +80,9 @@ async def get_log_record(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "qa", "auditor")
+    allowed_roles = ("root", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
-        if user_data["role"] == "domain_authority":
+        if user_data["role"] == "admin":
             pass  # domain scoping applied after fetch below
         else:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -90,8 +90,8 @@ async def get_log_record(
     all_records = await run_in_threadpool(_cfg.PERSISTENCE.query_log_records, limit=10000)
     for r in all_records:
         if r.get("record_id") == record_id:
-            # DA users: non-empty governed restricts to those modules
-            if user_data["role"] == "domain_authority":
+            # admin users: non-empty governed restricts to those modules
+            if user_data["role"] == "admin":
                 governed = user_data.get("governed_modules") or []
                 dpid = r.get("domain_pack_id", "")
                 if governed and dpid and dpid not in governed:
@@ -113,12 +113,12 @@ async def query_warnings(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "it_support", "domain_authority", "qa", "auditor")
+    allowed_roles = ("root", "super_admin", "admin", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    # DA users: empty governed_modules = full domain access
-    if user_data["role"] == "domain_authority":
+    # admin users: empty governed_modules = full domain access
+    if user_data["role"] == "admin":
         governed = user_data.get("governed_modules") or []
         if governed and domain_id:
             if "/" in domain_id and domain_id not in governed:
@@ -138,12 +138,12 @@ async def query_alerts(
     current = await get_current_user(credentials)
     user_data = require_auth(current)
 
-    allowed_roles = ("root", "it_support", "domain_authority", "qa", "auditor")
+    allowed_roles = ("root", "super_admin", "admin", "operator", "half_operator")
     if user_data["role"] not in allowed_roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    # DA users: empty governed_modules = full domain access
-    if user_data["role"] == "domain_authority":
+    # admin users: empty governed_modules = full domain access
+    if user_data["role"] == "admin":
         governed = user_data.get("governed_modules") or []
         if governed and domain_id:
             if "/" in domain_id and domain_id not in governed:
