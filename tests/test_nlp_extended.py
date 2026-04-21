@@ -6,6 +6,7 @@ and lines 185–196 (spaCy vector similarity pass in classify_domain).
 from __future__ import annotations
 
 import sys
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -39,21 +40,12 @@ def test_get_nlp_ose_model_not_found_returns_none(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(nlp_mod, "_spacy_available", None)
     monkeypatch.setattr(nlp_mod, "_nlp_instance", None)
 
-    try:
-        import spacy as _spacy
-    except ImportError:
-        pytest.skip("spaCy not installed — OSError path not reachable")
-
-    original_load = _spacy.load
-
-    def _raise_ose(model: str, **kwargs: Any) -> None:
+    def _raise_ose(model: str, **kwargs: Any) -> Any:
         raise OSError(f"Model '{model}' not found")
 
-    monkeypatch.setattr(_spacy, "load", _raise_ose)
-    try:
-        result = get_nlp()
-    finally:
-        _spacy.load = original_load  # safety — monkeypatch should handle it anyway
+    fake_spacy = SimpleNamespace(load=_raise_ose)
+    monkeypatch.setitem(sys.modules, "spacy", fake_spacy)
+    result = get_nlp()
 
     assert result is None
     assert nlp_mod._spacy_available is False
@@ -68,15 +60,11 @@ def test_get_nlp_generic_exception_returns_none(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(nlp_mod, "_spacy_available", None)
     monkeypatch.setattr(nlp_mod, "_nlp_instance", None)
 
-    try:
-        import spacy as _spacy
-    except ImportError:
-        pytest.skip("spaCy not installed — generic Exception path not reachable")
-
-    def _raise_unexpected(model: str, **kwargs: Any) -> None:
+    def _raise_unexpected(model: str, **kwargs: Any) -> Any:
         raise RuntimeError("unexpected loading failure")
 
-    monkeypatch.setattr(_spacy, "load", _raise_unexpected)
+    fake_spacy = SimpleNamespace(load=_raise_unexpected)
+    monkeypatch.setitem(sys.modules, "spacy", fake_spacy)
     result = get_nlp()
     assert result is None
     assert nlp_mod._spacy_available is False
