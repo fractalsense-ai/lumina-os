@@ -143,6 +143,17 @@ def domain_step(
         new_state["active_task_type"] = intent
         new_state["active_task_id"] = f"task-{intent}-{new_state['turn_count']}"
 
+    # ── Pending tool-call carry-forward tracking ─────────────────────dwa
+    # Store whether a tool call is pending so the next turn can carry it
+    # forward if the user's follow-up message is classified as "general"
+    # (e.g. "I wanted to go to Okinawa" after "what's the weather?").
+    if bool(evidence.get("tool_call_requested")):
+        new_state["pending_tool_call"] = True
+        new_state["pending_tool_intent"] = intent
+    elif task_status in ("completed", "abandoned", "deferred"):
+        new_state["pending_tool_call"] = False
+        new_state["pending_tool_intent"] = None
+
     # ── SVA Affect Update ────────────────────────────────────────────
     prev_affect = new_state.get("affect")
     if not isinstance(prev_affect, AffectState):

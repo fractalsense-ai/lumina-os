@@ -473,6 +473,20 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                         for _k, _v in _mc.items():
                             if _k not in _mod_cfg:
                                 _mod_cfg[_k] = _v
+            # Pre-load module domain physics so the enrichment pipeline can
+            # access module-specific glossaries without a runtime disk read.
+            _mod_dp = _mod_cfg.get("domain_physics_path")
+            if _mod_dp:
+                _mod_dp_file = repo_root / _mod_dp
+                if _mod_dp_file.is_file():
+                    try:
+                        _mod_cfg["domain_physics"] = json.loads(
+                            _mod_dp_file.read_text(encoding="utf-8")
+                        )
+                    except Exception as _e:
+                        log.warning(
+                            "Failed to pre-load module physics for %s: %s", _mod_id, _e
+                        )
 
         # Pre-compile per-module adapter overrides so session.py can swap
         # state_builder_fn / domain_step_fn for governance modules.

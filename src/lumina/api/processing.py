@@ -342,6 +342,26 @@ def process_message(
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
     vlog.debug("[TURN] turn_data keys: %s", list(turn_data.keys()))
 
+    # ── Carry-forward: pending tool call from prior turn ─────────────
+    # If the previous turn set tool_call_requested=True and the task has not
+    # been resolved, carry the flag forward even when the SLM classified the
+    # current turn as "general" (e.g. a location follow-up after a weather
+    # query). orch.state here is the state from the *previous* turn because
+    # domain_step (inside process_turn) has not yet run for this turn.
+    _orch_prior_state = orch.state if isinstance(orch.state, dict) else {}
+    if (
+        not turn_data.get("tool_call_requested")
+        and _orch_prior_state.get("pending_tool_call")
+        and turn_data.get("task_status") not in ("completed", "abandoned", "deferred")
+    ):
+        turn_data["tool_call_requested"] = True
+        vlog.debug("[TURN] Carried forward tool_call_requested=True from prior turn")
+        if turn_data.get("intent_type") == "general":
+            _prior_intent = _orch_prior_state.get("pending_tool_intent")
+            if _prior_intent:
+                turn_data["intent_type"] = _prior_intent
+                vlog.debug("[TURN] Carried forward intent_type=%s from prior turn", _prior_intent)
+
     # ── Deferred greeting (after turn interpretation) ─────────
     if _greeting_eligible:
         _g_result = check_greeting(
@@ -357,9 +377,13 @@ def process_message(
 
     # ── Layer 2½b: Post-interpretation enrichment (SLM context + telemetry) ──
     vlog.debug("[ENRICH] Enriching turn data (domain=%s)", resolved_domain_id)
+    # Prefer the active module's physics glossary so per-module terms (e.g.
+    # weather/forecast, search/query) reach the SLM context compression.
+    # Fall back to the top-level domain physics glossary if the module has none.
+    _active_mod_physics = _active_mod.get("domain_physics") or {}
     glossary = (
-        domain_physics.get("glossary")
-        or (runtime.get("domain") or {}).get("glossary")
+        _active_mod_physics.get("glossary")
+        or domain_physics.get("glossary")
         or []
     )
     turn_data = enrich_turn_data(
