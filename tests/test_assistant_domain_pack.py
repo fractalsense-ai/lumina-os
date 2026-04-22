@@ -16,6 +16,9 @@ import json
 import sys
 from pathlib import Path
 
+import os
+from unittest.mock import MagicMock, patch
+
 import pytest
 import yaml
 
@@ -734,6 +737,33 @@ class TestTaskTrackerAffect:
 # ════════════════════════════════════════════════════════════
 
 
+def _owm_current_mock():
+    m = MagicMock()
+    m.status_code = 200
+    m.raise_for_status = MagicMock()
+    m.json.return_value = {
+        "name": "London",
+        "main": {"temp": 18.5, "humidity": 72},
+        "weather": [{"description": "light rain"}],
+        "wind": {"speed": 5.0},
+    }
+    return m
+
+
+def _owm_forecast_mock():
+    m = MagicMock()
+    m.status_code = 200
+    m.raise_for_status = MagicMock()
+    m.json.return_value = {
+        "list": [{
+            "dt_txt": "2026-04-23 12:00:00",
+            "main": {"temp_max": 21.0, "temp_min": 14.0},
+            "weather": [{"description": "cloudy"}],
+        }]
+    }
+    return m
+
+
 class TestToolAdapterStubs:
     @pytest.fixture(autouse=True)
     def _import(self):
@@ -747,13 +777,55 @@ class TestToolAdapterStubs:
         self.planning_list_tool = mod.planning_list_tool
 
     def test_weather_ok(self):
-        r = self.weather_lookup_tool({"location": "London"})
+        with patch("httpx.get", side_effect=[_owm_current_mock(), _owm_forecast_mock()]), \
+             patch.dict(os.environ, {"OPENWEATHERMAP_API_KEY": "test-key"}):
+            r = self.weather_lookup_tool({"location": "London"})
         assert r["ok"] is True
         assert "temperature_c" in r
 
     def test_weather_missing_location(self):
         r = self.weather_lookup_tool({})
         assert r["ok"] is False
+
+    def test_weather_no_api_key(self):
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("OPENWEATHERMAP_API_KEY", None)
+            r = self.weather_lookup_tool({"location": "London"})
+        assert r["ok"] is False
+        assert "not configured" in r["error"]
+
+    def test_weather_invalid_api_key(self):
+        bad = MagicMock()
+        bad.status_code = 401
+        with patch("httpx.get", return_value=bad), \
+             patch.dict(os.environ, {"OPENWEATHERMAP_API_KEY": "bad-key"}):
+            r = self.weather_lookup_tool({"location": "London"})
+        assert r["ok"] is False
+        assert "invalid API key" in r["error"]
+
+    def test_weather_location_not_found(self):
+        not_found = MagicMock()
+        not_found.status_code = 404
+        with patch("httpx.get", return_value=not_found), \
+             patch.dict(os.environ, {"OPENWEATHERMAP_API_KEY": "test-key"}):
+            r = self.weather_lookup_tool({"location": "Atlantis"})
+        assert r["ok"] is False
+
+    def test_weather_service_unavailable(self):
+        import httpx as _httpx
+        with patch("httpx.get", side_effect=_httpx.ConnectError("refused")), \
+             patch.dict(os.environ, {"OPENWEATHERMAP_API_KEY": "test-key"}):
+            r = self.weather_lookup_tool({"location": "London"})
+        assert r["ok"] is False
+
+    def test_weather_wind_converted_to_kph(self):
+        current = _owm_current_mock()
+        current.json.return_value["wind"]["speed"] = 5.0
+        with patch("httpx.get", side_effect=[current, _owm_forecast_mock()]), \
+             patch.dict(os.environ, {"OPENWEATHERMAP_API_KEY": "test-key"}):
+            r = self.weather_lookup_tool({"location": "London"})
+        assert r["ok"] is True
+        assert r["wind_kph"] == 18.0
 
     def test_calendar_query_ok(self):
         r = self.calendar_query_tool({"date_start": "2026-04-20"})
