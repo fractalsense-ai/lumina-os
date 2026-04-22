@@ -55,5 +55,38 @@
       "pieces_generated": {"type": "integer", "default": 0},
       "active_genre": {"type": "string", "default": null}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "narrative",
+      "definition": "The connected sequence of events and scenes that form a story. In creative writing, narrative includes the plot, character actions, and cause-and-effect chain.",
+      "aliases": ["story", "storyline", "story arc"],
+      "related_terms": ["plot", "protagonist", "genre"]
+    },
+    {
+      "term": "plot",
+      "definition": "The structured sequence of events in a narrative — typically including setup, conflict, rising action, climax, and resolution.",
+      "aliases": ["story structure", "arc", "storyline"],
+      "related_terms": ["narrative", "protagonist"]
+    },
+    {
+      "term": "genre",
+      "definition": "A category of creative writing defined by shared conventions of tone, style, and subject matter — e.g. fantasy, thriller, romance, science fiction, literary fiction.",
+      "aliases": ["style", "type", "category", "writing genre"],
+      "related_terms": ["narrative", "tone"]
+    },
+    {
+      "term": "protagonist",
+      "definition": "The central character of a story whose journey or conflict drives the narrative forward.",
+      "aliases": ["main character", "hero", "central character", "lead"],
+      "related_terms": ["narrative", "plot", "dialogue"]
+    },
+    {
+      "term": "dialogue",
+      "definition": "Written conversation between characters. Effective dialogue reveals character, advances plot, and feels natural to the character's voice.",
+      "aliases": ["conversation", "speech", "character speech"],
+      "related_terms": ["protagonist", "voice"]
+    }
+  ]
 }

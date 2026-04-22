@@ -52,5 +52,32 @@
       "last_persona_update_turn": {"type": "integer", "default": null},
       "setup_step": {"type": "string", "default": null}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "persona",
+      "definition": "A defined personality and tone overlay applied to all assistant responses. Stored on the actor profile and persists across sessions and modules.",
+      "aliases": ["personality", "character", "character profile", "ai persona"],
+      "related_terms": ["trait", "voice", "backstory"]
+    },
+    {
+      "term": "trait",
+      "definition": "A single behavioral or stylistic attribute of a persona — e.g. sarcastic, warm, formal, blunt. Multiple traits combine to define how the assistant speaks.",
+      "aliases": ["personality trait", "characteristic", "attribute"],
+      "related_terms": ["persona", "voice"]
+    },
+    {
+      "term": "voice",
+      "definition": "The overall tone and style the assistant uses to communicate — shaped by the active persona's traits. Voice is applied dynamically every turn.",
+      "aliases": ["tone", "style", "speaking style", "communication style"],
+      "related_terms": ["persona", "trait"]
+    },
+    {
+      "term": "backstory",
+      "definition": "An optional narrative context for the persona — who the character is, where they come from, what they care about. Used to add depth and consistency to responses.",
+      "aliases": ["background", "character background", "lore", "origin"],
+      "related_terms": ["persona", "trait"]
+    }
+  ]
 }

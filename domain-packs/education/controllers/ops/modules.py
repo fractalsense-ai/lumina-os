@@ -121,9 +121,11 @@ async def switch_active_module(
     user_data: dict[str, Any],
     ctx: Any,
 ) -> dict[str, Any]:
-    """Self-service module switch for students.
+    """Self-service module switch for users.
 
-    Only switches between modules the student already has state in
+    Works across all domains (education, assistant, etc.) by resolving
+    the user's active domain from governed_modules at runtime.
+    Only switches to modules the user already has state in
     (profile["modules"] keys) or is listed in governed_modules.
     Does NOT create new enrolments.
     """
@@ -131,19 +133,35 @@ async def switch_active_module(
     if not module_id:
         raise ctx.HTTPException(status_code=422, detail="module_id is required")
 
-    # Resolve short names (e.g. "pre-algebra" → "domain/edu/pre-algebra/v1")
-    module_id = resolve_module_shortname(ctx, module_id)
-
     user_id = user_data["sub"]
 
-    _profile = await load_profile(ctx, user_id)
+    # Load user record first so governed_modules can be used to derive the
+    # active domain before resolving short names or loading the profile.
+    user_rec = await ctx.run_in_threadpool(ctx.persistence.get_user, user_id)
 
-    # Collect modules the student has state in
+    # Derive active domain so this handler works across all domains, not
+    # just education.  Falls back to "education" for backward compatibility.
+    _user_domain = "education"
+    if user_rec:
+        try:
+            _resolved = ctx.domain_registry.resolve_default_for_user(user_rec)
+            if _resolved:
+                _user_domain = _resolved
+        except Exception:
+            pass
+
+    # Resolve short names in the correct domain
+    # (e.g. "persona-craft" → "domain/asst/persona-craft/v1",
+    #        "pre-algebra"   → "domain/edu/pre-algebra/v1")
+    module_id = resolve_module_shortname(ctx, module_id, domain=_user_domain)
+
+    _profile = await load_profile(ctx, user_id, domain=_user_domain)
+
+    # Collect modules the user has state in
     _mods = _profile.get("modules")
     existing_modules = set((_mods if isinstance(_mods, dict) else {}).keys())
 
-    # Also check governed_modules from user record
-    user_rec = await ctx.run_in_threadpool(ctx.persistence.get_user, user_id)
+    # Also collect governed_modules from the user record
     if user_rec:
         governed = set(user_rec.get("governed_modules") or [])
         existing_modules |= governed
@@ -156,12 +174,12 @@ async def switch_active_module(
 
     # Validate that the module actually exists in the domain registry
     try:
-        _mods = ctx.domain_registry.list_modules_for_domain("education")
+        _mods = ctx.domain_registry.list_modules_for_domain(_user_domain)
         _valid_ids = {m["module_id"] for m in _mods}
         if module_id not in _valid_ids:
             raise ctx.HTTPException(
                 status_code=422,
-                detail=f"Unknown module_id: {module_id}",
+                detail=f"Unknown module '{module_id}'. Available: {sorted(extract_short_name(mid) for mid in _valid_ids)}",
             )
     except ctx.HTTPException:
         raise
@@ -170,13 +188,13 @@ async def switch_active_module(
 
     # Update active module
     _profile["domain_id"] = module_id
-    await save_profile(ctx, user_id, _profile)
+    await save_profile(ctx, user_id, _profile, domain=_user_domain)
 
     # Rebuild the cached session context so the next chat message uses
     # the new module's physics instead of the stale cached context.
     if getattr(ctx, "rebuild_domain_context", None) is not None:
         try:
-            ctx.rebuild_domain_context(user_id, "education")
+            ctx.rebuild_domain_context(user_id, _user_domain)
         except Exception:
             log.debug("Could not rebuild session context for %s", user_id)
 
@@ -185,7 +203,7 @@ async def switch_active_module(
     # Include ui_overrides so the frontend can update the header/subtitle
     _ui_overrides: dict[str, Any] = {}
     try:
-        _rt = ctx.domain_registry.get_runtime_context("education")
+        _rt = ctx.domain_registry.get_runtime_context(_user_domain)
         _mod_entry = (_rt.get("module_map") or {}).get(module_id) or {}
         _ui_overrides = _mod_entry.get("ui_overrides") or {}
     except Exception:

@@ -80,5 +80,26 @@
       "events_modified": {"type": "integer", "default": 0},
       "pending_confirmation": {"type": "boolean", "default": false}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "event",
+      "definition": "A scheduled occurrence with a start time, optional end time, and optional location. Events can be one-time or recurring.",
+      "aliases": ["appointment", "meeting", "booking", "entry", "calendar entry"],
+      "related_terms": ["reminder", "schedule"]
+    },
+    {
+      "term": "reminder",
+      "definition": "A notification set to trigger before or at an event's start time. Reminders prompt the user to prepare or attend.",
+      "aliases": ["alert", "notification", "alarm"],
+      "related_terms": ["event"]
+    },
+    {
+      "term": "schedule",
+      "definition": "The arrangement of events over a time period. A schedule represents the full picture of a user's calendar — when things happen and for how long.",
+      "aliases": ["calendar", "timetable", "agenda", "plan"],
+      "related_terms": ["event", "reminder"]
+    }
+  ]
 }

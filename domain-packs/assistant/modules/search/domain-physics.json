@@ -78,5 +78,20 @@
       "turn_count": {"type": "integer", "default": 0},
       "queries_completed": {"type": "integer", "default": 0}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "query",
+      "definition": "The search terms or question submitted to find information. A well-formed query is specific enough to return relevant results and avoids ambiguous keywords.",
+      "aliases": ["search", "search term", "search query", "lookup", "question"],
+      "related_terms": ["filter", "result"]
+    },
+    {
+      "term": "filter",
+      "definition": "A constraint applied to search results to narrow them by date, source, type, or other attribute. Filters reduce noise and surface more relevant results.",
+      "aliases": ["refinement", "narrow", "limit", "constraint"],
+      "related_terms": ["query"]
+    }
+  ]
 }

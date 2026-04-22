@@ -95,6 +95,7 @@ def _make_ctx() -> MagicMock:
     ctx.HTTPException = _FakeHTTPException
     ctx.domain_registry.list_modules_for_domain.return_value = _SAMPLE_MODULES
     ctx.domain_registry.get_runtime_context.return_value = {"module_map": _MODULE_MAP}
+    ctx.domain_registry.resolve_default_for_user.return_value = "education"
 
     ctx.persistence.get_user = MagicMock(
         return_value={"user_id": "student1", "governed_modules": [

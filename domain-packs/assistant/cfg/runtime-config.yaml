@@ -187,3 +187,8 @@ operation_handlers:
     callable: handle_operation
     hitl_exempt: true
     min_role: user
+  switch_active_module:
+    module_path: domain-packs/education/controllers/ops/modules.py
+    callable: switch_active_module
+    hitl_exempt: true
+    min_role: user

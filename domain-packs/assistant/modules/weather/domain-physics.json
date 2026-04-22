@@ -79,5 +79,26 @@
       "queries_completed": {"type": "integer", "default": 0},
       "last_location": {"type": "string", "default": null}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "forecast",
+      "definition": "A prediction of weather conditions for a future period — including temperature, precipitation probability, wind, and sky conditions — based on current data models.",
+      "aliases": ["weather forecast", "outlook", "prediction", "extended forecast"],
+      "related_terms": ["temperature", "precipitation"]
+    },
+    {
+      "term": "temperature",
+      "definition": "A measure of atmospheric heat. Reported in Celsius or Fahrenheit. Includes current, high, low, and feels-like values.",
+      "aliases": ["temp", "heat", "degrees", "how hot", "how cold"],
+      "related_terms": ["forecast"]
+    },
+    {
+      "term": "precipitation",
+      "definition": "Any form of water falling from the atmosphere — rain, snow, sleet, or hail. Weather forecasts report both precipitation type and probability percentage.",
+      "aliases": ["rain", "snow", "rainfall", "snowfall", "chance of rain", "chance of snow"],
+      "related_terms": ["forecast", "temperature"]
+    }
+  ]
 }

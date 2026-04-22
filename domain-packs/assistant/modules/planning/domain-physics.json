@@ -80,5 +80,32 @@
       "active_plan_id": {"type": "string", "default": null},
       "constraints_gathered": {"type": "boolean", "default": false}
     }
-  }
+  },
+
+  "glossary": [
+    {
+      "term": "goal",
+      "definition": "The desired end state or outcome a plan is intended to achieve. Goals should be specific, measurable, and time-bounded where possible.",
+      "aliases": ["objective", "aim", "target", "outcome"],
+      "related_terms": ["task", "milestone", "priority"]
+    },
+    {
+      "term": "task",
+      "definition": "A discrete unit of work that contributes to achieving a goal. Tasks have a clear completion state and can be assigned, sequenced, and tracked.",
+      "aliases": ["action item", "to-do", "action", "item", "step"],
+      "related_terms": ["goal", "milestone"]
+    },
+    {
+      "term": "milestone",
+      "definition": "A significant checkpoint in a plan that marks measurable progress toward a goal. Milestones are typically used to track multi-phase work.",
+      "aliases": ["checkpoint", "waypoint", "phase", "key date"],
+      "related_terms": ["goal", "task"]
+    },
+    {
+      "term": "priority",
+      "definition": "The relative importance or urgency of a task or goal. Higher-priority items should be addressed before lower-priority ones when resources are limited.",
+      "aliases": ["importance", "urgency", "rank", "priority level"],
+      "related_terms": ["task", "goal"]
+    }
+  ]
 }
