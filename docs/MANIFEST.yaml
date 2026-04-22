@@ -309,6 +309,13 @@ artifacts:
   status: active
   last_updated: 2026-03-31
   sha256: 65571c7a30e5cc97f3cfe341c85a78611c21c4268e867374415fa70214f0a5e1
+- path: docs/7-concepts/multi-task-turn-interpretation.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2025-07-19
+  sha256: 6c0e282d11b84c6a607309409e95cc1a444803b7509f340401258b6b867b5678
 - path: docs/7-concepts/nlp-semantic-router.md
   type: doc
   section: 7
@@ -771,6 +778,12 @@ artifacts:
   status: active
   last_updated: 2026-07-01
   sha256: 8451f720e683d5eb6081e0d66208c0e364ea1d9c0fb76782c8a44aa163eb8c7a
+- path: standards/turn-task-graph-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2025-07-19
+  sha256: 3c8c99e16542ce1c17e19b844c552281a1d9b17954400e4f75d6bfdb9813685b
 - path: standards/admin-command-schemas/approve-interpretation.json
   type: schema
   doc_version: 1.0.0

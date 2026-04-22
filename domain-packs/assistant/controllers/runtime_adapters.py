@@ -192,6 +192,19 @@ def domain_step(
         tier = "ok"
         action = None
 
+    # ── Weather tool routing ─────────────────────────────────────────
+    # When the weather module is active and a tool call is needed,
+    # route to weather_lookup (location present) or resolve_location
+    # (location missing) so apply_tool_call_policy fires the right tool.
+    if intent == "weather" and bool(evidence.get("tool_call_requested")):
+        location = evidence.get("location")
+        if location:
+            action = "weather_lookup"
+            tier = "ok"
+        else:
+            action = "resolve_location"
+            tier = "ok"
+
     # ── Persona Update (if intent is persona, apply update_dict) ────
     current_persona = new_state.get("persona")
     if not isinstance(current_persona, PersonaState):
@@ -293,3 +306,93 @@ def interpret_turn_input(
         evidence["satisfaction_signal"] = "unknown"
 
     return evidence
+
+
+# ── 4. Multi-Task Turn Interpreter ──────────────────────────────────────
+
+def interpret_multi_task_input(
+    call_llm: Callable[[str, str, str | None], str],
+    input_text: str,
+    task_context: dict[str, Any],
+    prompt_text: str,
+    default_fields: dict[str, Any] | None = None,
+    tool_fns: dict[str, Callable[..., Any]] | None = None,
+) -> dict[str, Any]:
+    """Call the LLM to parse raw user text into a multi-task graph.
+
+    Returns a dict with a ``tasks`` key containing a list of task nodes
+    conforming to turn-task-graph-schema-v1.  Falls back to a one-node
+    degenerate graph when the SLM does not emit a valid tasks array,
+    preserving full backward compatibility with the single-task path.
+    """
+    raw_response = call_llm(
+        system=prompt_text,
+        user=f"User message: {input_text}",
+        model=None,
+    )
+
+    try:
+        result = json.loads(_strip_markdown_fences(raw_response))
+    except (json.JSONDecodeError, IndexError):
+        result = {}
+
+    defaults = dict(default_fields or {})
+    if not defaults:
+        defaults = {
+            "intent_type": "general",
+            "task_status": "n/a",
+            "tool_call_requested": False,
+            "off_task_ratio": 0.0,
+            "response_latency_sec": 5.0,
+            "satisfaction_signal": "unknown",
+        }
+
+    valid_intents = {"general", "weather", "calendar", "search", "creative", "planning", "governance", "persona"}
+    valid_statuses = {"open", "completed", "abandoned", "deferred", "n/a"}
+    valid_signals = {"positive", "neutral", "negative", "unknown"}
+
+    if isinstance(result.get("tasks"), list) and result["tasks"]:
+        validated: list[dict[str, Any]] = []
+        for i, task in enumerate(result["tasks"]):
+            if not isinstance(task, dict):
+                continue
+            td: dict[str, Any] = dict(task.get("turn_data") or {})
+            for key, val in defaults.items():
+                if key not in td or td[key] is None:
+                    td[key] = val
+            if td.get("intent_type") not in valid_intents:
+                td["intent_type"] = str(task.get("intent", "general"))
+            if td.get("task_status") not in valid_statuses:
+                td["task_status"] = "open"
+            if td.get("satisfaction_signal") not in valid_signals:
+                td["satisfaction_signal"] = "unknown"
+            validated.append({
+                "task_id": int(task.get("task_id", i + 1)),
+                "intent": str(task.get("intent", td.get("intent_type", "general"))),
+                "status": "pending",
+                "blocked_by": list(task.get("blocked_by") or []),
+                "turn_data": td,
+            })
+        if validated:
+            return {"tasks": validated}
+
+    # Fallback: treat the raw result as a single-task evidence dict and wrap it
+    # in a one-node graph so the framework's graph extraction still works.
+    for key, val in defaults.items():
+        if key not in result or result[key] is None:
+            result[key] = val
+    if result.get("intent_type") not in valid_intents:
+        result["intent_type"] = "general"
+    if result.get("task_status") not in valid_statuses:
+        result["task_status"] = "n/a"
+    if result.get("satisfaction_signal") not in valid_signals:
+        result["satisfaction_signal"] = "unknown"
+    return {
+        "tasks": [{
+            "task_id": 1,
+            "intent": str(result.get("intent_type", "general")),
+            "status": "pending",
+            "blocked_by": [],
+            "turn_data": result,
+        }]
+    }

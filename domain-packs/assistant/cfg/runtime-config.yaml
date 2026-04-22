@@ -11,7 +11,7 @@ runtime:
   global_system_prompt_path: docs/5-standards/global-system-prompt.md
   domain_system_prompt_path: domain-packs/assistant/prompts/domain-persona-v1.md
   turn_interpretation_prompt_path: domain-packs/assistant/domain-lib/reference/turn-interpretation-spec-v1.md
-
+  multi_task_interpretation_prompt_path: domain-packs/assistant/domain-lib/reference/multi-task-turn-interpreter-spec-v1.md
   # ── Required data paths ───────────────────────────────────────────
   domain_physics_path: domain-packs/assistant/modules/conversation/domain-physics.json
   subject_profile_path: domain-packs/assistant/profiles/entity.yaml
@@ -128,7 +128,16 @@ runtime:
     constraint_gathering: "Before I start on {task_id}, let me gather some details."
     creative_response: "Here's what I came up with. Let me know if you'd like changes."
     escalate: "I'm connecting you with a supervisor who can help further."
+    resolve_location: "I need a location to check the weather — where would you like me to look?"
     default: "Let me help you with that."
+
+  tool_call_policies:
+    weather_lookup:
+      -
+        tool_id: weather_lookup
+        payload:
+          location: "{turn_data.location}"
+          forecast_days: "{turn_data.forecast_days}"
 
 # ── Adapter Bindings ──────────────────────────────────────────────────
 adapters:
@@ -141,6 +150,9 @@ adapters:
   turn_interpreter:
     module_path: domain-packs/assistant/controllers/runtime_adapters.py
     callable: interpret_turn_input
+  multi_task_turn_interpreter:
+    module_path: domain-packs/assistant/controllers/runtime_adapters.py
+    callable: interpret_multi_task_input
   nlp_pre_interpreter:
     module_path: domain-packs/assistant/controllers/nlp_pre_interpreter.py
     callable: nlp_preprocess

@@ -208,6 +208,15 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     domain_prompt = domain_prompt_path.read_text(encoding="utf-8")
     turn_interpretation_prompt = turn_prompt_path.read_text(encoding="utf-8")
 
+    # Optional multi-task turn interpretation prompt (domain opt-in).
+    multi_task_interpretation_prompt: str | None = None
+    _mti_prompt_path = runtime_cfg.get("multi_task_interpretation_prompt_path")
+    if _mti_prompt_path:
+        try:
+            multi_task_interpretation_prompt = _read_text(repo_root, _mti_prompt_path)
+        except Exception as _e:
+            log.warning("Failed to load multi_task_interpretation_prompt: %s", _e)
+
     from lumina.core.persona_builder import build_system_prompt, PersonaContext
     system_prompt = build_system_prompt(PersonaContext.CONVERSATIONAL, domain_override=domain_prompt.strip())
     domain_physics = json.loads(domain_physics_path.read_text(encoding="utf-8"))
@@ -252,6 +261,18 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             repo_root,
             nlp_cfg["module_path"],
             nlp_cfg["callable"],
+        )
+
+    # Optional multi-task turn interpreter adapter (domain opt-in).
+    # When registered, the framework uses this callable instead of the
+    # standard turn_interpreter_fn when multi-intent signals are detected.
+    multi_task_turn_interpreter_fn: Callable[..., Any] | None = None
+    _mti_cfg = adapters_cfg.get("multi_task_turn_interpreter")
+    if _mti_cfg is not None:
+        multi_task_turn_interpreter_fn = _load_callable(
+            repo_root,
+            _mti_cfg["module_path"],
+            _mti_cfg["callable"],
         )
 
     # Optional pre-turn resume hook (called when current_task is already
@@ -398,12 +419,14 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "ui_plugin": ui_plugin,
         "system_prompt": system_prompt,
         "turn_interpretation_prompt": turn_interpretation_prompt,
+        "multi_task_interpretation_prompt": multi_task_interpretation_prompt,
         "runtime_provenance": runtime_provenance,
         "domain": domain_physics,
         "state_builder_fn": state_builder_fn,
         "domain_step_fn": domain_step_fn,
         "turn_interpreter_fn": turn_interpreter_fn,
         "nlp_pre_interpreter_fn": nlp_pre_interpreter_fn,
+        "multi_task_turn_interpreter_fn": multi_task_turn_interpreter_fn,
         "pre_turn_resume_fn": pre_turn_resume_fn,
         "post_turn_processor_fn": post_turn_processor_fn,
         "post_turn_timer_fn": post_turn_timer_fn,
@@ -552,6 +575,12 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
                     _mod_cfg["turn_interpretation_prompt"] = _read_text(repo_root, _mod_ti_path)
                 except Exception as _e:
                     log.warning("Failed to load module turn-interp prompt %s: %s", _mod_id, _e)
+            _mod_mti_path = _mod_cfg.get("multi_task_interpretation_prompt_path")
+            if _mod_mti_path:
+                try:
+                    _mod_cfg["multi_task_interpretation_prompt"] = _read_text(repo_root, _mod_mti_path)
+                except Exception as _e:
+                    log.warning("Failed to load module multi-task-interp prompt %s: %s", _mod_id, _e)
             # Per-module turn_input_defaults / turn_input_schema override
             # so governance modules get governance-shaped evidence instead
             # of inheriting the domain-wide (learning) defaults.

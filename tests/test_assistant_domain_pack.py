@@ -1265,3 +1265,244 @@ class TestPersonaIntegrationWithDomainStep:
         _, decision = self.domain_step(state, {}, evidence, {})
         # Overlay intensity should be capped for planning module
         assert decision["persona_overlay"]["intensity"] <= 0.6
+
+
+# ════════════════════════════════════════════════════════════
+# 10. Weather tool routing — domain_step action dispatch
+# ════════════════════════════════════════════════════════════
+
+
+class TestWeatherToolRouting:
+    """Tests that domain_step routes weather intents to the correct tool action."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self):
+        ra = _force_import("runtime_adapters")
+        self.build_initial_state = ra.build_initial_state
+        self.domain_step = ra.domain_step
+
+    def _weather_evidence(self, location=None, forecast_days=1, tool_call_requested=True):
+        return {
+            "intent_type": "weather",
+            "task_status": "open",
+            "tool_call_requested": tool_call_requested,
+            "location": location,
+            "forecast_days": forecast_days,
+            "off_task_ratio": 0.0,
+            "response_latency_sec": 5.0,
+            "satisfaction_signal": "unknown",
+        }
+
+    def test_weather_with_location_routes_to_weather_lookup(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="Tokyo")
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "weather_lookup"
+
+    def test_weather_without_location_routes_to_resolve_location(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location=None)
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "resolve_location"
+
+    def test_weather_with_empty_string_location_routes_to_resolve_location(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="")
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "resolve_location"
+
+    def test_weather_routing_does_not_fire_when_tool_call_not_requested(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="Paris", tool_call_requested=False)
+        _, decision = self.domain_step(state, {}, evidence, {})
+        # No tool routing — action may be None or a drift/idle action, but not weather_lookup
+        assert decision["action"] != "weather_lookup"
+        assert decision["action"] != "resolve_location"
+
+    def test_weather_routing_clears_tier_to_ok(self):
+        """Weather tool routing should not produce a minor/escalate tier."""
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="London")
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["tier"] == "ok"
+
+    def test_non_weather_intent_does_not_produce_weather_action(self):
+        state = self.build_initial_state({})
+        evidence = {
+            "intent_type": "calendar",
+            "task_status": "open",
+            "tool_call_requested": True,
+            "location": "Tokyo",
+            "off_task_ratio": 0.0,
+            "response_latency_sec": 5.0,
+            "satisfaction_signal": "unknown",
+        }
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] not in ("weather_lookup", "resolve_location")
+
+    def test_weather_routing_preserves_suggested_module(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="Berlin")
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["suggested_module"] == "domain/asst/weather/v1"
+
+    def test_weather_multi_day_forecast_routing(self):
+        state = self.build_initial_state({})
+        evidence = self._weather_evidence(location="Sydney", forecast_days=5)
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "weather_lookup"
+
+
+# ════════════════════════════════════════════════════════════
+# 11. Weather runtime-config wiring
+# ════════════════════════════════════════════════════════════
+
+
+class TestRuntimeConfigWeatherPolicy:
+    """Tests that runtime-config.yaml has the correct tool_call_policies and
+    deterministic_templates for weather."""
+
+    @pytest.fixture(autouse=True)
+    def _load_config(self):
+        cfg_path = PACK / "cfg" / "runtime-config.yaml"
+        full_cfg = yaml.safe_load(cfg_path.read_text())
+        # runtime_loader reads tool_call_policies from the `runtime:` block
+        self.runtime_cfg = full_cfg.get("runtime", {})
+
+    def test_tool_call_policies_key_exists(self):
+        assert "tool_call_policies" in self.runtime_cfg, (
+            "runtime-config.yaml must have a tool_call_policies key under runtime:"
+        )
+
+    def test_weather_lookup_policy_registered(self):
+        policies = self.runtime_cfg.get("tool_call_policies", {})
+        assert "weather_lookup" in policies, (
+            "tool_call_policies must have a weather_lookup entry"
+        )
+
+    def test_weather_lookup_policy_has_tool_id(self):
+        policy = self.runtime_cfg["tool_call_policies"]["weather_lookup"]
+        assert isinstance(policy, list) and len(policy) >= 1
+        assert policy[0]["tool_id"] == "weather_lookup"
+
+    def test_weather_lookup_policy_has_location_template(self):
+        policy = self.runtime_cfg["tool_call_policies"]["weather_lookup"]
+        payload = policy[0].get("payload", {})
+        assert "location" in payload
+        assert "{turn_data.location}" in str(payload["location"])
+
+    def test_weather_lookup_policy_has_forecast_days(self):
+        policy = self.runtime_cfg["tool_call_policies"]["weather_lookup"]
+        payload = policy[0].get("payload", {})
+        assert "forecast_days" in payload
+
+    def test_deterministic_templates_has_resolve_location(self):
+        templates = self.runtime_cfg.get("deterministic_templates", {})
+        assert "resolve_location" in templates, (
+            "deterministic_templates must have a resolve_location entry"
+        )
+
+    def test_resolve_location_template_is_non_empty_string(self):
+        template = self.runtime_cfg["deterministic_templates"]["resolve_location"]
+        assert isinstance(template, str) and len(template.strip()) > 0
+
+
+# ════════════════════════════════════════════════════════════
+# 12. Weather module-config wiring
+# ════════════════════════════════════════════════════════════
+
+
+class TestWeatherModuleConfig:
+    """Tests that weather/module-config.yaml has the fields needed for
+    location extraction and tool dispatch."""
+
+    @pytest.fixture(autouse=True)
+    def _load_config(self):
+        cfg_path = PACK / "modules" / "weather" / "module-config.yaml"
+        self.cfg = yaml.safe_load(cfg_path.read_text())
+
+    def test_has_turn_interpretation_prompt_path(self):
+        assert "turn_interpretation_prompt_path" in self.cfg, (
+            "weather module-config must declare a turn_interpretation_prompt_path"
+        )
+
+    def test_turn_interpretation_prompt_path_points_to_spec(self):
+        path = self.cfg["turn_interpretation_prompt_path"]
+        assert "weather-command-interpreter-spec-v1.md" in path
+
+    def test_turn_interpretation_prompt_file_exists(self):
+        path = self.cfg["turn_interpretation_prompt_path"]
+        full = REPO_ROOT / path
+        assert full.is_file(), f"turn_interpretation_prompt_path target missing: {path}"
+
+    def test_turn_input_schema_has_location(self):
+        schema = self.cfg.get("turn_input_schema", {})
+        assert "location" in schema, "weather turn_input_schema must define location"
+
+    def test_turn_input_schema_location_is_nullable(self):
+        schema = self.cfg["turn_input_schema"]
+        assert schema["location"].get("nullable") is True
+
+    def test_turn_input_schema_has_forecast_days(self):
+        schema = self.cfg.get("turn_input_schema", {})
+        assert "forecast_days" in schema, "weather turn_input_schema must define forecast_days"
+
+    def test_turn_input_schema_forecast_days_bounds(self):
+        schema = self.cfg["turn_input_schema"]
+        fd = schema["forecast_days"]
+        assert fd.get("minimum") == 1
+        assert fd.get("maximum") == 7
+
+    def test_turn_input_defaults_has_location_null(self):
+        defaults = self.cfg.get("turn_input_defaults", {})
+        assert "location" in defaults
+        assert defaults["location"] is None
+
+    def test_turn_input_defaults_has_forecast_days_one(self):
+        defaults = self.cfg.get("turn_input_defaults", {})
+        assert defaults.get("forecast_days") == 1
+
+    def test_turn_input_defaults_tool_call_requested_true(self):
+        defaults = self.cfg.get("turn_input_defaults", {})
+        assert defaults.get("tool_call_requested") is True
+
+
+# ════════════════════════════════════════════════════════════
+# 13. Weather command interpreter spec
+# ════════════════════════════════════════════════════════════
+
+
+class TestWeatherCommandInterpreterSpec:
+    """Tests that the weather command interpreter spec exists and has required sections."""
+
+    @pytest.fixture(autouse=True)
+    def _load_spec(self):
+        spec_path = PACK / "domain-lib" / "reference" / "weather-command-interpreter-spec-v1.md"
+        self.spec_path = spec_path
+        self.spec_text = spec_path.read_text()
+
+    def test_spec_file_exists(self):
+        assert self.spec_path.is_file()
+
+    def test_spec_defines_weather_lookup_command(self):
+        assert "weather_lookup" in self.spec_text
+
+    def test_spec_defines_resolve_location_command(self):
+        assert "resolve_location" in self.spec_text
+
+    def test_spec_defines_location_field(self):
+        assert '"location"' in self.spec_text
+
+    def test_spec_defines_forecast_days_field(self):
+        assert '"forecast_days"' in self.spec_text
+
+    def test_spec_has_output_schema_section(self):
+        assert "Output schema" in self.spec_text or "output schema" in self.spec_text
+
+    def test_spec_forbids_completed_before_tool_result(self):
+        # The spec must tell the SLM not to set completed prematurely
+        assert "completed" in self.spec_text
+        assert "tool" in self.spec_text.lower()
+
+    def test_spec_has_examples(self):
+        assert "Example" in self.spec_text

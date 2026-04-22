@@ -308,6 +308,33 @@ def process_message(
         module_key=session.get("module_key"),
     )
 
+    # ── NLP pre-scan for multi-intent detection ───────────────
+    # Run the domain's NLP pre-interpreter deterministically before any
+    # LLM call. If multiple intent signals are detected AND the domain has
+    # registered a multi_task_turn_interpreter_fn, the multi-task path fires.
+    _nlp_pre_result: dict[str, Any] = {}
+    _multi_intent_detected = False
+    if not deterministic_response and turn_data_override is None:
+        _nlp_fn_pre = runtime.get("nlp_pre_interpreter_fn")
+        if _nlp_fn_pre is not None:
+            try:
+                _nlp_pre_result = _nlp_fn_pre(input_text, task_context) or {}
+                _nlp_intent_scores = _nlp_pre_result.get("intent_scores") or {}
+                _multi_intent_detected = (
+                    len([s for s in _nlp_intent_scores.values() if s > 0]) >= 2
+                    and bool(runtime.get("multi_task_turn_interpreter_fn"))
+                )
+                if _multi_intent_detected:
+                    vlog.debug("[TURN] Multi-intent detected: %s", _nlp_intent_scores)
+            except Exception:
+                _nlp_pre_result = {}
+                _multi_intent_detected = False
+
+    # Task graph state — populated when multi-task interpretation fires.
+    _task_graph: list[dict[str, Any]] | None = None
+    _primary_task_id: int | None = None
+    _secondary_results: list[tuple[dict[str, Any], str, dict[str, Any]]] = []
+
     # ── Turn interpretation ───────────────────────────────────
     vlog.debug("[TURN] Interpreting turn input (override=%s, deterministic=%s)", turn_data_override is not None, deterministic_response)
     if turn_data_override is not None:
@@ -316,30 +343,82 @@ def process_message(
         turn_data = dict(runtime.get("turn_input_defaults") or {})
     elif runtime.get("local_only") or _active_mod.get("local_only"):
         if slm_available():
-            _li_interpreter = _active_mod.get("turn_interpreter_fn") or runtime["turn_interpreter_fn"]
-            _li_sig = inspect.signature(_li_interpreter)
-            _li_kwargs: dict[str, Any] = {
-                "call_llm": call_slm,
-                "input_text": input_text,
-                "task_context": task_context,
-                "prompt_text": runtime["turn_interpretation_prompt"],
-                "default_fields": runtime["turn_input_defaults"],
-                "tool_fns": runtime.get("tool_fns"),
-            }
-            if "call_slm" in _li_sig.parameters:
-                _li_kwargs["call_slm"] = call_slm
-            _nlp_fn = runtime.get("nlp_pre_interpreter_fn")
-            if _nlp_fn is not None and "nlp_pre_interpreter_fn" in _li_sig.parameters:
-                _li_kwargs["nlp_pre_interpreter_fn"] = _nlp_fn
-            turn_data = _li_interpreter(**_li_kwargs)
+            if _multi_intent_detected:
+                _mti_fn = runtime["multi_task_turn_interpreter_fn"]
+                _mti_prompt = (
+                    runtime.get("multi_task_interpretation_prompt")
+                    or runtime["turn_interpretation_prompt"]
+                )
+                turn_data = _mti_fn(
+                    call_llm=call_slm,
+                    input_text=input_text,
+                    task_context=task_context,
+                    prompt_text=_mti_prompt,
+                    default_fields=runtime["turn_input_defaults"],
+                    tool_fns=runtime.get("tool_fns"),
+                )
+            else:
+                _li_interpreter = _active_mod.get("turn_interpreter_fn") or runtime["turn_interpreter_fn"]
+                _li_sig = inspect.signature(_li_interpreter)
+                _li_kwargs: dict[str, Any] = {
+                    "call_llm": call_slm,
+                    "input_text": input_text,
+                    "task_context": task_context,
+                    "prompt_text": runtime["turn_interpretation_prompt"],
+                    "default_fields": runtime["turn_input_defaults"],
+                    "tool_fns": runtime.get("tool_fns"),
+                }
+                if "call_slm" in _li_sig.parameters:
+                    _li_kwargs["call_slm"] = call_slm
+                _nlp_fn = runtime.get("nlp_pre_interpreter_fn")
+                if _nlp_fn is not None and "nlp_pre_interpreter_fn" in _li_sig.parameters:
+                    _li_kwargs["nlp_pre_interpreter_fn"] = _nlp_fn
+                turn_data = _li_interpreter(**_li_kwargs)
         else:
             turn_data = dict(runtime.get("turn_input_defaults") or {})
     else:
-        turn_data = interpret_turn_input(
-            input_text, task_context, runtime,
-            world_sim_theme=world_sim_theme, mud_world_state=mud_world_state,
-        )
+        if _multi_intent_detected:
+            _mti_fn = runtime["multi_task_turn_interpreter_fn"]
+            _mti_prompt = (
+                runtime.get("multi_task_interpretation_prompt")
+                or runtime["turn_interpretation_prompt"]
+            )
+            turn_data = _mti_fn(
+                call_llm=call_llm,
+                input_text=input_text,
+                task_context=task_context,
+                prompt_text=_mti_prompt,
+                default_fields=runtime["turn_input_defaults"],
+                tool_fns=runtime.get("tool_fns"),
+            )
+        else:
+            turn_data = interpret_turn_input(
+                input_text, task_context, runtime,
+                world_sim_theme=world_sim_theme, mud_world_state=mud_world_state,
+            )
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
+
+    # ── Multi-task graph extraction ───────────────────────────
+    # If the multi-task interpreter emitted a {tasks: [...]} graph shape,
+    # extract the primary (first unblocked) task's turn_data for the rest
+    # of the single-task pipeline (carry-forward, enrichment, inspection).
+    # Secondary tasks are dispatched in the graph walk after orch.process_turn().
+    if isinstance(turn_data.get("tasks"), list) and turn_data["tasks"]:
+        _task_graph = turn_data["tasks"]
+        _turn_schema = runtime.get("turn_input_schema") or {}
+        for _gt in _task_graph:
+            if isinstance(_gt.get("turn_data"), dict):
+                _gt["turn_data"] = normalize_turn_data(_gt["turn_data"], _turn_schema)
+        _primary_node = next(
+            (t for t in _task_graph if not t.get("blocked_by")), _task_graph[0]
+        )
+        _primary_task_id = _primary_node.get("task_id")
+        turn_data = dict(_primary_node.get("turn_data") or {})
+        vlog.debug(
+            "[TURN] Multi-task graph: %d tasks, primary=%s intent=%s",
+            len(_task_graph), _primary_task_id, turn_data.get("intent_type"),
+        )
+
     vlog.debug("[TURN] turn_data keys: %s", list(turn_data.keys()))
 
     # ── Carry-forward: pending tool call from prior turn ─────────────
@@ -459,6 +538,43 @@ def process_message(
     )
     vlog.debug("[ORCH] action=%s prompt_type=%s", resolved_action, prompt_contract.get("prompt_type"))
 
+    # ── Multi-task graph walk ─────────────────────────────────
+    # Dispatch all non-primary, non-blocked subtasks through the orchestrator.
+    # Each secondary call advances orch.state (affect, task history) for all
+    # subtasks before the session sync. Blocked tasks are deferred to
+    # pending_tasks in orch.state for carry-forward on the next user turn.
+    if _task_graph is not None:
+        for _gt in _task_graph:
+            if _gt.get("task_id") == _primary_task_id:
+                continue  # Already processed as primary
+            if _gt.get("blocked_by"):
+                continue  # Blocked — deferred to pending_tasks
+            _sub_td = dict(_gt.get("turn_data") or {})
+            _sub_contract, _sub_action = orch.process_turn(
+                task_spec, _sub_td, provenance_metadata=turn_provenance,
+            )
+            _secondary_results.append((_sub_contract, _sub_action, _sub_td))
+            vlog.debug(
+                "[ORCH] Graph walk: task_id=%s action=%s",
+                _gt.get("task_id"), _sub_action,
+            )
+        # Persist blocked tasks so the next turn can resume them
+        _pending = [
+            {
+                "task_id": t["task_id"],
+                "intent": t.get("intent", "general"),
+                "turn_data": t.get("turn_data"),
+            }
+            for t in _task_graph if t.get("blocked_by")
+        ]
+        if _pending and isinstance(orch.state, dict):
+            orch.state = dict(orch.state)
+            orch.state["pending_tasks"] = _pending
+            vlog.debug(
+                "[ORCH] %d blocked task(s) deferred to pending_tasks queue",
+                len(_pending),
+            )
+
     # ── Post-turn processing (domain-hook driven) ──────────────
     _new_task_presented = _new_task_on_resume
     _ptp_fn = _active_mod.get("post_turn_processor_fn") or runtime.get("post_turn_processor_fn")
@@ -573,6 +689,21 @@ def process_message(
         task_spec=task_spec,
         runtime=runtime,
     )
+
+    # Aggregate tool results from secondary tasks in the multi-task graph walk
+    if _secondary_results:
+        _extra_tools: list[dict[str, Any]] = []
+        for _sec_contract, _sec_action, _sec_td in _secondary_results:
+            _extra_tools.extend(apply_tool_call_policy(
+                resolved_action=_sec_action,
+                prompt_contract=_sec_contract,
+                turn_data=_sec_td,
+                task_spec=task_spec,
+                runtime=runtime,
+            ))
+        if _extra_tools:
+            tool_results = list(tool_results) + _extra_tools
+            vlog.debug("[LLM] Aggregated %d secondary tool result(s)", len(_extra_tools))
 
     # ── Layer 6: LLM payload + invocation ─────────────────────
     vlog.debug("[LLM] Assembling LLM payload (tool_results=%d)", len(tool_results))

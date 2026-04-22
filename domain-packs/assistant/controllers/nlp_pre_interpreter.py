@@ -81,6 +81,7 @@ def nlp_preprocess(
         best_intent = max(intent_scores, key=intent_scores.get)  # type: ignore[arg-type]
         result["intent_hint"] = best_intent
         result["intent_confidence"] = "high" if intent_scores[best_intent] >= 2 else "low"
+        result["intent_scores"] = dict(intent_scores)
 
     # Persona keyword detection (fast-path signal for the turn interpreter)
     result["persona_keywords_detected"] = bool(intent_scores.get("persona", 0) > 0)
