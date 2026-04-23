@@ -76,18 +76,28 @@ classified intent.
 ## Intent-specific extraction rules
 
 ### `weather` intent
-- **`location`**: Extract any location mentioned (city, region, country). Infer from context if
-  unambiguous (e.g. "will it rain here" in prior context where location was stated → reuse it).
-  Set to `null` only when truly no location can be determined from the message or context.
-  Examples: `"Okinawa"`, `"Okinawa, Japan"`, `"Tokyo"`, `"New York"`, `"London"`, `null`.
+- **`location`**: Extract the location the user wants weather **for**. In a trip planning context,
+  this is the **destination**, NOT the departure city.
+  Example: "I'm traveling from Syracuse to Okinawa Japan — what's the weather like there?" →
+  `"Okinawa, Japan"` (not `"Syracuse, NY"`).
+  Infer from context if unambiguous (prior message stated location → reuse it).
+  Set to `null` only when truly no location can be determined.
+  Examples: `"Okinawa, Japan"`, `"Tokyo"`, `"London"`, `null`.
 - **`forecast_days`**: Extract if the user specifies a time window (e.g. "this week" → 7,
-  "tomorrow" → 2, "today" → 1). Default `1` when not specified. Clamp to 1-7.
+  "for a week" → 7, "tomorrow" → 2, "today" → 1). Default `1` when not specified. Clamp to 1-7.
 
 ### `search` intent
 - **`query`**: Derive the search query directly from what the user wants to find. Keep it
   concise and specific. Do not paraphrase into a question — write it as a search engine query.
-  Examples: `"scuba diving spots Okinawa"`, `"Peace Park Okinawa history"`, `"best beaches Okinawa"`,
-  `"Okinawa June weather"`. Set to `null` only if no searchable topic can be extracted.
+  **For trip/travel context**: build a specific, factual query using the trip details from context
+  (origin, destination, dates). Do NOT produce vague queries like `"check the prices"`.
+  Examples:
+  - `"flights Syracuse NY to Okinawa Japan June 2026"`
+  - `"hotels Okinawa Japan June 2026 budget"`
+  - `"things to do Okinawa Japan historical cultural food"`
+  - `"scuba diving spots Okinawa"`
+  - `"Peace Park Okinawa history"`
+  Set to `null` only if no searchable topic can be extracted.
 - **`max_results`**: Default `5` unless user specifies (e.g. "top 3" → 3). Clamp to 1-10.
 
 ### `calendar` intent
@@ -102,9 +112,17 @@ classified intent.
   message. Examples: `"Plan a trip to Okinawa in June"`, `"Organise my work week"`.
   Set to `null` if the intent is ambiguous or the user hasn't stated a goal yet.
 - **`constraints`**: Any restrictions, preferences, or requirements mentioned
-  (budget, dates, duration, special needs). Use `null` if none mentioned.
+  (budget, dates, duration, special needs, activities). Use `null` if none mentioned.
 - **`horizon_days`**: Duration of the plan in days if mentioned. Default `3`. Example:
-  "plan my June trip" → `30`, "weekend plan" → 2, "this week" → 7.
+  "plan my June trip" → `30`, "weekend plan" → 2, "this week" → 7, "a week" → 7.
+- **`tool_call_requested`**: Set to `true` whenever the user has provided a clear `goal`
+  (even if no explicit "use a tool" signal is present). Planning requests almost always
+  require tool assistance. Only set `false` when the goal is completely unclear or the
+  user is still in early exploration (e.g. first greeting about a vague idea).
+- **`tool_call_requested`**: Set to `true` whenever the user has provided a clear `goal`
+  (even if no explicit "use a tool" signal is present). Planning requests almost always
+  require tool assistance. Only set `false` when the goal is completely unclear or the
+  user is still in early exploration (e.g. first greeting about a vague idea).
 
 ## Rules
 

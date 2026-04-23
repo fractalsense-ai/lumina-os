@@ -121,17 +121,19 @@ runtime:
       nullable: true
       default: null
       minimum: 1
-      maximum: 5
-      description: "Forecast days for weather intent (1-5)."
+      maximum: 7
+      description: "Forecast days for weather intent (1-7)."
     query:
       type: string
       nullable: true
       default: null
       description: "Search query derived from user message."
     max_results:
-      type: integer
+      type: int
       nullable: true
       default: null
+      minimum: 1
+      maximum: 10
       description: "Max search results (1-10)."
     date_start:
       type: string
@@ -154,9 +156,10 @@ runtime:
       default: null
       description: "Planning constraints or requirements."
     horizon_days:
-      type: integer
+      type: int
       nullable: true
       default: null
+      minimum: 1
       description: "Planning horizon in days."
 
   # ── Action → Prompt Type Map ──────────────────────────────────────

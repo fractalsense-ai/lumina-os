@@ -23,6 +23,11 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
     "search": [
         "search", "look up", "find", "what is", "who is", "define",
         "how does", "tell me about", "explain", "information about",
+        # Travel / cost signals — fire search intent alongside planning/weather
+        "cost", "costs", "price", "prices", "how much", "how much does",
+        "flight", "flights", "airline", "airfare", "fare", "ticket", "tickets",
+        "hotel", "hotels", "accommodation", "hostel", "resort",
+        "affordable", "cheap", "budget",
     ],
     "creative": [
         "write", "story", "poem", "creative", "brainstorm", "rewrite",
@@ -31,6 +36,8 @@ _INTENT_KEYWORDS: dict[str, list[str]] = {
     "planning": [
         "plan", "todo", "to-do", "task list", "organize", "prioritize",
         "goal", "roadmap", "milestone", "project", "checklist",
+        # Travel planning signals
+        "trip", "travel", "vacation", "holiday", "itinerary", "journey",
     ],
     "persona": [
         "persona", "personality", "customize you", "change your tone",

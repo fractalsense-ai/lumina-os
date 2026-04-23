@@ -203,6 +203,110 @@ Two independent intents — no dependency between them.
 }
 ```
 
+### "I want to plan a week-long trip to Okinawa Japan in June from Syracuse NY. I want weather, flight costs, and things to do."
+
+Four tasks: weather at destination, two search tasks (flights, activities), and planning synthesis that depends on all three.
+Weather location is the **destination** (Okinawa), never the departure city.
+
+```json
+{
+  "tasks": [
+    {
+      "task_id": 1,
+      "intent": "weather",
+      "status": "pending",
+      "blocked_by": [],
+      "turn_data": {
+        "intent_type": "weather",
+        "task_status": "open",
+        "tool_call_requested": true,
+        "off_task_ratio": 0.0,
+        "response_latency_sec": 5.0,
+        "satisfaction_signal": "unknown",
+        "location": "Okinawa, Japan",
+        "forecast_days": 5,
+        "query": null,
+        "max_results": null,
+        "date_start": null,
+        "date_end": null,
+        "goal": null,
+        "constraints": null,
+        "horizon_days": null
+      }
+    },
+    {
+      "task_id": 2,
+      "intent": "search",
+      "status": "pending",
+      "blocked_by": [],
+      "turn_data": {
+        "intent_type": "search",
+        "task_status": "open",
+        "tool_call_requested": true,
+        "off_task_ratio": 0.0,
+        "response_latency_sec": 5.0,
+        "satisfaction_signal": "unknown",
+        "location": null,
+        "forecast_days": null,
+        "query": "flights from Syracuse NY to Okinawa Japan June 2026",
+        "max_results": 5,
+        "date_start": null,
+        "date_end": null,
+        "goal": null,
+        "constraints": null,
+        "horizon_days": null
+      }
+    },
+    {
+      "task_id": 3,
+      "intent": "search",
+      "status": "pending",
+      "blocked_by": [],
+      "turn_data": {
+        "intent_type": "search",
+        "task_status": "open",
+        "tool_call_requested": true,
+        "off_task_ratio": 0.0,
+        "response_latency_sec": 5.0,
+        "satisfaction_signal": "unknown",
+        "location": null,
+        "forecast_days": null,
+        "query": "things to do Okinawa Japan historical cultural food fishing scuba diving",
+        "max_results": 5,
+        "date_start": null,
+        "date_end": null,
+        "goal": null,
+        "constraints": null,
+        "horizon_days": null
+      }
+    },
+    {
+      "task_id": 4,
+      "intent": "planning",
+      "status": "pending",
+      "blocked_by": [1, 2, 3],
+      "turn_data": {
+        "intent_type": "planning",
+        "task_status": "open",
+        "tool_call_requested": true,
+        "off_task_ratio": 0.0,
+        "response_latency_sec": 5.0,
+        "satisfaction_signal": "unknown",
+        "location": null,
+        "forecast_days": null,
+        "query": null,
+        "max_results": null,
+        "date_start": null,
+        "date_end": null,
+        "goal": "Plan a week-long trip to Okinawa Japan in June from Syracuse NY",
+        "constraints": "Visit historical and cultural sites, enjoy local food, go fishing and scuba diving",
+        "horizon_days": 7
+      }
+    }
+  ]
+}
+```
+
 ## Rules
 
 - Output ONLY valid JSON. No explanations, no markdown, no extra text.
