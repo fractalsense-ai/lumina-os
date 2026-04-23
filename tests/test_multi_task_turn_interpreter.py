@@ -12,6 +12,7 @@ Covers:
 
 from __future__ import annotations
 
+import functools
 import importlib
 import importlib.util
 import json
@@ -794,7 +795,8 @@ class TestProcessingWeightRouting:
                 slm_weight_overrides={"turn_interpretation": "low"},
             )
 
-        assert captured["call_llm"] is mock_slm
+        assert isinstance(captured["call_llm"], functools.partial)
+        assert captured["call_llm"].func is mock_slm
 
     def test_interpret_turn_input_uses_llm_when_no_override(self):
         """interpret_turn_input passes call_llm when slm_weight_overrides is empty."""
@@ -889,5 +891,6 @@ class TestProcessingWeightRouting:
         ):
             proc.process_message("sess-wr-mti", "weather and trip plan", deterministic_response=False)
 
-        # The _fake_mti should have received call_slm, not call_llm
-        assert captured["call_llm"] is mock_slm
+        # The _fake_mti should have received a partial wrapping call_slm, not call_llm
+        assert isinstance(captured["call_llm"], functools.partial)
+        assert captured["call_llm"].func is mock_slm

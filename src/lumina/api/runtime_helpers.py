@@ -7,12 +7,13 @@ See also:
 
 from __future__ import annotations
 
+import functools
 import inspect
 from typing import Any
 
 from lumina.api.llm import call_llm
 from lumina.api.utils.templates import render_template_value
-from lumina.core.slm import TaskWeight, call_slm, classify_task_weight, slm_available
+from lumina.core.slm import SLM_TURN_MAX_TOKENS, TaskWeight, call_slm, classify_task_weight, slm_available
 
 
 def render_contract_response(
@@ -62,13 +63,14 @@ def interpret_turn_input(
 ) -> dict[str, Any]:
     interpreter = runtime["turn_interpreter_fn"]
     _overrides = slm_weight_overrides or {}
+    _use_slm = (
+        bool(_overrides)
+        and slm_available()
+        and classify_task_weight("turn_interpretation", _overrides) == TaskWeight.LOW
+    )
     _call_fn = (
-        call_slm
-        if (
-            _overrides
-            and slm_available()
-            and classify_task_weight("turn_interpretation", _overrides) == TaskWeight.LOW
-        )
+        functools.partial(call_slm, max_tokens=SLM_TURN_MAX_TOKENS)
+        if _use_slm
         else call_llm
     )
     kwargs: dict[str, Any] = {
@@ -89,7 +91,18 @@ def interpret_turn_input(
         kwargs["world_sim_theme"] = world_sim_theme
     if mud_world_state and "mud_world_state" in _interp_sig.parameters:
         kwargs["mud_world_state"] = mud_world_state
-    return interpreter(**kwargs)
+    try:
+        return interpreter(**kwargs)
+    except Exception as _exc:
+        if _use_slm:
+            import logging as _log
+            _log.getLogger("lumina-api").warning(
+                "SLM turn interpretation failed (%s: %s), retrying with LLM",
+                type(_exc).__name__, _exc,
+            )
+            kwargs["call_llm"] = call_llm
+            return interpreter(**kwargs)
+        raise
 
 
 def invoke_runtime_tool(tool_id: str, payload: dict[str, Any], runtime: dict[str, Any]) -> dict[str, Any]:

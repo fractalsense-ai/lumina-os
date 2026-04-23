@@ -44,6 +44,10 @@ SLM_PHYSICS_MAX_TOKENS: int = int(os.environ.get("LUMINA_SLM_PHYSICS_MAX_TOKENS"
 # Admin command translation also needs a higher token budget — the SLM must
 # parse the instruction against the full operations list and emit a JSON dict.
 SLM_COMMAND_MAX_TOKENS: int = int(os.environ.get("LUMINA_SLM_COMMAND_MAX_TOKENS", "1024"))
+# Turn interpretation (single- and multi-task) must emit a complete JSON object
+# or task-graph array.  512 tokens is insufficient for multi-intent queries;
+# 1024 provides enough headroom without allowing runaway generation.
+SLM_TURN_MAX_TOKENS: int = int(os.environ.get("LUMINA_SLM_TURN_MAX_TOKENS", "1024"))
 
 
 # ─────────────────────────────────────────────────────────────

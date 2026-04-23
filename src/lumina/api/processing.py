@@ -13,6 +13,7 @@ See also:
 
 from __future__ import annotations
 
+import functools
 import inspect
 import json
 import logging
@@ -59,6 +60,7 @@ from lumina.api.utils.coercion import normalize_turn_data
 from lumina.api.utils.glossary import detect_glossary_query
 from lumina.api.utils.text import strip_latex_delimiters
 from lumina.core.slm import (
+    SLM_TURN_MAX_TOKENS,
     TaskWeight,
     call_slm,
     classify_task_weight,
@@ -384,23 +386,38 @@ def process_message(
                 or runtime["turn_interpretation_prompt"]
             )
             _mti_overrides = runtime.get("slm_weight_overrides") or {}
+            _mti_use_slm = (
+                _mti_overrides
+                and slm_available()
+                and classify_task_weight("turn_interpretation", _mti_overrides) == TaskWeight.LOW
+            )
             _mti_call_fn = (
-                call_slm
-                if (
-                    _mti_overrides
-                    and slm_available()
-                    and classify_task_weight("turn_interpretation", _mti_overrides) == TaskWeight.LOW
-                )
+                functools.partial(call_slm, max_tokens=SLM_TURN_MAX_TOKENS)
+                if _mti_use_slm
                 else call_llm
             )
-            turn_data = _mti_fn(
-                call_llm=_mti_call_fn,
-                input_text=input_text,
-                task_context=task_context,
-                prompt_text=_mti_prompt,
-                default_fields=runtime["turn_input_defaults"],
-                tool_fns=runtime.get("tool_fns"),
-            )
+            try:
+                turn_data = _mti_fn(
+                    call_llm=_mti_call_fn,
+                    input_text=input_text,
+                    task_context=task_context,
+                    prompt_text=_mti_prompt,
+                    default_fields=runtime["turn_input_defaults"],
+                    tool_fns=runtime.get("tool_fns"),
+                )
+            except Exception as _mti_exc:
+                if _mti_use_slm:
+                    vlog.warning("[TURN] SLM multi-task interpretation failed (%s: %s), retrying with LLM", type(_mti_exc).__name__, _mti_exc)
+                    turn_data = _mti_fn(
+                        call_llm=call_llm,
+                        input_text=input_text,
+                        task_context=task_context,
+                        prompt_text=_mti_prompt,
+                        default_fields=runtime["turn_input_defaults"],
+                        tool_fns=runtime.get("tool_fns"),
+                    )
+                else:
+                    raise
         else:
             turn_data = interpret_turn_input(
                 input_text, task_context, runtime,
