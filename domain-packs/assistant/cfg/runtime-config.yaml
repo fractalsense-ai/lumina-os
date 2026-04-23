@@ -131,6 +131,7 @@ runtime:
     resolve_location: "I need a location to check the weather — where would you like me to look?"
     refine_query: "What would you like me to search for?"
     clarify_goal: "What would you like me to plan for you?"
+    request_date_range: "What date range would you like to check?"
     default: "Let me help you with that."
 
   tool_call_policies:
@@ -154,6 +155,12 @@ runtime:
           constraints: "{turn_data.constraints}"
           horizon_days: "{turn_data.horizon_days}"
           tool_results: "{turn_data.tool_results}"
+    calendar_query:
+      -
+        tool_id: calendar_query
+        payload:
+          date_start: "{turn_data.date_start}"
+          date_end: "{turn_data.date_end}"
 
 # ── Adapter Bindings ──────────────────────────────────────────────────
 adapters:

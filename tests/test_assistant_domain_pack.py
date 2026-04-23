@@ -780,6 +780,44 @@ def _tavily_mock():
     return m
 
 
+_CALENDAR_ENV = {
+    "GOOGLE_CALENDAR_CLIENT_ID": "test-client-id",
+    "GOOGLE_CALENDAR_CLIENT_SECRET": "test-client-secret",
+    "GOOGLE_CALENDAR_REFRESH_TOKEN": "test-refresh-token",
+}
+
+
+def _google_token_mock():
+    m = MagicMock()
+    m.status_code = 200
+    m.raise_for_status = MagicMock()
+    m.json.return_value = {"access_token": "ya29.test-access-token", "expires_in": 3599}
+    return m
+
+
+def _caldav_mock(events_data=None):
+    from datetime import datetime, timezone
+    if events_data is None:
+        events_data = []
+    mock_client = MagicMock()
+    mock_calendar = MagicMock()
+    mock_client.calendar.return_value = mock_calendar
+    mock_results = []
+    for ev in events_data:
+        mock_event = MagicMock()
+        mock_vevent = MagicMock()
+        mock_vevent.uid.value = ev.get("uid", "uid-001")
+        mock_vevent.summary.value = ev.get("title", "Test Event")
+        start_dt = datetime.fromisoformat(ev.get("start", "2026-04-22T09:00:00")).replace(tzinfo=timezone.utc)
+        end_dt = datetime.fromisoformat(ev.get("end", "2026-04-22T09:30:00")).replace(tzinfo=timezone.utc)
+        mock_vevent.dtstart.value = start_dt
+        mock_vevent.dtend.value = end_dt
+        mock_event.vobject_instance.vevent = mock_vevent
+        mock_results.append(mock_event)
+    mock_calendar.date_search.return_value = mock_results
+    return mock_client
+
+
 class TestToolAdapterStubs:
     @pytest.fixture(autouse=True)
     def _import(self):
@@ -844,12 +882,60 @@ class TestToolAdapterStubs:
         assert r["wind_kph"] == 18.0
 
     def test_calendar_query_ok(self):
-        r = self.calendar_query_tool({"date_start": "2026-04-20"})
+        with patch("httpx.post", return_value=_google_token_mock()), \
+             patch("caldav.DAVClient", return_value=_caldav_mock()), \
+             patch.dict(os.environ, _CALENDAR_ENV):
+            r = self.calendar_query_tool({"date_start": "2026-04-20"})
         assert r["ok"] is True
+        assert "events" in r
+        assert "date_range" in r
 
     def test_calendar_query_missing_start(self):
         r = self.calendar_query_tool({})
         assert r["ok"] is False
+
+    def test_calendar_query_no_credentials(self):
+        env_override = {k: "" for k in _CALENDAR_ENV.keys()}
+        with patch.dict(os.environ, env_override):
+            r = self.calendar_query_tool({"date_start": "2026-04-22"})
+        assert r["ok"] is False
+        assert "not configured" in r["error"]
+
+    def test_calendar_query_token_refresh_failure(self):
+        import httpx as _httpx
+        with patch("httpx.post", side_effect=_httpx.ConnectError("refused")), \
+             patch.dict(os.environ, _CALENDAR_ENV):
+            r = self.calendar_query_tool({"date_start": "2026-04-22"})
+        assert r["ok"] is False
+        assert "token" in r["error"]
+
+    def test_calendar_query_caldav_error(self):
+        mock_client = MagicMock()
+        mock_client.calendar.return_value.date_search.side_effect = Exception("CalDAV failure")
+        with patch("httpx.post", return_value=_google_token_mock()), \
+             patch("caldav.DAVClient", return_value=mock_client), \
+             patch.dict(os.environ, _CALENDAR_ENV):
+            r = self.calendar_query_tool({"date_start": "2026-04-22"})
+        assert r["ok"] is False
+
+    def test_calendar_query_returns_events(self):
+        events_data = [{"uid": "evt-001", "title": "Team standup",
+                        "start": "2026-04-22T09:00:00", "end": "2026-04-22T09:30:00"}]
+        with patch("httpx.post", return_value=_google_token_mock()), \
+             patch("caldav.DAVClient", return_value=_caldav_mock(events_data)), \
+             patch.dict(os.environ, _CALENDAR_ENV):
+            r = self.calendar_query_tool({"date_start": "2026-04-22"})
+        assert r["ok"] is True
+        assert len(r["events"]) == 1
+        assert r["events"][0]["title"] == "Team standup"
+
+    def test_calendar_query_date_end_defaults_to_start(self):
+        with patch("httpx.post", return_value=_google_token_mock()), \
+             patch("caldav.DAVClient", return_value=_caldav_mock()), \
+             patch.dict(os.environ, _CALENDAR_ENV):
+            r = self.calendar_query_tool({"date_start": "2026-04-22"})
+        assert r["ok"] is True
+        assert r["date_range"]["end"] == "2026-04-22"
 
     def test_calendar_write_create(self):
         r = self.calendar_write_tool({"action": "create", "event_title": "Meeting"})

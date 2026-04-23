@@ -35,6 +35,10 @@ spacy>=3.7.0
 # all-MiniLM-L6-v2: 384-dim, ~80MB, CPU-friendly
 sentence-transformers>=3.0.0
 numpy>=1.26.0
+
+# CalDAV client (calendar tool — Google, iCloud, Nextcloud compatible)
+caldav>=1.3.0
+
 #   LUMINA_SLM_ENDPOINT   Ollama base URL  (default: http://localhost:11434)
 
 # Optional password hashing backends (install for production-grade hashing)

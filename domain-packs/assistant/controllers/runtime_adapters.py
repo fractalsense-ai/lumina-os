@@ -227,6 +227,17 @@ def domain_step(
             action = "clarify_goal"
             tier = "ok"
 
+    # ── Calendar tool routing ────────────────────────────────────────
+    # Route to calendar_query when date_start is known; ask otherwise.
+    if intent == "calendar" and bool(evidence.get("tool_call_requested")):
+        date_start = evidence.get("date_start")
+        if date_start:
+            action = "calendar_query"
+            tier = "ok"
+        else:
+            action = "request_date_range"
+            tier = "ok"
+
     # ── Persona Update (if intent is persona, apply update_dict) ────
     current_persona = new_state.get("persona")
     if not isinstance(current_persona, PersonaState):

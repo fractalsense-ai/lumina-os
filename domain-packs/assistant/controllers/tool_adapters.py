@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -14,6 +15,8 @@ import httpx
 _OWM_BASE = "https://api.openweathermap.org/data/2.5"
 _OWM_FORECAST_MAX_DAYS = 5  # free-tier /forecast gives 5 days of 3-hourly data
 _TAVILY_BASE = "https://api.tavily.com"
+_GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+_CALDAV_DEFAULT_URL = "https://apidata.googleusercontent.com/caldav/v2/primary/"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -88,19 +91,86 @@ def weather_lookup_tool(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────
-# Calendar query — stub
+# Calendar query — Google CalDAV via OAuth 2.0 refresh token
 # ─────────────────────────────────────────────────────────────
 
 
 def calendar_query_tool(payload: dict[str, Any]) -> dict[str, Any]:
-    date_start = payload.get("date_start", "")
-    date_end = payload.get("date_end", "")
+    import caldav  # runtime import — caldav must be installed (see requirements.txt)
+
+    date_start = (payload.get("date_start") or "").strip()
     if not date_start:
         return {"ok": False, "error": "date_start is required"}
+    date_end = (payload.get("date_end") or "").strip() or date_start
+
+    client_id = os.getenv("GOOGLE_CALENDAR_CLIENT_ID", "").strip()
+    client_secret = os.getenv("GOOGLE_CALENDAR_CLIENT_SECRET", "").strip()
+    refresh_token = os.getenv("GOOGLE_CALENDAR_REFRESH_TOKEN", "").strip()
+    if not all([client_id, client_secret, refresh_token]):
+        return {"ok": False, "error": "calendar credentials not configured"}
+
+    caldav_url = os.getenv("GOOGLE_CALENDAR_CALDAV_URL", _CALDAV_DEFAULT_URL).strip()
+
+    # ── Exchange refresh token for short-lived access token ────────────────
+    try:
+        token_resp = httpx.post(
+            _GOOGLE_TOKEN_URL,
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            },
+            timeout=10,
+        )
+        token_resp.raise_for_status()
+        access_token = token_resp.json()["access_token"]
+    except httpx.RequestError as exc:
+        return {"ok": False, "error": f"token exchange failed: {exc}"}
+    except httpx.HTTPStatusError as exc:
+        return {"ok": False, "error": f"token exchange error: {exc.response.status_code}"}
+
+    # ── Fetch events via CalDAV ──────────────────────────────────────────
+    try:
+        client = caldav.DAVClient(
+            url=caldav_url,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        calendar = client.calendar(url=caldav_url)
+        start_dt = datetime.fromisoformat(date_start.replace("Z", "+00:00"))
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        end_dt = datetime.fromisoformat(date_end.replace("Z", "+00:00"))
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=timezone.utc)
+        results = calendar.date_search(start=start_dt, end=end_dt, expand=True)
+    except Exception as exc:
+        return {"ok": False, "error": f"calendar query failed: {exc}"}
+
+    events: list[dict[str, Any]] = []
+    for event in results:
+        try:
+            vevent = event.vobject_instance.vevent
+            uid = str(vevent.uid.value) if hasattr(vevent, "uid") else ""
+            title = str(vevent.summary.value) if hasattr(vevent, "summary") else "(no title)"
+            start_val = vevent.dtstart.value
+            try:
+                end_val = vevent.dtend.value
+            except AttributeError:
+                end_val = start_val
+            events.append({
+                "uid": uid,
+                "title": title,
+                "start": start_val.isoformat() if hasattr(start_val, "isoformat") else str(start_val),
+                "end": end_val.isoformat() if hasattr(end_val, "isoformat") else str(end_val),
+            })
+        except Exception:
+            continue
+
     return {
         "ok": True,
-        "events": [],
-        "date_range": {"start": date_start, "end": date_end or date_start},
+        "events": events,
+        "date_range": {"start": date_start, "end": date_end},
     }
 
 
