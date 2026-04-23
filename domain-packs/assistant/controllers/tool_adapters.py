@@ -37,7 +37,15 @@ def weather_lookup_tool(payload: dict[str, Any]) -> dict[str, Any]:
     if not api_key:
         return {"ok": False, "error": "OPENWEATHERMAP_API_KEY not configured"}
 
-    params: dict[str, Any] = {"q": location, "appid": api_key, "units": "metric"}
+    # OWM accepts "City,CountryCode" but not "City, ST" (US state abbreviation).
+    # Normalise "City, ST" → "City,US" so OWM resolves US cities correctly.
+    _US_STATE_RE = __import__("re").compile(
+        r"^(.+?),\s*([A-Z]{2})\s*$"
+    )
+    _m = _US_STATE_RE.match(location)
+    owm_query = f"{_m.group(1)},US" if _m else location
+
+    params: dict[str, Any] = {"q": owm_query, "appid": api_key, "units": "metric"}
 
     try:
         resp = httpx.get(f"{_OWM_BASE}/weather", params=params, timeout=8)

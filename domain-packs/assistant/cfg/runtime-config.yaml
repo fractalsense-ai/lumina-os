@@ -117,10 +117,12 @@ runtime:
       default: null
       description: "Location extracted for weather intent."
     forecast_days:
-      type: integer
+      type: int
       nullable: true
       default: null
-      description: "Forecast days for weather intent (1-7)."
+      minimum: 1
+      maximum: 5
+      description: "Forecast days for weather intent (1-5)."
     query:
       type: string
       nullable: true

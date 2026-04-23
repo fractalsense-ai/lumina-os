@@ -31,7 +31,16 @@ Your job is to decompose the user message into a task graph and output ONLY vali
         "tool_call_requested": <bool>,
         "off_task_ratio": <float 0..1>,
         "response_latency_sec": <float, default 5.0>,
-        "satisfaction_signal": "<string: positive|neutral|negative|unknown>"
+        "satisfaction_signal": "<string: positive|neutral|negative|unknown>",
+        "location": "<string|null — city/region for weather intent, null otherwise>",
+        "forecast_days": <int|null — days 1-5 for weather, null otherwise>,
+        "query": "<string|null — search query for search intent, null otherwise>",
+        "max_results": <int|null — 1-10 for search, null otherwise>,
+        "date_start": "<string|null — ISO 8601 date for calendar intent, null otherwise>",
+        "date_end": "<string|null — ISO 8601 date for calendar intent, null otherwise>",
+        "goal": "<string|null — planning goal statement for planning intent, null otherwise>",
+        "constraints": "<string|null — planning constraints, null otherwise>",
+        "horizon_days": <int|null — planning horizon for planning intent, null otherwise>
       }
     }
   ]
@@ -134,10 +143,19 @@ Two intents: weather (primary, tool needed) → planning (depends on weather res
       "turn_data": {
         "intent_type": "planning",
         "task_status": "open",
-        "tool_call_requested": false,
+        "tool_call_requested": true,
         "off_task_ratio": 0.0,
         "response_latency_sec": 5.0,
-        "satisfaction_signal": "unknown"
+        "satisfaction_signal": "unknown",
+        "location": null,
+        "forecast_days": null,
+        "query": null,
+        "max_results": null,
+        "date_start": null,
+        "date_end": null,
+        "goal": "Plan a trip to Okinawa in June",
+        "constraints": null,
+        "horizon_days": 7
       }
     }
   ]
@@ -188,7 +206,8 @@ Two independent intents — no dependency between them.
 ## Rules
 
 - Output ONLY valid JSON. No explanations, no markdown, no extra text.
-- Never invent fields not listed in the turn_data schema. Use `additionalProperties` only for domain-specific fields like `location` or `forecast_days` that the tool needs.
+- Always include ALL 15 turn_data fields for every task. Set intent-specific fields to `null` when they do not apply to that task's intent.
+- Populate intent-specific fields for the task's own intent: `location`/`forecast_days` for weather, `query`/`max_results` for search, `date_start`/`date_end` for calendar, `goal`/`constraints`/`horizon_days` for planning.
 - Never create cycles in `blocked_by`.
 - The `tasks` array must have at least one element.
 - If in doubt about whether a dependency exists, use `blocked_by: []` (run independently).
