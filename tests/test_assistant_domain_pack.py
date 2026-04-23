@@ -342,6 +342,60 @@ class TestRuntimeAdaptersIntentRouting:
         assert new_state["active_task_id"] is None
         assert len(new_state["task_history"]) == 1
 
+    def test_weather_routing_fires_tool_when_location_known(self):
+        """When location is in evidence, route to weather_lookup (not resolve_location)."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "weather", "task_status": "open",
+                    "tool_call_requested": True, "location": "Okinawa",
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "weather_lookup"
+
+    def test_weather_routing_asks_location_when_missing(self):
+        """When location is absent, route to resolve_location."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "weather", "task_status": "open",
+                    "tool_call_requested": True, "location": None,
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "resolve_location"
+
+    def test_search_routing_fires_tool_when_query_known(self):
+        """When query is in evidence, route to web_search (not refine_query)."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "search", "task_status": "open",
+                    "tool_call_requested": True, "query": "scuba diving spots Okinawa",
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "web_search"
+
+    def test_search_routing_asks_query_when_missing(self):
+        """When query is absent, route to refine_query."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "search", "task_status": "open",
+                    "tool_call_requested": True, "query": None,
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "refine_query"
+
+    def test_planning_routing_fires_tool_when_goal_known(self):
+        """When goal is in evidence, route to planning_create."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "planning", "task_status": "open",
+                    "tool_call_requested": True, "goal": "Plan a trip to Okinawa",
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "planning_create"
+
+    def test_calendar_routing_fires_tool_when_date_known(self):
+        """When date_start is in evidence, route to calendar_query."""
+        state = self.build_initial_state({})
+        evidence = {"intent_type": "calendar", "task_status": "open",
+                    "tool_call_requested": True, "date_start": "2026-06-01",
+                    "satisfaction_signal": "unknown"}
+        _, decision = self.domain_step(state, {}, evidence, {})
+        assert decision["action"] == "calendar_query"
+
 
 # ════════════════════════════════════════════════════════════
 # 4b. SVA Affect Monitor — EWMA & Drift Detection

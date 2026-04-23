@@ -110,6 +110,52 @@ runtime:
         - unknown
       default: unknown
       description: "Detected user satisfaction signal."
+    # ── Intent-specific fields (null when not applicable) ────────
+    location:
+      type: string
+      nullable: true
+      default: null
+      description: "Location extracted for weather intent."
+    forecast_days:
+      type: integer
+      nullable: true
+      default: null
+      description: "Forecast days for weather intent (1-7)."
+    query:
+      type: string
+      nullable: true
+      default: null
+      description: "Search query derived from user message."
+    max_results:
+      type: integer
+      nullable: true
+      default: null
+      description: "Max search results (1-10)."
+    date_start:
+      type: string
+      nullable: true
+      default: null
+      description: "ISO 8601 date start for calendar intent."
+    date_end:
+      type: string
+      nullable: true
+      default: null
+      description: "ISO 8601 date end for calendar intent."
+    goal:
+      type: string
+      nullable: true
+      default: null
+      description: "Concise goal statement for planning intent."
+    constraints:
+      type: string
+      nullable: true
+      default: null
+      description: "Planning constraints or requirements."
+    horizon_days:
+      type: integer
+      nullable: true
+      default: null
+      description: "Planning horizon in days."
 
   # ── Action → Prompt Type Map ──────────────────────────────────────
   action_prompt_type_map:
