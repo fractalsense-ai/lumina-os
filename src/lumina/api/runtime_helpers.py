@@ -12,7 +12,7 @@ from typing import Any
 
 from lumina.api.llm import call_llm
 from lumina.api.utils.templates import render_template_value
-from lumina.core.slm import call_slm
+from lumina.core.slm import TaskWeight, call_slm, classify_task_weight, slm_available
 
 
 def render_contract_response(
@@ -58,10 +58,21 @@ def interpret_turn_input(
     runtime: dict[str, Any],
     world_sim_theme: dict[str, Any] | None = None,
     mud_world_state: dict[str, Any] | None = None,
+    slm_weight_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     interpreter = runtime["turn_interpreter_fn"]
+    _overrides = slm_weight_overrides or {}
+    _call_fn = (
+        call_slm
+        if (
+            _overrides
+            and slm_available()
+            and classify_task_weight("turn_interpretation", _overrides) == TaskWeight.LOW
+        )
+        else call_llm
+    )
     kwargs: dict[str, Any] = {
-        "call_llm": call_llm,
+        "call_llm": _call_fn,
         "input_text": input_text,
         "task_context": task_context,
         "prompt_text": runtime["turn_interpretation_prompt"],

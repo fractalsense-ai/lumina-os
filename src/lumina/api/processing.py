@@ -383,8 +383,18 @@ def process_message(
                 runtime.get("multi_task_interpretation_prompt")
                 or runtime["turn_interpretation_prompt"]
             )
+            _mti_overrides = runtime.get("slm_weight_overrides") or {}
+            _mti_call_fn = (
+                call_slm
+                if (
+                    _mti_overrides
+                    and slm_available()
+                    and classify_task_weight("turn_interpretation", _mti_overrides) == TaskWeight.LOW
+                )
+                else call_llm
+            )
             turn_data = _mti_fn(
-                call_llm=call_llm,
+                call_llm=_mti_call_fn,
                 input_text=input_text,
                 task_context=task_context,
                 prompt_text=_mti_prompt,
@@ -395,6 +405,7 @@ def process_message(
             turn_data = interpret_turn_input(
                 input_text, task_context, runtime,
                 world_sim_theme=world_sim_theme, mud_world_state=mud_world_state,
+                slm_weight_overrides=runtime.get("slm_weight_overrides") or {},
             )
     turn_data = normalize_turn_data(turn_data, runtime.get("turn_input_schema") or {})
 

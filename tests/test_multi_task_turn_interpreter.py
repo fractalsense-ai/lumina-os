@@ -702,3 +702,192 @@ class TestRuntimeLoaderMultiTaskKeys:
         assert "multi_task_turn_interpreter_fn" in ctx
         assert ctx["multi_task_turn_interpreter_fn"] is None
         assert "multi_task_interpretation_prompt" in ctx
+
+
+class TestProcessingWeightRouting:
+    """Weight-routing: turn_interpretation path uses SLM vs LLM per slm_weight_overrides."""
+
+    # ── Helpers ─────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _make_interpreter_runtime(weight_overrides: dict | None = None):
+        """Minimal runtime for interpret_turn_input unit tests."""
+        captured: dict[str, Any] = {}
+
+        def _fake_interpreter(**kwargs: Any) -> dict[str, Any]:
+            captured["call_llm"] = kwargs.get("call_llm")
+            return {"intent_type": "general", "task_status": "n/a"}
+
+        return {
+            "turn_interpreter_fn": _fake_interpreter,
+            "turn_interpretation_prompt": "PROMPT",
+            "turn_input_defaults": {"intent_type": "general", "task_status": "n/a"},
+            "tool_fns": {},
+            "nlp_pre_interpreter_fn": None,
+        }, captured
+
+    @staticmethod
+    def _make_proc_runtime(weight_overrides: dict | None = None):
+        """Full processing.py runtime with optional slm_weight_overrides."""
+        captured: dict[str, Any] = {}
+
+        def _fake_mti(**kwargs: Any) -> dict[str, Any]:
+            captured["call_llm"] = kwargs.get("call_llm")
+            return {"intent_type": "weather", "task_status": "open", "tool_call_requested": False}
+
+        return {
+            "turn_interpreter_fn": MagicMock(return_value={"intent_type": "general", "task_status": "n/a"}),
+            "multi_task_turn_interpreter_fn": _fake_mti,
+            "nlp_pre_interpreter_fn": MagicMock(
+                return_value={"intent_scores": {"weather": 0.8, "planning": 0.7}}
+            ),
+            "turn_interpretation_prompt": "PROMPT",
+            "multi_task_interpretation_prompt": None,
+            "turn_input_schema": {},
+            "turn_input_defaults": {
+                "intent_type": "general",
+                "task_status": "n/a",
+                "tool_call_requested": False,
+                "off_task_ratio": 0.0,
+                "response_latency_sec": 5.0,
+                "satisfaction_signal": "unknown",
+            },
+            "action_prompt_type_map": {},
+            "deterministic_templates": {},
+            "deterministic_templates_mud": {},
+            "tool_call_policies": {},
+            "slm_weight_overrides": weight_overrides or {},
+            "system_prompt": "SYS",
+            "domain": {"id": "assistant", "physics": {}},
+            "module_id": "assistant",
+            "runtime_provenance": {},
+            "state_builder_fn": MagicMock(return_value={}),
+            "domain_step_fn": MagicMock(return_value=({}, {})),
+            "domain_step_params": {},
+            "default_task_spec": {"task_id": "task-1"},
+            "pre_turn_checks": [],
+            "local_only": False,
+            "module_map": {},
+            "tool_fns": {},
+            "ui_manifest": None,
+            "ui_plugin": None,
+            "api_route_defs": [],
+        }, captured
+
+    # ── interpret_turn_input unit tests ─────────────────────────────────────
+
+    def test_interpret_turn_input_uses_slm_when_override_low(self):
+        """interpret_turn_input passes call_slm when override is low and SLM is available."""
+        from lumina.api import runtime_helpers as rh
+
+        runtime, captured = self._make_interpreter_runtime()
+        mock_slm = MagicMock()
+        mock_llm = MagicMock()
+
+        with (
+            patch.object(rh, "slm_available", return_value=True),
+            patch.object(rh, "call_slm", mock_slm),
+            patch.object(rh, "call_llm", mock_llm),
+        ):
+            rh.interpret_turn_input(
+                "hello", {}, runtime,
+                slm_weight_overrides={"turn_interpretation": "low"},
+            )
+
+        assert captured["call_llm"] is mock_slm
+
+    def test_interpret_turn_input_uses_llm_when_no_override(self):
+        """interpret_turn_input passes call_llm when slm_weight_overrides is empty."""
+        from lumina.api import runtime_helpers as rh
+
+        runtime, captured = self._make_interpreter_runtime()
+        mock_slm = MagicMock()
+        mock_llm = MagicMock()
+
+        with (
+            patch.object(rh, "slm_available", return_value=True),
+            patch.object(rh, "call_slm", mock_slm),
+            patch.object(rh, "call_llm", mock_llm),
+        ):
+            rh.interpret_turn_input(
+                "hello", {}, runtime,
+                slm_weight_overrides={},
+            )
+
+        assert captured["call_llm"] is mock_llm
+
+    def test_interpret_turn_input_falls_back_to_llm_when_slm_unavailable(self):
+        """interpret_turn_input uses call_llm even with low override when SLM is unavailable."""
+        from lumina.api import runtime_helpers as rh
+
+        runtime, captured = self._make_interpreter_runtime()
+        mock_slm = MagicMock()
+        mock_llm = MagicMock()
+
+        with (
+            patch.object(rh, "slm_available", return_value=False),
+            patch.object(rh, "call_slm", mock_slm),
+            patch.object(rh, "call_llm", mock_llm),
+        ):
+            rh.interpret_turn_input(
+                "hello", {}, runtime,
+                slm_weight_overrides={"turn_interpretation": "low"},
+            )
+
+        assert captured["call_llm"] is mock_llm
+
+    # ── Multi-task branch integration test ──────────────────────────────────
+
+    def test_mti_branch_uses_slm_when_override_low(self):
+        """Non-local_only multi-task branch passes call_slm when override is low and SLM available."""
+        from lumina.api import processing as proc
+
+        runtime, captured = self._make_proc_runtime(
+            weight_overrides={"turn_interpretation": "low"}
+        )
+        orch = MagicMock()
+        orch.state = {"turn_count": 0}
+        orch.process_turn.return_value = (
+            {"action": "general", "prompt_type": "general"},
+            "general",
+        )
+        orch.log_records = []
+        orch.get_standing_order_attempts.return_value = {}
+        orch.last_invariant_results = []
+        orch.last_domain_lib_decision = {}
+        session = {
+            "orchestrator": orch,
+            "task_spec": {"task_id": "task-1"},
+            "current_task": {},
+            "turn_count": 0,
+            "module_key": "domain/asst/conversation/v1",
+            "session_id": "test-sess-wr",
+            "domain_id": "assistant",
+            "user": {"sub": "u1"},
+            "holodeck": False,
+            "consent": True,
+        }
+        mock_slm = MagicMock(return_value="OK")
+        mock_llm = MagicMock(return_value="OK")
+
+        with (
+            patch.object(proc, "get_or_create_session", return_value=session),
+            patch.object(proc._cfg, "DOMAIN_REGISTRY", MagicMock(**{"get_runtime_context.return_value": runtime})),
+            patch.object(proc._cfg, "PERSISTENCE", MagicMock()),
+            patch.object(proc, "detect_glossary_query", return_value=None),
+            patch.object(proc, "slm_available", return_value=True),
+            patch.object(proc, "normalize_turn_data", side_effect=lambda d, _s: d),
+            patch.object(proc, "apply_tool_call_policy", return_value=[]),
+            patch.object(proc, "build_escalation_content", return_value=(False, None)),
+            patch.object(proc, "build_command_content", return_value=None),
+            patch.object(proc, "assemble_llm_payload", return_value={}),
+            patch.object(proc, "strip_latex_delimiters", side_effect=lambda s: s),
+            patch.object(proc, "call_slm", mock_slm),
+            patch.object(proc, "call_llm", mock_llm),
+            patch("lumina.api.processing._session_containers", {}),
+            patch("lumina.api.processing._persist_session_container"),
+        ):
+            proc.process_message("sess-wr-mti", "weather and trip plan", deterministic_response=False)
+
+        # The _fake_mti should have received call_slm, not call_llm
+        assert captured["call_llm"] is mock_slm
