@@ -13,6 +13,7 @@ import httpx
 
 _OWM_BASE = "https://api.openweathermap.org/data/2.5"
 _OWM_FORECAST_MAX_DAYS = 5  # free-tier /forecast gives 5 days of 3-hourly data
+_TAVILY_BASE = "https://api.tavily.com"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ def calendar_write_tool(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────
-# Web search — stub
+# Web search — Tavily
 # ─────────────────────────────────────────────────────────────
 
 
@@ -132,17 +133,47 @@ def web_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
     if not query:
         return {"ok": False, "error": "query is required"}
     max_results = min(int(payload.get("max_results", 5)), 10)
+
+    api_key = os.getenv("TAVILY_API_KEY", "").strip()
+    if not api_key:
+        return {"ok": False, "error": "TAVILY_API_KEY not configured"}
+
+    try:
+        resp = httpx.post(
+            f"{_TAVILY_BASE}/search",
+            json={
+                "api_key": api_key,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": max_results,
+                "include_answer": True,
+            },
+            timeout=10,
+        )
+        if resp.status_code == 401:
+            return {"ok": False, "error": "invalid API key"}
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.RequestError as exc:
+        return {"ok": False, "error": f"search service unavailable: {exc}"}
+    except httpx.HTTPStatusError as exc:
+        return {"ok": False, "error": f"search service error: {exc.response.status_code}"}
+
+    results = [
+        {
+            "title": r.get("title", ""),
+            "snippet": r.get("content", ""),
+            "url": r.get("url", ""),
+            "relevance": round(float(r.get("score", 0.0)), 4),
+        }
+        for r in data.get("results", [])
+    ]
+
     return {
         "ok": True,
-        "results": [
-            {
-                "title": f"Result {i + 1} for '{query}'",
-                "snippet": f"Stub snippet for result {i + 1}.",
-                "url": f"https://example.com/result-{i + 1}",
-                "relevance": round(1.0 - i * 0.1, 2),
-            }
-            for i in range(max_results)
-        ],
+        "query": query,
+        "results": results,
+        "answer": data.get("answer", ""),
     }
 
 
@@ -152,15 +183,28 @@ def web_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def planning_create_tool(payload: dict[str, Any]) -> dict[str, Any]:
-    title = payload.get("title", "").strip()
-    if not title:
-        return {"ok": False, "error": "title is required"}
+    goal = payload.get("goal", "").strip()
+    if not goal:
+        return {"ok": False, "error": "goal is required"}
+
+    constraints = payload.get("constraints", [])
+    if not isinstance(constraints, list):
+        constraints = []
+    horizon_days = int(payload.get("horizon_days", 3))
+    tool_results: dict[str, Any] = payload.get("tool_results") or {}
+    if not isinstance(tool_results, dict):
+        tool_results = {}
+    sources = list(tool_results.keys())
+
     return {
         "ok": True,
-        "plan_id": "plan-stub-001",
-        "title": title,
-        "items": payload.get("items", []),
-        "confirmation": "Plan created (stub).",
+        "brief": {
+            "goal": goal,
+            "constraints": constraints,
+            "horizon_days": horizon_days,
+            "sources": sources,
+            "status": "ready_for_synthesis",
+        },
     }
 
 

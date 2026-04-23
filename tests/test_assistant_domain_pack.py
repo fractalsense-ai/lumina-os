@@ -764,6 +764,22 @@ def _owm_forecast_mock():
     return m
 
 
+def _tavily_mock():
+    m = MagicMock()
+    m.status_code = 200
+    m.raise_for_status = MagicMock()
+    m.json.return_value = {
+        "results": [{
+            "title": "Okinawa Guide",
+            "url": "https://example.com/okinawa",
+            "content": "Great beaches and clear water.",
+            "score": 0.92,
+        }],
+        "answer": "Okinawa is a tropical island in Japan.",
+    }
+    return m
+
+
 class TestToolAdapterStubs:
     @pytest.fixture(autouse=True)
     def _import(self):
@@ -844,21 +860,91 @@ class TestToolAdapterStubs:
         assert r["ok"] is False
 
     def test_search_ok(self):
-        r = self.web_search_tool({"query": "python"})
+        with patch("httpx.post", return_value=_tavily_mock()), \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}):
+            r = self.web_search_tool({"query": "Okinawa beaches"})
         assert r["ok"] is True
+        assert r["query"] == "Okinawa beaches"
         assert len(r["results"]) > 0
+        assert "title" in r["results"][0]
+        assert "snippet" in r["results"][0]
+        assert "url" in r["results"][0]
+        assert "relevance" in r["results"][0]
+        assert "answer" in r
 
     def test_search_missing_query(self):
         r = self.web_search_tool({})
         assert r["ok"] is False
 
-    def test_planning_create_ok(self):
-        r = self.planning_create_tool({"title": "Trip plan"})
-        assert r["ok"] is True
+    def test_search_no_api_key(self):
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("TAVILY_API_KEY", None)
+            r = self.web_search_tool({"query": "python"})
+        assert r["ok"] is False
+        assert "not configured" in r["error"]
 
-    def test_planning_create_missing_title(self):
+    def test_search_invalid_api_key(self):
+        bad = MagicMock()
+        bad.status_code = 401
+        with patch("httpx.post", return_value=bad), \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "bad-key"}):
+            r = self.web_search_tool({"query": "python"})
+        assert r["ok"] is False
+        assert "invalid API key" in r["error"]
+
+    def test_search_service_unavailable(self):
+        import httpx as _httpx
+        with patch("httpx.post", side_effect=_httpx.ConnectError("refused")), \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}):
+            r = self.web_search_tool({"query": "python"})
+        assert r["ok"] is False
+        assert "unavailable" in r["error"]
+
+    def test_search_answer_in_result(self):
+        with patch("httpx.post", return_value=_tavily_mock()), \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}):
+            r = self.web_search_tool({"query": "Okinawa"})
+        assert r["answer"] == "Okinawa is a tropical island in Japan."
+
+    def test_search_max_results_capped(self):
+        mock = _tavily_mock()
+        mock.json.return_value["results"] = [
+            {"title": f"R{i}", "url": f"https://x.com/{i}", "content": "c", "score": 0.5}
+            for i in range(10)
+        ]
+        with patch("httpx.post", return_value=mock) as mock_post, \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}):
+            self.web_search_tool({"query": "python", "max_results": 999})
+        call_kwargs = mock_post.call_args
+        assert call_kwargs[1]["json"]["max_results"] == 10
+
+    def test_planning_create_ok(self):
+        r = self.planning_create_tool({"goal": "Plan a trip to Okinawa"})
+        assert r["ok"] is True
+        assert "brief" in r
+        assert r["brief"]["status"] == "ready_for_synthesis"
+        assert r["brief"]["goal"] == "Plan a trip to Okinawa"
+
+    def test_planning_create_missing_goal(self):
         r = self.planning_create_tool({})
         assert r["ok"] is False
+        assert "goal" in r["error"]
+
+    def test_planning_create_bundles_tool_results(self):
+        tool_results = {
+            "weather_lookup": {"ok": True, "temperature_c": 28},
+            "web_search": {"ok": True, "results": []},
+        }
+        r = self.planning_create_tool({"goal": "Okinawa trip", "tool_results": tool_results})
+        assert r["ok"] is True
+        assert set(r["brief"]["sources"]) == {"weather_lookup", "web_search"}
+
+    def test_planning_create_sources_list(self):
+        r = self.planning_create_tool({"goal": "Weekend plan"})
+        assert r["ok"] is True
+        assert r["brief"]["sources"] == []
+        assert r["brief"]["horizon_days"] == 3
+        assert r["brief"]["constraints"] == []
 
     def test_planning_update_ok(self):
         r = self.planning_update_tool({"plan_id": "plan-001"})

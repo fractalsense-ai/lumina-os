@@ -129,6 +129,8 @@ runtime:
     creative_response: "Here's what I came up with. Let me know if you'd like changes."
     escalate: "I'm connecting you with a supervisor who can help further."
     resolve_location: "I need a location to check the weather — where would you like me to look?"
+    refine_query: "What would you like me to search for?"
+    clarify_goal: "What would you like me to plan for you?"
     default: "Let me help you with that."
 
   tool_call_policies:
@@ -138,6 +140,20 @@ runtime:
         payload:
           location: "{turn_data.location}"
           forecast_days: "{turn_data.forecast_days}"
+    web_search:
+      -
+        tool_id: web_search
+        payload:
+          query: "{turn_data.query}"
+          max_results: "{turn_data.max_results}"
+    planning_create:
+      -
+        tool_id: planning_create
+        payload:
+          goal: "{turn_data.goal}"
+          constraints: "{turn_data.constraints}"
+          horizon_days: "{turn_data.horizon_days}"
+          tool_results: "{turn_data.tool_results}"
 
 # ── Adapter Bindings ──────────────────────────────────────────────────
 adapters:

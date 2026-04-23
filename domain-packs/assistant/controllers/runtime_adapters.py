@@ -205,6 +205,28 @@ def domain_step(
             action = "resolve_location"
             tier = "ok"
 
+    # ── Search tool routing ──────────────────────────────────────────
+    # Route to web_search when query is resolved; ask for it otherwise.
+    if intent == "search" and bool(evidence.get("tool_call_requested")):
+        query = evidence.get("query")
+        if query:
+            action = "web_search"
+            tier = "ok"
+        else:
+            action = "refine_query"
+            tier = "ok"
+
+    # ── Planning tool routing ────────────────────────────────────────
+    # Build a synthesis brief once the goal is known; clarify if not.
+    if intent == "planning" and bool(evidence.get("tool_call_requested")):
+        goal = evidence.get("goal")
+        if goal:
+            action = "planning_create"
+            tier = "ok"
+        else:
+            action = "clarify_goal"
+            tier = "ok"
+
     # ── Persona Update (if intent is persona, apply update_dict) ────
     current_persona = new_state.get("persona")
     if not isinstance(current_persona, PersonaState):

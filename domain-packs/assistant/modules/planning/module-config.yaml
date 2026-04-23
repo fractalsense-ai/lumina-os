@@ -4,6 +4,20 @@
 # Module: planning (Task planning — extended multi-turn)
 
 domain_physics_path: domain-packs/assistant/modules/planning/domain-physics.json
+turn_interpretation_prompt_path: domain-packs/assistant/domain-lib/reference/planning-task-spec-v1.md
+
+turn_input_schema:
+  goal:
+    type: string
+    nullable: true
+    default: null
+  constraints:
+    type: array
+    default: []
+  horizon_days:
+    type: int
+    minimum: 1
+    default: 3
 
 initial_module_state:
   turn_count: 0
@@ -18,7 +32,10 @@ default_task_spec:
 turn_input_defaults:
   intent_type: planning
   task_status: open
-  tool_call_requested: false
+  tool_call_requested: true
+  goal: null
+  constraints: []
+  horizon_days: 3
   off_task_ratio: 0.0
   response_latency_sec: 5.0
   satisfaction_signal: unknown
