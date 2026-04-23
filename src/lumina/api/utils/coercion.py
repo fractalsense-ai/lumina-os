@@ -75,13 +75,13 @@ def normalize_turn_data(
             continue
 
         if field_type == "bool":
-            normalized[field] = coerce_bool(value, bool(raw_cfg.get("default", False)))
+            normalized[field] = coerce_bool(value, bool(raw_cfg.get("default") or False))
             continue
 
         if field_type == "int":
             minimum = raw_cfg.get("minimum")
             minimum_int = int(minimum) if isinstance(minimum, (int, float)) else None
-            normalized[field] = coerce_int(value, int(raw_cfg.get("default", 0)), minimum_int)
+            normalized[field] = coerce_int(value, int(raw_cfg.get("default") or 0), minimum_int)
             continue
 
         if field_type == "float":
@@ -89,11 +89,11 @@ def normalize_turn_data(
             maximum = raw_cfg.get("maximum")
             min_float = float(minimum) if isinstance(minimum, (int, float)) else None
             max_float = float(maximum) if isinstance(maximum, (int, float)) else None
-            normalized[field] = coerce_float(value, float(raw_cfg.get("default", 0.0)), min_float, max_float)
+            normalized[field] = coerce_float(value, float(raw_cfg.get("default") or 0.0), min_float, max_float)
             continue
 
         if field_type == "string":
-            normalized[field] = coerce_str(value, str(raw_cfg.get("default", "")))
+            normalized[field] = coerce_str(value, str(raw_cfg.get("default") or ""))
             continue
 
         if field_type == "enum":
