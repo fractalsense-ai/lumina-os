@@ -502,6 +502,9 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
             if _mod_dp:
                 _mod_dp_file = repo_root / _mod_dp
                 if _mod_dp_file.is_file():
+                    # Resolve to absolute path so session.py can open it
+                    # regardless of the server's working directory.
+                    _mod_cfg["domain_physics_path"] = str(_mod_dp_file)
                     try:
                         _mod_cfg["domain_physics"] = json.loads(
                             _mod_dp_file.read_text(encoding="utf-8")
