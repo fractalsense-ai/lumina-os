@@ -375,3 +375,34 @@ adapters:
       roles: []
       request_body:
         pin: {type: str, required: true}
+    # ── Safe Person handshake (journal wellness) ──────────────
+    designate_safe_person:
+      path: /api/user/{user_id}/safe-person
+      method: POST
+      module_path: domain-packs/education/controllers/ops/safe_person.py
+      callable: designate_safe_person
+      roles: [root, admin, teacher]
+      request_body:
+        safe_person_id: {type: str, required: true}
+    safe_person_acknowledge:
+      path: /api/safe-person/acknowledge
+      method: POST
+      module_path: domain-packs/education/controllers/ops/safe_person.py
+      callable: safe_person_acknowledge
+      roles: []
+      request_body:
+        token: {type: str, required: true}
+    revoke_safe_person:
+      path: /api/user/{user_id}/safe-person
+      method: DELETE
+      module_path: domain-packs/education/controllers/ops/safe_person.py
+      callable: revoke_safe_person
+      roles: [root, admin, teacher]
+  tools:
+    breathing_regulation:
+      module_path: domain-packs/education/controllers/journal_adapters.py
+      callable: breathing_regulation_tool
+  action_prompt_type_map:
+    journal_tier1_breathing: journal_tier1_breathing
+    journal_tier2_opt_in_ask: journal_tier2_opt_in_ask
+    journal_tier3_safe_person_alert: journal_tier3_safe_person_alert

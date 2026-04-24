@@ -197,6 +197,9 @@ async def chat(
             req.model_id,
             req.model_version,
             req.holodeck,
+            None,                      # physics_sandbox
+            req.journal_entity_salt,
+            req.journal_mode,
         )
     except DomainNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

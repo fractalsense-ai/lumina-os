@@ -150,6 +150,8 @@ def process_message(
     model_version: str | None = None,
     holodeck: bool = False,
     physics_sandbox: dict[str, Any] | None = None,
+    journal_entity_salt: str | None = None,
+    journal_mode: bool = False,
 ) -> dict[str, Any]:
     # physics_sandbox implies holodeck
     if physics_sandbox is not None:
@@ -331,6 +333,28 @@ def process_message(
             except Exception:
                 _nlp_pre_result = {}
                 _multi_intent_detected = False
+
+    # ── Journal entity extraction (SVA-gated, privacy-preserving) ─
+    # When the client sends a journal_entity_salt (device-local, never
+    # persisted server-side), we run spaCy NER on the raw input, hash every
+    # named entity with the salt, and discard the entity names immediately.
+    # The orchestrator and DB see only hashes.  The resulting entity_mentions
+    # and sva_direct evidence keys are merged into _nlp_pre_result so they
+    # flow through to the domain step.
+    if (journal_mode or journal_entity_salt) and not deterministic_response and turn_data_override is None:
+        try:
+            from domain_packs.education.controllers.journal_nlp_pre_interpreter import (
+                extract_journal_evidence,
+            )
+            _journal_evidence = extract_journal_evidence(
+                input_text,
+                journal_entity_salt or "",
+                params={},
+            )
+            _nlp_pre_result.update(_journal_evidence)
+            vlog.debug("[JOURNAL] entity_count=%d", _journal_evidence.get("entity_count", 0))
+        except Exception:
+            vlog.debug("[JOURNAL] entity extraction failed (spaCy unavailable?)", exc_info=True)
 
     # Task graph state — populated when multi-task interpretation fires.
     _task_graph: list[dict[str, Any]] | None = None

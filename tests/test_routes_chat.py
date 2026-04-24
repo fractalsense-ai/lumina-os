@@ -81,6 +81,7 @@ def _auth_header(token: str) -> dict:
 def _fake_process_message(
     session_id, message, turn_data_override, deterministic_response,
     domain_id, user, model_id, model_version, holodeck,
+    physics_sandbox=None, journal_entity_salt=None, journal_mode=False,
 ):
     """Stub for process_message that returns a valid ChatResponse dict."""
     return {

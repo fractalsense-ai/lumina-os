@@ -18,6 +18,13 @@ class ChatRequest(BaseModel):
     model_id: str | None = None
     model_version: str | None = None
     holodeck: bool = False
+    # ── Journal SVA ───────────────────────────────────────────
+    # Device-local 32-byte hex salt used to hash named entities before
+    # they reach the orchestrator.  Never persisted server-side.
+    journal_entity_salt: str | None = None
+    # Flag indicating this turn is in journal mode.  When True the server
+    # extracts SVA heuristics from the text even if no salt is provided.
+    journal_mode: bool = False
 
 
 class ChatResponse(BaseModel):

@@ -526,11 +526,11 @@ def test_default_module_exists_education() -> None:
     assert dp.exists()
     data = json.loads(dp.read_text(encoding="utf-8"))
     assert data["id"] == "domain/edu/general-education/v1"
-    # Student Commons has a single hard-safety invariant
-    assert len(data["invariants"]) == 1
+    # Student Commons has a hard-safety invariant and a privacy invariant
+    assert len(data["invariants"]) == 2
     assert data["invariants"][0]["id"] == "content_safety_hard"
     # And safety + journaling standing orders
-    assert len(data["standing_orders"]) == 2
+    assert len(data["standing_orders"]) == 4
 
 
 @pytest.mark.unit

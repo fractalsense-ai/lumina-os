@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "lumina://standards/journal-evidence-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-06-15",
+  "title": "Journal Evidence",
+  "description": "Structured evidence extracted from a journal turn by journal_nlp_pre_interpreter. This schema describes the NLP output that passes through the processing pipeline. Entity names are hashed before this structure is produced; the raw input text is never stored in this schema.",
+  "type": "object",
+  "required": ["entity_mentions", "sva_direct", "entity_count"],
+  "additionalProperties": false,
+  "properties": {
+    "entity_mentions": {
+      "type": "object",
+      "description": "Map of entity_hash to per-entity affect deltas. Keys are opaque hashes (Entity_XXXX format). Values contain context-local valence/arousal signals derived from the entity's surrounding text.",
+      "additionalProperties": {
+        "$ref": "#/definitions/EntityMention"
+      }
+    },
+    "sva_direct": {
+      "$ref": "#/definitions/SVADirect",
+      "description": "Aggregate salience-valence-arousal scores for the turn as a whole, independent of any specific entity."
+    },
+    "entity_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of distinct entities detected in this turn."
+    }
+  },
+  "definitions": {
+    "EntityMention": {
+      "type": "object",
+      "required": ["valence_delta", "arousal_delta"],
+      "additionalProperties": false,
+      "properties": {
+        "valence_delta": {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0,
+          "description": "Valence signal for this entity's local context (-1=negative, +1=positive)."
+        },
+        "arousal_delta": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Arousal signal derived from sentence-level energy around this entity."
+        }
+      }
+    },
+    "SVADirect": {
+      "type": "object",
+      "required": ["salience", "valence", "arousal"],
+      "additionalProperties": false,
+      "properties": {
+        "salience": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Overall topic salience — proxy for how much the turn focuses on interpersonal content."
+        },
+        "valence": {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0,
+          "description": "Turn-level valence derived from keyword sentiment analysis."
+        },
+        "arousal": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Turn-level arousal derived from capitalisation, punctuation density, and fragmentation."
+        }
+      }
+    }
+  }
+}

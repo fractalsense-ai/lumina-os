@@ -23,12 +23,19 @@
       "severity": "critical",
       "check": "content_safety_flags != []",
       "standing_order_on_violation": "safety_intervene"
+    },
+    {
+      "id": "safe_person_escalation_aggregate_only",
+      "description": "Tier 3 wellness escalation evidence_summary MUST contain only aggregate SVA statistics, intervention history, and sessions_affected count. Entity maps, entity hashes, and journal text are prohibited from escalation payloads.",
+      "severity": "critical",
+      "check": "escalation_evidence_contains_no_entity_map",
+      "blocks": ["entity_map", "entity_mentions", "journal_text"]
     }
   ],
   "standing_orders": [
     {
       "id": "safety_intervene",
-      "description": "Immediately escalate to teacher or domain authority when hard-safety content is detected. Do not attempt to counsel the student — route to a qualified adult.",
+      "description": "Immediately escalate to teacher or domain authority when hard-safety content is detected. Do not attempt to counsel the student \u2014 route to a qualified adult.",
       "action": "escalate",
       "target": "teacher",
       "sla_minutes": 5,
@@ -41,12 +48,38 @@
       "style": "hybrid",
       "passive_turns_before_prompt": 3,
       "categories": ["interests", "learning_goals", "feelings_about_school", "curiosities"]
+    },
+    {
+      "id": "journal_tier1_breathing",
+      "description": "Offer a brief grounding/breathing exercise when a single-turn arousal spike or valence drop is detected during journaling. Non-intrusive: framed as optional, never diagnostic.",
+      "action": "journal_tier1_breathing",
+      "target": "student",
+      "style": "soft_offer",
+      "auto_freeze": false
+    },
+    {
+      "id": "journal_tier3_protocol",
+      "description": "Initiate a Safe Person alert when sustained cross-session wellness signals meet the Tier 3 threshold AND a Safe Person has been designated and has accepted the handshake. Evidence sent is aggregate-only \u2014 no entity maps or journal text.",
+      "action": "journal_tier3_safe_person_alert",
+      "target": "safe_person",
+      "fallback_target": "teacher",
+      "sla_minutes": 60,
+      "auto_freeze": false
     }
   ],
   "artifact_sequence": [],
   "domain_step_params": {
     "window_turns": 10,
-    "drift_threshold": 0.5
+    "drift_threshold": 0.5,
+    "journal_intervention_thresholds": {
+      "tier1_arousal_spike": 0.35,
+      "tier1_valence_drop": -0.30,
+      "tier2_sustained_turns": 3,
+      "tier2_relational_concern_turns": 2,
+      "tier3_valence_floor": -0.60,
+      "tier3_cross_session_count": 2,
+      "baseline_warmup_sessions": 3
+    }
   },
   "subsystem_configs": {
     "journaling": {

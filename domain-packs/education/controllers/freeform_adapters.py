@@ -103,6 +103,25 @@ def freeform_domain_step(
     that user commands route through command dispatch and tool requests
     route through ``apply_tool_call_policy()``.
     """
+    # ── Journal SVA intervention (must run before other checks) ──
+    # If the turn carries entity_mentions or sva_direct evidence from the
+    # journal NLP pre-interpreter, delegate to journal_domain_step first.
+    # That function is responsible for wellness tier evaluation and returns
+    # early when a tier fires, so we return its decision directly.
+    if evidence.get("entity_mentions") or evidence.get("sva_direct"):
+        try:
+            from domain_packs.education.controllers.journal_adapters import (
+                journal_domain_step,
+            )
+        except ModuleNotFoundError:
+            from journal_adapters import journal_domain_step  # type: ignore[no-redef]
+        return journal_domain_step(
+            state=state,
+            task_spec=task_spec,
+            evidence=evidence,
+            params=params,
+        )
+
     intent = evidence.get("intent_type")
     if intent == "command":
         action = "user_command"

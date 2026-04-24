@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "lumina://standards/relational-baseline-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-06-15",
+  "title": "Relational Baseline",
+  "description": "Per-entity EWMA baseline tracking for affect dimensions (valence, arousal, salience). Stored in learning_state.relational_baseline keyed by entity hash. Entity hashes are opaque client-side identifiers; no entity names or identifying information are stored server-side.",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/definitions/EntityBaseline"
+  },
+  "definitions": {
+    "EntityBaseline": {
+      "type": "object",
+      "required": ["valence", "arousal", "salience", "sample_count", "last_updated_utc"],
+      "additionalProperties": false,
+      "properties": {
+        "valence": {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0,
+          "description": "EWMA valence score for this entity (alpha=0.1). Seeded from global affect baseline."
+        },
+        "arousal": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "EWMA arousal score for this entity (alpha=0.1). Seeded from global affect baseline."
+        },
+        "salience": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "EWMA salience score for this entity (alpha=0.1). Higher = more frequently mentioned."
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of turns in which this entity was observed. Used for warmup gating."
+        },
+        "last_updated_utc": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of the last EWMA update."
+        }
+      }
+    }
+  }
+}

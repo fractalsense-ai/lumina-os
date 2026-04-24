@@ -25,8 +25,7 @@ _TRIGGER_LABELS: dict[str, str] = {
     "frustration_detected": "Frustration detected — multiple frustration markers observed",
     "content_safety": "Content safety — potentially unsafe content flagged",
     "consecutive_incorrect": "Consecutive incorrect — repeated wrong answers without progress",
-    "manual_escalation": "Manual escalation — student or system requested teacher intervention",
-}
+    "manual_escalation": "Manual escalation — student or system requested teacher intervention",    "wellness_critical": "Wellness critical \u2014 sustained cross-session wellness signals require trusted adult review",}
 
 
 # ── Capability helpers (domain-specific) ──────────────────────
@@ -415,4 +414,95 @@ async def resolve_escalation(
         "escalation_id": escalation_id,
         "decision": decision,
         **response_extra,
+    }
+
+
+# ── Handler: wellness_critical_escalation ─────────────────────
+# Called by journal_adapters._create_wellness_escalation() — not a
+# direct API endpoint.  Resolves routing (Safe Person → teacher fallback)
+# and notifies the appropriate adult.
+
+
+async def route_wellness_escalation(
+    *,
+    student_id: str,
+    escalation_record: dict[str, Any],
+    persistence: Any,
+    ctx: Any | None = None,
+) -> dict[str, Any]:
+    """Route a wellness_critical escalation to the Safe Person or teacher.
+
+    Looks up the student profile to find ``assigned_safe_person_id`` and
+    ``assigned_teacher_id``.  Routes to the Safe Person when available and
+    their handshake is accepted; otherwise falls back to the teacher.
+
+    The escalation record is persisted to the system ledger.  Any PII or
+    entity data must have been stripped before calling this function —
+    only aggregate evidence (valence, arousal, turn counts) may be present.
+
+    Args:
+        student_id:         The student's user ID.
+        escalation_record:  An EscalationRecord-compatible dict, already
+                            built by the caller with aggregate evidence only.
+        persistence:        The persistence adapter.
+        ctx:                Optional request context (used for HTTP helpers).
+
+    Returns:
+        A dict with {routed_to, target_id, escalation_id}.
+    """
+    from starlette.concurrency import run_in_threadpool
+
+    profile_path = None
+    if ctx is not None:
+        try:
+            profile_path = str(ctx.resolve_user_profile_path(student_id, "education"))
+        except Exception:
+            pass
+
+    profile: dict[str, Any] = {}
+    if profile_path:
+        try:
+            profile = await run_in_threadpool(persistence.load_subject_profile, profile_path)
+        except Exception:
+            pass
+
+    safe_person_id: str | None = profile.get("assigned_safe_person_id")
+    handshake_accepted: bool = bool(profile.get("safe_person_handshake_accepted", False))
+    teacher_id: str | None = profile.get("assigned_teacher_id")
+
+    if safe_person_id and handshake_accepted:
+        target_id = safe_person_id
+        routed_to = "safe_person"
+    elif teacher_id:
+        target_id = teacher_id
+        routed_to = "teacher_fallback"
+    else:
+        target_id = None
+        routed_to = "unrouted"
+        log.warning(
+            "[WELLNESS] No routing target for student=%s; escalation persisted but undelivered",
+            student_id,
+        )
+
+    rec = dict(escalation_record)
+    rec["escalation_target_id"] = target_id
+    rec["metadata"] = {
+        **(rec.get("metadata") or {}),
+        "routed_to": routed_to,
+    }
+
+    session_id = rec.get("session_id", "admin")
+    persistence.append_log_record(
+        session_id, rec,
+        ledger_path=persistence.get_system_ledger_path(session_id),
+    )
+
+    log.info(
+        "[WELLNESS] Escalation %s routed=%s target=%s student=%s",
+        rec.get("record_id"), routed_to, target_id, student_id,
+    )
+    return {
+        "routed_to": routed_to,
+        "target_id": target_id,
+        "escalation_id": rec.get("record_id"),
     }

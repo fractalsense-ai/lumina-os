@@ -17,6 +17,13 @@ preferences:
 assigned_ta_ids: []
 assigned_guardian_ids: []
 
+# ── Safe Person (journaling wellness) ───────────────────────
+# A Safe Person is a trusted adult (different from the guardianship
+# model) the student designates for Tier 3 wellness escalations.
+# Both fields must be set AND handshake accepted before any alert fires.
+assigned_safe_person_id: null
+safe_person_handshake_accepted: false
+
 # ── Domain-wide learning posture ────────────────────────────
 # Module-specific state (mastery, challenge_band, recent_window, fluency)
 # is initialized per-module from runtime-config initial_module_state and
@@ -35,6 +42,13 @@ learning_state:
   # Domain-wide posture defaults (seeds for first module entry)
   challenge: 0.3
   uncertainty: 0.8
+
+  # ── Relational SVA Baseline ────────────────────────────────
+  # Per-entity EWMA affect baselines.  Keys are opaque entity hashes
+  # (e.g. "Entity_A4F9"); entity names are never stored server-side.
+  # Populated by education_profile_serializer when entity_mentions are
+  # present in the orchestrator state.
+  relational_baseline: {}
 
   # ── Vocabulary Growth Tracking ────────────────────────────
   # Passive vocabulary complexity monitoring. Only structured metrics

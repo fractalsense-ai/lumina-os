@@ -360,3 +360,78 @@ def module_deviation(
     if not mod_data:
         return None
     return mod_data.get("delta_from_baseline")
+
+
+# ─────────────────────────────────────────────────────────────
+# Relational Baseline Update
+# ─────────────────────────────────────────────────────────────
+
+def update_relational_baseline(
+    relational_baseline: dict[str, Any],
+    entity_hash: str,
+    valence_delta: float,
+    arousal_delta: float,
+    salience_delta: float,
+    params: dict[str, Any] | None = None,
+    global_baseline: "AffectBaseline | None" = None,
+) -> dict[str, Any]:
+    """Update the per-entity EWMA baseline for a named entity reference.
+
+    The entity is identified only by its privacy-preserving hash
+    (e.g. ``"Entity_A4F9"``).  Entity names are never passed here.
+
+    New entities are seeded at the actor's current global baseline values
+    rather than zero — seeding at zero would cause a spurious intervention
+    trigger on first mention and would not reflect that this entity is new
+    but the actor's overall baseline is known.
+
+    Args:
+        relational_baseline: Current ``learning_state.relational_baseline``
+                             dict from the actor profile.  Mutated in-place
+                             and returned for convenience.
+        entity_hash:         Privacy-preserving entity identifier.
+        valence_delta:       Per-entity valence signal for this turn.
+        arousal_delta:       Per-entity arousal signal for this turn.
+        salience_delta:      Per-entity salience signal for this turn.
+        params:              Optional param overrides (e.g. ``ewma_alpha``).
+        global_baseline:     Actor's current global AffectBaseline, used to
+                             seed new entities.  Falls back to neutral if None.
+
+    Returns:
+        The updated ``relational_baseline`` dict.
+    """
+    p = params or DEFAULT_PARAMS
+    alpha = float(p.get("ewma_alpha", 0.1))
+
+    # Determine seed values for first encounter
+    if global_baseline is not None:
+        seed_s = global_baseline.salience
+        seed_v = global_baseline.valence
+        seed_a = global_baseline.arousal
+    else:
+        seed_s, seed_v, seed_a = 0.5, 0.0, 0.5
+
+    entry = relational_baseline.get(entity_hash)
+    if entry is None:
+        # First mention — seed at global baseline, then apply this turn's delta
+        entry = {
+            "salience": round(_clamp(seed_s + salience_delta * alpha, 0.0, 1.0), 6),
+            "valence": round(_clamp(seed_v + valence_delta * alpha, -1.0, 1.0), 6),
+            "arousal": round(_clamp(seed_a + arousal_delta * alpha, 0.0, 1.0), 6),
+            "sample_count": 1,
+        }
+    else:
+        prev_s = float(entry.get("salience", seed_s))
+        prev_v = float(entry.get("valence", seed_v))
+        prev_a = float(entry.get("arousal", seed_a))
+        n = int(entry.get("sample_count", 1)) + 1
+        entry = {
+            "salience": round(_clamp(alpha * (prev_s + salience_delta) + (1 - alpha) * prev_s, 0.0, 1.0), 6),
+            "valence": round(_clamp(alpha * (prev_v + valence_delta) + (1 - alpha) * prev_v, -1.0, 1.0), 6),
+            "arousal": round(_clamp(alpha * (prev_a + arousal_delta) + (1 - alpha) * prev_a, 0.0, 1.0), 6),
+            "sample_count": n,
+        }
+
+    relational_baseline[entity_hash] = entry
+    return relational_baseline
+

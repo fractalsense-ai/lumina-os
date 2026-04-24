@@ -72,6 +72,7 @@
         "principle_violation",
         "discrepancy_detected",
         "novel_synthesis_review",
+        "wellness_critical",
         "other",
         null
       ],

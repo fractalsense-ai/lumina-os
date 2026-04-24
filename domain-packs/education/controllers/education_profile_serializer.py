@@ -145,6 +145,34 @@ def education_serialize_profile(
     else:
         _sd = orch_state if isinstance(orch_state, dict) else {}
         _state_snapshot = dict(_sd)
+
+        # ── Relational baseline update ─────────────────────────
+        # When the freeform/journal domain step places entity_mentions in
+        # orch_state, update the per-entity EWMA baseline on the profile.
+        # Entity names are never present here — only opaque hashes.
+        _entity_mentions = _sd.get("entity_mentions")
+        if _entity_mentions:
+            _global_bl_data = (profile_data.get("learning_state") or {}).get("affect_baseline") or {}
+            from domain_packs.assistant.domain_lib.affect_monitor import (
+                AffectBaseline,
+                update_relational_baseline,
+            )
+            _global_bl = AffectBaseline.from_dict(_global_bl_data)
+            _rel_bl = dict(
+                (profile_data.get("learning_state") or {}).get("relational_baseline") or {}
+            )
+            for _hash, _signals in _entity_mentions.items():
+                _rel_bl = update_relational_baseline(
+                    _rel_bl,
+                    _hash,
+                    float(_signals.get("valence_delta", 0.0)),
+                    float(_signals.get("arousal_delta", 0.0)),
+                    float(_signals.get("salience_delta", 0.0)),
+                    global_baseline=_global_bl,
+                )
+            _ls = profile_data.setdefault("learning_state", {})
+            _ls["relational_baseline"] = _rel_bl
+
         profile_data["session_state"] = {
             "turn_count": int(_sd.get("turn_count", 0)),
             "operator_id": str(_sd.get("operator_id", "")),
