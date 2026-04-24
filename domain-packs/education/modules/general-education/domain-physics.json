@@ -72,11 +72,20 @@
     "window_turns": 10,
     "drift_threshold": 0.5,
     "journal_intervention_thresholds": {
-      "tier1_arousal_spike": 0.35,
-      "tier1_valence_drop": -0.30,
+      "k_sigma_tier1": 2.0,
+      "k_sigma_tier3": 3.0,
+      "min_samples_for_zscore": 5,
+      "min_variance_floor": 0.001,
+      "k_shape_tier1": 2.0,
+      "k_shape_tier3": 3.0,
+      "min_samples_for_shape": 10,
+      "min_crossing_rate": 0.05,
+      "rhythm_noise_floor": 0.05,
+      "fallback_tier1_arousal_spike": 0.35,
+      "fallback_tier1_valence_drop": -0.30,
+      "fallback_tier3_valence_floor": -0.60,
       "tier2_sustained_turns": 3,
       "tier2_relational_concern_turns": 2,
-      "tier3_valence_floor": -0.60,
       "tier3_cross_session_count": 2,
       "baseline_warmup_sessions": 3
     }

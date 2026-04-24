@@ -49,11 +49,34 @@ log = logging.getLogger("lumina-api.education.journal")
 # ─────────────────────────────────────────────────────────────
 
 _DEFAULT_THRESHOLDS: dict[str, Any] = {
-    "tier1_arousal_spike": 0.35,
-    "tier1_valence_drop": -0.30,
+    # Z-score gates against the actor's learned envelope (per-entity and global).
+    # k=2.0 → ~5% one-sided false-positive rate at steady state if residuals
+    #         are roughly normal; k=3.0 → ~0.3%. Tuned against student data.
+    "k_sigma_tier1": 2.0,
+    "k_sigma_tier3": 3.0,
+    "min_samples_for_zscore": 5,
+    "min_variance_floor": 0.001,
+
+    # Shape (rhythm) gates — Phase F heartbeat-shape detection. Catches
+    # sustained one-direction drift INSIDE the amplitude envelope. k_shape
+    # multiplies the actor's expected mean run length (1 / crossing_rate),
+    # so the threshold auto-scales to each actor's natural oscillation.
+    "k_shape_tier1": 2.0,
+    "k_shape_tier3": 3.0,
+    "min_samples_for_shape": 10,
+    "min_crossing_rate": 0.05,
+
+    # Cold-start fallback: used while baselines are still warming up
+    # (sample_count < min_samples_for_zscore). Once envelope is mature these
+    # constants no longer drive escalation — the actor's own oscillation
+    # pattern does.
+    "fallback_tier1_arousal_spike": 0.35,
+    "fallback_tier1_valence_drop": -0.30,
+    "fallback_tier3_valence_floor": -0.60,
+
+    # Tier-2 / Tier-3 cross-window counters (independent of envelope check)
     "tier2_sustained_turns": 3,
     "tier2_relational_concern_turns": 2,
-    "tier3_valence_floor": -0.60,
     "tier3_cross_session_count": 2,
     "baseline_warmup_sessions": 3,
 }
@@ -129,11 +152,136 @@ def journal_domain_step(
     if baseline_sessions_remaining > 0:
         return state, {"tier": "ok", "action": None, "message": "warmup_gate_active"}
 
-    # ── Tier 1 — single-turn spike ────────────────────────────
-    tier1_arousal_spike = float(thresholds["tier1_arousal_spike"])
-    tier1_valence_drop = float(thresholds["tier1_valence_drop"])
+    # ── Pull learned baselines for envelope checks ────────────
+    # The actor's own oscillation envelope (per-entity + global) drives
+    # Tier 1 / Tier 3 once enough samples exist. Absolute thresholds are
+    # only the cold-start fallback.
+    relational_baseline: dict[str, Any] = {}
+    if profile_data:
+        ls = profile_data.get("learning_state") or {}
+        relational_baseline = dict(ls.get("relational_baseline") or {})
 
-    is_tier1 = arousal > tier1_arousal_spike or valence < tier1_valence_drop
+    k_sigma_tier1 = float(thresholds["k_sigma_tier1"])
+    k_sigma_tier3 = float(thresholds["k_sigma_tier3"])
+    min_samples_z = int(thresholds["min_samples_for_zscore"])
+    min_var_floor = float(thresholds["min_variance_floor"])
+
+    # ── Tier 1 — envelope deviation (z-score) with fallback ──
+    # Strategy: if ANY entity referenced this turn has a mature baseline AND
+    # the per-entity SVA reading is outside its envelope → Tier 1. Otherwise,
+    # if we have a global SVA reading, check that against the actor's global
+    # baseline. If no baseline anywhere is mature, fall back to absolute
+    # thresholds so the system isn't completely blind on day one.
+    fallback_arousal = float(thresholds["fallback_tier1_arousal_spike"])
+    fallback_valence = float(thresholds["fallback_tier1_valence_drop"])
+
+    is_tier1 = False
+    tier1_reason = "within_envelope"
+    any_mature_baseline = False
+    worst_z_t1 = 0.0
+
+    # Per-entity envelope checks
+    try:
+        from affect_monitor import check_relational_deviation  # type: ignore
+    except ModuleNotFoundError:
+        from domain_packs.assistant.domain_lib.affect_monitor import (  # type: ignore[no-redef]
+            check_relational_deviation,
+        )
+
+    for h, signals in entity_mentions.items():
+        baseline_entry = relational_baseline.get(h)
+        # The per-entity affect reading for this turn = baseline mean + this turn's delta.
+        if baseline_entry is not None:
+            obs_v = float(baseline_entry.get("valence", 0.0)) + float(signals.get("valence_delta", 0.0))
+            obs_a = float(baseline_entry.get("arousal", 0.5)) + float(signals.get("arousal_delta", 0.0))
+            obs_s = float(baseline_entry.get("salience", 0.5)) + float(signals.get("salience_delta", 0.0))
+        else:
+            obs_v, obs_a, obs_s = valence, arousal, salience
+        check = check_relational_deviation(
+            baseline_entry, obs_v, obs_a, obs_s,
+            k_sigma=k_sigma_tier1,
+            min_samples=min_samples_z,
+            min_variance_floor=min_var_floor,
+        )
+        if check["mature"]:
+            any_mature_baseline = True
+            if check["z_score"] > worst_z_t1:
+                worst_z_t1 = float(check["z_score"])
+            if check["triggered"]:
+                is_tier1 = True
+                tier1_reason = f"entity_envelope_{check['axis']}_z{check['z_score']}"
+                break
+
+    # Global SVA envelope check (covers entity-less journal turns too)
+    if not is_tier1 and sva:
+        try:
+            from affect_monitor import check_global_deviation, AffectBaseline  # type: ignore
+        except ModuleNotFoundError:
+            from domain_packs.assistant.domain_lib.affect_monitor import (  # type: ignore[no-redef]
+                check_global_deviation,
+                AffectBaseline,
+            )
+        global_baseline_dict = (profile_data or {}).get("learning_state", {}).get("global_affect_baseline")
+        global_baseline = AffectBaseline.from_dict(global_baseline_dict) if global_baseline_dict else None
+        gcheck = check_global_deviation(
+            global_baseline, valence, arousal, salience,
+            k_sigma=k_sigma_tier1,
+            min_samples=min_samples_z,
+            min_variance_floor=min_var_floor,
+        )
+        if gcheck["mature"]:
+            any_mature_baseline = True
+            if gcheck["triggered"]:
+                is_tier1 = True
+                tier1_reason = f"global_envelope_{gcheck['axis']}_z{gcheck['z_score']}"
+
+    # ── Tier 1 — shape (rhythm) check ────────────────────────
+    # Even when amplitude stays inside the envelope, a sustained one-direction
+    # run (or absent natural flips) signals the actor's normal rhythm is
+    # broken. Heartbeat analogy: ST elevation or rate change inside the band.
+    k_shape_tier1 = float(thresholds["k_shape_tier1"])
+    min_samples_shape = int(thresholds["min_samples_for_shape"])
+    min_crossing_rate = float(thresholds["min_crossing_rate"])
+
+    try:
+        from affect_monitor import check_shape_deviation  # type: ignore
+    except ModuleNotFoundError:
+        from domain_packs.assistant.domain_lib.affect_monitor import (  # type: ignore[no-redef]
+            check_shape_deviation,
+        )
+
+    if not is_tier1:
+        for h, _signals in entity_mentions.items():
+            baseline_entry = relational_baseline.get(h)
+            if not baseline_entry:
+                continue
+            sc = int(baseline_entry.get("sample_count", 0))
+            for axis in ("valence", "arousal", "salience"):
+                shape = check_shape_deviation(
+                    crossing_rate=float(baseline_entry.get(f"{axis}_crossing_rate", 0.5)),
+                    run_length=int(baseline_entry.get(f"{axis}_run_length", 0)),
+                    sample_count=sc,
+                    k_shape=k_shape_tier1,
+                    min_samples=min_samples_shape,
+                    min_crossing_rate=min_crossing_rate,
+                )
+                if shape["mature"]:
+                    any_mature_baseline = True
+                    if shape["triggered"]:
+                        is_tier1 = True
+                        tier1_reason = (
+                            f"entity_shape_{axis}_run{shape['run_length']}"
+                            f"_dir_{shape['direction']}"
+                        )
+                        break
+            if is_tier1:
+                break
+
+    # Cold-start fallback (no mature baseline anywhere yet)
+    if not is_tier1 and not any_mature_baseline:
+        if arousal > fallback_arousal or valence < fallback_valence:
+            is_tier1 = True
+            tier1_reason = "fallback_absolute_threshold"
 
     if is_tier1:
         state["sustained_elevation_count"] = int(state.get("sustained_elevation_count", 0)) + 1
@@ -142,15 +290,30 @@ def journal_domain_step(
         # Reset sustained counter when no spike this turn
         state["sustained_elevation_count"] = 0
 
-    # Count relational concerns (entities with negative valence delta)
-    relational_concern_count = sum(
-        1 for sig in state_entity_mentions.values()
-        if float(sig.get("valence_delta", 0.0)) < tier1_valence_drop
-    )
+    # Per-entity relational concern count (z-score, with fallback)
+    tier2_relational = int(thresholds["tier2_relational_concern_turns"])
+    relational_concern_count = 0
+    for h, sig in state_entity_mentions.items():
+        baseline_entry = relational_baseline.get(h)
+        if baseline_entry and int(baseline_entry.get("sample_count", 0)) >= min_samples_z:
+            obs_v = float(baseline_entry.get("valence", 0.0)) + float(sig.get("valence_delta", 0.0))
+            obs_a = float(baseline_entry.get("arousal", 0.5)) + float(sig.get("arousal_delta", 0.0))
+            obs_s = float(baseline_entry.get("salience", 0.5)) + float(sig.get("salience_delta", 0.0))
+            chk = check_relational_deviation(
+                baseline_entry, obs_v, obs_a, obs_s,
+                k_sigma=k_sigma_tier1,
+                min_samples=min_samples_z,
+                min_variance_floor=min_var_floor,
+            )
+            if chk["triggered"] and chk["axis"] == "valence":
+                relational_concern_count += 1
+        else:
+            # Fallback: legacy absolute drop
+            if float(sig.get("valence_delta", 0.0)) < fallback_valence:
+                relational_concern_count += 1
 
     # ── Tier 2 — sustained elevation ─────────────────────────
     tier2_sustained = int(thresholds["tier2_sustained_turns"])
-    tier2_relational = int(thresholds["tier2_relational_concern_turns"])
     sustained = int(state.get("sustained_elevation_count", 0))
     tier2_opt_in_pending = bool(state.get("tier2_opt_in_pending", False))
 
@@ -159,8 +322,8 @@ def journal_domain_step(
         and (sustained >= tier2_sustained or relational_concern_count >= tier2_relational)
     )
 
-    # ── Tier 3 — cross-session critical ──────────────────────
-    tier3_valence_floor = float(thresholds["tier3_valence_floor"])
+    # ── Tier 3 — cross-session critical (envelope-gated) ─────
+    fallback_tier3_floor = float(thresholds["fallback_tier3_valence_floor"])
     tier3_cross_session_count = int(thresholds["tier3_cross_session_count"])
     cross_session_count = int(state.get("cross_session_elevation_count", 0))
     safe_person_alerted = bool(state.get("safe_person_alerted", False))
@@ -171,9 +334,56 @@ def journal_domain_step(
         _assigned_safe_person_id = profile_data.get("assigned_safe_person_id")
         _safe_person_handshake_accepted = bool(profile_data.get("safe_person_handshake_accepted", False))
 
+    # Tier 3 valence-floor check: prefer envelope-based (k_sigma_tier3) on the
+    # most-mentioned entity baseline; fall back to absolute floor only when no
+    # entity baseline is mature.
+    valence_critical = False
+    if relational_baseline:
+        for h, signals in entity_mentions.items():
+            baseline_entry = relational_baseline.get(h)
+            if not baseline_entry or int(baseline_entry.get("sample_count", 0)) < min_samples_z:
+                continue
+            obs_v = float(baseline_entry.get("valence", 0.0)) + float(signals.get("valence_delta", 0.0))
+            obs_a = float(baseline_entry.get("arousal", 0.5)) + float(signals.get("arousal_delta", 0.0))
+            obs_s = float(baseline_entry.get("salience", 0.5)) + float(signals.get("salience_delta", 0.0))
+            chk3 = check_relational_deviation(
+                baseline_entry, obs_v, obs_a, obs_s,
+                k_sigma=k_sigma_tier3,
+                min_samples=min_samples_z,
+                min_variance_floor=min_var_floor,
+            )
+            if chk3["triggered"] and chk3["axis"] == "valence" and obs_v < float(baseline_entry.get("valence", 0.0)):
+                valence_critical = True
+                break
+    if not valence_critical and not any_mature_baseline:
+        valence_critical = valence < fallback_tier3_floor
+
+    # Tier 3 shape check: extreme sustained drift (k_shape_tier3 × expected
+    # mean run length) on a mature baseline is a critical rhythm break, even
+    # if the amplitude check didn't fire. Only treat as critical when valence
+    # is the affected axis AND direction is negative (sustained downward).
+    if not valence_critical:
+        k_shape_tier3 = float(thresholds["k_shape_tier3"])
+        for h, _signals in entity_mentions.items():
+            be = relational_baseline.get(h)
+            if not be:
+                continue
+            sc = int(be.get("sample_count", 0))
+            shape_v = check_shape_deviation(
+                crossing_rate=float(be.get("valence_crossing_rate", 0.5)),
+                run_length=int(be.get("valence_run_length", 0)),
+                sample_count=sc,
+                k_shape=k_shape_tier3,
+                min_samples=min_samples_shape,
+                min_crossing_rate=min_crossing_rate,
+            )
+            if shape_v["triggered"] and shape_v["direction"] == "negative":
+                valence_critical = True
+                break
+
     is_tier3 = (
         not safe_person_alerted
-        and valence < tier3_valence_floor
+        and valence_critical
         and cross_session_count >= tier3_cross_session_count
         and bool(_assigned_safe_person_id)
         and _safe_person_handshake_accepted
@@ -211,7 +421,7 @@ def journal_domain_step(
         return state, {
             "tier": "tier1",
             "action": "journal_tier1_breathing",
-            "message": "tier1_arousal_spike_or_valence_drop",
+            "message": tier1_reason,
         }
 
     return state, {"tier": "ok", "action": None, "message": None}

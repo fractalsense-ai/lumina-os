@@ -564,3 +564,376 @@ class TestFreeformAdapterDelegation:
         _, decision = freeform_domain_step(state, {}, evidence, {})
         assert decision["tier"] == "ok"
         assert "tier1" not in str(decision)
+
+
+# ── Envelope (z-score) tracking tests ───────────────────────────────────
+
+
+class TestEnvelopeTracking:
+    """EWMA variance fields appear and grow with per-turn deltas."""
+
+    def test_variance_fields_seeded_on_first_encounter(self):
+        from affect_monitor import AffectBaseline, update_relational_baseline
+
+        gb = AffectBaseline(valence=0.0, arousal=0.3, salience=0.5)
+        rb = update_relational_baseline({}, "Entity_X", 0.1, 0.0, 0.1, {}, gb)
+        entry = rb["Entity_X"]
+        assert "valence_variance" in entry
+        assert "arousal_variance" in entry
+        assert "salience_variance" in entry
+        # Seed default = 0.04
+        assert abs(entry["valence_variance"] - 0.04) < 1e-6
+
+    def test_variance_responds_to_volatile_residuals(self):
+        from affect_monitor import AffectBaseline, update_relational_baseline
+
+        gb = AffectBaseline(valence=0.0, arousal=0.3, salience=0.5)
+        rb: dict[str, Any] = {}
+        # Alternate large positive/negative valence deltas to inflate variance
+        for delta in [0.6, -0.6, 0.6, -0.6, 0.6, -0.6]:
+            rb = update_relational_baseline(rb, "Entity_V", delta, 0.0, 0.0, {}, gb)
+        # Should grow well above seed
+        assert rb["Entity_V"]["valence_variance"] > 0.10
+
+    def test_variance_stable_for_quiet_actor(self):
+        from affect_monitor import AffectBaseline, update_relational_baseline
+
+        gb = AffectBaseline(valence=0.0, arousal=0.3, salience=0.5)
+        rb: dict[str, Any] = {}
+        # Tiny consistent deltas → variance should decay below seed
+        for _ in range(20):
+            rb = update_relational_baseline(rb, "Entity_Q", 0.01, 0.01, 0.01, {}, gb)
+        assert rb["Entity_Q"]["valence_variance"] < 0.04
+
+    def test_global_baseline_round_trips_variance(self):
+        from affect_monitor import AffectBaseline
+
+        bl = AffectBaseline(valence=0.1, valence_variance=0.07, arousal_variance=0.05)
+        d = bl.to_dict()
+        assert d["valence_variance"] == 0.07
+        assert d["arousal_variance"] == 0.05
+        roundtrip = AffectBaseline.from_dict(d)
+        assert roundtrip.valence_variance == 0.07
+        assert roundtrip.arousal_variance == 0.05
+
+
+class TestZScoreGate:
+    """check_relational_deviation triggers on z-score, not absolute thresholds."""
+
+    def _mature_entry(self, valence=0.0, valence_var=0.04, sample_count=10):
+        return {
+            "valence": valence,
+            "arousal": 0.5,
+            "salience": 0.5,
+            "valence_variance": valence_var,
+            "arousal_variance": 0.04,
+            "salience_variance": 0.04,
+            "sample_count": sample_count,
+        }
+
+    def test_within_envelope_does_not_trigger(self):
+        from affect_monitor import check_relational_deviation
+
+        # Actor's valence baseline = -0.4, std = 0.2 (var = 0.04). Reading -0.45
+        # is z=0.25 — well inside the 2σ envelope.
+        entry = self._mature_entry(valence=-0.4, valence_var=0.04)
+        result = check_relational_deviation(entry, valence=-0.45, arousal=0.5,
+                                            salience=0.5, k_sigma=2.0)
+        assert result["triggered"] is False
+        assert result["mature"] is True
+        assert result["reason"] == "within_envelope"
+
+    def test_outside_envelope_triggers(self):
+        from affect_monitor import check_relational_deviation
+
+        # Same baseline, but valence drops to -0.85 → z=2.25 > 2.0
+        entry = self._mature_entry(valence=-0.4, valence_var=0.04)
+        result = check_relational_deviation(entry, valence=-0.85, arousal=0.5,
+                                            salience=0.5, k_sigma=2.0)
+        assert result["triggered"] is True
+        assert result["axis"] == "valence"
+        assert result["z_score"] > 2.0
+
+    def test_picks_worst_axis(self):
+        from affect_monitor import check_relational_deviation
+
+        entry = self._mature_entry(valence=0.0, valence_var=0.04)
+        entry["arousal"] = 0.3
+        entry["arousal_variance"] = 0.01  # std=0.1
+        # arousal jumps to 0.7 → z = 4.0; valence to -0.5 → z = 2.5
+        result = check_relational_deviation(entry, valence=-0.5, arousal=0.7,
+                                            salience=0.5, k_sigma=2.0)
+        assert result["triggered"] is True
+        assert result["axis"] == "arousal"
+
+    def test_variance_floor_prevents_divide_by_zero(self):
+        from affect_monitor import check_relational_deviation
+
+        entry = self._mature_entry(valence=0.0, valence_var=0.0)
+        # With min_variance_floor=0.001, sqrt=0.0316; tiny deltas still get
+        # finite z-scores rather than infinity.
+        result = check_relational_deviation(entry, valence=0.05, arousal=0.5,
+                                            salience=0.5, k_sigma=2.0,
+                                            min_variance_floor=0.001)
+        assert result["mature"] is True
+        # Should be finite
+        assert result["z_score"] < 1e6
+
+
+class TestWarmupFallback:
+    """Below min_samples_for_zscore the absolute fallback governs Tier 1."""
+
+    def test_immature_baseline_returns_immature(self):
+        from affect_monitor import check_relational_deviation
+
+        entry = {
+            "valence": 0.0, "arousal": 0.5, "salience": 0.5,
+            "valence_variance": 0.04, "arousal_variance": 0.04,
+            "salience_variance": 0.04,
+            "sample_count": 2,  # below default min_samples=5
+        }
+        result = check_relational_deviation(entry, valence=-0.9, arousal=0.9,
+                                            salience=0.9, k_sigma=2.0,
+                                            min_samples=5)
+        assert result["triggered"] is False
+        assert result["mature"] is False
+        assert result["reason"] == "baseline_immature"
+
+    def test_fallback_thresholds_drive_cold_start_tier1(self):
+        from journal_adapters import journal_domain_step
+
+        # No profile_data → no mature baseline anywhere → fallback path active.
+        state = _make_state()
+        evidence = _make_evidence(arousal=0.5, valence=0.0)
+        _, decision = journal_domain_step(state, {}, evidence, {})
+        assert decision["tier"] == "tier1"
+        assert decision["message"] == "fallback_absolute_threshold"
+
+
+class TestTier3EnvelopeFloor:
+    """Tier 3 fires on z-score≥k_sigma_tier3 even when raw valence > legacy floor."""
+
+    def test_envelope_tier3_fires_within_legacy_floor(self):
+        from journal_adapters import journal_domain_step
+
+        # Mature entity baseline: valence mean=-0.1, very tight variance.
+        # Observed valence delta of -0.3 → obs ≈ -0.4, residual=-0.3, std=0.1
+        # → z=3.0 → exceeds k_sigma_tier3=3.0 (use slightly worse delta to be safe).
+        entity_hash = "Entity_TT00"
+        relational_baseline = {
+            entity_hash: {
+                "valence": -0.1, "arousal": 0.4, "salience": 0.5,
+                "valence_variance": 0.01, "arousal_variance": 0.04,
+                "salience_variance": 0.04,
+                "sample_count": 20,
+            }
+        }
+        profile_data = {
+            "learning_state": {"relational_baseline": relational_baseline},
+            "assigned_safe_person_id": "sp_42",
+            "safe_person_handshake_accepted": True,
+        }
+        # Cross-session count primed; SVA direct still > legacy -0.60 floor.
+        state = _make_state(cross_session=2)
+        evidence = _make_evidence(
+            valence=-0.40, arousal=0.0,
+            entity_mentions={entity_hash: {"valence_delta": -0.35, "arousal_delta": 0.0, "salience_delta": 0.0}},
+        )
+        _, decision = journal_domain_step(state, {}, evidence, {}, profile_data=profile_data)
+        # Despite raw valence -0.40 being above the legacy -0.60 floor, the
+        # envelope deviation should have escalated to Tier 3.
+        assert decision["tier"] == "tier3", f"got {decision}"
+
+# ── Phase F: Rhythm tracking & shape detection ──────────────────────────
+
+
+class TestRhythmTracking:
+    """crossing_rate and run_length update correctly under EWMA semantics."""
+
+    def test_run_length_grows_on_sustained_drift(self):
+        from affect_monitor import AffectBaseline, update_relational_baseline
+
+        gb = AffectBaseline(valence=0.0, arousal=0.3, salience=0.5)
+        rb: dict[str, Any] = {}
+        # Five same-direction (positive) valence deltas above noise floor
+        for _ in range(5):
+            rb = update_relational_baseline(rb, "Entity_R", 0.2, 0.0, 0.0, {}, gb)
+        entry = rb["Entity_R"]
+        # First call seeds (run=+1), then 4 same-sign continuations → +5
+        assert entry["valence_run_length"] == 5
+        # crossing_rate decays toward 0 because no flips
+        assert entry["valence_crossing_rate"] < 0.5
+
+    def test_run_length_resets_on_flip(self):
+        from affect_monitor import AffectBaseline, update_relational_baseline
+
+        gb = AffectBaseline(valence=0.0, arousal=0.3, salience=0.5)
+        rb: dict[str, Any] = {}
+        for _ in range(3):
+            rb = update_relational_baseline(rb, "Entity_F", 0.2, 0.0, 0.0, {}, gb)
+        # Now flip sign
+        rb = update_relational_baseline(rb, "Entity_F", -0.2, 0.0, 0.0, {}, gb)
+        entry = rb["Entity_F"]
+        assert entry["valence_run_length"] == -1
+
+    def test_noise_floor_ignores_tiny_residuals(self):
+        from affect_monitor import _update_rhythm
+
+        # Tiny residual (below default 0.05 noise floor) → unchanged
+        new_run, new_cr = _update_rhythm(
+            residual=0.01, prev_run=4, prev_crossing_rate=0.2,
+            alpha=0.1, noise_floor=0.05,
+        )
+        assert new_run == 4
+        assert new_cr == 0.2
+
+    def test_rhythm_round_trips_via_to_dict(self):
+        from affect_monitor import AffectBaseline
+
+        bl = AffectBaseline(
+            valence=0.1,
+            valence_crossing_rate=0.23,
+            valence_run_length=7,
+            arousal_crossing_rate=0.41,
+            arousal_run_length=-3,
+        )
+        d = bl.to_dict()
+        assert d["valence_crossing_rate"] == 0.23
+        assert d["valence_run_length"] == 7
+        assert d["arousal_run_length"] == -3
+        rt = AffectBaseline.from_dict(d)
+        assert rt.valence_crossing_rate == 0.23
+        assert rt.valence_run_length == 7
+        assert rt.arousal_run_length == -3
+
+
+class TestShapeDeviation:
+    """check_shape_deviation triggers on broken rhythm, not amplitude."""
+
+    def test_alternating_actor_does_not_trigger(self):
+        from affect_monitor import check_shape_deviation
+
+        # Volatile actor: crossing_rate 0.5, currently mid-run length 2.
+        # Threshold = 2.0 * 1/0.5 = 4.0 → run of 2 is normal.
+        result = check_shape_deviation(
+            crossing_rate=0.5, run_length=2, sample_count=20,
+            k_shape=2.0,
+        )
+        assert result["triggered"] is False
+        assert result["reason"] == "rhythm_normal"
+        assert result["mature"] is True
+
+    def test_sustained_drift_triggers(self):
+        from affect_monitor import check_shape_deviation
+
+        # Volatile actor (crossing_rate=0.5) with long run of 8
+        # Threshold = 4.0 → run of 8 breaks rhythm
+        result = check_shape_deviation(
+            crossing_rate=0.5, run_length=8, sample_count=20,
+            k_shape=2.0,
+        )
+        assert result["triggered"] is True
+        assert result["direction"] == "positive"
+        assert result["reason"] == "rhythm_broken"
+
+    def test_negative_run_direction(self):
+        from affect_monitor import check_shape_deviation
+
+        result = check_shape_deviation(
+            crossing_rate=0.5, run_length=-9, sample_count=20,
+            k_shape=2.0,
+        )
+        assert result["triggered"] is True
+        assert result["direction"] == "negative"
+
+    def test_immature_baseline(self):
+        from affect_monitor import check_shape_deviation
+
+        result = check_shape_deviation(
+            crossing_rate=0.3, run_length=20, sample_count=5,
+            k_shape=2.0, min_samples=10,
+        )
+        assert result["triggered"] is False
+        assert result["mature"] is False
+        assert result["reason"] == "rhythm_immature"
+
+    def test_min_crossing_rate_caps_threshold(self):
+        from affect_monitor import check_shape_deviation
+
+        # Actor has only ever drifted one way: crossing_rate=0.0
+        # Without floor, threshold would be infinite. With min=0.05,
+        # threshold = 2.0 * 1/0.05 = 40. Run of 50 still triggers.
+        result = check_shape_deviation(
+            crossing_rate=0.0, run_length=50, sample_count=60,
+            k_shape=2.0, min_crossing_rate=0.05,
+        )
+        assert result["triggered"] is True
+        # And run of 30 does not trigger (below 40)
+        result2 = check_shape_deviation(
+            crossing_rate=0.0, run_length=30, sample_count=60,
+            k_shape=2.0, min_crossing_rate=0.05,
+        )
+        assert result2["triggered"] is False
+
+
+class TestJournalAdaptersShape:
+    """Shape check escalates Tier 1 when amplitude stays inside the envelope."""
+
+    def test_sustained_drift_inside_envelope_fires_shape_tier1(self):
+        from journal_adapters import journal_domain_step
+
+        # Mature entity with flat crossing_rate (low) and long positive valence
+        # run. Amplitude (valence_delta) is small → envelope check would NOT
+        # fire. Shape check should catch it.
+        entity_hash = "Entity_SHP1"
+        relational_baseline = {
+            entity_hash: {
+                "valence": 0.0, "arousal": 0.4, "salience": 0.5,
+                "valence_variance": 0.04, "arousal_variance": 0.04,
+                "salience_variance": 0.04,
+                "valence_crossing_rate": 0.1,
+                "valence_run_length": 25,  # 25 > 2*1/0.1=20 → triggers
+                "arousal_crossing_rate": 0.5,
+                "salience_crossing_rate": 0.5,
+                "arousal_run_length": 0,
+                "salience_run_length": 0,
+                "sample_count": 30,
+            }
+        }
+        profile_data = {"learning_state": {"relational_baseline": relational_baseline}}
+        state = _make_state()
+        # Small valence delta → inside the envelope
+        evidence = _make_evidence(
+            valence=0.05, arousal=0.0,
+            entity_mentions={entity_hash: {"valence_delta": 0.05, "arousal_delta": 0.0, "salience_delta": 0.0}},
+        )
+        _, decision = journal_domain_step(state, {}, evidence, {}, profile_data=profile_data)
+        assert decision["tier"] == "tier1"
+        assert decision["message"].startswith("entity_shape_valence_run")
+
+    def test_normal_rhythm_no_tier1(self):
+        from journal_adapters import journal_domain_step
+
+        entity_hash = "Entity_SHP2"
+        relational_baseline = {
+            entity_hash: {
+                "valence": 0.0, "arousal": 0.4, "salience": 0.5,
+                "valence_variance": 0.04, "arousal_variance": 0.04,
+                "salience_variance": 0.04,
+                "valence_crossing_rate": 0.5,
+                "valence_run_length": 2,
+                "arousal_crossing_rate": 0.5,
+                "salience_crossing_rate": 0.5,
+                "arousal_run_length": 0,
+                "salience_run_length": 0,
+                "sample_count": 30,
+            }
+        }
+        profile_data = {"learning_state": {"relational_baseline": relational_baseline}}
+        state = _make_state()
+        evidence = _make_evidence(
+            valence=0.05, arousal=0.0,
+            entity_mentions={entity_hash: {"valence_delta": 0.05, "arousal_delta": 0.0, "salience_delta": 0.0}},
+        )
+        _, decision = journal_domain_step(state, {}, evidence, {}, profile_data=profile_data)
+        assert decision["tier"] == "ok"

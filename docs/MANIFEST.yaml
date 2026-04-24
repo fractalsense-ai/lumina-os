@@ -1442,8 +1442,8 @@ artifacts:
   type: code
   doc_version: 1.0.0
   status: active
-  last_updated: 2026-07-01
-  sha256: 126c2efb379bf24b3801a1e2dad01a14508e97958916d167a648af8254c54e05
+  last_updated: 2026-07-16
+  sha256: 2aa3cbe73881be293a8154a340df601a52034d517b819d1aba32c2ce22df8835
 - path: domain-packs/assistant/domain-lib/persona_engine.py
   type: code
   doc_version: 1.0.0
@@ -1586,8 +1586,8 @@ artifacts:
   type: source
   doc_version: 1.0.0
   status: active
-  last_updated: 2026-04-04
-  sha256: e4447f348caa697ed18843fd679e274c8e9fd8b942b6cf82162c9927eb51c615
+  last_updated: 2026-07-16
+  sha256: 6a4258b319f425e396bb96ad1ec251fb6bf4b143bc8273fda545311bbdcc7398
 - path: domain-packs/education/controllers/ops/safe_person.py
   type: source
   doc_version: 1.0.0
@@ -1598,8 +1598,8 @@ artifacts:
   type: standard
   doc_version: 1.0.0
   status: active
-  last_updated: 2026-04-04
-  sha256: b605df85a65d76673e77316c437ecce3cecc14fd5f6d07901ee3a56f115dd95e
+  last_updated: 2026-07-16
+  sha256: a497615e8325be5713c48061c211ea966bcd438c789f052da694931c23c31913
 - path: standards/journal-evidence-schema-v1.json
   type: standard
   doc_version: 1.0.0
@@ -1616,5 +1616,5 @@ artifacts:
   type: source
   doc_version: 1.0.0
   status: active
-  last_updated: 2026-04-04
-  sha256: 243649426924c9f6d890716658c9f9f63af1702d31bb12da2d7de5e82374bb82
+  last_updated: 2026-07-16
+  sha256: d6cd71c1ca737377325fb1c9ae4c2215218a3cafa515237e6a29fcbae9f87edb

@@ -38,6 +38,51 @@
           "minimum": 0,
           "description": "Number of turns in which this entity was observed. Used for warmup gating."
         },
+        "valence_variance": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "EWMA variance of per-turn valence residuals. Captures the actor's normal oscillation amplitude on this axis. Used with the EWMA mean to compute z-score deviation; escalation fires when |obs - mean| / sqrt(variance) exceeds k_sigma rather than on universal absolute thresholds. Seeded at 0.04 (std≈0.2) on first encounter."
+        },
+        "arousal_variance": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "EWMA variance of per-turn arousal residuals. See valence_variance for semantics."
+        },
+        "salience_variance": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "EWMA variance of per-turn salience residuals. See valence_variance for semantics."
+        },
+        "valence_crossing_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "EWMA of 'did the per-turn valence residual flip sign this turn?' (0..1). Captures the actor's natural oscillation frequency on this axis. A naturally-flat actor has low crossing_rate; a volatile actor has high crossing_rate. Used by the shape (rhythm) check to decide what run_length is anomalous for THIS actor."
+        },
+        "arousal_crossing_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "EWMA of arousal residual sign flips. See valence_crossing_rate."
+        },
+        "salience_crossing_rate": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "EWMA of salience residual sign flips. See valence_crossing_rate."
+        },
+        "valence_run_length": {
+          "type": "integer",
+          "description": "Signed count of consecutive same-direction valence residuals. Positive = sustained drift up, negative = sustained drift down, 0 = no prior direction. Detects sustained shifts that stay inside the amplitude envelope but break the actor's normal rhythm (heartbeat-shape analogy)."
+        },
+        "arousal_run_length": {
+          "type": "integer",
+          "description": "Signed run length on arousal residuals. See valence_run_length."
+        },
+        "salience_run_length": {
+          "type": "integer",
+          "description": "Signed run length on salience residuals. See valence_run_length."
+        },
         "last_updated_utc": {
           "type": ["string", "null"],
           "format": "date-time",

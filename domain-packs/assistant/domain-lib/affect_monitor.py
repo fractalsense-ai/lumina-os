@@ -106,6 +106,28 @@ class AffectBaseline:
     prev_valence: float = 0.0
     prev_arousal: float = 0.5
 
+    # Envelope tracking: EWMA variance per axis. Captures the actor's normal
+    # oscillation amplitude so escalations fire on z-score deviation rather
+    # than universal absolute thresholds. Seeded at 0.04 (std≈0.2).
+    salience_variance: float = 0.04
+    valence_variance: float = 0.04
+    arousal_variance: float = 0.04
+
+    # Rhythm/shape tracking (Phase F — heartbeat analogy):
+    #   crossing_rate = EWMA of "did residual flip sign this turn?" (0..1).
+    #     Captures the actor's natural oscillation frequency. A naturally-flat
+    #     actor has low crossing_rate; a volatile actor has high crossing_rate.
+    #   run_length = signed count of consecutive same-direction residuals.
+    #     Positive = sustained drift up, negative = sustained drift down, 0 = no
+    #     prior direction. Detects STEMI-like sustained shifts that stay inside
+    #     the amplitude envelope but break the actor's normal rhythm.
+    salience_crossing_rate: float = 0.5
+    valence_crossing_rate: float = 0.5
+    arousal_crossing_rate: float = 0.5
+    salience_run_length: int = 0
+    valence_run_length: int = 0
+    arousal_run_length: int = 0
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "salience": round(self.salience, 6),
@@ -116,6 +138,15 @@ class AffectBaseline:
             "prev_salience": round(self.prev_salience, 6),
             "prev_valence": round(self.prev_valence, 6),
             "prev_arousal": round(self.prev_arousal, 6),
+            "salience_variance": round(self.salience_variance, 6),
+            "valence_variance": round(self.valence_variance, 6),
+            "arousal_variance": round(self.arousal_variance, 6),
+            "salience_crossing_rate": round(self.salience_crossing_rate, 6),
+            "valence_crossing_rate": round(self.valence_crossing_rate, 6),
+            "arousal_crossing_rate": round(self.arousal_crossing_rate, 6),
+            "salience_run_length": int(self.salience_run_length),
+            "valence_run_length": int(self.valence_run_length),
+            "arousal_run_length": int(self.arousal_run_length),
         }
 
     @classmethod
@@ -129,6 +160,15 @@ class AffectBaseline:
             prev_salience=float(data.get("prev_salience", 0.5)),
             prev_valence=float(data.get("prev_valence", 0.0)),
             prev_arousal=float(data.get("prev_arousal", 0.5)),
+            salience_variance=float(data.get("salience_variance", 0.04)),
+            valence_variance=float(data.get("valence_variance", 0.04)),
+            arousal_variance=float(data.get("arousal_variance", 0.04)),
+            salience_crossing_rate=float(data.get("salience_crossing_rate", 0.5)),
+            valence_crossing_rate=float(data.get("valence_crossing_rate", 0.5)),
+            arousal_crossing_rate=float(data.get("arousal_crossing_rate", 0.5)),
+            salience_run_length=int(data.get("salience_run_length", 0)),
+            valence_run_length=int(data.get("valence_run_length", 0)),
+            arousal_run_length=int(data.get("arousal_run_length", 0)),
         )
 
 
@@ -260,6 +300,23 @@ def update_baseline(
     """
     p = params or DEFAULT_PARAMS
     alpha = float(p.get("ewma_alpha", 0.1))
+    noise_floor = float(p.get("rhythm_noise_floor", 0.05))
+
+    # EWMA variance: residual is observed - prev_mean. Smooth squared residual.
+    res_s = current_affect.salience - baseline.salience
+    res_v = current_affect.valence - baseline.valence
+    res_a = current_affect.arousal - baseline.arousal
+    new_var_s = round(alpha * (res_s ** 2) + (1 - alpha) * baseline.salience_variance, 6)
+    new_var_v = round(alpha * (res_v ** 2) + (1 - alpha) * baseline.valence_variance, 6)
+    new_var_a = round(alpha * (res_a ** 2) + (1 - alpha) * baseline.arousal_variance, 6)
+
+    # Rhythm/shape: update crossing rate + run length per axis (heartbeat shape)
+    new_run_s, new_cross_s = _update_rhythm(
+        res_s, baseline.salience_run_length, baseline.salience_crossing_rate, alpha, noise_floor)
+    new_run_v, new_cross_v = _update_rhythm(
+        res_v, baseline.valence_run_length, baseline.valence_crossing_rate, alpha, noise_floor)
+    new_run_a, new_cross_a = _update_rhythm(
+        res_a, baseline.arousal_run_length, baseline.arousal_crossing_rate, alpha, noise_floor)
 
     # Store previous values for velocity tracking
     new_baseline = AffectBaseline(
@@ -272,6 +329,15 @@ def update_baseline(
         salience=round(alpha * current_affect.salience + (1 - alpha) * baseline.salience, 6),
         valence=round(alpha * current_affect.valence + (1 - alpha) * baseline.valence, 6),
         arousal=round(alpha * current_affect.arousal + (1 - alpha) * baseline.arousal, 6),
+        salience_variance=new_var_s,
+        valence_variance=new_var_v,
+        arousal_variance=new_var_a,
+        salience_crossing_rate=round(new_cross_s, 6),
+        valence_crossing_rate=round(new_cross_v, 6),
+        arousal_crossing_rate=round(new_cross_a, 6),
+        salience_run_length=new_run_s,
+        valence_run_length=new_run_v,
+        arousal_run_length=new_run_a,
     )
 
     # Per-module affect signature with delta_from_baseline
@@ -402,6 +468,10 @@ def update_relational_baseline(
     """
     p = params or DEFAULT_PARAMS
     alpha = float(p.get("ewma_alpha", 0.1))
+    # Initial variance seed (std≈0.2). Wide enough that early observations don't
+    # produce huge z-scores during warm-up; narrows down as samples accumulate.
+    seed_var = float(p.get("ewma_initial_variance", 0.04))
+    noise_floor = float(p.get("rhythm_noise_floor", 0.05))
 
     # Determine seed values for first encounter
     if global_baseline is not None:
@@ -418,20 +488,258 @@ def update_relational_baseline(
             "salience": round(_clamp(seed_s + salience_delta * alpha, 0.0, 1.0), 6),
             "valence": round(_clamp(seed_v + valence_delta * alpha, -1.0, 1.0), 6),
             "arousal": round(_clamp(seed_a + arousal_delta * alpha, 0.0, 1.0), 6),
+            "salience_variance": round(seed_var, 6),
+            "valence_variance": round(seed_var, 6),
+            "arousal_variance": round(seed_var, 6),
+            "salience_crossing_rate": 0.5,
+            "valence_crossing_rate": 0.5,
+            "arousal_crossing_rate": 0.5,
+            "salience_run_length": _initial_run(salience_delta, noise_floor),
+            "valence_run_length": _initial_run(valence_delta, noise_floor),
+            "arousal_run_length": _initial_run(arousal_delta, noise_floor),
             "sample_count": 1,
         }
     else:
         prev_s = float(entry.get("salience", seed_s))
         prev_v = float(entry.get("valence", seed_v))
         prev_a = float(entry.get("arousal", seed_a))
+        prev_var_s = float(entry.get("salience_variance", seed_var))
+        prev_var_v = float(entry.get("valence_variance", seed_var))
+        prev_var_a = float(entry.get("arousal_variance", seed_var))
+        prev_run_s = int(entry.get("salience_run_length", 0))
+        prev_run_v = int(entry.get("valence_run_length", 0))
+        prev_run_a = int(entry.get("arousal_run_length", 0))
+        prev_cross_s = float(entry.get("salience_crossing_rate", 0.5))
+        prev_cross_v = float(entry.get("valence_crossing_rate", 0.5))
+        prev_cross_a = float(entry.get("arousal_crossing_rate", 0.5))
         n = int(entry.get("sample_count", 1)) + 1
+        # Residuals (this turn's delta IS the residual since the "observation" being
+        # smoothed is prev + delta, and (prev + delta) - prev = delta).
+        new_var_s = alpha * (salience_delta ** 2) + (1 - alpha) * prev_var_s
+        new_var_v = alpha * (valence_delta ** 2) + (1 - alpha) * prev_var_v
+        new_var_a = alpha * (arousal_delta ** 2) + (1 - alpha) * prev_var_a
+        new_run_s, new_cross_s = _update_rhythm(salience_delta, prev_run_s, prev_cross_s, alpha, noise_floor)
+        new_run_v, new_cross_v = _update_rhythm(valence_delta, prev_run_v, prev_cross_v, alpha, noise_floor)
+        new_run_a, new_cross_a = _update_rhythm(arousal_delta, prev_run_a, prev_cross_a, alpha, noise_floor)
         entry = {
             "salience": round(_clamp(alpha * (prev_s + salience_delta) + (1 - alpha) * prev_s, 0.0, 1.0), 6),
             "valence": round(_clamp(alpha * (prev_v + valence_delta) + (1 - alpha) * prev_v, -1.0, 1.0), 6),
             "arousal": round(_clamp(alpha * (prev_a + arousal_delta) + (1 - alpha) * prev_a, 0.0, 1.0), 6),
+            "salience_variance": round(new_var_s, 6),
+            "valence_variance": round(new_var_v, 6),
+            "arousal_variance": round(new_var_a, 6),
+            "salience_crossing_rate": round(new_cross_s, 6),
+            "valence_crossing_rate": round(new_cross_v, 6),
+            "arousal_crossing_rate": round(new_cross_a, 6),
+            "salience_run_length": new_run_s,
+            "valence_run_length": new_run_v,
+            "arousal_run_length": new_run_a,
             "sample_count": n,
         }
 
     relational_baseline[entity_hash] = entry
     return relational_baseline
+
+
+# ─────────────────────────────────────────────────────────────
+# Rhythm / shape helpers (Phase F — heartbeat-shape detection)
+# ─────────────────────────────────────────────────────────────
+
+
+def _initial_run(residual: float, noise_floor: float) -> int:
+    """Sign-of-first-observation seed for run_length tracking."""
+    if abs(residual) < noise_floor:
+        return 0
+    return 1 if residual > 0 else -1
+
+
+def _update_rhythm(
+    residual: float,
+    prev_run: int,
+    prev_crossing_rate: float,
+    alpha: float,
+    noise_floor: float,
+) -> tuple[int, float]:
+    """Update (run_length, crossing_rate) for one axis given this turn's residual.
+
+    - Residuals smaller than ``noise_floor`` are treated as "no movement": they
+      don't break a run, don't register a crossing, and don't extend a run.
+      This keeps tiny SVA jitter from corrupting the rhythm signature.
+    - When the residual sign matches the current run's sign → extend the run
+      and register a non-crossing event (decays crossing_rate toward 0).
+    - When it opposes the current run's sign → reset the run to ±1 and
+      register a crossing event (pulls crossing_rate toward 1).
+    - When ``prev_run == 0`` (uninitialised), seed sign without registering
+      a crossing.
+    """
+    if abs(residual) < noise_floor:
+        return prev_run, prev_crossing_rate
+    cur_sign = 1 if residual > 0 else -1
+    if prev_run == 0:
+        return cur_sign, prev_crossing_rate
+    prev_sign = 1 if prev_run > 0 else -1
+    if cur_sign == prev_sign:
+        # Same direction — extend run, no crossing event
+        new_cross = (1 - alpha) * prev_crossing_rate
+        return prev_run + cur_sign, new_cross
+    # Direction flip — reset run, register crossing event
+    new_cross = alpha * 1.0 + (1 - alpha) * prev_crossing_rate
+    return cur_sign, new_cross
+
+
+def check_shape_deviation(
+    crossing_rate: float,
+    run_length: int,
+    sample_count: int,
+    k_shape: float = 2.0,
+    min_samples: int = 10,
+    min_crossing_rate: float = 0.05,
+) -> dict[str, Any]:
+    """Detect sustained-direction drift inside the actor's amplitude envelope.
+
+    The "heartbeat-shape" check: even when each individual reading sits inside
+    the per-axis z-score envelope, an unusually long run of same-direction
+    residuals means the actor's natural rhythm is broken. The expected mean
+    run length for a Bernoulli flip process with crossing rate p is 1/p
+    (geometric distribution), so we trigger when ``|run_length| > k_shape / p``.
+
+    Args:
+        crossing_rate:    EWMA of "did residual flip sign?" — actor's natural
+                          oscillation frequency. 0 = never flips; 1 = flips
+                          every turn.
+        run_length:       Signed current run count.
+        sample_count:     Total observations on this baseline.
+        k_shape:          Run-length tolerance multiplier. 2.0 = trigger at
+                          twice the expected mean run length for this actor.
+        min_samples:      Maturity gate; below this, return immature.
+        min_crossing_rate: Floor on crossing_rate when computing expected run
+                          length, to avoid divide-by-zero / runaway thresholds
+                          on actors that have only ever drifted one way.
+
+    Returns:
+        ``{triggered, run_length, expected_max_run, direction, reason, mature}``
+    """
+    if int(sample_count) < int(min_samples):
+        return {
+            "triggered": False, "run_length": int(run_length),
+            "expected_max_run": 0.0, "direction": None,
+            "reason": "rhythm_immature", "mature": False,
+        }
+    cr = max(float(crossing_rate), float(min_crossing_rate))
+    expected_mean_run = 1.0 / cr
+    threshold = expected_mean_run * float(k_shape)
+    triggered = abs(int(run_length)) > threshold
+    direction = None
+    if triggered:
+        direction = "positive" if run_length > 0 else "negative"
+    return {
+        "triggered": triggered,
+        "run_length": int(run_length),
+        "expected_max_run": round(threshold, 4),
+        "direction": direction,
+        "reason": "rhythm_broken" if triggered else "rhythm_normal",
+        "mature": True,
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# Envelope (z-score) deviation checks
+# ─────────────────────────────────────────────────────────────
+
+import math as _math
+
+
+def _z(observed: float, mean: float, variance: float, var_floor: float) -> float:
+    """Return |z| score with a variance floor to avoid divide-by-zero."""
+    var = max(float(variance), float(var_floor))
+    return abs(observed - mean) / _math.sqrt(var)
+
+
+def check_relational_deviation(
+    entry: dict[str, Any] | None,
+    valence: float,
+    arousal: float,
+    salience: float,
+    k_sigma: float,
+    min_samples: int = 5,
+    min_variance_floor: float = 0.001,
+) -> dict[str, Any]:
+    """Z-score envelope check for an entity's per-axis affect.
+
+    Compares this turn's observed values against the entity's learned mean and
+    EWMA variance. Returns whether any axis is outside the actor's normal
+    oscillation envelope and which axis tripped first.
+
+    Returns:
+        {
+            "triggered": bool,
+            "axis": "valence" | "arousal" | "salience" | None,
+            "z_score": float,        # worst (largest) z across axes
+            "reason": str,           # short tag for logging
+            "mature": bool,          # False if baseline still warming up
+        }
+    """
+    if entry is None or int(entry.get("sample_count", 0)) < int(min_samples):
+        return {"triggered": False, "axis": None, "z_score": 0.0,
+                "reason": "baseline_immature", "mature": False}
+
+    z_v = _z(valence, float(entry.get("valence", 0.0)),
+             float(entry.get("valence_variance", min_variance_floor)), min_variance_floor)
+    z_a = _z(arousal, float(entry.get("arousal", 0.5)),
+             float(entry.get("arousal_variance", min_variance_floor)), min_variance_floor)
+    z_s = _z(salience, float(entry.get("salience", 0.5)),
+             float(entry.get("salience_variance", min_variance_floor)), min_variance_floor)
+
+    worst_axis, worst_z = max(
+        (("valence", z_v), ("arousal", z_a), ("salience", z_s)),
+        key=lambda kv: kv[1],
+    )
+    triggered = worst_z > float(k_sigma)
+    return {
+        "triggered": triggered,
+        "axis": worst_axis if triggered else None,
+        "z_score": round(worst_z, 4),
+        "reason": "envelope_exceeded" if triggered else "within_envelope",
+        "mature": True,
+    }
+
+
+def check_global_deviation(
+    baseline: "AffectBaseline | None",
+    valence: float,
+    arousal: float,
+    salience: float,
+    k_sigma: float,
+    min_samples: int = 5,
+    min_variance_floor: float = 0.001,
+) -> dict[str, Any]:
+    """Z-score envelope check against the actor's global SVA baseline.
+
+    Mirrors ``check_relational_deviation`` but reads variance fields from
+    AffectBaseline (which stores them as attributes).
+    """
+    if baseline is None or baseline.sample_count < int(min_samples):
+        return {"triggered": False, "axis": None, "z_score": 0.0,
+                "reason": "baseline_immature", "mature": False}
+
+    var_v = getattr(baseline, "valence_variance", min_variance_floor)
+    var_a = getattr(baseline, "arousal_variance", min_variance_floor)
+    var_s = getattr(baseline, "salience_variance", min_variance_floor)
+
+    z_v = _z(valence, baseline.valence, var_v, min_variance_floor)
+    z_a = _z(arousal, baseline.arousal, var_a, min_variance_floor)
+    z_s = _z(salience, baseline.salience, var_s, min_variance_floor)
+
+    worst_axis, worst_z = max(
+        (("valence", z_v), ("arousal", z_a), ("salience", z_s)),
+        key=lambda kv: kv[1],
+    )
+    triggered = worst_z > float(k_sigma)
+    return {
+        "triggered": triggered,
+        "axis": worst_axis if triggered else None,
+        "z_score": round(worst_z, 4),
+        "reason": "envelope_exceeded" if triggered else "within_envelope",
+        "mature": True,
+    }
 
