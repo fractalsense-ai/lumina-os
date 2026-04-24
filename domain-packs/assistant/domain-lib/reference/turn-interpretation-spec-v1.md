@@ -124,6 +124,35 @@ classified intent.
   require tool assistance. Only set `false` when the goal is completely unclear or the
   user is still in early exploration (e.g. first greeting about a vague idea).
 
+## trip intent
+
+Extract the following fields from the user's message:
+
+- **`trip_destination`**: Where the user wants to travel TO. Normalize to
+  "City, Country" or "Region, Country" form. Emit `null` if not mentioned.
+- **`trip_origin_airport`**: Where the user is flying FROM. Normalize to IATA code
+  (e.g. `"SYR"`) or `"City, ST"` / `"City, Country"`. Emit `null` if not mentioned.
+- **`trip_date_start`**: Outbound travel date — ISO 8601 (YYYY-MM-DD). Convert natural
+  language: "July" → `2026-07-01`, "mid July" → `2026-07-10`, "late July" → `2026-07-20`.
+  Emit `null` if not mentioned.
+- **`trip_date_end`**: Return travel date — ISO 8601 (YYYY-MM-DD). Apply the same
+  normalization. "two weeks in July" → start `2026-07-01`, end `2026-07-14`. Emit `null`
+  if not mentioned.
+- **`trip_activity_preferences`**: Comma-separated activity interests (e.g.
+  `"history, wine, châteaux"`). Emit `null` if not mentioned.
+- **`trip_budget_usd`**: Numeric total budget in USD. Convert other currencies
+  approximately. Emit `null` if not mentioned or too vague.
+- **`trip_accommodation_style`**: One of `hotel|hostel|airbnb|resort|flexible`.
+  Emit `null` if not mentioned.
+- **`trip_party_size`**: Integer number of travelers. "family of four" → 4. Emit `null`
+  if not mentioned (do not default to 1 — the framework applies the default).
+- **`tool_call_requested`**: Set to `true` whenever any trip field has been provided.
+  Set to `false` only on vague first-contact messages with no trip detail at all.
+
+**Carry-forward rule:** Only emit fields present in the CURRENT message. If the user
+mentions only the destination this turn, set `trip_destination` and leave all other trip
+fields as `null`. The framework accumulates state across turns.
+
 ## Rules
 
 - Output ONLY valid JSON. No explanations, no markdown, no extra text.
@@ -136,6 +165,6 @@ classified intent.
   (e.g. "what's the weather for my trip planning" → `weather` not `planning`).
 - For multi-intent messages, classify by the primary actionable intent and extract
   fields for that intent only.
-- `tool_call_requested` should be `true` for weather, calendar, and search intents.
+- `tool_call_requested` should be `true` for weather, calendar, search, and trip intents.
   It should be `false` for creative and general intents. For planning, set `true` only
   when the user is creating/updating/listing specific plans.

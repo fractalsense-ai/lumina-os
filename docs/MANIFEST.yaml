@@ -1510,6 +1510,18 @@ artifacts:
   status: active
   last_updated: 2026-07-01
   sha256: 85277a991c05dac8a339ddd72e3672df60404c1dd9360ab47e689e5c8965b48a
+- path: domain-packs/assistant/modules/trip/domain-physics.json
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-23
+  sha256: c4f734b050b22d66b074004332c746473e50e6dc2902c6790faf6d359eed4911
+- path: domain-packs/assistant/modules/trip/module-config.yaml
+  type: config
+  doc_version: 0.1.0
+  status: active
+  last_updated: 2026-04-23
+  sha256: 0c43ff20d5d7cfe7f70debc18e45a972dce48d97ef96f9074e095df986f2cfe2
 - path: domain-packs/assistant/modules/planning/tool-adapters/planning-tools-adapter-v1.yaml
   type: config
   doc_version: 1.0.0

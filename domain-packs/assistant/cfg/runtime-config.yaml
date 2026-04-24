@@ -41,6 +41,8 @@ runtime:
       module_path: domain-packs/assistant/modules/creative-writing
     domain/asst/planning/v1:
       module_path: domain-packs/assistant/modules/planning
+    domain/asst/trip/v1:
+      module_path: domain-packs/assistant/modules/trip
     domain/asst/domain-authority/v1:
       module_path: domain-packs/assistant/modules/domain-authority
     domain/asst/persona-craft/v1:
@@ -72,6 +74,7 @@ runtime:
         - search
         - creative
         - planning
+        - trip
         - governance
         - persona
       default: general
@@ -161,6 +164,49 @@ runtime:
       default: null
       minimum: 1
       description: "Planning horizon in days."
+    # ── Trip planning fields ────────────────────────────────────────
+    trip_destination:
+      type: string
+      nullable: true
+      default: null
+      description: "Primary travel destination (city / region / country)."
+    trip_origin_airport:
+      type: string
+      nullable: true
+      default: null
+      description: "Departure airport IATA code or 'City, ST' string."
+    trip_date_start:
+      type: string
+      nullable: true
+      default: null
+      description: "ISO 8601 outbound travel date."
+    trip_date_end:
+      type: string
+      nullable: true
+      default: null
+      description: "ISO 8601 return travel date."
+    trip_activity_preferences:
+      type: string
+      nullable: true
+      default: null
+      description: "Comma-separated activity preferences (soft invariant)."
+    trip_budget_usd:
+      type: int
+      nullable: true
+      default: null
+      minimum: 0
+      description: "Approximate total trip budget in USD (soft invariant)."
+    trip_accommodation_style:
+      type: string
+      nullable: true
+      default: null
+      description: "Preferred lodging type: hotel|hostel|airbnb|resort|flexible (soft invariant)."
+    trip_party_size:
+      type: int
+      nullable: true
+      default: null
+      minimum: 1
+      description: "Number of travelers."
 
   # ── Action → Prompt Type Map ──────────────────────────────────────
   action_prompt_type_map:
@@ -169,6 +215,9 @@ runtime:
     cite_sources: citation_response
     gather_constraints_first: constraint_gathering
     respect_creative_intent: creative_response
+    gather_trip_hard_invariants: trip_hard_constraint_gathering
+    gather_trip_soft_details: trip_soft_constraint_gathering
+    trip_plan_create: trip_planning
 
   # ── Deterministic Templates ───────────────────────────────────────
   deterministic_templates:
@@ -183,6 +232,9 @@ runtime:
     refine_query: "What would you like me to search for?"
     clarify_goal: "What would you like me to plan for you?"
     request_date_range: "What date range would you like to check?"
+    trip_hard_constraint_gathering: "Before I can build your itinerary I need a few details: {trip_missing_hard}."
+    trip_soft_constraint_gathering: "To build the best itinerary for your trip, could you share any of these: {trip_missing_soft}?"
+    trip_planning: "Here's your itinerary for {trip_destination}. Let me know if you'd like any changes."
     default: "Let me help you with that."
 
   tool_call_policies:
@@ -212,6 +264,36 @@ runtime:
         payload:
           date_start: "{turn_data.date_start}"
           date_end: "{turn_data.date_end}"
+    trip_plan_create:
+      -
+        tool_id: flight_search
+        payload:
+          origin: "{module_state.trip_origin_airport}"
+          destination: "{module_state.trip_destination}"
+          date_start: "{module_state.trip_date_start}"
+          date_end: "{module_state.trip_date_end}"
+          party_size: "{module_state.trip_party_size}"
+      -
+        tool_id: hotel_search
+        payload:
+          destination: "{module_state.trip_destination}"
+          check_in: "{module_state.trip_date_start}"
+          check_out: "{module_state.trip_date_end}"
+          party_size: "{module_state.trip_party_size}"
+          accommodation_style: "{module_state.trip_accommodation_style}"
+          budget_usd: "{module_state.trip_budget_usd}"
+      -
+        tool_id: poi_search
+        payload:
+          destination: "{module_state.trip_destination}"
+          categories: "{module_state.trip_activity_preferences}"
+          max_results: 10
+      -
+        tool_id: restaurant_search
+        payload:
+          destination: "{module_state.trip_destination}"
+          cuisine: "{module_state.trip_activity_preferences}"
+          max_results: 5
 
 # ── Adapter Bindings ──────────────────────────────────────────────────
 adapters:
@@ -255,6 +337,24 @@ adapters:
     planning_list:
       module_path: domain-packs/assistant/controllers/tool_adapters.py
       callable: planning_list_tool
+    flight_search:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: flight_search_tool
+    flight_status:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: flight_status_tool
+    hotel_search:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: hotel_search_tool
+    poi_search:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: poi_search_tool
+    routing:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: routing_tool
+    restaurant_search:
+      module_path: domain-packs/assistant/controllers/tool_adapters.py
+      callable: restaurant_search_tool
 
 # ── Operation Handlers ────────────────────────────────────────────────
 operation_handlers:

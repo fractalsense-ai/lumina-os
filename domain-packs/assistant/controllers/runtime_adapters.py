@@ -47,9 +47,35 @@ INTENT_TO_MODULE: dict[str, str] = {
     "search": "domain/asst/search/v1",
     "creative": "domain/asst/creative-writing/v1",
     "planning": "domain/asst/planning/v1",
+    "trip": "domain/asst/trip/v1",
     "governance": "domain/asst/domain-authority/v1",
     "persona": "domain/asst/persona-craft/v1",
 }
+
+# Trip-specific state fields that are carried forward across turns.
+TRIP_CARRY_FIELDS: tuple[str, ...] = (
+    "trip_destination",
+    "trip_origin_airport",
+    "trip_date_start",
+    "trip_date_end",
+    "trip_activity_preferences",
+    "trip_budget_usd",
+    "trip_accommodation_style",
+    "trip_party_size",
+)
+
+
+def _compute_trip_days(date_start: str | None, date_end: str | None) -> int | None:
+    """Return trip duration in days, or None if either date is absent/unparseable."""
+    if not date_start or not date_end:
+        return None
+    try:
+        from datetime import date as _date
+        d0 = _date.fromisoformat(date_start)
+        d1 = _date.fromisoformat(date_end)
+        return max(1, (d1 - d0).days + 1)
+    except (ValueError, TypeError):
+        return None
 
 
 # ── 1. State Builder ─────────────────────────────────────────────────
@@ -237,6 +263,59 @@ def domain_step(
         else:
             action = "request_date_range"
             tier = "ok"
+
+    # ── Trip planning routing ────────────────────────────────────────
+    # Carry forward any trip fields extracted this turn (evidence wins
+    # over accumulated state for non-null values).
+    if intent == "trip":
+        for _field in TRIP_CARRY_FIELDS:
+            if evidence.get(_field) is not None:
+                new_state[_field] = evidence[_field]
+
+        _dest    = new_state.get("trip_destination")
+        _origin  = new_state.get("trip_origin_airport")
+        _d_start = new_state.get("trip_date_start")
+        _d_end   = new_state.get("trip_date_end")
+        _prefs   = new_state.get("trip_activity_preferences")
+        _budget  = new_state.get("trip_budget_usd")
+        _accom   = new_state.get("trip_accommodation_style")
+
+        _missing_hard = [
+            label for label, val in [
+                ("destination",      _dest),
+                ("travel dates",     _d_start),
+                ("departure airport", _origin),
+            ] if not val
+        ]
+
+        if _missing_hard:
+            new_state["hard_fields_complete"] = False
+            new_state["trip_missing_hard"] = _missing_hard
+            action = "gather_trip_hard_invariants"
+            tier = "ok"
+        else:
+            new_state["hard_fields_complete"] = True
+            new_state["trip_missing_hard"] = []
+            _trip_days = _compute_trip_days(_d_start, _d_end)
+            _unknown_soft = sum([
+                _prefs is None,
+                _budget is None,
+                _accom is None,
+            ])
+            if _trip_days is not None and _trip_days > 3 and _unknown_soft >= 2:
+                new_state["trip_missing_soft"] = [
+                    label for label, val in [
+                        ("activity preferences", _prefs),
+                        ("budget",               _budget),
+                        ("accommodation style",  _accom),
+                    ] if val is None
+                ]
+                action = "gather_trip_soft_details"
+                tier = "ok"
+            else:
+                new_state["trip_missing_soft"] = []
+                action = "trip_plan_create"
+                tier = "ok"
 
     # ── Persona Update (if intent is persona, apply update_dict) ────
     current_persona = new_state.get("persona")

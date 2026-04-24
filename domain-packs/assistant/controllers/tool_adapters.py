@@ -302,3 +302,220 @@ def planning_list_tool(payload: dict[str, Any]) -> dict[str, Any]:
         "ok": True,
         "plans": [],
     }
+
+
+# ─────────────────────────────────────────────────────────────
+# Trip planning tools
+#
+# All six tools below are stubs.  The response shapes mirror the
+# expected real-API contracts so that filling them in is a drop-in.
+# Env vars document which credentials each tool will need.
+#
+# APIs targeted (integration deferred):
+#   flight_search  → Amadeus Self-Service  (AMADEUS_CLIENT_ID / AMADEUS_CLIENT_SECRET)
+#   flight_status  → AeroDataBox           (AERODATABOX_API_KEY)
+#   hotel_search   → Expedia Rapid API     (EXPEDIA_RAPID_API_KEY)
+#   poi_search     → Trueway Places        (TRUEWAY_API_KEY)
+#   routing        → Trueway Routing       (TRUEWAY_API_KEY)
+#   restaurant_search → Search Restaurant API (RESTAURANT_SEARCH_API_KEY)
+# ─────────────────────────────────────────────────────────────
+
+_STUB_NOTE = "API integration pending — stub response"
+
+
+def flight_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Search for available flights between origin and destination.
+
+    Expected env vars (not yet wired): AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET.
+    """
+    origin      = (payload.get("origin") or "").strip()
+    destination = (payload.get("destination") or "").strip()
+    date_start  = (payload.get("date_start") or "").strip()
+    date_end    = (payload.get("date_end") or "").strip()
+    party_size  = int(payload.get("party_size") or 1)
+
+    if not origin:
+        return {"ok": False, "error": "origin is required"}
+    if not destination:
+        return {"ok": False, "error": "destination is required"}
+    if not date_start:
+        return {"ok": False, "error": "date_start is required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "origin": origin,
+        "destination": destination,
+        "date_start": date_start,
+        "date_end": date_end or None,
+        "party_size": party_size,
+        "flights": [
+            {
+                "flight_id": "STUB-001",
+                "carrier": "Stub Airways",
+                "departs": f"{date_start}T08:00:00",
+                "arrives": f"{date_start}T18:00:00",
+                "stops": 1,
+                "price_usd_per_person": 0,
+                "total_price_usd": 0,
+            }
+        ],
+    }
+
+
+def flight_status_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve real-time flight status and airport data.
+
+    Expected env vars (not yet wired): AERODATABOX_API_KEY.
+    """
+    flight_number = (payload.get("flight_number") or "").strip()
+    airport_iata  = (payload.get("airport_iata") or "").strip()
+
+    if not flight_number and not airport_iata:
+        return {"ok": False, "error": "flight_number or airport_iata is required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "flight_number": flight_number or None,
+        "airport_iata": airport_iata or None,
+        "status": "on_time",
+        "gate": "B12",
+        "terminal": "1",
+    }
+
+
+def hotel_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Search for hotels at the destination.
+
+    Expected env vars (not yet wired): EXPEDIA_RAPID_API_KEY.
+    """
+    destination       = (payload.get("destination") or "").strip()
+    check_in          = (payload.get("check_in") or "").strip()
+    check_out         = (payload.get("check_out") or "").strip()
+    party_size        = int(payload.get("party_size") or 1)
+    accommodation_style = (payload.get("accommodation_style") or "flexible").strip()
+    budget_usd        = payload.get("budget_usd")
+
+    if not destination:
+        return {"ok": False, "error": "destination is required"}
+    if not check_in:
+        return {"ok": False, "error": "check_in date is required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "destination": destination,
+        "check_in": check_in,
+        "check_out": check_out or None,
+        "party_size": party_size,
+        "accommodation_style": accommodation_style,
+        "budget_usd": budget_usd,
+        "hotels": [
+            {
+                "hotel_id": "STUB-H001",
+                "name": f"Stub {accommodation_style.title()} — {destination}",
+                "stars": 3,
+                "price_usd_per_night": 0,
+                "distance_to_center_km": 1.2,
+                "rating": 4.2,
+            }
+        ],
+    }
+
+
+def poi_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Discover points of interest near a destination.
+
+    Expected env vars (not yet wired): TRUEWAY_API_KEY.
+    """
+    destination  = (payload.get("destination") or "").strip()
+    categories   = (payload.get("categories") or "").strip()   # e.g. "history,food,nature"
+    radius_km    = float(payload.get("radius_km") or 20.0)
+    max_results  = int(payload.get("max_results") or 10)
+
+    if not destination:
+        return {"ok": False, "error": "destination is required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "destination": destination,
+        "categories": categories or None,
+        "radius_km": radius_km,
+        "pois": [
+            {
+                "poi_id": "STUB-P001",
+                "name": f"Stub Attraction — {destination}",
+                "category": categories.split(",")[0].strip() if categories else "general",
+                "distance_km": 2.5,
+                "rating": 4.5,
+                "description": "Stub POI — real data pending API integration.",
+            }
+        ],
+    }
+
+
+def routing_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Calculate a route between waypoints (Trueway Routing + Matrix).
+
+    Expected env vars (not yet wired): TRUEWAY_API_KEY.
+    """
+    waypoints = payload.get("waypoints") or []
+    if not isinstance(waypoints, list) or len(waypoints) < 2:
+        return {"ok": False, "error": "at least two waypoints are required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "waypoints": waypoints,
+        "total_distance_km": 0.0,
+        "total_duration_minutes": 0,
+        "legs": [
+            {
+                "from": waypoints[i],
+                "to": waypoints[i + 1],
+                "distance_km": 0.0,
+                "duration_minutes": 0,
+            }
+            for i in range(len(waypoints) - 1)
+        ],
+    }
+
+
+def restaurant_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Search for restaurants near the destination.
+
+    Expected env vars (not yet wired): RESTAURANT_SEARCH_API_KEY.
+    """
+    destination   = (payload.get("destination") or "").strip()
+    cuisine       = (payload.get("cuisine") or "").strip()     # e.g. "French", "local"
+    max_results   = int(payload.get("max_results") or 5)
+    budget_level  = (payload.get("budget_level") or "").strip()  # "budget", "mid", "fine"
+
+    if not destination:
+        return {"ok": False, "error": "destination is required"}
+
+    return {
+        "ok": True,
+        "stub": True,
+        "note": _STUB_NOTE,
+        "destination": destination,
+        "cuisine": cuisine or None,
+        "budget_level": budget_level or None,
+        "restaurants": [
+            {
+                "restaurant_id": "STUB-R001",
+                "name": f"Stub Bistro — {destination}",
+                "cuisine": cuisine or "local",
+                "price_level": budget_level or "mid",
+                "rating": 4.3,
+                "address": "123 Stub Street",
+            }
+        ],
+    }

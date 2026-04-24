@@ -1,0 +1,109 @@
+{
+  "id": "domain/asst/trip/v1",
+  "version": "0.1.0",
+  "domain_authority": {
+    "name": "Assistant Domain Lead",
+    "role": "Domain Authority",
+    "pseudonymous_id": "da_assistant_001"
+  },
+  "meta_authority_id": "root",
+  "description": "Trip planning module — handles end-to-end travel itinerary planning: flight search, hotel search, POI discovery, restaurant lookup, and multi-stop routing. Hard invariants gate planning until destination, travel dates, and origin airport are known. Soft invariants (activity preferences, budget, accommodation style) use a degradation heuristic: ask only when the trip is long enough that omitting them would materially degrade the itinerary.",
+  "department": "Travel",
+  "lumina_core_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "hard_fields_complete",
+      "description": "Trip planning cannot begin until all three hard invariant fields are known: destination, travel date range, and departure airport/city. The assistant must ask targeted clarifying questions until these are resolved.",
+      "severity": "warning",
+      "check": "hard_fields_complete == true",
+      "standing_order_on_violation": "gather_trip_hard_invariants"
+    },
+    {
+      "id": "content_safety_hard",
+      "description": "Hard safety gate — immediate escalation on harmful content.",
+      "severity": "critical",
+      "check": "content_safety_flags != []",
+      "standing_order_on_violation": "safety_intervene"
+    }
+  ],
+  "standing_orders": [
+    {
+      "id": "gather_trip_hard_invariants",
+      "action": "gather_trip_hard_invariants",
+      "trigger_condition": "hard_fields_complete",
+      "max_attempts": 5,
+      "escalation_on_exhaust": false,
+      "description": "Ask targeted questions to resolve missing hard invariant fields (destination, travel dates, departure airport). Ask only for what is missing — never re-ask for fields already provided."
+    },
+    {
+      "id": "safety_intervene",
+      "action": "escalate",
+      "target": "domain_authority",
+      "sla_minutes": 5,
+      "auto_freeze": true,
+      "description": "Immediately escalate on safety violation."
+    }
+  ],
+  "escalation_triggers": [
+    {
+      "id": "critical_safety_event",
+      "condition": "A critical invariant fired (content_safety_hard).",
+      "target_role": "domain_authority",
+      "sla_minutes": 5
+    }
+  ],
+  "artifacts": [],
+  "tool_adapters": [
+    "adapter/asst/trip-tools/v1"
+  ],
+  "module_state_schema": {
+    "mastery_dimensions": [],
+    "tracked_subsystems": [],
+    "custom_fields": {
+      "turn_count":               {"type": "integer", "default": 0},
+      "trip_destination":         {"type": "string",  "default": null},
+      "trip_origin_airport":      {"type": "string",  "default": null},
+      "trip_date_start":          {"type": "string",  "default": null},
+      "trip_date_end":            {"type": "string",  "default": null},
+      "trip_activity_preferences":{"type": "string",  "default": null},
+      "trip_budget_usd":          {"type": "integer", "default": null},
+      "trip_accommodation_style": {"type": "string",  "default": null},
+      "trip_party_size":          {"type": "integer", "default": 1},
+      "hard_fields_complete":     {"type": "boolean", "default": false},
+      "trip_missing_hard":        {"type": "array",   "default": []},
+      "trip_missing_soft":        {"type": "array",   "default": []}
+    }
+  },
+  "glossary": [
+    {
+      "term": "itinerary",
+      "definition": "A day-by-day or segment-by-segment plan for a trip, including flights, accommodation, activities, and dining.",
+      "aliases": ["trip plan", "travel plan", "schedule"],
+      "related_terms": ["trip_destination", "travel_dates", "origin_airport"]
+    },
+    {
+      "term": "origin airport",
+      "definition": "The departure airport or city the traveler is flying from. Expressed as an IATA code (e.g. SYR) or 'City, ST' format.",
+      "aliases": ["departure airport", "departure city", "flying from", "leaving from"],
+      "related_terms": ["trip_destination", "flight_search"]
+    },
+    {
+      "term": "travel dates",
+      "definition": "The date range of the trip — outbound departure date and return date. ISO 8601 format (YYYY-MM-DD).",
+      "aliases": ["trip dates", "departure date", "return date", "date range"],
+      "related_terms": ["trip_date_start", "trip_date_end"]
+    },
+    {
+      "term": "activity preferences",
+      "definition": "What the traveler wants to do at the destination — e.g. beaches, history, nightlife, food, adventure sports. Informs POI and restaurant recommendations.",
+      "aliases": ["interests", "things to do", "activities"],
+      "related_terms": ["poi_search", "restaurant_search"]
+    },
+    {
+      "term": "accommodation style",
+      "definition": "The traveler's preferred lodging category: hotel, hostel, airbnb, resort, or flexible (no preference).",
+      "aliases": ["lodging", "where to stay", "hotel type"],
+      "related_terms": ["hotel_search"]
+    }
+  ]
+}
