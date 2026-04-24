@@ -89,13 +89,14 @@ class TestDaemonReport:
 class TestTaskRegistry:
     def test_all_registered(self):
         tasks = list_tasks()
-        assert len(tasks) == 13
+        assert len(tasks) == 14
         assert "glossary_expansion" in tasks
         assert "telemetry_summary_refresh" in tasks
         assert "logic_scrape_review" in tasks
         assert "context_crawler" in tasks
         assert "gated_staging" in tasks
         assert "rebuild_domain_vectors" in tasks
+        assert "rhythm_fft_analysis" in tasks
 
     def test_get_task(self):
         fn = get_task("glossary_expansion")

@@ -88,6 +88,13 @@
       "tier2_relational_concern_turns": 2,
       "tier3_cross_session_count": 2,
       "baseline_warmup_sessions": 3
+    },
+    "spectral_drift_thresholds": {
+      "window_days": 30,
+      "k_spectral": 2.5,
+      "min_samples_for_drift": 5,
+      "alpha": 0.1,
+      "axes": ["valence"]
     }
   },
   "subsystem_configs": {

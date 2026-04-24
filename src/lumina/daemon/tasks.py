@@ -962,3 +962,294 @@ def rebuild_domain_vectors(
         duration_seconds=time.monotonic() - start,
         metadata=summary,
     )
+
+
+# ── Phase G: spectral chronic-drift analysis ─────────────────
+
+
+def _extract_sva_value(record: dict[str, Any], axis: str) -> float | None:
+    """Defensively pull a single SVA axis value out of a TraceEvent record.
+
+    Trace events have evolved over time; SVA can live in several places.
+    We probe the most common locations in priority order rather than coupling
+    the daemon to one exact wire-format. Returns None when no usable value
+    found (caller skips that record).
+    """
+    candidates = (
+        record.get("sva"),
+        (record.get("metadata") or {}).get("sva"),
+        (record.get("metadata") or {}).get("sva_direct"),
+        (record.get("metadata") or {}).get("evidence", {}).get("sva_direct")
+            if isinstance((record.get("metadata") or {}).get("evidence"), dict) else None,
+        (record.get("decision_rationale") or {}).get("sva"),
+    )
+    for c in candidates:
+        if isinstance(c, dict) and axis in c:
+            try:
+                return float(c[axis])
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def _iter_actor_profiles(
+    persistence: Any,
+    domain_key: str,
+) -> list[tuple[str, dict[str, Any]]]:
+    """Yield (user_id, profile_dict) for every profile stored under domain_key.
+
+    Uses the standard list_users + list_profiles pair available on every
+    persistence backend. Defensive: any backend missing those methods just
+    returns an empty list (the task then no-ops cleanly).
+    """
+    out: list[tuple[str, dict[str, Any]]] = []
+    if persistence is None:
+        return out
+    list_users = getattr(persistence, "list_users", None)
+    list_profiles = getattr(persistence, "list_profiles", None)
+    load_profile = getattr(persistence, "load_profile", None)
+    if not (list_users and list_profiles and load_profile):
+        return out
+    try:
+        users = list_users() or []
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("rhythm_fft_analysis: list_users failed: %s", exc)
+        return out
+    for u in users:
+        uid = u.get("user_id") if isinstance(u, dict) else None
+        if not uid:
+            continue
+        try:
+            domain_keys = list_profiles(uid) or []
+        except Exception:
+            continue
+        if domain_key not in domain_keys:
+            continue
+        try:
+            profile = load_profile(uid, domain_key)
+        except Exception:
+            continue
+        if profile:
+            out.append((uid, profile))
+    return out
+
+
+@register_task("rhythm_fft_analysis")
+def rhythm_fft_analysis(
+    domain_id: str,
+    domain_physics: dict[str, Any],
+    persistence: Any = None,
+    call_slm_fn: Callable | None = None,
+    *,
+    profile_domain_key: str | None = None,
+) -> TaskResult:
+    """Run an FFT spectral chronic-drift scan for every actor in this domain.
+
+    Phase A-F catch acute affect events on a per-turn timescale (envelope
+    z-score) and an acute-rhythm timescale (run-length vs. crossing rate).
+    Phase G fills the chronic gap: a slow weeks-long slide that stays inside
+    the per-turn envelope and never produces a sustained run because the
+    EWMA crawls along with it.
+
+    For each actor:
+      1. Pull recent TraceEvents and project a per-axis daily mean series
+         spanning ``window_days`` (default 30).
+      2. Compute a spectral signature (DC drift + circaseptan + ultradian
+         + noise floor bands) via :mod:`lumina.daemon.rhythm_fft`.
+      3. Fold today's signature into the actor's persisted EWMA spectral
+         history.
+      4. If the history is mature, compare today's signature against it.
+         Each band whose z-score exceeds ``k_spectral`` becomes a Proposal
+         of type ``chronic_spectral_drift`` for DA review. ``dc_drift``
+         is asymmetric — only the harmful direction triggers (so recovery
+         from a slump doesn't false-fire).
+      5. Persist the updated history back onto the actor profile.
+
+    The task respects ``TaskPreempted`` cooperatively per-actor — if the
+    daemon scheduler signals preemption between actors we stop cleanly.
+    """
+    start = time.monotonic()
+    proposals: list[Proposal] = []
+    summary: dict[str, Any] = {
+        "profiles_analyzed": 0,
+        "profiles_skipped": 0,
+        "axes_run": [],
+    }
+
+    # Lazy imports keep this task's failure modes isolated from the rest
+    # of the registry (numpy/import errors don't poison glossary tasks).
+    try:
+        from lumina.daemon.rhythm_fft import (
+            check_spectral_drift,
+            compute_spectral_signature,
+            resample_to_daily,
+            update_spectral_history,
+        )
+    except ImportError as exc:
+        return TaskResult(
+            task="rhythm_fft_analysis",
+            domain_id=domain_id,
+            success=False,
+            duration_seconds=time.monotonic() - start,
+            error=f"rhythm_fft module unavailable: {exc}",
+        )
+
+    cfg = (
+        domain_physics.get("spectral_drift_thresholds")
+        or (domain_physics.get("domain_step_params") or {}).get("spectral_drift_thresholds")
+        or {}
+    )
+    window_days = int(cfg.get("window_days", 30))
+    k_spectral = float(cfg.get("k_spectral", 2.5))
+    min_samples = int(cfg.get("min_samples_for_drift", 5))
+    alpha = float(cfg.get("alpha", 0.1))
+    axes = list(cfg.get("axes") or ["valence"])
+    summary["axes_run"] = axes
+
+    # The profile key used to store the AffectBaseline on disk is usually the
+    # domain id itself for single-module domains; callers can override.
+    domain_key = profile_domain_key or domain_id
+
+    actor_profiles = _iter_actor_profiles(persistence, domain_key)
+    if not actor_profiles:
+        return TaskResult(
+            task="rhythm_fft_analysis",
+            domain_id=domain_id,
+            success=True,
+            duration_seconds=time.monotonic() - start,
+            metadata={**summary, "no_profiles": True},
+        )
+
+    # Pull all recent records once and bucket by actor — much cheaper than
+    # one query_log_records call per actor for a large user base.
+    try:
+        all_records = persistence.query_log_records(
+            record_type="TraceEvent",
+            domain_id=domain_id,
+            limit=10000,
+        )
+    except Exception as exc:
+        log.warning("rhythm_fft_analysis: query_log_records failed: %s", exc)
+        all_records = []
+
+    by_actor: dict[str, list[dict[str, Any]]] = {}
+    for r in all_records:
+        aid = r.get("actor_id")
+        if aid:
+            by_actor.setdefault(aid, []).append(r)
+
+    save_profile = getattr(persistence, "save_profile", None)
+
+    # Cooperative preemption: if the daemon's PreemptionToken is being
+    # used elsewhere in this run, importing TaskPreempted lets the task
+    # honor a stop signal between actors. Failure to import is fine.
+    try:
+        from lumina.daemon.preemption import TaskPreempted  # type: ignore
+    except ImportError:  # pragma: no cover
+        class TaskPreempted(Exception):  # type: ignore
+            pass
+
+    for user_id, profile in actor_profiles:
+        try:
+            learning_state = profile.get("learning_state") or {}
+            baseline_dict = learning_state.get("global_affect_baseline") or {}
+            spectral_history = dict(baseline_dict.get("spectral_history") or {})
+
+            actor_records = by_actor.get(user_id, [])
+            if not actor_records:
+                summary["profiles_skipped"] += 1
+                continue
+
+            updated_for_actor = False
+            for axis in axes:
+                timestamps: list[str] = []
+                values: list[float] = []
+                for rec in actor_records:
+                    v = _extract_sva_value(rec, axis)
+                    if v is None:
+                        continue
+                    ts = rec.get("timestamp_utc")
+                    if not ts:
+                        continue
+                    timestamps.append(ts)
+                    values.append(v)
+
+                series, n_real = resample_to_daily(
+                    timestamps, values, window_days=window_days,
+                )
+                if len(series) == 0 or n_real < max(min_samples, 5):
+                    continue
+
+                today_sig = compute_spectral_signature(series)
+                if not today_sig:
+                    continue
+
+                # Per-axis history is namespaced under the axis name so
+                # adding more axes later doesn't collide.
+                axis_hist = spectral_history.get(axis) or {}
+                findings = check_spectral_drift(
+                    axis_hist, today_sig,
+                    k_spectral=k_spectral,
+                    min_samples=min_samples,
+                )
+                axis_hist_new = update_spectral_history(
+                    axis_hist, today_sig, alpha=alpha,
+                )
+                spectral_history[axis] = axis_hist_new
+                updated_for_actor = True
+
+                for f in findings:
+                    proposals.append(Proposal(
+                        task="rhythm_fft_analysis",
+                        domain_id=domain_id,
+                        proposal_type="chronic_spectral_drift",
+                        summary=(
+                            f"Chronic {f['band']} drift on {axis} for {user_id} "
+                            f"(z={f['z_score']}, dir={f['direction']})"
+                        ),
+                        detail={
+                            "user_id": user_id,
+                            "axis": axis,
+                            "band": f["band"],
+                            "z_score": f["z_score"],
+                            "today_value": f["today_value"],
+                            "ewma_value": f["ewma_value"],
+                            "direction": f["direction"],
+                            "window_days": window_days,
+                            "n_real_samples": n_real,
+                        },
+                    ))
+
+            if updated_for_actor and save_profile is not None:
+                # Round-trip back through learning_state to preserve siblings.
+                baseline_dict["spectral_history"] = spectral_history
+                learning_state["global_affect_baseline"] = baseline_dict
+                profile["learning_state"] = learning_state
+                try:
+                    save_profile(user_id, domain_key, profile)
+                except Exception as exc:
+                    log.warning(
+                        "rhythm_fft_analysis: save_profile(%s) failed: %s",
+                        user_id, exc,
+                    )
+
+            summary["profiles_analyzed"] += 1
+        except TaskPreempted:
+            log.info("rhythm_fft_analysis preempted at actor %s", user_id)
+            break
+        except Exception as exc:  # pragma: no cover - defensive
+            log.warning(
+                "rhythm_fft_analysis(%s/%s) failed: %s",
+                domain_id, user_id, exc,
+            )
+            summary["profiles_skipped"] += 1
+
+    return TaskResult(
+        task="rhythm_fft_analysis",
+        domain_id=domain_id,
+        success=True,
+        duration_seconds=time.monotonic() - start,
+        proposals=proposals,
+        metadata=summary,
+    )
+

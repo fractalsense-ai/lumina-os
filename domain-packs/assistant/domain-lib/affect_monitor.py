@@ -128,6 +128,19 @@ class AffectBaseline:
     valence_run_length: int = 0
     arousal_run_length: int = 0
 
+    # Spectral chronic-drift fingerprint (Phase G). Owned exclusively by the
+    # `rhythm_fft_analysis` daemon task — per-turn updates do NOT touch it.
+    # Shape (when populated):
+    #   {"ewma": {band: float, ...},
+    #    "variance": {band: float, ...},
+    #    "sample_count": int,
+    #    "last_run_utc": iso str,
+    #    "last_signature": {band: float, ...}}
+    # Stored verbatim — keeping the whole structure opaque to the per-turn
+    # path means the daemon can evolve the band layout without touching
+    # journal_adapters.
+    spectral_history: dict[str, Any] = field(default_factory=dict)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "salience": round(self.salience, 6),
@@ -147,6 +160,7 @@ class AffectBaseline:
             "salience_run_length": int(self.salience_run_length),
             "valence_run_length": int(self.valence_run_length),
             "arousal_run_length": int(self.arousal_run_length),
+            "spectral_history": dict(self.spectral_history),
         }
 
     @classmethod
@@ -169,6 +183,7 @@ class AffectBaseline:
             salience_run_length=int(data.get("salience_run_length", 0)),
             valence_run_length=int(data.get("valence_run_length", 0)),
             arousal_run_length=int(data.get("arousal_run_length", 0)),
+            spectral_history=dict(data.get("spectral_history") or {}),
         )
 
 
