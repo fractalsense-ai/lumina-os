@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lumina://standards/spectral-advisory-schema-v1.json",
+  "schema_version": "1.0.0",
+  "last_updated": "2026-04-25",
+  "title": "SpectralAdvisory",
+  "description": "Schema for a single spectral advisory entry persisted on an actor profile under learning_state.spectral_advisories. Produced by the rhythm_fft_analysis daemon task in lumina.signals.advisories.upsert_spectral_advisory and consumed by per-domain advisory consumers (education journal_adapters, future agriculture/equipment dashboards). The entry is keyed for dedup purposes by the (signal, band) tuple; a new finding for the same key replaces any existing entry.",
+  "type": "object",
+  "required": [
+    "advisory_id",
+    "signal",
+    "band",
+    "direction",
+    "z_score",
+    "message",
+    "created_utc",
+    "expires_utc"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "advisory_id": {
+      "type": "string",
+      "description": "RFC-4122 UUID assigned at upsert time. Stable for the lifetime of the entry; consumers may use it as a deduplication key when surfacing an advisory across multiple UI refreshes."
+    },
+    "signal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the signal that produced this advisory (e.g. 'valence', 'soil_pH', 'motor_vibration'). Must match a signal name declared in the producing domain's domain-physics.json signals block."
+    },
+    "band": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Spectral band whose drift triggered the advisory (e.g. 'dc_drift', 'circaseptan', 'ultradian', 'intra_hour'). Band names are domain-defined via the per-signal bands map; the framework supplies defaults but does not constrain the keyset."
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["positive", "negative", "neutral", "*"],
+      "description": "Sign of the spectral drift relative to the historical band signature. 'positive' = signal trending up against its baseline at this period; 'negative' = trending down; 'neutral' = magnitude-only finding with no signed direction; '*' reserved for wildcard cases."
+    },
+    "z_score": {
+      "type": "number",
+      "description": "Magnitude of the drift expressed as a z-score against the per-band variance window. The producing domain's spectral_drift_thresholds.k_spectral controls the trigger threshold."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable advisory message rendered at upsert time via lumina.signals.templates.render_advisory_message. Domain physics may inject per-signal message_overrides; otherwise the framework default template is used. Consumers should treat this string as opaque."
+    },
+    "created_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp at which the advisory was created or most recently re-upserted. Used for tie-breaking when multiple advisories share the same priority class."
+    },
+    "expires_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp after which the advisory is considered stale and should be pruned from the persisted list and ignored by consumers. Computed as created_utc + advisory_ttl_seconds (per-signal optional override, framework default 86400)."
+    }
+  }
+}

@@ -98,6 +98,63 @@
       "drift_threshold": 0.4
     }
   },
+  "signals": {
+    "soil_pH": {
+      "label": "soil pH",
+      "units": "pH",
+      "range": [3.0, 10.0],
+      "record_path": "sensors.soil.pH",
+      "advisory_priority": 0,
+      "advisory_ttl_seconds": 172800,
+      "bands": {
+        "dc_drift":    { "window_days": [10, 90] },
+        "circaseptan": { "window_days": [5, 9] }
+      },
+      "message_overrides": {
+        "dc_drift,negative": "{label} has been trending acidic over the past several weeks — consider liming.",
+        "dc_drift,positive": "{label} has been trending alkaline over the past several weeks \u2014 review irrigation source.",
+        "circaseptan,*": "Weekly oscillation on {label} has shifted noticeably \u2014 check the irrigation schedule and recent feedings."
+      }
+    },
+    "soil_moisture": {
+      "label": "soil moisture",
+      "units": "%",
+      "range": [0.0, 100.0],
+      "record_path": "sensors.soil.moisture_pct",
+      "advisory_priority": 1,
+      "bands": {
+        "dc_drift":    { "window_days": [7, 60] },
+        "circaseptan": { "window_days": [3, 7] },
+        "ultradian":   { "window_days": [0.5, 2.0] }
+      }
+    },
+    "air_temperature": {
+      "label": "air temperature",
+      "units": "°C",
+      "range": [-20.0, 55.0],
+      "record_path": "sensors.air.temperature_c",
+      "advisory_priority": 2,
+      "bands": {
+        "dc_drift":    { "window_days": [14, 90] },
+        "circadian":   { "window_days": [0.8, 1.2] }
+      }
+    },
+    "motor_vibration": {
+      "label": "motor vibration",
+      "units": "mm/s",
+      "range": [0.0, 50.0],
+      "record_path": "sensors.equipment.vibration_mm_s",
+      "advisory_priority": 0,
+      "advisory_ttl_seconds": 3600,
+      "bands": {
+        "intra_hour":  { "window_days": [0.01, 0.1] },
+        "intra_day":   { "window_days": [0.1, 1.0] }
+      },
+      "message_overrides": {
+        "intra_hour,positive": "{label} is rising on a sub-hour cadence — inspect the motor before the next shift."
+      }
+    }
+  },
   "evidence_schema": {
     "path": "evidence-schema.json",
     "version": "1.0"

@@ -121,3 +121,38 @@ def aggregate_readings(
         "mean_normalized": sum(normalized_values) / len(normalized_values),
         "min_quality": min(qualities),
     }
+
+
+# ── Signal-decomposition framework adapter ───────────────────
+
+
+def to_signal_samples(
+    readings: list[SensorReading],
+    *,
+    signal_name_for: dict[str, str] | None = None,
+) -> list[Any]:
+    """Convert a batch of ``SensorReading`` objects into framework
+    ``lumina.signals.SignalSample`` objects.
+
+    The agriculture domain owns the mapping from physical sensor IDs
+    (e.g. ``"barn_3_collar_b"``) to the *signal name* declared in
+    ``domain-physics.json`` (e.g. ``"motor_vibration"``). Pass that
+    mapping via ``signal_name_for``; readings whose ``sensor_id`` is
+    absent from the mapping fall back to the sensor_id itself, which
+    matches the framework's default behaviour for actor-scoped signals.
+
+    The framework instrument (``lumina.signals``) is domain-agnostic;
+    this adapter is the agriculture pack's reaction-side bridge so the
+    same EWMA + envelope + heartbeat-shape + spectral pipeline that
+    runs against the assistant's SVA axes also runs against soil pH,
+    moisture, temperature, and motor vibration.
+    """
+    from lumina.signals import SignalSample  # local import: keep this
+    # library import-light when the framework isn't required.
+
+    mapping = signal_name_for or {}
+    samples: list[Any] = []
+    for r in readings:
+        signal_name = mapping.get(r.sensor_id, r.sensor_id)
+        samples.append(SignalSample(name=signal_name, value=float(r.value), ts=r.timestamp))
+    return samples

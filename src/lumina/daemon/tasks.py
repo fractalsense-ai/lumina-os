@@ -1278,6 +1278,24 @@ def rhythm_fft_analysis(
                 updated_for_actor = True
 
                 for f in findings:
+                    # Normalize the spectral finding's signed direction
+                    # (int +1 / -1 / 0 emitted by spectral.py) into the
+                    # framework's symbolic direction vocabulary
+                    # ("positive" / "negative" / "neutral") so message
+                    # template lookup and the persisted advisory shape
+                    # both line up with the advisory schema enum.
+                    raw_dir = f.get("direction", 0)
+                    try:
+                        dir_int = int(raw_dir)
+                    except (TypeError, ValueError):
+                        dir_int = 0
+                    direction_label = (
+                        "positive" if dir_int > 0
+                        else "negative" if dir_int < 0
+                        else "neutral"
+                    )
+                    finding_for_advisory = {**f, "direction": direction_label}
+
                     proposals.append(Proposal(
                         task="rhythm_fft_analysis",
                         domain_id=domain_id,
@@ -1301,14 +1319,14 @@ def rhythm_fft_analysis(
                     # Mirror the proposal into a profile-side advisory so
                     # the journal session-start surface can render it.
                     message = render_advisory_message(
-                        signal_label, f["band"], f["direction"],
+                        signal_label, f["band"], direction_label,
                         signal_overrides=message_overrides,
                     )
                     advisories = upsert_spectral_advisory(
                         advisories,
                         signal=signal_name,
                         band=f["band"],
-                        finding=f,
+                        finding=finding_for_advisory,
                         message=message,
                         ttl_seconds=ttl_seconds,
                     )

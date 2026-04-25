@@ -1051,6 +1051,12 @@ artifacts:
   status: active
   last_updated: 2026-03-08
   sha256: 74f82ef2a4366e21045841b32f6f5a80cc525e2a4b3dcb3e0acfe616facc9c9c
+- path: standards/spectral-advisory-schema-v1.json
+  type: schema
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-25
+  sha256: f0bcae5a19bed9cd8f955ff17e112792ef31e1a4f37e506c41a5741a10f0b4c7
 - path: domain-packs/agriculture/docs/1-commands/README.md
   sha256: 62791ccb67feda1e6099e9a1cb914b21190ae53bd35d55d5de7dc1371fceb56d
 - path: domain-packs/agriculture/docs/3-functions/README.md
@@ -1650,7 +1656,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-17
-  sha256: 49cb529af0552c2dd259e2de75bf5cd1f344bfaa27adc5852729bc64159ad235
+  sha256: c7e4ed7af5c921641db722fa0f5c54b770286c9eab217e9ff34bd92a0ebcad75
 - path: tests/test_daemon_rhythm_fft.py
   type: source
   doc_version: 1.0.0
