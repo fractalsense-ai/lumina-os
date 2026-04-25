@@ -351,28 +351,16 @@ def journal_domain_step(
                 tier1_reason = f"entity_envelope_{check['axis']}_z{check['z_score']}"
                 break
 
-    # Global SVA envelope check (covers entity-less journal turns too)
-    if not is_tier1 and sva:
-        try:
-            from affect_monitor import check_global_deviation, AffectBaseline  # type: ignore
-        except ModuleNotFoundError:
-            from domain_packs.assistant.domain_lib.affect_monitor import (  # type: ignore[no-redef]
-                check_global_deviation,
-                AffectBaseline,
-            )
-        global_baseline_dict = (profile_data or {}).get("learning_state", {}).get("global_affect_baseline")
-        global_baseline = AffectBaseline.from_dict(global_baseline_dict) if global_baseline_dict else None
-        gcheck = check_global_deviation(
-            global_baseline, valence, arousal, salience,
-            k_sigma=k_sigma_tier1,
-            min_samples=min_samples_z,
-            min_variance_floor=min_var_floor,
-        )
-        if gcheck["mature"]:
-            any_mature_baseline = True
-            if gcheck["triggered"]:
-                is_tier1 = True
-                tier1_reason = f"global_envelope_{gcheck['axis']}_z{gcheck['z_score']}"
+    # NOTE (Phase H.5): A global SVA envelope check used to live here, reading
+    # ``learning_state.global_affect_baseline`` and feeding it through the
+    # assistant pack's ``check_global_deviation`` helper. That key was never
+    # written by the education pack's profile serializer, so the branch was
+    # always inert. Per the signal-decomposition principle (each domain owns
+    # its actor shape), education's hand-rolled student baseline does not
+    # carry per-axis variance, so the assistant-shaped global envelope check
+    # does not apply here. If education ever needs a global envelope check on
+    # the student actor, it should declare its own per-signal baseline via the
+    # ``lumina.signals`` framework rather than borrow the assistant's helper.
 
     # ── Tier 1 — shape (rhythm) check ────────────────────────
     # Even when amplitude stays inside the envelope, a sustained one-direction

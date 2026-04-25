@@ -93,8 +93,14 @@
       "window_days": 30,
       "k_spectral": 2.5,
       "min_samples_for_drift": 5,
-      "alpha": 0.1,
-      "axes": ["valence"]
+      "alpha": 0.1
+    }
+  },
+  "signals": {
+    "valence": {
+      "label": "valence",
+      "range": [-1.0, 1.0],
+      "advisory_priority": 0
     }
   },
   "subsystem_configs": {

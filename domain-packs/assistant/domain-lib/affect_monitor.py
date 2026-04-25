@@ -1,5 +1,20 @@
 """Affect monitor for the assistant domain — SVA with EWMA per module.
 
+This module is the **assistant pack's domain monitor** for one specific
+actor (the assistant user). It owns its own actor shape
+(``AffectBaseline`` carries SVA mean + variance + rhythm + per-module
+signatures + spectral history) and its own persistence key
+(``entity_state.affect_baseline`` and ``learning_state.affect_baseline``).
+
+The scalar math primitives — EWMA + variance recurrence, heartbeat-shape
+crossing-rate / run-length tracking, z-score envelope checks — live in
+``lumina.signals`` and are reused here. This file's responsibility is the
+assistant-domain *interpretation*: turning structured turn evidence into
+an SVA reading, folding it into the per-actor baseline, and surfacing
+per-module deviation. Other domains (education, agriculture, system) own
+their own actor shapes and monitors and call into ``lumina.signals``
+directly with whatever signals are meaningful for them.
+
 Maintains a compressed representation of actor engagement/affect across
 sessions without storing conversational history.  The affect baseline
 floats with the actor over time via exponential weighted moving average,
@@ -13,6 +28,7 @@ without access to conversation content.
 Architecture parallels:
     education domain → zpd_monitor_v0_2.py + education_profile_serializer.py
     assistant domain → this file (unified — simpler domain, fewer state vars)
+    framework        → src/lumina/signals/ (instrument, domain-agnostic)
 
 Evidence contract (from turn interpreter / tool adapters):
     - task_status: "completed" | "abandoned" | "open" | "deferred" | "n/a"
@@ -28,6 +44,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+
+from lumina.signals.baseline import (
+    _initial_run as _framework_initial_run,
+    _update_rhythm as _framework_update_rhythm,
+    _z as _framework_z,
+)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -562,10 +584,12 @@ def update_relational_baseline(
 
 
 def _initial_run(residual: float, noise_floor: float) -> int:
-    """Sign-of-first-observation seed for run_length tracking."""
-    if abs(residual) < noise_floor:
-        return 0
-    return 1 if residual > 0 else -1
+    """Sign-of-first-observation seed for run_length tracking.
+
+    Thin delegator to ``lumina.signals.baseline._initial_run`` — kept as a
+    local name for backward compatibility with existing call sites.
+    """
+    return _framework_initial_run(residual, noise_floor)
 
 
 def _update_rhythm(
@@ -577,29 +601,12 @@ def _update_rhythm(
 ) -> tuple[int, float]:
     """Update (run_length, crossing_rate) for one axis given this turn's residual.
 
-    - Residuals smaller than ``noise_floor`` are treated as "no movement": they
-      don't break a run, don't register a crossing, and don't extend a run.
-      This keeps tiny SVA jitter from corrupting the rhythm signature.
-    - When the residual sign matches the current run's sign → extend the run
-      and register a non-crossing event (decays crossing_rate toward 0).
-    - When it opposes the current run's sign → reset the run to ±1 and
-      register a crossing event (pulls crossing_rate toward 1).
-    - When ``prev_run == 0`` (uninitialised), seed sign without registering
-      a crossing.
+    Thin delegator to ``lumina.signals.baseline._update_rhythm``. The
+    framework owns the math; the assistant pack uses it per-axis.
     """
-    if abs(residual) < noise_floor:
-        return prev_run, prev_crossing_rate
-    cur_sign = 1 if residual > 0 else -1
-    if prev_run == 0:
-        return cur_sign, prev_crossing_rate
-    prev_sign = 1 if prev_run > 0 else -1
-    if cur_sign == prev_sign:
-        # Same direction — extend run, no crossing event
-        new_cross = (1 - alpha) * prev_crossing_rate
-        return prev_run + cur_sign, new_cross
-    # Direction flip — reset run, register crossing event
-    new_cross = alpha * 1.0 + (1 - alpha) * prev_crossing_rate
-    return cur_sign, new_cross
+    return _framework_update_rhythm(
+        residual, prev_run, prev_crossing_rate, alpha, noise_floor
+    )
 
 
 def check_shape_deviation(
@@ -661,13 +668,10 @@ def check_shape_deviation(
 # Envelope (z-score) deviation checks
 # ─────────────────────────────────────────────────────────────
 
-import math as _math
-
 
 def _z(observed: float, mean: float, variance: float, var_floor: float) -> float:
-    """Return |z| score with a variance floor to avoid divide-by-zero."""
-    var = max(float(variance), float(var_floor))
-    return abs(observed - mean) / _math.sqrt(var)
+    """Return |z| score. Thin delegator to ``lumina.signals.baseline._z``."""
+    return _framework_z(observed, mean, variance, var_floor)
 
 
 def check_relational_deviation(

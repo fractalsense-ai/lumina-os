@@ -1464,7 +1464,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-16
-  sha256: 42a9bbf2fb2732819d766a1ecf6eaa9d881141e33a74b466dd75aeab3c0589a1
+  sha256: 8b58d1f645f81a42cff4ee4b018f7e74e586aa686f58fe9a2a3c515b17ee3790
 - path: domain-packs/assistant/domain-lib/persona_engine.py
   type: code
   doc_version: 1.0.0
@@ -1608,7 +1608,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-16
-  sha256: 841c1530f277d920d6cab13efd535c1bca83e0585877389932c3c9a9f8f37da2
+  sha256: e5c69c245c32d39bee3dbbedce15f76b34127c9ff54fbcb34b947e6aafb7dde9
 - path: domain-packs/education/controllers/ops/safe_person.py
   type: source
   doc_version: 1.0.0
