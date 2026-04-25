@@ -282,12 +282,29 @@ def _build_domain_context(
 
     initial_state = state_builder(profile, **_sb_kwargs)
 
+    # ── Phase G.5 plumbing: forward profile / persistence / user / session ──
+    # Domain step callables that accept these kwargs (currently
+    # ``journal_domain_step`` / ``freeform_domain_step``) need them so the
+    # chronic spectral advisory piggyback can read+prune
+    # ``profile.learning_state.spectral_advisories``.  Other domain steps
+    # don't declare them, so we filter via inspect.
+    _ds_sig = inspect.signature(domain_step)
+    _ds_extra: dict[str, Any] = {}
+    if "profile_data" in _ds_sig.parameters:
+        _ds_extra["profile_data"] = profile
+    if "persistence" in _ds_sig.parameters:
+        _ds_extra["persistence"] = _cfg.PERSISTENCE
+    if "user_id" in _ds_sig.parameters and _user_id:
+        _ds_extra["user_id"] = _user_id
+    if "session_id" in _ds_sig.parameters:
+        _ds_extra["session_id"] = session_id
+
     orch = PPAOrchestrator(
         domain_physics=domain,
         subject_profile=profile,
         ledger_path=str(ledger_path),
         session_id=session_id,
-        domain_lib_step_fn=lambda state, task, ev: domain_step(state, task, ev, domain_params),
+        domain_lib_step_fn=lambda state, task, ev: domain_step(state, task, ev, domain_params, **_ds_extra),
         initial_state=initial_state,
         action_prompt_type_map=runtime.get("action_prompt_type_map") or {},
         policy_commitment=_policy_commitment_payload(runtime),

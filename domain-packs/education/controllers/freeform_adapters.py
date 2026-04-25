@@ -95,6 +95,10 @@ def freeform_domain_step(
     task_spec: dict[str, Any],
     evidence: dict[str, Any],
     params: dict[str, Any],
+    profile_data: dict[str, Any] | None = None,
+    persistence: Any | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
 ) -> tuple[Any, dict[str, Any]]:
     """Domain-lib step for free-form modules (e.g. Student Commons).
 
@@ -120,6 +124,10 @@ def freeform_domain_step(
             task_spec=task_spec,
             evidence=evidence,
             params=params,
+            profile_data=profile_data,
+            persistence=persistence,
+            user_id=user_id,
+            session_id=session_id,
         )
 
     intent = evidence.get("intent_type")

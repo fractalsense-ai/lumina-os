@@ -35,7 +35,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # ── Line-pattern constants ───────────────────────────────────
 # Matches the start of an artifact entry:  - path: <value>
-_PATH_LINE_RE = re.compile(r"^\s{2}-\s+path:\s+(.+)")
+# Accepts 0, 1, or 2 leading spaces to tolerate both PyYAML-style dumps
+# (zero-indent list items under a top-level key) and hand-written
+# 2-space-indented fixtures used by some legacy tests.
+_PATH_LINE_RE = re.compile(r"^\s{0,2}-\s+path:\s+(.+)")
 # Matches a sha256 field line inside an indented block.
 # Group 1 = indentation+key+space prefix, group 2 = the hash/pending value.
 _SHA256_LINE_RE = re.compile(r"^(\s+sha256:[ \t]+)(\S+)")

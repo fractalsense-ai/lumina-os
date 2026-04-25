@@ -83,6 +83,138 @@ _DEFAULT_THRESHOLDS: dict[str, Any] = {
 
 
 # ─────────────────────────────────────────────────────────────
+# Phase G.5 — chronic spectral advisory surface
+# ─────────────────────────────────────────────────────────────
+#
+# The daemon task ``rhythm_fft_analysis`` writes advisory entries into
+# ``profile.learning_state.spectral_advisories`` whenever it detects a
+# chronic drift pattern. The journal session-start surface (and the
+# first-turn piggyback path inside ``journal_domain_step``) reads those
+# entries and projects them into ``decision["advisory"]`` so the web
+# banner can render them. Each advisory carries its own TTL so the UI
+# never has to call back to clear it.
+
+# Priority order when multiple advisories are active simultaneously.
+# Lower index = higher priority. Valence drift is the most clinically
+# meaningful signal, and slow baseline shifts (dc_drift) outrank the
+# rhythm bands.
+_ADVISORY_AXIS_PRIORITY = ("valence", "arousal", "salience")
+_ADVISORY_BAND_PRIORITY = ("dc_drift", "circaseptan", "ultradian")
+
+
+def _pull_active_advisory(
+    profile_data: dict[str, Any] | None,
+    now_utc: datetime | None = None,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Return (highest-priority active advisory | None, pruned list).
+
+    Filters expired entries and returns the surviving list so callers can
+    persist the prune. Picks the highest-priority advisory by
+    (axis, band) using the constants above. The decision payload exposes
+    only the user-facing fields, never the raw daemon detail.
+    """
+    if not profile_data:
+        return None, []
+    ls = profile_data.get("learning_state") or {}
+    raw = ls.get("spectral_advisories") or []
+    if not isinstance(raw, list):
+        return None, []
+
+    now = now_utc or datetime.now(timezone.utc)
+    surviving: list[dict[str, Any]] = []
+    for adv in raw:
+        if not isinstance(adv, dict):
+            continue
+        exp = adv.get("expires_utc")
+        if isinstance(exp, str):
+            try:
+                if datetime.fromisoformat(exp) <= now:
+                    continue
+            except ValueError:
+                continue
+        surviving.append(adv)
+
+    if not surviving:
+        return None, surviving
+
+    def _rank(a: dict[str, Any]) -> tuple[int, int]:
+        axis = str(a.get("axis", ""))
+        band = str(a.get("band", ""))
+        ax_rank = (
+            _ADVISORY_AXIS_PRIORITY.index(axis)
+            if axis in _ADVISORY_AXIS_PRIORITY
+            else len(_ADVISORY_AXIS_PRIORITY)
+        )
+        bd_rank = (
+            _ADVISORY_BAND_PRIORITY.index(band)
+            if band in _ADVISORY_BAND_PRIORITY
+            else len(_ADVISORY_BAND_PRIORITY)
+        )
+        return (ax_rank, bd_rank)
+
+    best = min(surviving, key=_rank)
+    return best, surviving
+
+
+def _advisory_for_decision(adv: dict[str, Any]) -> dict[str, Any]:
+    """Project a stored advisory into the user-facing decision payload."""
+    return {
+        "advisory_id": adv.get("advisory_id"),
+        "axis": adv.get("axis"),
+        "band": adv.get("band"),
+        "direction": adv.get("direction"),
+        "message": adv.get("message"),
+        "expires_utc": adv.get("expires_utc"),
+    }
+
+
+def journal_session_start(
+    state: dict[str, Any],
+    profile_data: dict[str, Any] | None = None,
+    persistence: Any | None = None,
+    user_id: str | None = None,
+    session_id: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Run journal session-start checks and surface any active chronic advisory.
+
+    Returns ``(updated_state, decision)`` where ``decision`` always has
+    ``tier == "ok"`` (chronic advisories never gate the journal — they are
+    informational) and an ``advisory`` field that is either ``None`` or a
+    user-facing advisory payload. Expired advisories are pruned from the
+    profile as a side-effect.
+
+    Mark the session as having surfaced an advisory (via
+    ``state["session_advisory_surfaced"] = True``) so the per-turn
+    piggyback path inside ``journal_domain_step`` does not re-surface it.
+    """
+    advisory, surviving = _pull_active_advisory(profile_data)
+
+    # Persist the pruned list back to the profile so expired entries don't
+    # accumulate. Best-effort — failure to save shouldn't block the session.
+    if profile_data is not None and persistence is not None and user_id:
+        save_profile = getattr(persistence, "save_profile", None)
+        ls = profile_data.get("learning_state") or {}
+        prior = ls.get("spectral_advisories") or []
+        if save_profile and surviving != prior:
+            ls["spectral_advisories"] = surviving
+            profile_data["learning_state"] = ls
+            try:
+                save_profile(user_id, "journal", profile_data)
+            except Exception as exc:  # pragma: no cover - defensive
+                log.warning("journal_session_start: save_profile failed: %s", exc)
+
+    decision: dict[str, Any] = {
+        "tier": "ok",
+        "action": None,
+        "message": None,
+        "advisory": _advisory_for_decision(advisory) if advisory else None,
+    }
+    if advisory is not None:
+        state["session_advisory_surfaced"] = True
+    return state, decision
+
+
+# ─────────────────────────────────────────────────────────────
 # Public entry point
 # ─────────────────────────────────────────────────────────────
 
@@ -122,6 +254,37 @@ def journal_domain_step(
     p = params or {}
     thresholds = {**_DEFAULT_THRESHOLDS, **dict(p.get("journal_intervention_thresholds") or {})}
 
+    # ── Phase G.5 piggyback: surface chronic advisory once per session ──
+    # If a session-start adapter has already surfaced the advisory, the
+    # ``session_advisory_surfaced`` flag is set on state and we skip.
+    # Otherwise the FIRST per-turn step of the session pulls it.
+    piggyback_advisory: dict[str, Any] | None = None
+    if profile_data and not state.get("session_advisory_surfaced"):
+        adv, surviving = _pull_active_advisory(profile_data)
+        # Best-effort prune on first touch.
+        if persistence is not None and user_id:
+            save_profile = getattr(persistence, "save_profile", None)
+            ls = profile_data.get("learning_state") or {}
+            prior = ls.get("spectral_advisories") or []
+            if save_profile and surviving != prior:
+                ls["spectral_advisories"] = surviving
+                profile_data["learning_state"] = ls
+                try:
+                    save_profile(user_id, "journal", profile_data)
+                except Exception as exc:  # pragma: no cover - defensive
+                    log.warning(
+                        "journal_domain_step: advisory prune save failed: %s", exc,
+                    )
+        if adv is not None:
+            piggyback_advisory = _advisory_for_decision(adv)
+            state["session_advisory_surfaced"] = True
+
+    def _attach_advisory(decision: dict[str, Any]) -> dict[str, Any]:
+        """Inject the piggyback advisory into a decision payload (if any)."""
+        if piggyback_advisory is not None and "advisory" not in decision:
+            decision["advisory"] = piggyback_advisory
+        return decision
+
     sva = dict(evidence.get("sva_direct") or {})
     entity_mentions = dict(evidence.get("entity_mentions") or {})
 
@@ -150,7 +313,9 @@ def journal_domain_step(
         vocab.get("baseline_sessions_remaining", warmup_sessions)
     )
     if baseline_sessions_remaining > 0:
-        return state, {"tier": "ok", "action": None, "message": "warmup_gate_active"}
+        return state, _attach_advisory(
+            {"tier": "ok", "action": None, "message": "warmup_gate_active"}
+        )
 
     # ── Pull learned baselines for envelope checks ────────────
     # The actor's own oscillation envelope (per-entity + global) drives
@@ -403,28 +568,28 @@ def journal_domain_step(
             user_id=user_id,
             session_id=session_id,
         )
-        return state, {
+        return state, _attach_advisory({
             "tier": "tier3",
             "action": "journal_tier3_safe_person_alert",
             "message": "tier3_wellness_escalation_created",
-        }
+        })
 
     if is_tier2:
         state["tier2_opt_in_pending"] = True
-        return state, {
+        return state, _attach_advisory({
             "tier": "tier2",
             "action": "journal_tier2_opt_in_ask",
             "message": "tier2_sustained_elevation_ask",
-        }
+        })
 
     if is_tier1:
-        return state, {
+        return state, _attach_advisory({
             "tier": "tier1",
             "action": "journal_tier1_breathing",
             "message": tier1_reason,
-        }
+        })
 
-    return state, {"tier": "ok", "action": None, "message": None}
+    return state, _attach_advisory({"tier": "ok", "action": None, "message": None})
 
 
 # ─────────────────────────────────────────────────────────────

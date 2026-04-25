@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 from lumina.daemon.report import Proposal, TaskResult
@@ -1034,6 +1036,100 @@ def _iter_actor_profiles(
     return out
 
 
+# ── Spectral advisory helpers (Phase G.5) ────────────────────
+#
+# When ``rhythm_fft_analysis`` emits a chronic_spectral_drift Proposal it
+# also writes a small advisory entry to the actor's profile so the journal
+# session-start surface can render a soft banner.  Advisories carry their
+# own TTL (24h) so the UI never has to call back to clear them.
+
+_ADVISORY_TTL_SECONDS = 24 * 3600
+
+# Keyed by (axis, band, direction).  "*" matches any direction.
+_ADVISORY_MESSAGES: dict[tuple[str, str, str], str] = {
+    ("valence", "dc_drift", "negative"):
+        "Your overall mood has been drifting downward over the past few weeks.",
+    ("valence", "dc_drift", "positive"):
+        "Your overall mood has been trending upward recently.",
+    ("valence", "circaseptan", "*"):
+        "A weekly mood pattern has shifted noticeably.",
+    ("valence", "ultradian", "*"):
+        "Multi-day mood swings have become more pronounced.",
+    ("arousal", "dc_drift", "positive"):
+        "Your baseline arousal has been creeping upward over the past few weeks.",
+    ("arousal", "dc_drift", "negative"):
+        "Your baseline arousal has been settling lower over the past few weeks.",
+    ("arousal", "circaseptan", "*"):
+        "A weekly arousal pattern has shifted noticeably.",
+    ("arousal", "ultradian", "*"):
+        "Multi-day arousal swings have become more pronounced.",
+    ("salience", "dc_drift", "*"):
+        "How emotionally significant things feel has been drifting recently.",
+    ("salience", "circaseptan", "*"):
+        "A weekly salience pattern has shifted noticeably.",
+    ("salience", "ultradian", "*"):
+        "Multi-day salience swings have become more pronounced.",
+}
+
+
+def _advisory_message(axis: str, band: str, direction: str) -> str:
+    """Look up a human-readable message for an advisory, with fallbacks."""
+    key = (axis, band, direction)
+    if key in _ADVISORY_MESSAGES:
+        return _ADVISORY_MESSAGES[key]
+    wildcard = (axis, band, "*")
+    if wildcard in _ADVISORY_MESSAGES:
+        return _ADVISORY_MESSAGES[wildcard]
+    return f"A chronic {band} pattern has shifted on {axis}."
+
+
+def _upsert_spectral_advisory(
+    advisories: list[dict[str, Any]],
+    *,
+    axis: str,
+    band: str,
+    finding: dict[str, Any],
+    now_utc: datetime | None = None,
+    ttl_seconds: int = _ADVISORY_TTL_SECONDS,
+) -> list[dict[str, Any]]:
+    """Insert/replace an advisory keyed by (axis, band).
+
+    Returns a new list (does not mutate input). Newer entries evict older
+    entries for the same (axis, band) tuple. Expired entries are pruned.
+    """
+    now = now_utc or datetime.now(timezone.utc)
+    expires = now + timedelta(seconds=ttl_seconds)
+    direction = str(finding.get("direction", "neutral"))
+    new_entry = {
+        "advisory_id": str(uuid.uuid4()),
+        "axis": axis,
+        "band": band,
+        "direction": direction,
+        "z_score": float(finding.get("z_score", 0.0)),
+        "message": _advisory_message(axis, band, direction),
+        "created_utc": now.isoformat(),
+        "expires_utc": expires.isoformat(),
+    }
+    out: list[dict[str, Any]] = []
+    for adv in advisories or []:
+        if not isinstance(adv, dict):
+            continue
+        # Drop the entry we are replacing.
+        if adv.get("axis") == axis and adv.get("band") == band:
+            continue
+        # Drop already-expired entries.
+        exp = adv.get("expires_utc")
+        if isinstance(exp, str):
+            try:
+                if datetime.fromisoformat(exp) <= now:
+                    continue
+            except ValueError:
+                continue
+        out.append(adv)
+    out.append(new_entry)
+    return out
+
+
 @register_task("rhythm_fft_analysis")
 def rhythm_fft_analysis(
     domain_id: str,
@@ -1154,6 +1250,7 @@ def rhythm_fft_analysis(
             learning_state = profile.get("learning_state") or {}
             baseline_dict = learning_state.get("global_affect_baseline") or {}
             spectral_history = dict(baseline_dict.get("spectral_history") or {})
+            advisories = list(learning_state.get("spectral_advisories") or [])
 
             actor_records = by_actor.get(user_id, [])
             if not actor_records:
@@ -1219,11 +1316,20 @@ def rhythm_fft_analysis(
                             "n_real_samples": n_real,
                         },
                     ))
+                    # Mirror the proposal into a profile-side advisory so
+                    # the journal session-start surface can render it.
+                    advisories = _upsert_spectral_advisory(
+                        advisories,
+                        axis=axis,
+                        band=f["band"],
+                        finding=f,
+                    )
 
             if updated_for_actor and save_profile is not None:
                 # Round-trip back through learning_state to preserve siblings.
                 baseline_dict["spectral_history"] = spectral_history
                 learning_state["global_affect_baseline"] = baseline_dict
+                learning_state["spectral_advisories"] = advisories
                 profile["learning_state"] = learning_state
                 try:
                     save_profile(user_id, domain_key, profile)

@@ -17,8 +17,9 @@
  */
 
 const DB_NAME = 'lumina-journal';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'entries';
+const ADVISORY_STORE = 'advisories';
 
 export interface JournalEntry {
   entryId: string;
@@ -28,6 +29,21 @@ export interface JournalEntry {
   entityMap: Record<string, string>;   // hash → displayName
   svaScores: { s: number; v: number; a: number } | null;
   turnNumber?: number;
+}
+
+/**
+ * Chronic spectral drift advisory delivered by the server in
+ * ``decision.advisory`` (see Phase G.5 / journal_session_start /
+ * journal_domain_step piggyback).  Stored locally so the banner survives
+ * page reloads until the server-side TTL (24h) expires.
+ */
+export interface SpectralAdvisory {
+  advisory_id: string;
+  axis: 'valence' | 'arousal' | 'salience' | string;
+  band: 'dc_drift' | 'circaseptan' | 'ultradian' | string;
+  direction: 'positive' | 'negative' | string;
+  message: string;
+  expires_utc: string;   // ISO-8601 UTC
 }
 
 // ── DB initialisation ─────────────────────────────────────────
@@ -42,6 +58,10 @@ function openDB(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'entryId' });
         store.createIndex('sessionId', 'sessionId', { unique: false });
         store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(ADVISORY_STORE)) {
+        // Single-row keyed by 'current' — only one advisory active at a time.
+        db.createObjectStore(ADVISORY_STORE, { keyPath: 'key' });
       }
     };
 
@@ -165,5 +185,59 @@ function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+// ── Spectral advisory store (Phase G.5) ───────────────────────
+
+/**
+ * Persist the active chronic spectral advisory locally so the UI banner
+ * survives reloads.  Replaces any prior advisory.
+ */
+export async function setAdvisory(adv: SpectralAdvisory): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(ADVISORY_STORE, 'readwrite');
+    const req = tx.objectStore(ADVISORY_STORE).put({ key: 'current', adv });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Return the currently-active advisory, or ``null`` if none is stored or
+ * the stored entry has passed its server-side TTL (``expires_utc``).
+ * Auto-clears expired entries as a side-effect.
+ */
+export async function getAdvisory(): Promise<SpectralAdvisory | null> {
+  const db = await openDB();
+  const stored = await new Promise<SpectralAdvisory | null>((resolve, reject) => {
+    const tx = db.transaction(ADVISORY_STORE, 'readonly');
+    const req = tx.objectStore(ADVISORY_STORE).get('current');
+    req.onsuccess = () => {
+      const row = req.result as { key: string; adv: SpectralAdvisory } | undefined;
+      resolve(row?.adv ?? null);
+    };
+    req.onerror = () => reject(req.error);
+  });
+  if (!stored) return null;
+  const exp = Date.parse(stored.expires_utc);
+  if (Number.isFinite(exp) && exp <= Date.now()) {
+    await clearAdvisory();
+    return null;
+  }
+  return stored;
+}
+
+/**
+ * Remove the stored advisory (called on dismiss or after TTL expiry).
+ */
+export async function clearAdvisory(): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(ADVISORY_STORE, 'readwrite');
+    const req = tx.objectStore(ADVISORY_STORE).delete('current');
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
   });
 }

@@ -198,3 +198,123 @@ class TestRhythmFFTDaemonTask:
         assert "valence" in sh
         assert sh["valence"]["sample_count"] >= 1
         assert "circaseptan" in sh["valence"]["ewma"]
+
+
+# ── Phase G.5 — chronic spectral advisory persistence ─────────
+
+
+def _drift_profile(actor: str) -> dict:
+    """Helper: build the same drift-prone profile used by the chronic test."""
+    return {
+        "subject_id": actor,
+        "learning_state": {
+            "global_affect_baseline": {
+                "spectral_history": {
+                    "valence": _make_baseline_history(stable_dc=0.02),
+                },
+            },
+        },
+    }
+
+
+def _drift_records(actor: str) -> list[dict]:
+    """Helper: 60d of trace events with a 14-day downward valence slide."""
+    now = datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc)
+    out: list[dict] = []
+    for d in range(60):
+        ts = now - timedelta(days=59 - d)
+        if d < 46:
+            v = 0.05 + 0.02 * math.sin(2 * math.pi * d / 7.0)
+        else:
+            v = -0.6 * (d - 45) / 14.0
+        for hour_offset in (0, 4, 8):
+            out.append(_make_trace(actor, ts + timedelta(hours=hour_offset), v))
+    return out
+
+
+_PHYSICS_DRIFT = {
+    "spectral_drift_thresholds": {
+        "window_days": 30,
+        "k_spectral": 2.0,
+        "min_samples_for_drift": 5,
+        "alpha": 0.1,
+        "axes": ["valence"],
+    },
+}
+
+
+class TestSpectralAdvisoryPersistence:
+    """Phase G.5: chronic_spectral_drift Proposals must also write a
+    user-facing advisory entry into ``profile.learning_state.spectral_advisories``
+    so the journal session-start / piggyback path can surface it."""
+
+    def test_proposal_writes_spectral_advisory(self):
+        task = get_task("rhythm_fft_analysis")
+        actor = "student_g51"
+        profiles = {actor: {"education": _drift_profile(actor)}}
+        persistence = _MockPersistence(profiles, _drift_records(actor))
+
+        result = task("education", _PHYSICS_DRIFT, persistence=persistence)
+        assert result.success
+        chronic = [p for p in result.proposals if p.proposal_type == "chronic_spectral_drift"]
+        assert chronic
+
+        saved = persistence.load_profile(actor, "education")
+        advisories = saved["learning_state"].get("spectral_advisories")
+        assert isinstance(advisories, list) and advisories, (
+            "expected at least one advisory written alongside the Proposal"
+        )
+        adv = advisories[0]
+        for key in ("advisory_id", "axis", "band", "direction",
+                    "message", "created_utc", "expires_utc"):
+            assert key in adv, f"advisory missing key {key!r}: {adv}"
+        assert adv["axis"] == "valence"
+        assert adv["band"] == "dc_drift"
+        assert isinstance(adv["message"], str) and adv["message"]
+
+    def test_advisory_ttl_is_24_hours(self):
+        task = get_task("rhythm_fft_analysis")
+        actor = "student_g51_ttl"
+        profiles = {actor: {"education": _drift_profile(actor)}}
+        persistence = _MockPersistence(profiles, _drift_records(actor))
+
+        task("education", _PHYSICS_DRIFT, persistence=persistence)
+        adv = persistence.load_profile(actor, "education")[
+            "learning_state"]["spectral_advisories"][0]
+
+        created = datetime.fromisoformat(adv["created_utc"])
+        expires = datetime.fromisoformat(adv["expires_utc"])
+        ttl = expires - created
+        # Expect exactly 24h window with a small (sub-second) tolerance.
+        assert abs(ttl.total_seconds() - 24 * 3600) < 5
+
+    def test_repeat_drift_replaces_same_band_advisory(self):
+        """A second daemon pass for the same (axis, band) must replace
+        rather than accumulate advisories."""
+        task = get_task("rhythm_fft_analysis")
+        actor = "student_g51_replace"
+        profiles = {actor: {"education": _drift_profile(actor)}}
+        persistence = _MockPersistence(profiles, _drift_records(actor))
+
+        task("education", _PHYSICS_DRIFT, persistence=persistence)
+        first = persistence.load_profile(actor, "education")[
+            "learning_state"]["spectral_advisories"]
+        assert len(first) >= 1
+        first_id = first[0]["advisory_id"]
+
+        # Run again — same drift fixtures, same (axis, band) finding.
+        task("education", _PHYSICS_DRIFT, persistence=persistence)
+        second = persistence.load_profile(actor, "education")[
+            "learning_state"]["spectral_advisories"]
+
+        same_band = [
+            a for a in second
+            if a["axis"] == "valence" and a["band"] == "dc_drift"
+        ]
+        assert len(same_band) == 1, (
+            f"expected exactly one (valence,dc_drift) advisory after replay; "
+            f"got {len(same_band)}: {same_band}"
+        )
+        # Replacement => new advisory_id.
+        assert same_band[0]["advisory_id"] != first_id
+

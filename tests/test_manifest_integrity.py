@@ -333,3 +333,48 @@ def test_main_regen_writes_updated_hashes(tmp_path: Path) -> None:
     assert result == 0
     content = manifest.read_text(encoding="utf-8")
     assert sha in content
+
+
+# ── Real-manifest regression (bug: regex only matched 2-space indent) ─────
+
+
+@pytest.mark.unit
+def test_real_manifest_parses_artifacts() -> None:
+    """The real docs/MANIFEST.yaml uses zero-indent list entries (PyYAML
+    default).  _parse_artifacts must recognise those and return a
+    reasonably large artifact list (sanity: >100 entries)."""
+    real_manifest = REPO_ROOT / "docs" / "MANIFEST.yaml"
+    assert real_manifest.exists(), "real docs/MANIFEST.yaml must exist"
+    artifacts = _parse_artifacts(real_manifest)
+    assert len(artifacts) > 100, (
+        f"expected real manifest to yield >100 artifacts; got {len(artifacts)}. "
+        "This is a guard against regressions of the 2-space-only regex bug."
+    )
+    paths = {a["path"] for a in artifacts}
+    # Sentinel file that has lived at the top of the manifest for a long time.
+    assert "docs/1-commands/README.md" in paths
+
+
+@pytest.mark.unit
+def test_check_manifest_real_reports_many_artifacts(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """check_manifest against the real repo root must report a non-zero
+    artifact count in its summary line."""
+    rc = check_manifest(repo_root=REPO_ROOT)
+    out = capsys.readouterr().out
+    assert rc in (0, 1)
+    # Summary line format:
+    #   "Manifest integrity: <ok> OK | <pending> pending | <missing> missing | <mm> mismatch"
+    import re as _re
+    m = _re.search(
+        r"Manifest integrity:\s+(\d+)\s+OK\s+\|\s+(\d+)\s+pending\s+\|\s+(\d+)\s+missing\s+\|\s+(\d+)\s+mismatch",
+        out,
+    )
+    assert m, f"expected a 'Manifest integrity: …' summary line; got:\n{out}"
+    total = sum(int(g) for g in m.groups())
+    assert total > 100, (
+        f"expected >100 artifacts accounted for; got {total}. "
+        "Regression of manifest_integrity regex bug."
+    )
+
