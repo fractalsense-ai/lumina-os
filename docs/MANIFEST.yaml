@@ -1,5 +1,5 @@
 schema_version: 1.0.0
-last_updated: 2026-04-24
+last_updated: 2026-04-25
 artifacts:
 - path: docs/1-commands/README.md
   type: doc
@@ -690,7 +690,7 @@ artifacts:
   doc_version: 1.2.0
   status: active
   last_updated: 2026-03-15
-  sha256: 581d55aaf78c6d65509fb23bea39078f19c4e0a9e0f196688714301dd4727aed
+  sha256: 57e7f508a92b8c344694e47da0b83a74dae7b9836462eefb974b92dd71b9023e
 - path: standards/domain-registry-schema-v1.json
   type: schema
   doc_version: 1.0.0
@@ -1608,7 +1608,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-16
-  sha256: ab71758936fa4e2dbb203990bf769f95f12f5a00f368a77f4d0870d26a591d75
+  sha256: 841c1530f277d920d6cab13efd535c1bca83e0585877389932c3c9a9f8f37da2
 - path: domain-packs/education/controllers/ops/safe_person.py
   type: source
   doc_version: 1.0.0
@@ -1644,28 +1644,16 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-17
-  sha256: 40ec3ca1d360675efaef026d8f16442b0d85fb83e72ad98ddd576c5d36ec0622
-- path: src/lumina/daemon/rhythm_fft.py
-  type: code
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-07-17
-  sha256: 315c4345cfdd3f9d69368815a70a2669fdd81ed439035922cb2b3b0e9836e350
+  sha256: cad8cd9e15f731843054648ca6751b67a8bf143a7a19675b2c0fec9850719cac
 - path: src/lumina/daemon/tasks.py
   type: code
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-17
-  sha256: 2fa6d5a37c154dc6fbfb3e1d55e2d617ae8620431e2c92f15061b734ccf61259
-- path: tests/test_rhythm_fft.py
-  type: source
-  doc_version: 1.0.0
-  status: active
-  last_updated: 2026-07-17
-  sha256: bfd7495d02b851aa4a5fb266d0ba07ebcd60a33ddaa5978af1e32da322acd5b8
+  sha256: 49cb529af0552c2dd259e2de75bf5cd1f344bfaa27adc5852729bc64159ad235
 - path: tests/test_daemon_rhythm_fft.py
   type: source
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-17
-  sha256: e190f1144cd9a77603fddddd07dd64c3afc359260383596a3cb4de253d61ffe6
+  sha256: 78d1690395592e6480da406a6b7c3357ee8d348fb3fcc0decaa717687c91e1d5

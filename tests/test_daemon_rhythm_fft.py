@@ -75,7 +75,7 @@ def _make_trace(actor_id: str, ts: datetime, valence: float) -> dict[str, Any]:
 
 def _make_baseline_history(stable_dc: float = 0.02, runs: int = 8) -> dict:
     """Pre-seed the actor's spectral_history with a stable, mature signature."""
-    from lumina.daemon.rhythm_fft import update_spectral_history
+    from lumina.signals import update_spectral_history
     hist: dict = {}
     # Tiny natural jitter so variance > 0 → finite z-scores
     for i in range(runs):
@@ -115,7 +115,7 @@ class TestRhythmFFTDaemonTask:
         profile = {
             "subject_id": actor,
             "learning_state": {
-                "global_affect_baseline": {
+                "signal_baselines": {
                     "spectral_history": {
                         "valence": _make_baseline_history(stable_dc=0.02),
                     },
@@ -156,7 +156,7 @@ class TestRhythmFFTDaemonTask:
 
         assert result.success, f"task failed: {result.error}"
         assert result.metadata["profiles_analyzed"] == 1
-        assert result.metadata["axes_run"] == ["valence"]
+        assert result.metadata["signals_run"] == ["valence"]
 
         # At least one chronic_spectral_drift proposal for dc_drift / negative
         chronic = [
@@ -167,7 +167,7 @@ class TestRhythmFFTDaemonTask:
         dc_props = [p for p in chronic if p.detail.get("band") == "dc_drift"]
         assert dc_props, "expected a dc_drift proposal in the chronic findings"
         assert dc_props[0].detail["direction"] == -1
-        assert dc_props[0].detail["axis"] == "valence"
+        assert dc_props[0].detail["signal"] == "valence"
         assert dc_props[0].detail["user_id"] == actor
 
     def test_history_is_persisted_back_to_profile(self):
@@ -176,7 +176,7 @@ class TestRhythmFFTDaemonTask:
         domain_key = "education"
         profile = {
             "subject_id": actor,
-            "learning_state": {"global_affect_baseline": {}},
+            "learning_state": {"signal_baselines": {}},
         }
         profiles = {actor: {domain_key: profile}}
 
@@ -194,7 +194,7 @@ class TestRhythmFFTDaemonTask:
         assert result.success
         # Inspect the saved profile for spectral_history under valence axis
         saved = persistence.load_profile(actor, domain_key)
-        sh = saved["learning_state"]["global_affect_baseline"]["spectral_history"]
+        sh = saved["learning_state"]["signal_baselines"]["spectral_history"]
         assert "valence" in sh
         assert sh["valence"]["sample_count"] >= 1
         assert "circaseptan" in sh["valence"]["ewma"]
@@ -208,7 +208,7 @@ def _drift_profile(actor: str) -> dict:
     return {
         "subject_id": actor,
         "learning_state": {
-            "global_affect_baseline": {
+            "signal_baselines": {
                 "spectral_history": {
                     "valence": _make_baseline_history(stable_dc=0.02),
                 },
@@ -265,10 +265,10 @@ class TestSpectralAdvisoryPersistence:
             "expected at least one advisory written alongside the Proposal"
         )
         adv = advisories[0]
-        for key in ("advisory_id", "axis", "band", "direction",
+        for key in ("advisory_id", "signal", "band", "direction",
                     "message", "created_utc", "expires_utc"):
             assert key in adv, f"advisory missing key {key!r}: {adv}"
-        assert adv["axis"] == "valence"
+        assert adv["signal"] == "valence"
         assert adv["band"] == "dc_drift"
         assert isinstance(adv["message"], str) and adv["message"]
 
@@ -289,7 +289,7 @@ class TestSpectralAdvisoryPersistence:
         assert abs(ttl.total_seconds() - 24 * 3600) < 5
 
     def test_repeat_drift_replaces_same_band_advisory(self):
-        """A second daemon pass for the same (axis, band) must replace
+        """A second daemon pass for the same (signal, band) must replace
         rather than accumulate advisories."""
         task = get_task("rhythm_fft_analysis")
         actor = "student_g51_replace"
@@ -309,7 +309,7 @@ class TestSpectralAdvisoryPersistence:
 
         same_band = [
             a for a in second
-            if a["axis"] == "valence" and a["band"] == "dc_drift"
+            if a["signal"] == "valence" and a["band"] == "dc_drift"
         ]
         assert len(same_band) == 1, (
             f"expected exactly one (valence,dc_drift) advisory after replay; "

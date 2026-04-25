@@ -472,9 +472,82 @@
         }
       },
       "description": "Named groups of Actor types. Groups allow overlapping membership — a sensor may belong to both an environmental-monitors group and a barn-subsystem group. Mirrors the permissions 'groups' pattern but applies to evidence-producing Actors rather than access-control roles."
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/signal_definition"
+      },
+      "description": "Optional declaration of named scalar signals tracked by the lumina.signals decomposition framework. Each entry maps a signal name (e.g. 'valence', 'soil_pH', 'motor_vibration') to its band layout, range, advisory priority, and optional record-path accessor. The rhythm_fft_analysis daemon task reads this map to know which signals to fetch from each actor's records, what bands to bin them into, and how to phrase advisory messages. Omit entirely for domains that do not use the signal framework."
     }
   },
   "$defs": {
+    "signal_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Human-readable signal name used in advisory messages (e.g. 'soil pH', 'valence')."
+        },
+        "units": {
+          "type": "string",
+          "description": "Optional unit string for human display (e.g. 'pH', '%', 'mm/s')."
+        },
+        "range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Optional [min, max] clamp applied to incoming observations before EWMA update."
+        },
+        "record_path": {
+          "type": "string",
+          "description": "Dotted accessor into a record dict (e.g. 'sensors.soil.pH'). The daemon walks this path to extract a scalar from each record. Omit for legacy SVA signals (salience/valence/arousal) which use a built-in fallback extractor."
+        },
+        "bands": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "window_days": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[low, high) period window in days for this band."
+              }
+            },
+            "required": ["window_days"]
+          },
+          "description": "Per-signal spectral band layout. Keys are band names, values declare the [low, high) period window in days. Omit to inherit framework defaults (circaseptan/ultradian)."
+        },
+        "advisory_priority": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Lower value = higher priority when multiple advisories are active simultaneously. Used by consumers (journal_adapters, dashboards) to pick the single advisory to surface."
+        },
+        "advisory_ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "description": "Optional per-signal advisory TTL override. Defaults to 86400 (24 hours) at the framework level. Faster-cadence signals (motor vibration recheck) may want shorter TTLs; slower signals (soil pH) may want longer."
+        },
+        "message_overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Optional per-signal advisory message overrides. Keys follow '<band>,<direction>' (e.g. 'dc_drift,negative') or '<band>,*' for wildcard direction. The token '{label}' in any value is substituted with this signal's 'label'."
+        }
+      },
+      "description": "Declaration of a single named scalar signal tracked by the lumina.signals framework."
+    },
     "invariant": {
       "type": "object",
       "required": [

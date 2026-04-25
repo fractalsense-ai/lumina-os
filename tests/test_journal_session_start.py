@@ -31,7 +31,7 @@ from journal_adapters import (  # noqa: E402
 
 def _adv(
     *,
-    axis: str = "valence",
+    signal: str = "valence",
     band: str = "dc_drift",
     direction: str = "negative",
     advisory_id: str = "adv-1",
@@ -41,7 +41,7 @@ def _adv(
     now = datetime.now(timezone.utc)
     return {
         "advisory_id": advisory_id,
-        "axis": axis,
+        "signal": signal,
         "band": band,
         "direction": direction,
         "z_score": -3.0,
@@ -70,7 +70,7 @@ class TestJournalSessionStart:
         assert decision["tier"] == "ok"
         assert decision["action"] is None
         assert decision["advisory"] is not None
-        assert decision["advisory"]["axis"] == "valence"
+        assert decision["advisory"]["signal"] == "valence"
         assert decision["advisory"]["band"] == "dc_drift"
         assert decision["advisory"]["message"] == "Things have felt heavier lately."
         assert state.get("session_advisory_surfaced") is True
@@ -91,13 +91,13 @@ class TestJournalSessionStart:
 
     def test_priority_valence_outranks_arousal(self):
         prof = _profile([
-            _adv(axis="arousal", band="dc_drift", advisory_id="ar"),
-            _adv(axis="valence", band="ultradian", advisory_id="va"),
+            _adv(signal="arousal", band="dc_drift", advisory_id="ar"),
+            _adv(signal="valence", band="ultradian", advisory_id="va"),
         ])
         _, decision = journal_session_start({}, profile_data=prof)
-        # valence (axis priority 0) outranks arousal (priority 1) regardless
+        # valence (signal priority 0) outranks arousal (priority 1) regardless
         # of band ordering.
-        assert decision["advisory"]["axis"] == "valence"
+        assert decision["advisory"]["signal"] == "valence"
         assert decision["advisory"]["advisory_id"] == "va"
 
 

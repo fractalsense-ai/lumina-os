@@ -97,8 +97,10 @@ _DEFAULT_THRESHOLDS: dict[str, Any] = {
 # Priority order when multiple advisories are active simultaneously.
 # Lower index = higher priority. Valence drift is the most clinically
 # meaningful signal, and slow baseline shifts (dc_drift) outrank the
-# rhythm bands.
-_ADVISORY_AXIS_PRIORITY = ("valence", "arousal", "salience")
+# rhythm bands. (Per-domain priorities can be expressed in the
+# domain-physics ``signals`` block; this hard-coded fallback covers
+# legacy SVA-only deployments.)
+_ADVISORY_SIGNAL_PRIORITY = ("valence", "arousal", "salience")
 _ADVISORY_BAND_PRIORITY = ("dc_drift", "circaseptan", "ultradian")
 
 
@@ -108,10 +110,10 @@ def _pull_active_advisory(
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     """Return (highest-priority active advisory | None, pruned list).
 
-    Filters expired entries and returns the surviving list so callers can
-    persist the prune. Picks the highest-priority advisory by
-    (axis, band) using the constants above. The decision payload exposes
-    only the user-facing fields, never the raw daemon detail.
+    Thin wrapper around :func:`lumina.signals.pull_active_advisory` that
+    sources the priority tuples from this module's hard-coded SVA defaults.
+    Domains with declared ``signals`` blocks would compute priorities from
+    physics, but the journal adapter is SVA-only so the fixed lists are fine.
     """
     if not profile_data:
         return None, []
@@ -119,48 +121,20 @@ def _pull_active_advisory(
     raw = ls.get("spectral_advisories") or []
     if not isinstance(raw, list):
         return None, []
-
-    now = now_utc or datetime.now(timezone.utc)
-    surviving: list[dict[str, Any]] = []
-    for adv in raw:
-        if not isinstance(adv, dict):
-            continue
-        exp = adv.get("expires_utc")
-        if isinstance(exp, str):
-            try:
-                if datetime.fromisoformat(exp) <= now:
-                    continue
-            except ValueError:
-                continue
-        surviving.append(adv)
-
-    if not surviving:
-        return None, surviving
-
-    def _rank(a: dict[str, Any]) -> tuple[int, int]:
-        axis = str(a.get("axis", ""))
-        band = str(a.get("band", ""))
-        ax_rank = (
-            _ADVISORY_AXIS_PRIORITY.index(axis)
-            if axis in _ADVISORY_AXIS_PRIORITY
-            else len(_ADVISORY_AXIS_PRIORITY)
-        )
-        bd_rank = (
-            _ADVISORY_BAND_PRIORITY.index(band)
-            if band in _ADVISORY_BAND_PRIORITY
-            else len(_ADVISORY_BAND_PRIORITY)
-        )
-        return (ax_rank, bd_rank)
-
-    best = min(surviving, key=_rank)
-    return best, surviving
+    from lumina.signals import pull_active_advisory  # lazy to avoid hard dep at import time
+    return pull_active_advisory(
+        raw,
+        signal_priority=_ADVISORY_SIGNAL_PRIORITY,
+        band_priority=_ADVISORY_BAND_PRIORITY,
+        now_utc=now_utc,
+    )
 
 
 def _advisory_for_decision(adv: dict[str, Any]) -> dict[str, Any]:
     """Project a stored advisory into the user-facing decision payload."""
     return {
         "advisory_id": adv.get("advisory_id"),
-        "axis": adv.get("axis"),
+        "signal": adv.get("signal"),
         "band": adv.get("band"),
         "direction": adv.get("direction"),
         "message": adv.get("message"),

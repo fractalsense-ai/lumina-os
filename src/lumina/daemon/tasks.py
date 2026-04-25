@@ -10,8 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 from lumina.daemon.report import Proposal, TaskResult
@@ -969,28 +968,55 @@ def rebuild_domain_vectors(
 # ── Phase G: spectral chronic-drift analysis ─────────────────
 
 
-def _extract_sva_value(record: dict[str, Any], axis: str) -> float | None:
-    """Defensively pull a single SVA axis value out of a TraceEvent record.
+_LEGACY_SVA_AXES = frozenset({"salience", "valence", "arousal"})
 
-    Trace events have evolved over time; SVA can live in several places.
-    We probe the most common locations in priority order rather than coupling
-    the daemon to one exact wire-format. Returns None when no usable value
-    found (caller skips that record).
+
+def _extract_signal_value(
+    record: dict[str, Any],
+    signal_name: str,
+    signal_def: dict[str, Any] | None = None,
+) -> float | None:
+    """Pull a single named scalar signal value out of a record.
+
+    Resolution order:
+      1. If ``signal_def`` declares a ``record_path`` (dotted accessor), walk
+         that path through the record dict and coerce the leaf to float.
+      2. Else, if ``signal_name`` is one of the legacy SVA axes
+         (salience/valence/arousal), probe the historical SVA candidate
+         locations (``record.sva``, ``metadata.sva``, ``metadata.sva_direct``,
+         ``metadata.evidence.sva_direct``, ``decision_rationale.sva``).
+
+    Returns None when no usable value is found (caller skips that record).
     """
-    candidates = (
-        record.get("sva"),
-        (record.get("metadata") or {}).get("sva"),
-        (record.get("metadata") or {}).get("sva_direct"),
-        (record.get("metadata") or {}).get("evidence", {}).get("sva_direct")
-            if isinstance((record.get("metadata") or {}).get("evidence"), dict) else None,
-        (record.get("decision_rationale") or {}).get("sva"),
-    )
-    for c in candidates:
-        if isinstance(c, dict) and axis in c:
-            try:
-                return float(c[axis])
-            except (TypeError, ValueError):
-                continue
+    sig_def = signal_def or {}
+    record_path = sig_def.get("record_path")
+    if isinstance(record_path, str) and record_path:
+        cur: Any = record
+        for part in record_path.split("."):
+            if isinstance(cur, dict) and part in cur:
+                cur = cur[part]
+            else:
+                return None
+        try:
+            return float(cur)
+        except (TypeError, ValueError):
+            return None
+
+    if signal_name in _LEGACY_SVA_AXES:
+        candidates = (
+            record.get("sva"),
+            (record.get("metadata") or {}).get("sva"),
+            (record.get("metadata") or {}).get("sva_direct"),
+            (record.get("metadata") or {}).get("evidence", {}).get("sva_direct")
+                if isinstance((record.get("metadata") or {}).get("evidence"), dict) else None,
+            (record.get("decision_rationale") or {}).get("sva"),
+        )
+        for c in candidates:
+            if isinstance(c, dict) and signal_name in c:
+                try:
+                    return float(c[signal_name])
+                except (TypeError, ValueError):
+                    continue
     return None
 
 
@@ -1036,98 +1062,13 @@ def _iter_actor_profiles(
     return out
 
 
-# ── Spectral advisory helpers (Phase G.5) ────────────────────
+# ── Spectral advisory helpers (Phase G.5 + Phase H signal framework) ─
 #
 # When ``rhythm_fft_analysis`` emits a chronic_spectral_drift Proposal it
 # also writes a small advisory entry to the actor's profile so the journal
-# session-start surface can render a soft banner.  Advisories carry their
-# own TTL (24h) so the UI never has to call back to clear them.
-
-_ADVISORY_TTL_SECONDS = 24 * 3600
-
-# Keyed by (axis, band, direction).  "*" matches any direction.
-_ADVISORY_MESSAGES: dict[tuple[str, str, str], str] = {
-    ("valence", "dc_drift", "negative"):
-        "Your overall mood has been drifting downward over the past few weeks.",
-    ("valence", "dc_drift", "positive"):
-        "Your overall mood has been trending upward recently.",
-    ("valence", "circaseptan", "*"):
-        "A weekly mood pattern has shifted noticeably.",
-    ("valence", "ultradian", "*"):
-        "Multi-day mood swings have become more pronounced.",
-    ("arousal", "dc_drift", "positive"):
-        "Your baseline arousal has been creeping upward over the past few weeks.",
-    ("arousal", "dc_drift", "negative"):
-        "Your baseline arousal has been settling lower over the past few weeks.",
-    ("arousal", "circaseptan", "*"):
-        "A weekly arousal pattern has shifted noticeably.",
-    ("arousal", "ultradian", "*"):
-        "Multi-day arousal swings have become more pronounced.",
-    ("salience", "dc_drift", "*"):
-        "How emotionally significant things feel has been drifting recently.",
-    ("salience", "circaseptan", "*"):
-        "A weekly salience pattern has shifted noticeably.",
-    ("salience", "ultradian", "*"):
-        "Multi-day salience swings have become more pronounced.",
-}
-
-
-def _advisory_message(axis: str, band: str, direction: str) -> str:
-    """Look up a human-readable message for an advisory, with fallbacks."""
-    key = (axis, band, direction)
-    if key in _ADVISORY_MESSAGES:
-        return _ADVISORY_MESSAGES[key]
-    wildcard = (axis, band, "*")
-    if wildcard in _ADVISORY_MESSAGES:
-        return _ADVISORY_MESSAGES[wildcard]
-    return f"A chronic {band} pattern has shifted on {axis}."
-
-
-def _upsert_spectral_advisory(
-    advisories: list[dict[str, Any]],
-    *,
-    axis: str,
-    band: str,
-    finding: dict[str, Any],
-    now_utc: datetime | None = None,
-    ttl_seconds: int = _ADVISORY_TTL_SECONDS,
-) -> list[dict[str, Any]]:
-    """Insert/replace an advisory keyed by (axis, band).
-
-    Returns a new list (does not mutate input). Newer entries evict older
-    entries for the same (axis, band) tuple. Expired entries are pruned.
-    """
-    now = now_utc or datetime.now(timezone.utc)
-    expires = now + timedelta(seconds=ttl_seconds)
-    direction = str(finding.get("direction", "neutral"))
-    new_entry = {
-        "advisory_id": str(uuid.uuid4()),
-        "axis": axis,
-        "band": band,
-        "direction": direction,
-        "z_score": float(finding.get("z_score", 0.0)),
-        "message": _advisory_message(axis, band, direction),
-        "created_utc": now.isoformat(),
-        "expires_utc": expires.isoformat(),
-    }
-    out: list[dict[str, Any]] = []
-    for adv in advisories or []:
-        if not isinstance(adv, dict):
-            continue
-        # Drop the entry we are replacing.
-        if adv.get("axis") == axis and adv.get("band") == band:
-            continue
-        # Drop already-expired entries.
-        exp = adv.get("expires_utc")
-        if isinstance(exp, str):
-            try:
-                if datetime.fromisoformat(exp) <= now:
-                    continue
-            except ValueError:
-                continue
-        out.append(adv)
-    out.append(new_entry)
-    return out
+# session-start surface can render a soft banner. Advisory rendering and
+# upsert/prune logic lives in :mod:`lumina.signals` so non-SVA domains
+# (agriculture sensors, etc.) get the same machinery for free.
 
 
 @register_task("rhythm_fft_analysis")
@@ -1169,17 +1110,21 @@ def rhythm_fft_analysis(
     summary: dict[str, Any] = {
         "profiles_analyzed": 0,
         "profiles_skipped": 0,
-        "axes_run": [],
+        "signals_run": [],
     }
 
     # Lazy imports keep this task's failure modes isolated from the rest
     # of the registry (numpy/import errors don't poison glossary tasks).
     try:
-        from lumina.daemon.rhythm_fft import (
+        from lumina.signals import (
+            DEFAULT_ADVISORY_TTL_SECONDS,
+            DEFAULT_BAND_DEFS_DAYS,
             check_spectral_drift,
             compute_spectral_signature,
+            render_advisory_message,
             resample_to_daily,
             update_spectral_history,
+            upsert_spectral_advisory,
         )
     except ImportError as exc:
         return TaskResult(
@@ -1187,7 +1132,7 @@ def rhythm_fft_analysis(
             domain_id=domain_id,
             success=False,
             duration_seconds=time.monotonic() - start,
-            error=f"rhythm_fft module unavailable: {exc}",
+            error=f"lumina.signals module unavailable: {exc}",
         )
 
     cfg = (
@@ -1199,11 +1144,24 @@ def rhythm_fft_analysis(
     k_spectral = float(cfg.get("k_spectral", 2.5))
     min_samples = int(cfg.get("min_samples_for_drift", 5))
     alpha = float(cfg.get("alpha", 0.1))
-    axes = list(cfg.get("axes") or ["valence"])
-    summary["axes_run"] = axes
 
-    # The profile key used to store the AffectBaseline on disk is usually the
-    # domain id itself for single-module domains; callers can override.
+    # Resolve the signal map. Preferred form is the additive ``signals`` block
+    # in domain physics (Phase H). For domains that haven't migrated yet,
+    # fall back to ``spectral_drift_thresholds.axes`` (legacy SVA list) and
+    # synthesize a minimal signal_def per axis. Either way the rest of the
+    # task only deals with the unified shape.
+    signals_map: dict[str, dict[str, Any]] = {}
+    raw_signals = domain_physics.get("signals")
+    if isinstance(raw_signals, dict) and raw_signals:
+        for name, sdef in raw_signals.items():
+            signals_map[name] = dict(sdef) if isinstance(sdef, dict) else {}
+    else:
+        for axis in (cfg.get("axes") or ["valence"]):
+            signals_map[str(axis)] = {}
+    summary["signals_run"] = list(signals_map.keys())
+
+    # The profile key used to store baselines on disk is usually the domain
+    # id itself for single-module domains; callers can override.
     domain_key = profile_domain_key or domain_id
 
     actor_profiles = _iter_actor_profiles(persistence, domain_key)
@@ -1248,7 +1206,7 @@ def rhythm_fft_analysis(
     for user_id, profile in actor_profiles:
         try:
             learning_state = profile.get("learning_state") or {}
-            baseline_dict = learning_state.get("global_affect_baseline") or {}
+            baseline_dict = learning_state.get("signal_baselines") or {}
             spectral_history = dict(baseline_dict.get("spectral_history") or {})
             advisories = list(learning_state.get("spectral_advisories") or [])
 
@@ -1258,11 +1216,30 @@ def rhythm_fft_analysis(
                 continue
 
             updated_for_actor = False
-            for axis in axes:
+            for signal_name, signal_def in signals_map.items():
+                # Per-signal band overrides (e.g. {"circaseptan": [5, 9]});
+                # fall back to framework defaults.
+                band_defs_raw = signal_def.get("bands") or {}
+                band_defs_days: dict[str, tuple[float, float]] = {}
+                for bname, bspec in band_defs_raw.items():
+                    if isinstance(bspec, dict) and "window_days" in bspec:
+                        win = bspec["window_days"]
+                        if isinstance(win, (list, tuple)) and len(win) == 2:
+                            band_defs_days[str(bname)] = (float(win[0]), float(win[1]))
+                if not band_defs_days:
+                    band_defs_days = dict(DEFAULT_BAND_DEFS_DAYS)
+
+                signal_label = str(signal_def.get("label") or signal_name)
+                ttl_seconds = int(
+                    signal_def.get("advisory_ttl_seconds")
+                    or DEFAULT_ADVISORY_TTL_SECONDS
+                )
+                message_overrides = signal_def.get("message_overrides")
+
                 timestamps: list[str] = []
                 values: list[float] = []
                 for rec in actor_records:
-                    v = _extract_sva_value(rec, axis)
+                    v = _extract_signal_value(rec, signal_name, signal_def)
                     if v is None:
                         continue
                     ts = rec.get("timestamp_utc")
@@ -1277,22 +1254,27 @@ def rhythm_fft_analysis(
                 if len(series) == 0 or n_real < max(min_samples, 5):
                     continue
 
-                today_sig = compute_spectral_signature(series)
+                today_sig = compute_spectral_signature(
+                    series, band_defs_days=band_defs_days,
+                )
                 if not today_sig:
                     continue
 
-                # Per-axis history is namespaced under the axis name so
-                # adding more axes later doesn't collide.
-                axis_hist = spectral_history.get(axis) or {}
+                # Per-signal history is namespaced under the signal name so
+                # adding more signals later doesn't collide.
+                signal_hist = spectral_history.get(signal_name) or {}
                 findings = check_spectral_drift(
-                    axis_hist, today_sig,
+                    signal_hist, today_sig,
+                    band_defs_days=band_defs_days,
                     k_spectral=k_spectral,
                     min_samples=min_samples,
                 )
-                axis_hist_new = update_spectral_history(
-                    axis_hist, today_sig, alpha=alpha,
+                signal_hist_new = update_spectral_history(
+                    signal_hist, today_sig,
+                    band_defs_days=band_defs_days,
+                    alpha=alpha,
                 )
-                spectral_history[axis] = axis_hist_new
+                spectral_history[signal_name] = signal_hist_new
                 updated_for_actor = True
 
                 for f in findings:
@@ -1301,12 +1283,12 @@ def rhythm_fft_analysis(
                         domain_id=domain_id,
                         proposal_type="chronic_spectral_drift",
                         summary=(
-                            f"Chronic {f['band']} drift on {axis} for {user_id} "
+                            f"Chronic {f['band']} drift on {signal_name} for {user_id} "
                             f"(z={f['z_score']}, dir={f['direction']})"
                         ),
                         detail={
                             "user_id": user_id,
-                            "axis": axis,
+                            "signal": signal_name,
                             "band": f["band"],
                             "z_score": f["z_score"],
                             "today_value": f["today_value"],
@@ -1318,17 +1300,23 @@ def rhythm_fft_analysis(
                     ))
                     # Mirror the proposal into a profile-side advisory so
                     # the journal session-start surface can render it.
-                    advisories = _upsert_spectral_advisory(
+                    message = render_advisory_message(
+                        signal_label, f["band"], f["direction"],
+                        signal_overrides=message_overrides,
+                    )
+                    advisories = upsert_spectral_advisory(
                         advisories,
-                        axis=axis,
+                        signal=signal_name,
                         band=f["band"],
                         finding=f,
+                        message=message,
+                        ttl_seconds=ttl_seconds,
                     )
 
             if updated_for_actor and save_profile is not None:
                 # Round-trip back through learning_state to preserve siblings.
                 baseline_dict["spectral_history"] = spectral_history
-                learning_state["global_affect_baseline"] = baseline_dict
+                learning_state["signal_baselines"] = baseline_dict
                 learning_state["spectral_advisories"] = advisories
                 profile["learning_state"] = learning_state
                 try:
