@@ -13,6 +13,32 @@ They intentionally diverge: the specification leads, the implementation follows.
 
 ---
 
+## [Unreleased] — Signal Decomposition Framework (Phase H) + Affect Monitoring Pipeline (Phases F & G)
+
+### Added — Phase H: Signal Decomposition Framework
+
+- **New top-level package `lumina.signals`** — domain-agnostic, signal-name-agnostic primitives extracted from the SVA-specific `affect_monitor.py`. Public API: `SignalSample`, `SignalBaseline`, `SignalDriftSignal`, `update_baseline`, `compute_drift`, `check_envelope_deviation`, `check_shape_deviation`, `resample_to_daily`, `compute_spectral_signature`, `update_spectral_history`, `check_spectral_drift`, `render_advisory_message`, `pull_active_advisory`, `upsert_spectral_advisory`. Consolidates baseline/spectral/advisory math into the framework so every domain monitors arbitrary scalars (soil pH, motor vibration, lab instruments, …) through one code path.
+- **`signals` block in `domain-physics-schema-v1.json`** — domains declare each observed scalar with `label`, `units`, `range`, `record_path` (dotted path into a record body), optional `advisory_priority`, `advisory_ttl_seconds`, `bands`, and `message_overrides` (`"<band>,<direction>"` or `"<band>,*"` keys).
+- **`standards/spectral-advisory-schema-v1.json`** — formal schema for `learning_state.spectral_advisories[*]` records (`advisory_id`, `signal`, `band`, `direction`, `z_score`, `message`, `created_utc`, `expires_utc`).
+- **Generalised daemon task** — `rhythm_fft_analysis` in `src/lumina/daemon/tasks.py` now reads `domain_physics["signals"]` and iterates every declared signal on every actor, with no SVA hard-coding. Direction is normalised to the symbolic vocabulary (`positive` / `negative` / `neutral`) at the advisory boundary; `Proposal.detail.direction` retains the integer form for back-compat.
+- **Generalised in-session consumer** — `journal_domain_step` advisory pull now delegates to `lumina.signals.pull_active_advisory`, which arbitrates across all signals (not just SVA axes) by `advisory_priority` → `band_priority` → recency.
+- **Scope Y education delegation** — `domain-packs/education/domain-lib/affect_monitor.py` is now a delegating shim over `lumina.signals`, and the education pack ships its own `signals` physics block declaring SVA axes with education-flavored `message_overrides`.
+- **Agriculture POC** — `domain-packs/agriculture/modules/operations-level-1/domain-physics.json` declares four sensor signals (`soil_pH`, `soil_moisture`, `air_temperature`, `motor_vibration`) with per-signal `message_overrides`. New `to_signal_samples(...)` adapter on `domain-packs/agriculture/domain-lib/sensors/environmental_sensors.py` bridges `SensorReading` records to `SignalSample`. Proves the framework runs end-to-end on a non-affect domain with no framework changes.
+- **Documentation**:
+  - `docs/7-concepts/signal-decomposition-framework.md` — concept doc covering the instruments-vs-reactions principle, the `signals` block contract, the advisory schema, and the steps to onboard a new domain.
+  - `docs/3-functions/signals.md` — public API reference for `lumina.signals` including the dual integer/symbolic direction vocabulary.
+- **Tests** (75+ new, total 4389 passed):
+  - `tests/test_signals_*.py` (61 tests) — unit coverage for the new package (state, baseline, spectral, advisories, templates).
+  - `tests/test_signals_agriculture_poc.py` (10 tests) — end-to-end agriculture POC using real pack files; synthesises a 60-day pH slide, runs the daemon, asserts persisted advisory conforms to `spectral-advisory-schema-v1.json`.
+  - `tests/test_daemon_rhythm_fft_generic.py` (4 tests) — daemon-level regression using a synthetic `lab_research` domain with arbitrary signal names declared inline (no real pack files), proving signal-name-agnosticism, deeply-nested `record_path` extraction, exact-vs-wildcard `message_overrides` resolution, and per-signal `advisory_ttl_seconds` honoring.
+
+### Changed — Phase H
+
+- **Daemon direction normalisation bug fix** — `rhythm_fft_analysis` was passing the raw integer direction (`+1 / -1 / 0`) into `render_advisory_message` and `upsert_spectral_advisory`, which expect the symbolic form. The daemon now normalises at the bridge point, while `Proposal.detail` still keeps the integer for the existing daemon-test contract.
+- **Legacy `rhythm_fft.py`** and its colocated test removed — fully superseded by `lumina.signals.spectral` + `lumina.signals.baseline`.
+
+---
+
 ## [Unreleased] — Affect Monitoring Pipeline (Phases F & G)
 
 ### Added

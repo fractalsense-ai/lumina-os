@@ -407,6 +407,13 @@ artifacts:
   status: active
   last_updated: 2026-07-17
   sha256: f43d34059b704abd591df6655c4f8a1415e164fccbe3b3a451e4b40b81fe284d
+- path: docs/7-concepts/signal-decomposition-framework.md
+  type: doc
+  section: 7
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-25
+  sha256: 2b6f18d6d2d34b9c311559621590016c8b4a5ca5557b4725577a2df85d87a979
 - path: docs/7-concepts/student-commons.md
   type: doc
   section: 7
@@ -667,6 +674,13 @@ artifacts:
   status: active
   last_updated: 2026-07-17
   sha256: 8d15c6ef923189cdf68237119f8a9c61157fb78a4f3db1f1c5aea28e4771700d
+- path: docs/3-functions/signals.md
+  type: doc
+  section: 3
+  doc_version: 1.0.0
+  status: active
+  last_updated: 2026-04-25
+  sha256: 53b06492e1d3b90e783bec582b788b076e5a775b932e7e02329931560af6e1b6
 - path: docs/5-standards/lumina-core.md
   type: standard
   doc_version: 1.0.0
