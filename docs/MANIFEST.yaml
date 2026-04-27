@@ -196,7 +196,7 @@ artifacts:
   doc_version: 1.5.0
   status: active
   last_updated: 2026-04-16
-  sha256: f308dd716d1d20b32478a1a0c314e756ee2462934003d9f00d50804af1f684ab
+  sha256: 79e2980e9506aaa14b076f408601acc12aeb9ae96ded094650dd80306b780596
 - path: docs/7-concepts/ai-governance-principles.md
   type: doc
   section: 7
@@ -610,7 +610,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-08
-  sha256: e0d752086c2740c4b6bd2fa4d59a3567d79d18f09cb3ad0501029d51695fc735
+  sha256: 2af5d7892929dc328cf631cbe8d4b22339492976ae013452c80237fcabc6c17f
 - path: docs/5-standards/orchestrator-system-prompt.md
   type: spec
   doc_version: 1.0.0
@@ -629,7 +629,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-27
-  sha256: 769727f357c502d186447f3572e60f4c4eb2394fc6faf01874e71972c565be9e
+  sha256: ed3ab19593b987aaf517d6d1f418a37665966cd518ac5803221b76dcfc971524
 - path: docs/5-standards/rbac-spec.md
   type: spec
   doc_version: 1.1.0
@@ -1083,7 +1083,7 @@ artifacts:
 - path: model-packs/agriculture/docs/3-functions/README.md
   sha256: 77f4183aadfce37c1eb083d9519cf896aab5decb7ceee07059c98b5344574608
 - path: model-packs/agriculture/docs/7-concepts/README.md
-  sha256: 88842ae16cee097da451084f626b16d33d270a192b331f0ee364095551d242f4
+  sha256: 15c4512acc1db738045b684de0b4e82a176643d31bcbd20b2e7a2f6a96c9e4e8
 - path: model-packs/agriculture/docs/README.md
   sha256: 6c39a5c510f94bc53a3c7ed669b69bb1341d09466e3f6ecce55f35749b61cfb7
 - path: model-packs/education/docs/1-commands/README.md
@@ -1095,7 +1095,7 @@ artifacts:
 - path: model-packs/education/docs/3-functions/problem-generator.md
   sha256: 82b6ef216490e63ff2127bd9e103347446b4a03f53beddca7ec1492201faaf20
 - path: model-packs/education/docs/7-concepts/README.md
-  sha256: cd676545555ea321d38159855244cdb723cf4cf91ad8aa3d7a16b504f90e2932
+  sha256: 1ac7c0ecbfaeef931e788d2c21ff863a29a95f17a44fe4ba57a7f4a49d9e0bd6
 - path: model-packs/education/docs/README.md
   sha256: 5db651f901e02d74353ae33e0d36d2015eeccbe9578b25e39edf9ac5940e601f
 - path: model-packs/system/docs/1-commands/README.md
@@ -1105,7 +1105,7 @@ artifacts:
 - path: model-packs/system/docs/3-functions/state-transaction-adapter.md
   sha256: ec1962b6fda2c7c4c926d61563516b924d7add2e3e213653d5b849239fd21d53
 - path: model-packs/system/docs/7-concepts/README.md
-  sha256: 68f5b0fdbac1ab1ba86265f817359976e1ea72119d179e96fafa13407476bace
+  sha256: 844e13a5de727ff39608240da847b57d679fd3fa506c43eeecf85944f5a0f443
 - path: model-packs/system/docs/README.md
   sha256: 384cf5fb74bdb74dbece6b5b8d121574edfc78a4f8f2c37798291fcf00c8092b
 - path: model-packs/system/cfg/admin-operations.yaml

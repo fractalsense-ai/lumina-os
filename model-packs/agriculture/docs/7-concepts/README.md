@@ -6,5 +6,5 @@ Architectural rationale and design concepts specific to the agriculture domain.
 |---------|-------------|
 | *(placeholder — soil health monitoring, pest-pressure escalation, and moisture-anomaly detection concepts to be documented)* | |
 
-For cross-domain concepts (domain pack anatomy, NLP semantic routing, system logging), see
+For cross-domain concepts (model-pack ontology/anatomy, NLP semantic routing, system logging), see
 the root [`docs/7-concepts/`](../../../../docs/7-concepts/).

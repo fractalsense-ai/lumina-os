@@ -21,10 +21,10 @@ Architectural principles, design frameworks, and system philosophy.
 | [dsa-framework-v1](../../specs/dsa-framework-v1.md) | D.S.A. structural schema (Domain, State, Actor) — the contract model behind PPA |
 | [dsa-framework](dsa-framework.md) | D.S.A. framework overview (local reference) |
 | [dsa-actor-model](dsa-actor-model.md) | D.S.A. Actor pillar: actor types, actor groups, signal flow, distinction from RBAC roles |
-| [domain-pack-anatomy](domain-pack-anatomy.md) | Seven-component domain pack anatomy, self-containment contract, cross-domain comparison |
-| [hmvc-heritage](hmvc-heritage.md) | HMVC architectural lineage: domain packs as HMVC modules, framework-as-engine |
+| [domain-pack-anatomy](domain-pack-anatomy.md) | Seven-component model-pack anatomy, self-containment contract, cross-domain comparison |
+| [hmvc-heritage](hmvc-heritage.md) | HMVC architectural lineage: model-packs as HMVC modules, framework-as-engine |
 | [rag-contracts](rag-contracts.md) | RAG retrieval contract model |
-| [domain-adapter-pattern](domain-adapter-pattern.md) | How domain packs extend the engine: NLP pre-processing, signal synthesis, engine contract fields |
+| [domain-adapter-pattern](domain-adapter-pattern.md) | How model-packs extend the engine: NLP pre-processing, signal synthesis, engine contract fields |
 | [domain-evidence-extension](domain-evidence-extension.md) | Domain evidence extension pattern |
 | [domain-profile-spec](domain-profile-spec.md) | Domain profile specification |
 | [domain-role-hierarchy](domain-role-hierarchy.md) | Domain-scoped RBAC role tiers beneath Domain Authority ceiling |
@@ -36,7 +36,7 @@ Architectural principles, design frameworks, and system philosophy.
 | [world-sim-persona-pattern](world-sim-persona-pattern.md) | Persona pattern: three-file world-sim composition (spec + consent + mastery) |
 | [ingestion-pipeline](ingestion-pipeline.md) | Document ingestion lifecycle: upload → SLM extraction → review → commit |
 | [cross-domain-synthesis](cross-domain-synthesis.md) | Cross-domain synthesis: opt-in VLAN bridging, glossary comparison, dual-key DA approval |
-| [group-libraries-and-tools](group-libraries-and-tools.md) | Domain-scoped shared resources for cross-module reuse within a domain pack |
+| [group-libraries-and-tools](group-libraries-and-tools.md) | Domain-scoped shared resources for cross-module reuse within a model-pack |
 | [edge-vectorization](edge-vectorization.md) | Per-domain vector isolation: VectorStoreRegistry, NLP Pass 1.5 vector classification |
 | [execution-route-compilation](execution-route-compilation.md) | AOT compilation of domain-physics into flat O(1) lookup tables |
 | [command-execution-pipeline](command-execution-pipeline.md) | Slash command execution pipeline |

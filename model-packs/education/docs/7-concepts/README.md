@@ -13,5 +13,5 @@ Architectural rationale and design concepts specific to the education domain.
 | **Vocabulary growth tracking** | Passive vocabulary complexity monitor — client-side analysis produces structured complexity scores; the server tracks growth delta against a locked baseline. See [`vocabulary-growth-monitor(3)`](../3-functions/vocabulary-growth-monitor.md) |
 | **Domain API route handlers** | Education-specific HTTP endpoints declared in `cfg/runtime-config.yaml §adapters.api_routes` and implemented in `controllers/api_handlers.py`. The core server mounts these at startup with auth/role enforcement. See [`api-server-architecture(7)`](../../../../docs/7-concepts/api-server-architecture.md) §G |
 
-For cross-domain concepts (domain pack anatomy, NLP semantic routing, system logging), see
+For cross-domain concepts (model-pack ontology/anatomy, NLP semantic routing, system logging), see
 the root [`docs/7-concepts/`](../../../../docs/7-concepts/).

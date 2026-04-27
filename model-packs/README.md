@@ -22,6 +22,12 @@ A model-pack is the authored bundle for a modeled system. It supplies the **D (D
 - **Artifacts** — milestones that can be earned in this domain
 - **Subsystem Configuration** — domain-specific domain-lib parameters and drift thresholds
 
+In the object-oriented framing, the Lumina system contract is the class,
+each loaded model-pack is an object instance of that contract, and modules
+are the methods or workflows that object exposes. The router selects the
+right object and method; deterministic code handles dispatch and guards;
+neural execution happens inside the selected module context.
+
 See [`../docs/7-concepts/lumina-framework-ontology.md`](../docs/7-concepts/lumina-framework-ontology.md) for the engine/model-pack/module vocabulary and [`../docs/7-concepts/domain-profile-spec.md`](../docs/7-concepts/domain-profile-spec.md) for the full authoring specification.
 
 ---
@@ -102,7 +108,7 @@ model-packs/
 
 ### Three-layer distinction
 
-Domain packs use three distinct component types. They are different in how the core engine interacts with them:
+Model-packs use three distinct component types. They are different in how the core engine interacts with them:
 
 | Layer | Location | Called by | Purpose |
 |---|---|---|---|
@@ -117,7 +123,7 @@ See [`docs/7-concepts/world-sim-persona-pattern.md`](../docs/7-concepts/world-si
 
 ---
 
-## How to Author a Domain Pack
+## How to Author a Model-Pack
 
 ### 1. Create the directory
 
@@ -196,7 +202,7 @@ See [`docs/7-concepts/api-server-architecture.md`](../docs/7-concepts/api-server
 
 ---
 
-## Domain Pack Lifecycle
+## Model-Pack Lifecycle
 
 ```
 Draft → Validated → Committed (System Log) → Active
@@ -206,13 +212,13 @@ Draft → Validated → Committed (System Log) → Active
                                     Validated → Committed → Active
 ```
 
-A domain pack must be in the `Active` state (System Log commitment present) before use in a production session.
+A model-pack must be in the `Active` state (System Log commitment present) before use in a production session.
 
 ---
 
 ## Domain-Lib vs Tool-Adapters
 
-Each domain pack may contain two distinct component types. Understanding the distinction is essential for correct authoring.
+Each model-pack may contain two distinct component types. Understanding the distinction is essential for correct authoring.
 
 ### Domain-Lib (Passive Specifications)
 
@@ -282,7 +288,7 @@ The authoritative execution flow is:
 
 ## Conformance
 
-All domain packs in this directory must conform to:
+All model-packs in this directory must conform to:
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — Section 1
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — JSON Schema
 

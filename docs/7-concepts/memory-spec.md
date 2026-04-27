@@ -1,13 +1,13 @@
 ---
-version: "1.1.0"
-last_updated: "2026-03-05"
+version: "1.2.0"
+last_updated: "2026-04-27"
 ---
 
 # Memory Specification — V1
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** Active  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-04-27
 
 ---
 
@@ -16,7 +16,7 @@ last_updated: "2026-03-05"
 Project Lumina uses **indexed generalized memory** — a structured, queryable store of information about the entity being served, the domain, and prior interactions. This is not a transcript store. It is a structured index of facts and states.
 
 Memory in Project Lumina has three layers:
-1. **Domain Memory** — the Domain Physics (invariants, artifacts, standing orders) — static per session
+1. **Domain Memory** — the selected model-pack/module contracts, including Domain Physics (invariants, artifacts, standing orders) — static per session
 2. **Entity Memory** — the entity profile (compressed state, preferences, artifact history) — updated per session
 3. **Session Memory** — structured summaries from System Log TraceEvents — per-session ephemeral, summarized to profile
 
@@ -24,12 +24,14 @@ Memory in Project Lumina has three layers:
 
 ## Domain Memory
 
-Domain memory is the domain pack loaded at session start. It is:
+Domain memory is the model-pack and module contract loaded at session start. It is:
 - Immutable during the session
 - Loaded from disk and hash-verified against the System Logs commitment
 - Fully queryable via the RAG layer (see [`../retrieval/rag-contracts.md`](../retrieval/rag-contracts.md))
 
 Domain memory is not "remembered" between sessions — it is always loaded fresh. Consistency is ensured by version control and System Log hash commitments.
+
+In the object-oriented analogy, domain memory is the immutable object and method contract for the current invocation: the loaded model-pack is the object, its module contracts are the callable methods, and domain physics defines the rules those methods must obey.
 
 ---
 
@@ -71,7 +73,7 @@ artifacts_earned:
 ### Exception: Black Box Snapshots
 
 When a black-box trigger fires (escalation event, resource anomaly, or
-domain-pack-registered trigger), the last *N* turn-pairs from the
+model-pack-registered trigger), the last *N* turn-pairs from the
 ephemeral conversation ring buffer are frozen alongside telemetry, trace
 events, and session state into a local JSON file under `data/blackbox/`.
 
@@ -113,7 +115,7 @@ At session close:
 
 The RAG layer provides access to:
 - Prior System Log records (by session ID, entity ID, or record type)
-- Domain pack artifacts and invariants (by ID)
+- Model-pack artifacts, module invariants, and domain physics (by ID)
 - Evaluation bundles (for boss challenges)
 
 Retrieved content is always cited by artifact ID and version. See [`../retrieval/rag-contracts.md`](../retrieval/rag-contracts.md) for retrieval contracts.

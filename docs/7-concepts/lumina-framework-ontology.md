@@ -46,6 +46,28 @@ are intentionally analogous to mods in a game engine: the engine stays
 the same, but a different model-pack can make the runtime behave as a
 completely different system.
 
+## Object-Oriented Analogy
+
+The architecture also maps cleanly to ordinary object-oriented dispatch:
+
+| OOP concept | Lumina concept |
+|-------------|----------------|
+| Class / system type | The Lumina system contract and runtime environment |
+| Object instance | A loaded model-pack: an authored model of one system |
+| Method | A module routine, workflow, adapter, or exposed capability inside that model-pack |
+| Method dispatch | Knowledge graph and semantic routing select the model-pack and module |
+
+In this framing, multi-model-pack routing is not exotic. The runtime is
+calling methods across multiple loaded objects that share the same system
+contract. The deterministic layer owns dispatch, guardrails, invariants,
+RBAC, hash commitments, and auditability. The neural layer executes
+inside the selected module context after deterministic routing has
+selected the object and method.
+
+This is an architectural analogy, not a claim that every implementation
+artifact must be a Python class. The invariant is the dispatch boundary:
+system contract first, model-pack instance second, module routine third.
+
 ## Reference Model-Packs
 
 ### Education
