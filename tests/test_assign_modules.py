@@ -52,7 +52,6 @@ sys.modules[f"{_OPS_PKG_NAME}._helpers"] = _helpers_mod
 _MODULES_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "modules.py"
 _modules_spec = importlib.util.spec_from_file_location(
     f"{_OPS_PKG_NAME}.modules", str(_MODULES_PATH),
-    submodule_search_locations=[],
 )
 _modules_mod = importlib.util.module_from_spec(_modules_spec)  # type: ignore[arg-type]
 _modules_mod.__package__ = _OPS_PKG_NAME

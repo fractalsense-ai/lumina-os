@@ -34,9 +34,9 @@ def merge_module_config_sidecars(module_map: dict) -> dict:
 def _mount_domain_routes_if_loaded(request):
     """Ensure domain-declared API routes are available during tests.
 
-    The domain routes are normally mounted by an ``on_event("startup")``
-    handler, but many test suites create a ``TestClient`` without
-    triggering the startup lifecycle.  This fixture calls
+    The domain routes are normally mounted by the FastAPI lifespan
+    startup handler, but many test suites create a ``TestClient`` without
+    entering the application lifecycle.  This fixture calls
     ``_mount_domain_api_routes()`` automatically when an ``api_module``
     fixture is in scope.
     """

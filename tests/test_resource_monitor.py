@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from lumina.daemon.load_estimator import LoadSnapshot
+from lumina.daemon.load_estimator import LoadSnapshot, TelemetrySummary
 from lumina.daemon.preemption import TaskPreempted
 from lumina.daemon.resource_monitor import (
     DaemonState,
@@ -31,6 +31,14 @@ def _make_snapshot(load_score: float = 0.0, is_idle: bool = True) -> LoadSnapsho
         load_score=load_score,
         is_idle=is_idle,
     )
+
+
+def _make_estimator() -> MagicMock:
+    estimator = MagicMock()
+    estimator.get_window_summary.return_value = TelemetrySummary(
+        json_summary={"load_trajectory": "stable", "samples": 1},
+    )
+    return estimator
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -108,7 +116,7 @@ def test_get_status_when_stopped() -> None:
 @pytest.mark.anyio
 async def test_grace_period_suppresses_dispatch() -> None:
     """During grace period, no tasks should be dispatched even if idle."""
-    mock_estimator = AsyncMock()
+    mock_estimator = _make_estimator()
     mock_estimator.sample = AsyncMock(return_value=_make_snapshot(load_score=0.0, is_idle=True))
 
     task_runner = AsyncMock(return_value={"preempted": False})
@@ -136,7 +144,7 @@ async def test_grace_period_suppresses_dispatch() -> None:
 @pytest.mark.anyio
 async def test_idle_triggers_dispatch() -> None:
     """After sustained idle, the daemon should dispatch a task."""
-    mock_estimator = AsyncMock()
+    mock_estimator = _make_estimator()
     mock_estimator.sample = AsyncMock(return_value=_make_snapshot(load_score=0.05, is_idle=True))
 
     task_runner = AsyncMock(return_value={"preempted": False})
@@ -190,7 +198,7 @@ async def test_preemption_on_load_spike() -> None:
         _make_snapshot(0.05, True),
     ])
 
-    mock_estimator = AsyncMock()
+    mock_estimator = _make_estimator()
     mock_estimator.sample = AsyncMock(side_effect=lambda: next(snapshots, _make_snapshot(0.05, True)))
 
     daemon = ResourceMonitorDaemon(

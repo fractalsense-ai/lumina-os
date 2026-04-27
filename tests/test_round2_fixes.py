@@ -242,7 +242,6 @@ sys.modules[f"{_OPS_PKG_R2}._helpers"] = _helpers_mod
 _ROSTER_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "roster.py"
 _roster_spec = importlib.util.spec_from_file_location(
     f"{_OPS_PKG_R2}.roster", str(_ROSTER_PATH),
-    submodule_search_locations=[],
 )
 _roster_mod = importlib.util.module_from_spec(_roster_spec)  # type: ignore[arg-type]
 _roster_mod.__package__ = _OPS_PKG_R2

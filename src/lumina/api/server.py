@@ -19,7 +19,8 @@ import time
 
 import sys
 import types
-from typing import Any
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -155,10 +156,20 @@ from lumina.api.routes.panels import router as panels_router  # noqa: E402
 # FastAPI Application
 # ─────────────────────────────────────────────────────────────
 
+
+@asynccontextmanager
+async def _api_lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    await _start_background_tasks()
+    try:
+        yield
+    finally:
+        await _stop_background_tasks()
+
 app = FastAPI(
     title="Project Lumina API",
     description="D.S.A. Orchestrator + LLM Conversational Interface (multi-domain)",
     version="0.4.0",
+    lifespan=_api_lifespan,
 )
 
 app.add_middleware(
@@ -376,8 +387,7 @@ async def _session_idle_cleanup() -> None:
                 log.exception("Failed to auto-close session %s", sid)
 
 
-@app.on_event("startup")
-async def _start_idle_cleanup() -> None:
+async def _start_background_tasks() -> None:
     from lumina.core.invite_store import register_persistence as _reg_invite_persistence
     _reg_invite_persistence(PERSISTENCE)
 
@@ -517,7 +527,6 @@ async def _start_idle_cleanup() -> None:
         await _resource_monitor.start()
 
 
-@app.on_event("shutdown")
 async def _stop_background_tasks() -> None:
     # Stop the daemon before the SLM worker so in-flight tasks drain.
     from lumina.daemon import resource_monitor as _resource_monitor
