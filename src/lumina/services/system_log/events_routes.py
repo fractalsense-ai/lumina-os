@@ -27,6 +27,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
+from lumina.core.pack_identity import get_model_pack_id
 from lumina.system_log import log_bus
 from lumina.system_log.event_payload import LogEvent, LogLevel
 
@@ -132,7 +133,7 @@ def _event_visible_to_user(event: LogEvent, user: dict[str, Any]) -> bool:
         event_domain = event.data.get("domain_id", "")
         if event_domain and event_domain not in governed:
             record = event.record or {}
-            rec_domain = record.get("domain_pack_id", "")
+            rec_domain = get_model_pack_id(record)
             if rec_domain and rec_domain not in governed:
                 return False
         return True

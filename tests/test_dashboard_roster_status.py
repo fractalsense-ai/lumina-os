@@ -214,7 +214,7 @@ class TestEnrichEscalationRecords:
                 "escalation_id": "esc-001",
                 "actor_id": "stu-1",
                 "trigger": "frustration_detected",
-                "domain_pack_id": "general-education",
+                "model_pack_id": "general-education",
                 "domain_lib_decision": {
                     "domain_alert_flag": True,
                     "domain_metric_pct": 0.8,

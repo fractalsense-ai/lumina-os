@@ -218,8 +218,8 @@ validate_provenance_for_ledger() {
     local expect_escalation="$3"
 
     local required_runtime_keys=(
-        domain_pack_id
-        domain_pack_version
+        model_pack_id
+        model_pack_version
         domain_physics_hash
         global_prompt_hash
         domain_prompt_hash

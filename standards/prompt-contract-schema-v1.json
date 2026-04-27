@@ -8,8 +8,8 @@
   "type": "object",
   "required": [
     "prompt_type",
-    "domain_pack_id",
-    "domain_pack_version",
+    "model_pack_id",
+    "model_pack_version",
     "task_id"
   ],
   "properties": {
@@ -17,13 +17,21 @@
       "type": "string",
       "description": "The type of prompt being issued. Valid values are defined by the active domain pack."
     },
+    "model_pack_id": {
+      "type": "string",
+      "description": "Globally unique identifier of the model-pack that produced this contract (format: domain/{org}/{name}/v{major})"
+    },
+    "model_pack_version": {
+      "type": "string",
+      "description": "Semver version of the model-pack active when this prompt was generated"
+    },
     "domain_pack_id": {
       "type": "string",
-      "description": "Globally unique identifier of the domain pack that produced this contract (format: domain/{org}/{name}/v{major})"
+      "description": "Deprecated alias for model_pack_id; accepted for historical prompt-contract fixtures during the model-pack identifier migration."
     },
     "domain_pack_version": {
       "type": "string",
-      "description": "Semver version of the domain pack active when this prompt was generated"
+      "description": "Deprecated alias for model_pack_version; accepted for historical prompt-contract fixtures during the model-pack identifier migration."
     },
     "task_id": {
       "type": "string",

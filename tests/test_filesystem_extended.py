@@ -249,7 +249,7 @@ def test_has_policy_commitment_true(adapter: FilesystemPersistenceAdapter) -> No
         "subject_id": "domain-123",
         "subject_version": "1.0.0",
         "subject_hash": "abc123hashed",
-        "commitment_type": "domain_pack_activation",
+        "commitment_type": "model_pack_activation",
     }
     adapter.append_log_record(sid, record)
     assert adapter.has_policy_commitment("domain-123", "1.0.0", "abc123hashed") is True
@@ -270,7 +270,7 @@ def test_has_policy_commitment_version_none(adapter: FilesystemPersistenceAdapte
         "subject_id": "domain-x",
         "subject_version": "2.0",
         "subject_hash": "deadbeef",
-        "commitment_type": "domain_pack_activation",
+        "commitment_type": "model_pack_activation",
     }
     adapter.append_log_record(sid, record)
     # With version=None, should match any version
@@ -478,7 +478,7 @@ def test_query_escalations_filter_status(adapter: FilesystemPersistenceAdapter) 
     r: dict[str, Any] = {
         "record_type": "EscalationRecord", "record_id": "e1",
         "prev_record_hash": "genesis", "session_id": sid,
-        "status": "pending", "domain_pack_id": "edu",
+        "status": "pending", "model_pack_id": "edu",
         "timestamp_utc": "2024-01-01T00:00:00Z",
     }
     adapter.append_log_record(sid, r)

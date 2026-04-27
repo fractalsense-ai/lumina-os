@@ -41,8 +41,8 @@ trigger_standing_order_id: zpd_intervene_or_escalate
 trigger_invariant_id: null
 
 # ── Domain Context ──────────────────────────────────────────
-domain_pack_id: "domain/edu/algebra-level-1/v1"
-domain_pack_version: "0.2.0"
+model_pack_id: "domain/edu/algebra-level-1/v1"
+model_pack_version: "0.2.0"
 
 # ── Evidence Summary ────────────────────────────────────────
 # (Structured telemetry only — no transcript content)

@@ -735,8 +735,8 @@ class TestProcessingLocalOnlyNlpWiring:
         mock_orch.process_turn.return_value = (
             {
                 "prompt_type": "admin_response",
-                "domain_pack_id": "system",
-                "domain_pack_version": "1",
+                "model_pack_id": "system",
+                "model_pack_version": "1",
                 "task_id": "sys",
                 "task_nominal_difficulty": 0.0,
                 "skills_targeted": [],
@@ -865,8 +865,8 @@ class TestPhysicsContextLocalOnly:
         mock_orch.process_turn.return_value = (
             {
                 "prompt_type": "admin_response",
-                "domain_pack_id": "system",
-                "domain_pack_version": "1",
+                "model_pack_id": "system",
+                "model_pack_version": "1",
                 "task_id": "sys",
                 "task_nominal_difficulty": 0.0,
                 "skills_targeted": [],

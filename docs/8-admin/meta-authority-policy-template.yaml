@@ -87,7 +87,7 @@ audit_policy:
 
 # ── Rollback Policy ─────────────────────────────────────────
 rollback_policy:
-  domain_pack_rollback_requires: meta_authority_commitment
+  model_pack_rollback_requires: meta_authority_commitment
   subject_profile_rollback_requires: meta_authority_commitment
   rollback_records_retained: true
   retroactive_record_modification: never_permitted

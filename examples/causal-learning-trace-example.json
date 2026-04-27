@@ -13,8 +13,8 @@
     "summary": "Session opened for student a3f8c2e1... domain=algebra-level-1 v0.2.0",
     "references": ["commitment-domain-pack-hash-record-id"],
     "metadata": {
-      "domain_pack_id": "domain/edu/algebra-level-1/v1",
-      "domain_pack_version": "0.2.0",
+      "model_pack_id": "domain/edu/algebra-level-1/v1",
+      "model_pack_version": "0.2.0",
       "consent_version": "1.0.0",
       "world_sim_theme": "space_exploration"
     }
@@ -35,8 +35,8 @@
     "decision_tier": null,
     "evidence_summary": null,
     "state_snapshot_hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {}
   },
   {
@@ -62,8 +62,8 @@
       "off_task_ratio": 0.0
     },
     "state_snapshot_hash": "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {
       "tool_adapter_id": "adapter/edu/substitution-checker/v1",
       "call_type": "verify_solution",
@@ -93,8 +93,8 @@
       "off_task_ratio": 0.0
     },
     "state_snapshot_hash": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {
       "step_count": 1,
       "minimum_required": 3
@@ -123,8 +123,8 @@
       "off_task_ratio": 0.0
     },
     "state_snapshot_hash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {}
   },
   {
@@ -150,8 +150,8 @@
       "off_task_ratio": 0.0
     },
     "state_snapshot_hash": "5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {
       "step_count": 4,
       "minimum_required": 3
@@ -180,8 +180,8 @@
       "off_task_ratio": 0.0
     },
     "state_snapshot_hash": "6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a",
-    "domain_pack_id": "domain/edu/algebra-level-1/v1",
-    "domain_pack_version": "0.2.0",
+    "model_pack_id": "domain/edu/algebra-level-1/v1",
+    "model_pack_version": "0.2.0",
     "metadata": {
       "mastery_delta": {
         "solve_one_variable": 0.10,

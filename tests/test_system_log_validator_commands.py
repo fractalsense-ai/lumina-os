@@ -208,7 +208,7 @@ def test_cmd_commit_appends_with_correct_prev_hash(tmp_path: Path) -> None:
         commit=str(subject),
         ledger=str(ledger),
         actor_id="actor-1",
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         summary="My summary",
     )
     cmd_commit(args)
@@ -259,7 +259,7 @@ def test_cmd_print_ledger_commitment_record(tmp_path: Path, capsys: pytest.Captu
         commit=str(subject),
         ledger=str(ledger),
         actor_id="actor-test",
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         summary=None,
     )
     cmd_commit(commit_args)

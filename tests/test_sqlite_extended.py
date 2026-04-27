@@ -237,7 +237,7 @@ def test_sqlite_query_escalations_filter_status(db: SQLitePersistenceAdapter) ->
     db.append_log_record(sid, {
         "record_type": "EscalationRecord", "record_id": "e1",
         "prev_record_hash": "genesis", "session_id": sid,
-        "status": "pending", "domain_pack_id": "edu",
+        "status": "pending", "model_pack_id": "edu",
     })
     pending = db.query_escalations(status="pending")
     assert any(r["record_id"] == "e1" for r in pending)
@@ -251,7 +251,7 @@ def test_sqlite_query_escalations_filter_domain(db: SQLitePersistenceAdapter) ->
     db.append_log_record(sid, {
         "record_type": "EscalationRecord", "record_id": "e2",
         "prev_record_hash": "genesis", "session_id": sid,
-        "status": "pending", "domain_pack_id": "math",
+        "status": "pending", "model_pack_id": "math",
     })
     result = db.query_escalations(domain_id="math")
     assert any(r["record_id"] == "e2" for r in result)

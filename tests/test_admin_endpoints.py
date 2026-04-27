@@ -237,7 +237,7 @@ class TestDomainPackCommit:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["commitment_type"] == "domain_pack_activation"
+        assert body["commitment_type"] == "model_pack_activation"
         assert body["subject_hash"]
         assert body["record_id"]
 

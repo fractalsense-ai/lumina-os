@@ -10,6 +10,7 @@ from typing import Any
 
 from lumina.api import config as _cfg
 from lumina.api.config import _ensure_user_profile
+from lumina.core.pack_identity import get_model_pack_id, get_model_pack_version
 from lumina.core.ttl_manager import TTLManager, Tier
 from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
@@ -28,8 +29,8 @@ _MAX_CONTEXTS_PER_SESSION = int(os.environ.get("LUMINA_MAX_CONTEXTS_PER_SESSION"
 def _policy_commitment_payload(runtime: dict[str, Any]) -> dict[str, Any]:
     provenance = dict(runtime.get("runtime_provenance") or {})
     return {
-        "subject_id": str(provenance.get("domain_pack_id", "")),
-        "subject_version": str(provenance.get("domain_pack_version", "")),
+        "subject_id": get_model_pack_id(provenance),
+        "subject_version": get_model_pack_version(provenance),
         "subject_hash": str(provenance.get("domain_physics_hash", "")),
     }
 

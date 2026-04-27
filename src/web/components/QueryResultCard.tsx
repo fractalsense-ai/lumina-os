@@ -160,7 +160,7 @@ function EscalationListView({ escalations }: { escalations: Array<Record<string,
         const id = String(esc.escalation_id ?? esc.record_id ?? i)
         const reason = String(esc.reason ?? esc.summary ?? esc.decision ?? '-')
         const status = String(esc.status ?? 'pending')
-        const domain = String(esc.domain_pack_id ?? esc.domain_id ?? '')
+        const domain = String(esc.model_pack_id ?? esc.domain_pack_id ?? esc.domain_id ?? '')
         const shortDomain = domain.split('/').pop() ?? domain
         return (
           <div key={id} className="flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0">

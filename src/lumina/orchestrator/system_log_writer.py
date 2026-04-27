@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from lumina.core.pack_identity import MODEL_PACK_ACTIVATION, get_model_pack_id
 from lumina.system_log.event_payload import LogLevel, create_event
 from lumina.system_log import log_bus
 
@@ -118,7 +119,7 @@ class SystemLogWriter:
             category="hash_chain",
             message=f"{record.get('record_type', 'record')} appended",
             record=record,
-            domain_id=record.get("domain_pack_id"),
+            domain_id=get_model_pack_id(record),
         ))
 
     # ── Record writers ────────────────────────────────────────
@@ -143,12 +144,12 @@ class SystemLogWriter:
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "actor_id": actor_id,
             "actor_role": "domain_authority",
-            "commitment_type": "domain_pack_activation",
+            "commitment_type": MODEL_PACK_ACTIVATION,
             "subject_id": domain_id,
             "subject_version": domain_version,
             "subject_hash": domain_hash,
             "summary": (
-                f"Session {self.session_id} opened — domain pack "
+                f"Session {self.session_id} opened — model-pack "
                 f"{domain_id} v{domain_version} hash={str(domain_hash)[:12]}..."
             ),
             "references": [],
@@ -228,7 +229,8 @@ class SystemLogWriter:
             "prev_record_hash": self._prev_hash,
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "session_id": self.session_id,
-            "domain_pack_id": domain_physics.get("id", "") if domain_physics else "",
+            "model_pack_id": domain_physics.get("id", "") if domain_physics else "",
+            "model_pack_version": domain_physics.get("version", "") if domain_physics else "",
             "actor_id": self._profile.get(
                 "subject_id", self._profile.get("student_id", "unknown")
             ),

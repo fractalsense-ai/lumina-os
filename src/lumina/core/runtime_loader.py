@@ -229,8 +229,8 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
         "domain_prompt_hash": _sha256_text(domain_prompt),
         "turn_interpretation_prompt_hash": _sha256_text(turn_interpretation_prompt),
         "system_prompt_hash": _sha256_text(system_prompt),
-        "domain_pack_id": str(domain_physics.get("id", "")),
-        "domain_pack_version": str(domain_physics.get("version", "")),
+        "model_pack_id": str(domain_physics.get("id", "")),
+        "model_pack_version": str(domain_physics.get("version", "")),
     }
 
     state_builder_cfg = adapters_cfg["state_builder"]

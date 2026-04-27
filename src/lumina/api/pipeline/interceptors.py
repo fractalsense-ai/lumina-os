@@ -59,8 +59,8 @@ def check_glossary(
 
     prompt_contract = {
         "prompt_type": "definition_lookup",
-        "domain_pack_id": str(domain_physics.get("id", "")),
-        "domain_pack_version": str(domain_physics.get("version", "")),
+        "model_pack_id": str(domain_physics.get("id", "")),
+        "model_pack_version": str(domain_physics.get("version", "")),
         "task_id": str(task_spec.get("task_id", "")),
         "glossary_entry": {
             "term": match.get("term", ""),
@@ -148,8 +148,8 @@ def check_turn_0(
 
     contract = {
         "prompt_type": "task_presentation",
-        "domain_pack_id": str(domain_physics.get("id", "")),
-        "domain_pack_version": str(domain_physics.get("version", "")),
+        "model_pack_id": str(domain_physics.get("id", "")),
+        "model_pack_version": str(domain_physics.get("version", "")),
         "task_id": str(task_spec.get("task_id", "")),
         "current_problem": current_task,
         "actor_message": input_text,

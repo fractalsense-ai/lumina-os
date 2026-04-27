@@ -48,8 +48,8 @@ Record classification follows these rules, evaluated top-to-bottom:
    (``routing_decision``, ``admin_cmd_trace``, …) → **system**.
 3. **EscalationRecords** → **system**.
 4. **CommitmentRecords** with ``commitment_type`` in the domain set
-   (``domain_pack_activation``, ``domain_role_assignment``, …) → **domain**.
-5. **Records with an explicit ``domain_id`` or ``domain_pack_id``** that
+   (``model_pack_activation``, ``domain_role_assignment``, …) → **domain**.
+5. **Records with an explicit ``domain_id`` or ``model_pack_id``** that
    did not match an earlier rule → **domain**.
 6. **Everything else** → **system** (safe fallback).
 

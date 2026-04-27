@@ -140,7 +140,7 @@ def test_cmd_rollback_confirms_and_appends_record(tmp_path: Path) -> None:
         "record_type": "CommitmentRecord",
         "record_id": "prior-001",
         "prev_record_hash": "genesis",
-        "commitment_type": "domain_pack_activation",
+        "commitment_type": "model_pack_activation",
         "subject_id": "edu-algebra",
         "subject_hash": canonical_file_hash(subject),
         "actor_id": "actor-001",
@@ -160,7 +160,7 @@ def test_cmd_rollback_confirms_and_appends_record(tmp_path: Path) -> None:
     records = load_ledger(ledger)
     assert len(records) == 2
     last = records[-1]
-    assert last["commitment_type"] == "domain_pack_rollback"
+    assert last["commitment_type"] == "model_pack_rollback"
     assert "defective invariant" in last["summary"]
     assert last["references"] == ["prior-001"]
 
@@ -187,7 +187,7 @@ def test_cmd_rollback_no_prior_activation_else_branch(
     out = capsys.readouterr().out
     assert "none found" in out.lower()
     records = load_ledger(ledger)
-    assert records[-1]["commitment_type"] == "domain_pack_rollback"
+    assert records[-1]["commitment_type"] == "model_pack_rollback"
     assert records[-1]["references"] == []
 
 

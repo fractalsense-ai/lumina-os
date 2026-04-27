@@ -83,8 +83,7 @@ generalized into framework-level signal decomposition.
    layer of a modeled domain; the packaging layer is now called a
    model-pack.
 5. Pack-level compatibility names such as `domain_pack_id` are legacy
-   implementation vocabulary until the identifier-migration phase
-   replaces them with `model_pack_id`.
+   implementation vocabulary. New records should use `model_pack_id`.
 
 ## See Also
 

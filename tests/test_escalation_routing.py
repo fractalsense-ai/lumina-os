@@ -115,13 +115,13 @@ def _root_user() -> dict[str, Any]:
 def _esc_record(
     record_id: str,
     target_id: str | None = None,
-    domain_pack_id: str = _MODULE_ID,
+    model_pack_id: str = _MODULE_ID,
     status: str = "open",
 ) -> dict[str, Any]:
     rec = {
         "record_type": "EscalationRecord",
         "record_id": record_id,
-        "domain_pack_id": domain_pack_id,
+        "model_pack_id": model_pack_id,
         "status": status,
         "trigger": "test-trigger",
         "session_id": "sess-1",
@@ -222,8 +222,8 @@ class TestListEscalationsDAScope:
     def test_da_filtered_by_governed_modules(self) -> None:
         other_module = "domain/edu/other/v1"
         esc = [
-            _esc_record("e1", target_id="teacher1", domain_pack_id=_MODULE_ID),
-            _esc_record("e2", target_id="teacher1", domain_pack_id=other_module),
+            _esc_record("e1", target_id="teacher1", model_pack_id=_MODULE_ID),
+            _esc_record("e2", target_id="teacher1", model_pack_id=other_module),
         ]
         result = asyncio.run(list_escalations(
             user_data=_da_user("da1"),

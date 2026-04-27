@@ -11,6 +11,7 @@ from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth, require_role
+from lumina.core.pack_identity import get_model_pack_id
 from lumina.system_log.alert_store import warning_store, alert_store
 
 log = logging.getLogger("lumina-api")
@@ -93,7 +94,7 @@ async def get_log_record(
             # admin users: non-empty governed restricts to those modules
             if user_data["role"] == "admin":
                 governed = user_data.get("governed_modules") or []
-                dpid = r.get("domain_pack_id", "")
+                dpid = get_model_pack_id(r)
                 if governed and dpid and dpid not in governed:
                     raise HTTPException(status_code=403, detail="Record not in governed scope")
             return r

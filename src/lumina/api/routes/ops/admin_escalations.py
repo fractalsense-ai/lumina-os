@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from lumina.api.admin_context import AdminOperationContext
+from lumina.core.pack_identity import get_model_pack_id
 from lumina.core.domain_registry import DomainNotFoundError
 
 
@@ -43,7 +44,7 @@ async def execute(
         )
         if user_data["role"] == "admin":
             governed = user_data.get("governed_modules") or []
-            escalations = [e for e in escalations if e.get("domain_pack_id") in governed]
+            escalations = [e for e in escalations if get_model_pack_id(e) in governed]
         return {"operation": operation, "count": len(escalations), "escalations": escalations}
 
     if operation == "explain_reasoning":

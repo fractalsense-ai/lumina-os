@@ -18,5 +18,5 @@
       "@domain/education/*": ["../../model-packs/education/web/*"]
     }
   },
-  "include": ["app.tsx", "components", "lib", "src"]
+  "include": ["app.tsx", "components", "lib", "src", "vite-env.d.ts"]
 }

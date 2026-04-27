@@ -60,7 +60,7 @@ class ContractDrafter:
         """
         Build a prompt_contract dict conforming to prompt-contract-schema.json.
 
-        Required schema fields: prompt_type, domain_pack_id, domain_pack_version,
+        Required schema fields: prompt_type, model_pack_id, model_pack_version,
         task_id.  Additional optional fields are populated where available.
         """
         prompt_type = self._action_prompt_type_map.get(
@@ -73,8 +73,8 @@ class ContractDrafter:
 
         contract: dict[str, Any] = {
             "prompt_type": prompt_type,
-            "domain_pack_id": self._domain.get("id", ""),
-            "domain_pack_version": self._domain.get("version", ""),
+            "model_pack_id": self._domain.get("id", ""),
+            "model_pack_version": self._domain.get("version", ""),
             "task_id": task_spec.get("task_id", ""),
             "task_nominal_difficulty": float(
                 task_spec.get(

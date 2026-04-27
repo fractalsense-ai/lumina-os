@@ -245,7 +245,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-15
-  sha256: c0fdcd19b16dfc35c16518115c8829f842e0984e95131898d84c6457383291c7
+  sha256: 1ac22d87e330287e496b080e36eef68fc322313fdf8416b5c2f1efc4b9e05367
 - path: docs/7-concepts/domain-role-hierarchy.md
   type: doc
   section: 7
@@ -336,7 +336,7 @@ artifacts:
   doc_version: 1.1.0
   status: active
   last_updated: 2026-03-18
-  sha256: fbc7c20027b1ec06f6dd55a31049f4801380e78464c328b31a01c96df048d621
+  sha256: 97cb58c1c8ef5d72062467f4c134629ac094fa653006fed918b653620eb3ec25
 - path: docs/7-concepts/parallel-authority-tracks.md
   type: doc
   section: 7
@@ -477,7 +477,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-23
-  sha256: 14894cff6d2690cf462add80ea98f8728c002c94269f60e28ab818325a89d3e5
+  sha256: a8cab9ce5bc4d0c827f4135ea60f083d17c090eb889095173a60bc1cbaf83f40
 - path: docs/7-concepts/group-libraries-and-tools.md
   type: doc
   section: 7
@@ -554,7 +554,7 @@ artifacts:
   doc_version: 1.2.0
   status: active
   last_updated: 2026-03-22
-  sha256: a7dae4d73ef1525c0d45c39097895f7a1234d160301d77f4bbda6c3cd6d6e08e
+  sha256: daca7c598ae662218a669ee700c398f6e1b0272c4b2312647a538aa161491f78
 - path: docs/8-admin/secrets-and-runtime-config.md
   type: doc
   section: 8
@@ -580,7 +580,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-08
-  sha256: 8430bff3eb9826a579cc7c8c8f34f70366bd6aaf89bcc2497378fe3de8116cbf
+  sha256: 755abba8003d95078068e23ac4483e64512f9c8b5143b9b6fc44d822d7ae7939
 - path: docs/7-concepts/domain-profile-spec.md
   type: spec
   doc_version: 1.0.0
@@ -592,13 +592,13 @@ artifacts:
   doc_version: 1.2.0
   status: active
   last_updated: 2026-03-08
-  sha256: bf95a0a82e68e9ca33290c15f3074830b7974da0e521a996fd0773101ea053ba
+  sha256: 8e759954520700a7cf79f6df1f972e1455acf8f8e457fb511d5612aee04ffaf2
 - path: docs/8-admin/evaluation-harness.md
   type: spec
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-08
-  sha256: fc7e70d36e510395c8a0e118a46bfb9f7c9975789e9aeca4e158899bec3bdda0
+  sha256: 3cda4eaedacbb37ca955d7a2c17e6f749f754b6dd582321a1a8697f5be9e9fd7
 - path: docs/5-standards/global-system-prompt.md
   type: spec
   doc_version: 1.0.0
@@ -629,7 +629,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-27
-  sha256: 1bef0867c7f596f1aeeaf471996ae65bc8a367f9da94e3a82e1e33b7bc3db8e2
+  sha256: 769727f357c502d186447f3572e60f4c4eb2394fc6faf01874e71972c565be9e
 - path: docs/5-standards/rbac-spec.md
   type: spec
   doc_version: 1.1.0
@@ -648,7 +648,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-02
-  sha256: 6b875cafc35de9f9b289cc971fc1abeba24c55168857b4889f886d7da4bab238
+  sha256: 3bce0dacf9cd4282b761ea13989bbed09f1f622a7e191d0228ee7212d00e4921
 - path: docs/8-admin/domain-authority-roles.md
   type: doc
   section: 8
@@ -661,13 +661,13 @@ artifacts:
   doc_version: 1.1.0
   status: active
   last_updated: 2026-03-15
-  sha256: 496a06dbcc4e2dc58ddb55b5882485d36947a587bd395d23ebfba7966e8ac67d
+  sha256: 03ee4fa41b3fe46f9d86cd2cd7c092e1fd62a947816b69d1a65c4667c508c8f4
 - path: docs/7-concepts/domain-evidence-extension.md
   type: standard
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-15
-  sha256: c0fdcd19b16dfc35c16518115c8829f842e0984e95131898d84c6457383291c7
+  sha256: 1ac22d87e330287e496b080e36eef68fc322313fdf8416b5c2f1efc4b9e05367
 - path: docs/3-functions/domain-state-lib.md
   type: standard
   doc_version: 1.0.0
@@ -747,7 +747,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-08
-  sha256: 96a816c8f0021510164461d70b59354c0639615e212687facd4957d42b13ab3a
+  sha256: 66e33167681151697662a2e0f0cfdaf76051a93deaddb6dc78be748c8660788f
 - path: standards/rbac-permission-schema-v1.json
   type: schema
   doc_version: 1.1.0
@@ -1023,13 +1023,13 @@ artifacts:
   doc_version: 1.1.0
   status: active
   last_updated: 2026-03-15
-  sha256: b8c748207bb3b2252033850f93dfcdf2bd59a871df4c4327bb4615c8a229b12f
+  sha256: 4e93c0bbb1081f31d0bceea7acae7c2ecce41b09766cc7c446a21627eebe6ea6
 - path: standards/escalation-record-schema-v1.json
   type: schema
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-02
-  sha256: c8e6c93e7761c657f4282c0eeb112d2e42da40f9e16bf157d67c6367f3db75d9
+  sha256: 343932d93511ff185b11dcba3e667d8c040afd21e84f2f144902c6668a276bbe
 - path: standards/ingestion-record-schema-v1.json
   type: schema
   doc_version: 1.0.0
@@ -1041,7 +1041,7 @@ artifacts:
   doc_version: 1.1.0
   status: active
   last_updated: 2026-03-15
-  sha256: 53a8bf0b25ffc4d467423781f2460dc124cb4c15c48577a40090ef1bc559be3f
+  sha256: 0269c4178a1e9e1f315b87c0ff20355945d87f6ff6dc79761222bfbb3a0f7640
 - path: model-packs/system/cfg/domain-registry.yaml
   type: config
   doc_version: 1.0.0
@@ -1599,7 +1599,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-04
-  sha256: c0fcd0defc647fa4af0588fca1377fdcdd94dfba27dec19a951176e385172d83
+  sha256: fd5eec7b035af69ff0bb31094a3a7904a06e287b58e5ccb171a754b996947a34
 - path: examples/invite-onboarding-example.yaml
   type: doc
   doc_version: 1.0.0
@@ -1611,7 +1611,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-04
-  sha256: cd2aedbd7f1c199f2834635406e5ed5d9fb19cc6ffbdcdbbd3258113949ab266
+  sha256: 2bf556deeb38244aa360d855054a6185b9b2d7693b299aa0dd1fd8ad8392dab9
 - path: src/web/services/entitySaltManager.ts
   type: source
   doc_version: 1.0.0
@@ -1635,7 +1635,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-07-16
-  sha256: 0e217026fbaeb83c1b9813bc420609af727c18da4c735ba179e03a4683bba789
+  sha256: 8b646f65f85945d62008d4274d29f221e9c15b13a6cfdc3aa2c49c78ec841d9b
 - path: model-packs/education/controllers/ops/safe_person.py
   type: source
   doc_version: 1.0.0

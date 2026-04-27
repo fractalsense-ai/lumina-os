@@ -87,8 +87,8 @@ Task: linear_equations_one_variable_set_2 → pass (score: 0.88)
 Payload Provenance Lineage
 --------------------------
 Runtime Policy Hashes:
-- domain_pack_id: <domain-pack-id>
-- domain_pack_version: <semver>
+- model_pack_id: <model-pack-id>
+- model_pack_version: <semver>
 - domain_physics_hash: <sha256>
 - global_prompt_hash: <sha256>
 - domain_prompt_hash: <sha256>

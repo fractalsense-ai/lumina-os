@@ -49,6 +49,7 @@ from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
 )
 from lumina.core.domain_registry import DomainNotFoundError, DomainRegistry
+from lumina.core.pack_identity import MODEL_PACK_ACTIVATION, get_model_pack_id, get_model_pack_version
 from lumina.persistence.filesystem import FilesystemPersistenceAdapter
 from lumina.core.permissions import Operation, check_permission
 from lumina.persistence.adapter import PersistenceAdapter
@@ -317,8 +318,8 @@ def _detect_glossary_query(
 def _policy_commitment_payload(runtime: dict[str, Any]) -> dict[str, Any]:
     provenance = dict(runtime.get("runtime_provenance") or {})
     return {
-        "subject_id": str(provenance.get("domain_pack_id", "")),
-        "subject_version": str(provenance.get("domain_pack_version", "")),
+        "subject_id": get_model_pack_id(provenance),
+        "subject_version": get_model_pack_version(provenance),
         "subject_hash": str(provenance.get("domain_physics_hash", "")),
     }
 
@@ -965,8 +966,8 @@ def process_message(
     if glossary_match is not None:
         prompt_contract = {
             "prompt_type": "definition_lookup",
-            "domain_pack_id": str(domain_physics.get("id", "")),
-            "domain_pack_version": str(domain_physics.get("version", "")),
+            "model_pack_id": str(domain_physics.get("id", "")),
+            "model_pack_version": str(domain_physics.get("version", "")),
             "task_id": str(task_spec.get("task_id", "")),
             "glossary_entry": {
                 "term": glossary_match.get("term", ""),
@@ -2060,9 +2061,9 @@ async def domain_pack_commit(
     record = build_commitment_record(
         actor_id=req.actor_id or user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
-        commitment_type="domain_pack_activation",
+        commitment_type=MODEL_PACK_ACTIVATION,
         subject_id=subject_id,
-        summary=req.summary or f"Domain pack activation: {resolved}",
+        summary=req.summary or f"Model-pack activation: {resolved}",
         subject_version=subject_version,
         subject_hash=subject_hash,
     )
@@ -2076,7 +2077,7 @@ async def domain_pack_commit(
         "record_id": record["record_id"],
         "subject_hash": subject_hash,
         "subject_version": subject_version,
-        "commitment_type": "domain_pack_activation",
+        "commitment_type": MODEL_PACK_ACTIVATION,
     }
 
 
@@ -2153,7 +2154,7 @@ async def update_domain_physics(
     record = build_commitment_record(
         actor_id=user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
-        commitment_type="domain_pack_activation",
+        commitment_type=MODEL_PACK_ACTIVATION,
         subject_id=subject_id,
         summary=req.summary,
         subject_version=str(domain.get("version", "")),
@@ -2743,7 +2744,7 @@ async def list_escalations(
     # Scope domain_authority to governed domains only
     if user_data["role"] == "domain_authority":
         governed = user_data.get("governed_modules") or []
-        records = [r for r in records if r.get("domain_pack_id") in governed]
+        records = [r for r in records if get_model_pack_id(r) in governed]
 
     return records
 
@@ -2777,7 +2778,7 @@ async def resolve_escalation(
 
     # Domain authority scoping
     if user_data["role"] == "domain_authority":
-        domain = target.get("domain_pack_id", "")
+        domain = get_model_pack_id(target)
         if not can_govern_domain(user_data, domain):
             raise HTTPException(status_code=403, detail="Not authorized for this domain")
 
@@ -3069,7 +3070,7 @@ async def _execute_admin_operation(
         record = build_commitment_record(
             actor_id=user_data["sub"],
             actor_role=map_role_to_actor_role(user_data["role"]),
-            commitment_type="domain_pack_activation",
+            commitment_type=MODEL_PACK_ACTIVATION,
             subject_id=str(domain.get("id", resolved)),
             summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),
@@ -3099,7 +3100,7 @@ async def _execute_admin_operation(
         record = build_commitment_record(
             actor_id=user_data["sub"],
             actor_role=map_role_to_actor_role(user_data["role"]),
-            commitment_type="domain_pack_activation",
+            commitment_type=MODEL_PACK_ACTIVATION,
             subject_id=str(domain.get("id", resolved)),
             summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),
@@ -3204,7 +3205,7 @@ async def _execute_admin_operation(
         )
         if user_data["role"] == "domain_authority":
             governed = user_data.get("governed_modules") or []
-            escalations = [e for e in escalations if e.get("domain_pack_id") in governed]
+            escalations = [e for e in escalations if get_model_pack_id(e) in governed]
         result = {"operation": operation, "count": len(escalations), "escalations": escalations}
 
     elif operation == "explain_reasoning":

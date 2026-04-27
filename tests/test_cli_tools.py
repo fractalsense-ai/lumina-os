@@ -51,7 +51,7 @@ def _seed_ledger_with_activation(mod, ledger_path: Path, subject_path: Path, act
     record = mod.build_commitment_record(
         subject_path=subject_path,
         actor_id=actor_id,
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         prev_record_hash="genesis",
         summary="Initial activation",
     )
@@ -89,7 +89,7 @@ class TestRollbackCommand:
 
         rollback_rec = records[-1]
         assert rollback_rec["record_type"] == "CommitmentRecord"
-        assert rollback_rec["commitment_type"] == "domain_pack_rollback"
+        assert rollback_rec["commitment_type"] == "model_pack_rollback"
         assert rollback_rec["actor_id"] == "actor-1"
         assert rollback_rec["subject_id"] == "test-domain"
         assert rollback_rec["metadata"]["reason"] == "Defective invariant"

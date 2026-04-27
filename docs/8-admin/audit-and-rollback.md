@@ -115,7 +115,7 @@ The System Logs is **append-only**. Rollback does not mean deleting records. It 
 If a domain pack version has a defect:
 
 1. The Domain Authority authors a corrected version (new semver)
-2. A `CommitmentRecord` is appended: `commitment_type: domain_pack_rollback`, referencing the prior version's record and the new version
+2. A `CommitmentRecord` is appended: `commitment_type: model_pack_rollback`, referencing the prior version's record and the new version
 3. Sessions started after this CommitmentRecord use the new version
 4. Sessions started before this CommitmentRecord retain their original domain pack hash in their System Log records
 

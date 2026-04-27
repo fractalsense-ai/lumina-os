@@ -86,13 +86,21 @@
       "type": ["string", "null"],
       "description": "ID of the invariant that was violated (if trigger_type is critical_invariant_violation)."
     },
+    "model_pack_id": {
+      "type": ["string", "null"],
+      "description": "Model-pack active at the time of escalation."
+    },
+    "model_pack_version": {
+      "type": ["string", "null"],
+      "description": "Version of the model-pack at the time of escalation."
+    },
     "domain_pack_id": {
       "type": ["string", "null"],
-      "description": "Domain pack active at the time of escalation."
+      "description": "Deprecated alias for model_pack_id; accepted for historical escalation records during the model-pack identifier migration."
     },
     "domain_pack_version": {
       "type": ["string", "null"],
-      "description": "Version of the domain pack at the time of escalation."
+      "description": "Deprecated alias for model_pack_version; accepted for historical escalation records during the model-pack identifier migration."
     },
     "evidence_summary": {
       "type": "object",

@@ -206,7 +206,7 @@ class TestNovelSynthesisCommitmentTypes:
             "summary": f"Novel synthesis {commitment_type} for test",
             "metadata": {
                 "model_id": "claude-sonnet-4-20250514",
-                "domain_pack_id": "domain/test/novel-synthesis/v1",
+                "model_pack_id": "domain/test/novel-synthesis/v1",
             },
         }
 

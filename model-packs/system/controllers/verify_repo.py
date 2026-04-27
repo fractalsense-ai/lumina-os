@@ -8,8 +8,8 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 PROVENANCE_RUNTIME_KEYS = [
-    "domain_pack_id",
-    "domain_pack_version",
+    "model_pack_id",
+    "model_pack_version",
     "domain_physics_hash",
     "global_prompt_hash",
     "domain_prompt_hash",

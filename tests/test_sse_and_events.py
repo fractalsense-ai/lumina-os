@@ -179,7 +179,7 @@ def test_escalation_detail_returns_record(client: TestClient, api_module) -> Non
     fake_record = {
         "record_id": "esc-test-001",
         "trigger": "frustration_repeated",
-        "domain_pack_id": "education/pre-algebra",
+        "model_pack_id": "education/pre-algebra",
         "session_id": "s1",
         "status": "pending",
         "timestamp_utc": "2025-01-01T00:00:00Z",

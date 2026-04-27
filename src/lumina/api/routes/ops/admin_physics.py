@@ -8,6 +8,7 @@ from typing import Any
 
 from lumina.api.admin_context import AdminOperationContext
 from lumina.core.domain_registry import DomainNotFoundError
+from lumina.core.pack_identity import MODEL_PACK_ACTIVATION
 
 
 async def execute(
@@ -51,7 +52,7 @@ async def execute(
         record = ctx.build_commitment_record(
             actor_id=user_data["sub"],
             actor_role=ctx.map_role_to_actor_role(user_data["role"]),
-            commitment_type="domain_pack_activation",
+            commitment_type=MODEL_PACK_ACTIVATION,
             subject_id=str(domain.get("id", resolved)),
             summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),
@@ -81,7 +82,7 @@ async def execute(
         record = ctx.build_commitment_record(
             actor_id=user_data["sub"],
             actor_role=ctx.map_role_to_actor_role(user_data["role"]),
-            commitment_type="domain_pack_activation",
+            commitment_type=MODEL_PACK_ACTIVATION,
             subject_id=str(domain.get("id", resolved)),
             summary=f"SLM command: {original_instruction}",
             subject_version=str(domain.get("version", "")),

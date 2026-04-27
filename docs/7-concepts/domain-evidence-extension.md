@@ -56,7 +56,7 @@ Keys beginning with `_` (underscore) are reserved by the System Logs system. Dom
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
-| `_domain` | string | Recommended | The `id` of the domain-physics module that produced this record. Matches `domain_pack_id` on the parent `TraceEvent`. |
+| `_domain` | string | Recommended | The `id` of the domain-physics module that produced this record. Matches `model_pack_id` on the parent `TraceEvent`. |
 | `_schema_version` | string (semver) | Recommended | Version of the domain's `evidence-schema.json` in effect when this record was created. Enables audit tooling to validate records against the correct schema version. |
 
 > **Note:** `_domain` and `_schema_version` are recommended for all new records and required for records that will be validated against a domain evidence schema. Existing records without these keys remain valid — the System Log JSON Schema accepts any object for `evidence_summary`.

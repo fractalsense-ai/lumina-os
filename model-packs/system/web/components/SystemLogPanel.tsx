@@ -15,6 +15,7 @@ interface LogRecord {
   event_type?: string
   timestamp_utc: string
   session_id?: string
+  model_pack_id?: string
   domain_pack_id?: string
   [key: string]: unknown
 }
@@ -45,6 +46,10 @@ function getRecordSummary(rec: LogRecord): string {
   if (rec.description && typeof rec.description === 'string') return rec.description
   if (rec.actor_id && typeof rec.actor_id === 'string') return `Actor: ${rec.actor_id}`
   return ''
+}
+
+function getModelPackId(rec: LogRecord): string | undefined {
+  return rec.model_pack_id ?? rec.domain_pack_id
 }
 
 export function SystemLogPanel({ auth, domainId, domainKey }: { auth: AuthState; domainId?: string; domainKey?: string }) {
@@ -130,7 +135,7 @@ export function SystemLogPanel({ auth, domainId, domainKey }: { auth: AuthState;
                 {getRecordSummary(rec) || (
                   <>
                     {rec.session_id && `Session: ${rec.session_id}`}
-                    {rec.domain_pack_id && ` · Domain: ${rec.domain_pack_id}`}
+                    {getModelPackId(rec) && ` · Model-pack: ${getModelPackId(rec)}`}
                   </>
                 )}
               </p>

@@ -12,7 +12,8 @@ interface AuthState {
 interface Escalation {
   record_id: string
   trigger: string
-  domain_pack_id: string
+  model_pack_id?: string
+  domain_pack_id?: string
   session_id: string
   status: string
   timestamp_utc: string
@@ -45,6 +46,10 @@ function severityColor(esc: Escalation): string {
   if (drift > 0.5) return 'border-l-orange-500'
   if (drift > 0.25) return 'border-l-yellow-400'
   return 'border-l-green-500'
+}
+
+function getModelPackId(esc: Escalation): string {
+  return esc.model_pack_id ?? esc.domain_pack_id ?? ''
 }
 
 export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?: string; domainKey?: string }) {
@@ -130,7 +135,7 @@ export function EscalationQueue({ auth, domainId }: { auth: AuthState; domainId?
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Domain: {esc.domain_pack_id} &middot; Session: {esc.session_id}
+                Model-pack: {getModelPackId(esc)} &middot; Session: {esc.session_id}
               </p>
               <p className="text-xs text-muted-foreground">
                 {esc.timestamp_utc}

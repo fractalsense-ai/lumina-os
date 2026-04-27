@@ -114,7 +114,7 @@ The system does **not** learn the new concept until Key 2 turns. This prevents h
   │       ▼                     ▼                ▼          │   │
   │  TraceEvent            System System Log records verdict       │   │
   │  metadata:             + model_id + model_version       │   │
-  │    model_id            + domain_pack_id                 │   │
+  │    model_id            + model_pack_id                  │   │
   │    model_version                                        │   │
   │    novel_synthesis_signal                               │   │
   │                                                         │   │
@@ -136,7 +136,7 @@ The system boundary tracks model identity without inspecting domain logic. Every
 The system log stores only the **metadata** for the audit — not the raw synthesis content. This creates a reproducible "Map of Innovation" without bloating the system ledger:
 
 - **Tag:** `NOVEL_SYNTHESIS` (the `novel_synthesis_signal` value in TraceEvent metadata)
-- **Metadata:** `domain_pack_id`, `model_id`, `model_version`, `timestamp_utc`
+- **Metadata:** `model_pack_id`, `model_id`, `model_version`, `timestamp_utc`
 - **Resolution:** `novel_synthesis_verified` or `novel_synthesis_rejected` CommitmentRecord
 
 ---
@@ -181,7 +181,7 @@ Novel synthesis metadata enables three forms of model intelligence:
 
 ### 1. LLM Performance Heatmap
 
-By aggregating `novel_synthesis_signal` events grouped by `model_id` x `domain_pack_id`, the system builds a performance matrix:
+By aggregating `novel_synthesis_signal` events grouped by `model_id` x `model_pack_id`, the system builds a performance matrix:
 
 ```
                     Education    Agriculture    Lab-Science
@@ -305,7 +305,7 @@ With `block`, if the SLM detects a semantic match above threshold, the LLM call 
 Each rejection corpus entry contains:
 
 - `record_id` — CommitmentRecord UUID (for audit trail back-reference)
-- `domain_pack_id` — corpus is scoped to this domain
+- `model_pack_id` — corpus is scoped to this model-pack
 - `rejection_summary_hash` — hash of the original synthesis signal context (never raw transcript)
 - `denial_rationale.reason_category` — structured reason for SLM similarity matching
 - `denial_rationale.authority_note` — human rationale, surfaced as prompt context when the SLM fires

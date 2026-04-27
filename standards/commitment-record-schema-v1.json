@@ -50,6 +50,8 @@
     "commitment_type": {
       "type": "string",
       "enum": [
+        "model_pack_activation",
+        "model_pack_rollback",
         "domain_pack_activation",
         "domain_pack_rollback",
         "system_physics_activation",
@@ -113,7 +115,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Additional structured metadata. Must not contain PII or transcript content. When commitment_type is 'novel_synthesis_rejected', metadata MUST include a 'denial_rationale' object with two required sub-keys: 'reason_category' (enum: hallucination | out_of_domain | logical_error | insufficient_evidence | duplicate_of_known_pattern | other) and 'authority_note' (string, max 512 chars — the Domain Authority's written explanation of the denial). When commitment_type is 'novel_synthesis_verified', metadata SHOULD include 'domain_pack_id', 'model_id', and 'model_version' to enable corpus indexing for the SLM verified-synthesis replay path."
+      "description": "Additional structured metadata. Must not contain PII or transcript content. When commitment_type is 'novel_synthesis_rejected', metadata MUST include a 'denial_rationale' object with two required sub-keys: 'reason_category' (enum: hallucination | out_of_domain | logical_error | insufficient_evidence | duplicate_of_known_pattern | other) and 'authority_note' (string, max 512 chars — the Domain Authority's written explanation of the denial). When commitment_type is 'novel_synthesis_verified', metadata SHOULD include 'model_pack_id', 'model_id', and 'model_version' to enable corpus indexing for the SLM verified-synthesis replay path."
     }
   }
 }

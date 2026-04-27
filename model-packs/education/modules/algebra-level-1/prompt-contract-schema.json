@@ -4,7 +4,7 @@
   "title": "Algebra Level 1 — Prompt Contract Schema",
   "description": "Defines the structured contract for prompts used in Algebra Level 1 sessions. Prompts must conform to this schema before being issued to the student.",
   "type": "object",
-  "required": ["prompt_type", "domain_pack_id", "domain_pack_version", "task_id"],
+  "required": ["prompt_type", "model_pack_id", "model_pack_version", "task_id"],
   "additionalProperties": false,
   "properties": {
     "prompt_type": {
@@ -27,13 +27,21 @@
       ],
       "description": "Type of prompt being issued"
     },
-    "domain_pack_id": {
+    "model_pack_id": {
       "type": "string",
       "const": "domain/edu/algebra-level-1/v1"
     },
+    "model_pack_version": {
+      "type": "string",
+      "description": "Version of the model-pack active when this prompt was generated"
+    },
+    "domain_pack_id": {
+      "type": "string",
+      "description": "Deprecated alias for model_pack_id; accepted for historical prompt-contract fixtures during migration."
+    },
     "domain_pack_version": {
       "type": "string",
-      "description": "Version of the domain pack active when this prompt was generated"
+      "description": "Deprecated alias for model_pack_version; accepted for historical prompt-contract fixtures during migration."
     },
     "task_id": {
       "type": "string",

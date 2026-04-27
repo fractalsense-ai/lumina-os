@@ -307,7 +307,7 @@ extends the default RBAC check (which allows only `root` and
 `admin`) to include teachers and other instructional staff.
 
 The resolution is scoped: the user can only resolve escalations whose
-`domain_pack_id` matches a module where they hold an escalation-capable
+`model_pack_id` matches a module where they hold an escalation-capable
 domain role.
 
 ## SEE ALSO

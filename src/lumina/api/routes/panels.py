@@ -20,6 +20,7 @@ from starlette.concurrency import run_in_threadpool
 
 from lumina.api import config as _cfg
 from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
+from lumina.core.pack_identity import get_model_pack_id
 
 log = logging.getLogger("lumina-api")
 
@@ -442,9 +443,9 @@ async def _resolve_escalation_queue(
 
     # Scope by governed modules (DA) or assigned domain roles (teacher)
     if governed is not None:
-        records = [r for r in records if r.get("domain_pack_id") in governed]
+        records = [r for r in records if get_model_pack_id(r) in governed]
     elif not system_admin:
-        records = [r for r in records if r.get("domain_pack_id") in domain_roles_map]
+        records = [r for r in records if get_model_pack_id(r) in domain_roles_map]
 
     return {
         "panel": pcfg.get("id", "escalation_queue"),

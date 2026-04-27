@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from lumina.core.pack_identity import get_model_pack_id
+
 log = logging.getLogger("lumina-api.education")
 
 # ── Trigger type → human-readable label map ───────────────────
@@ -108,13 +110,13 @@ async def list_escalations(
 
     if is_admin:
         governed = user_data.get("governed_modules") or []
-        records = [r for r in records if r.get("domain_pack_id") in governed]
+        records = [r for r in records if get_model_pack_id(r) in governed]
     elif has_esc_capability:
         allowed_modules = {
             mod_id for mod_id in (user_data.get("domain_roles") or {})
             if _has_escalation_capability(user_data, mod_id, domain_registry)
         }
-        records = [r for r in records if r.get("domain_pack_id") in allowed_modules]
+        records = [r for r in records if get_model_pack_id(r) in allowed_modules]
         # Teacher scoping: only show escalations targeted at this teacher
         # or unassigned (target_id is None/empty).
         caller_id = user_data["sub"]
@@ -170,7 +172,7 @@ async def _enrich_escalation_records(
         enriched_rec["reason"] = reason
         enriched_rec["evidence"] = evidence
         enriched_rec["student_username"] = student_username
-        enriched_rec["active_module"] = r.get("domain_pack_id", "")
+        enriched_rec["active_module"] = get_model_pack_id(r)
         enriched.append(enriched_rec)
 
     return enriched
@@ -211,7 +213,7 @@ async def get_escalation_detail(
     if target is None:
         return {"__status": 404, "detail": "Escalation not found"}
 
-    module_id = target.get("domain_pack_id", "")
+    module_id = get_model_pack_id(target)
 
     if user_data["role"] == "admin":
         if not can_govern_domain(user_data, module_id, registry=domain_registry):
@@ -319,7 +321,7 @@ async def resolve_escalation(
     if target is None:
         return {"__status": 404, "detail": "Escalation not found"}
 
-    module_id = target.get("domain_pack_id", "")
+    module_id = get_model_pack_id(target)
 
     if _role == "admin":
         if not can_govern_domain(user_data, module_id, registry=domain_registry):

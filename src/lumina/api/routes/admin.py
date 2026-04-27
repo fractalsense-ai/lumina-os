@@ -410,7 +410,7 @@ def _stage_command(
         "target_meta_authority_id": "root",
         "trigger": f"hitl_command_pending: {operation}",
         "trigger_type": "other",
-        "domain_pack_id": (
+        "model_pack_id": (
             ((parsed_command.get("params") or {}).get("governed_modules") or [None])[0]
             if isinstance((parsed_command.get("params") or {}).get("governed_modules"), list)
             else (parsed_command.get("params") or {}).get("governed_modules")

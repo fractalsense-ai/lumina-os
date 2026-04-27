@@ -50,6 +50,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+MODEL_PACK_ACTIVATION = "model_pack_activation"
+MODEL_PACK_ROLLBACK = "model_pack_rollback"
+
 if hasattr(sys.stdout, "reconfigure"):
     # Avoid Windows cp1252 encoding failures for unicode status symbols.
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -274,7 +277,7 @@ def cmd_commit(args: argparse.Namespace) -> int:
     else:
         prev_hash = "genesis"
 
-    commitment_type = args.commitment_type or "domain_pack_activation"
+    commitment_type = args.commitment_type or MODEL_PACK_ACTIVATION
     record = build_commitment_record(
         subject_path=subject_path,
         actor_id=actor_id,
@@ -312,14 +315,14 @@ def cmd_rollback(args: argparse.Namespace) -> int:
     prior_activation = None
     for r in reversed(records):
         if (r.get("record_type") == "CommitmentRecord"
-                and r.get("commitment_type") == "domain_pack_activation"
+            and r.get("commitment_type") == MODEL_PACK_ACTIVATION
                 and r.get("subject_id") == subject_id):
             prior_activation = r
             break
 
     # Interactive confirmation
     print("─" * 60)
-    print("DOMAIN PACK ROLLBACK")
+    print("MODEL-PACK ROLLBACK")
     print("─" * 60)
     print(f"  Subject:     {subject_id}")
     print(f"  Version:     {subject_version}")
@@ -331,7 +334,7 @@ def cmd_rollback(args: argparse.Namespace) -> int:
     else:
         print("  Prior commit: (none found)")
     print("─" * 60)
-    print("This will append a domain_pack_rollback CommitmentRecord to the System Logs.")
+    print("This will append a model_pack_rollback CommitmentRecord to the System Logs.")
 
     confirmation = input("Type 'ROLLBACK' to confirm: ")
     if confirmation.strip() != "ROLLBACK":
@@ -347,7 +350,7 @@ def cmd_rollback(args: argparse.Namespace) -> int:
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "actor_id": actor_id,
         "actor_role": "admin",
-        "commitment_type": "domain_pack_rollback",
+        "commitment_type": MODEL_PACK_ROLLBACK,
         "subject_id": subject_id,
         "subject_version": subject_version,
         "subject_hash": subject_hash,
@@ -475,8 +478,8 @@ def main() -> None:
     parser.add_argument(
         "--commitment-type",
         metavar="TYPE",
-        default="domain_pack_activation",
-        help="CommitmentRecord type (default: domain_pack_activation).",
+        default=MODEL_PACK_ACTIVATION,
+        help="CommitmentRecord type (default: model_pack_activation).",
     )
     parser.add_argument("--summary", metavar="TEXT", help="Human-readable summary (for --commit).")
     parser.add_argument("--reason", metavar="TEXT", help="Reason for rollback (for --rollback).")

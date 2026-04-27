@@ -125,8 +125,8 @@ class TestProcessingTimingCapture:
         mock_orch.process_turn.return_value = (
             {
                 "prompt_type": "task_complete",
-                "domain_pack_id": "edu",
-                "domain_pack_version": "1",
+                "model_pack_id": "edu",
+                "model_pack_version": "1",
                 "task_id": "t1",
                 "task_nominal_difficulty": 0.2,
                 "skills_targeted": [],
@@ -235,8 +235,8 @@ class TestProcessingTimingCapture:
         session["orchestrator"].process_turn.return_value = (
             {
                 "prompt_type": "task_presentation",
-                "domain_pack_id": "edu",
-                "domain_pack_version": "1",
+                "model_pack_id": "edu",
+                "model_pack_version": "1",
                 "task_id": "t1",
                 "task_nominal_difficulty": 0.2,
                 "skills_targeted": [],
@@ -358,8 +358,8 @@ class TestTaskCompletePayloadSeparation:
         mock_orch.process_turn.return_value = (
             {
                 "prompt_type": "task_complete",
-                "domain_pack_id": "edu",
-                "domain_pack_version": "1",
+                "model_pack_id": "edu",
+                "model_pack_version": "1",
                 "task_id": "t1",
                 "task_nominal_difficulty": 0.5,
                 "skills_targeted": [],

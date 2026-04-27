@@ -55,8 +55,8 @@ magic_circle_accepted: true
 consent_timestamp_utc: "2026-03-05T10:00:00Z"
 consent_version: "1.0.0"
 guardian_consent: false  # or true if applicable
-domain_pack_id: "domain/org/algebra-level-1/v1"
-domain_pack_version: "0.2.0"
+model_pack_id: "domain/org/algebra-level-1/v1"
+model_pack_version: "0.2.0"
 ```
 
 The consent record is stored in the entity profile and referenced in the session-open `CommitmentRecord` in the System Logs.

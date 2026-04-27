@@ -102,7 +102,6 @@ export function SessionPanel({
                   <Lock
                     size={14}
                     className="flex-shrink-0 text-muted-foreground"
-                    title="Learning module — deletion requires teacher approval"
                   />
                 ) : (
                   <Button

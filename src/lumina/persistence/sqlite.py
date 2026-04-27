@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from lumina.core.pack_identity import get_model_pack_id
 from lumina.persistence.adapter import PersistenceAdapter
 from lumina.core.yaml_loader import load_yaml
 from lumina.persistence.filesystem import _dump_yaml
@@ -856,7 +857,7 @@ class SQLitePersistenceAdapter(PersistenceAdapter):
         if status:
             records = [r for r in records if r.get("status") == status]
         if domain_id:
-            records = [r for r in records if r.get("domain_pack_id") == domain_id]
+            records = [r for r in records if get_model_pack_id(r) == domain_id]
         return records[offset : offset + limit]
 
     def query_commitments(self, subject_id: str) -> list[dict[str, Any]]:

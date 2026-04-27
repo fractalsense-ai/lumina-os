@@ -112,7 +112,7 @@ def _make_esc_record(
     record_id: str = "esc-test-001",
     session_id: str = "session-abc",
     actor_id: str = "student-123",
-    domain_pack_id: str = "education",
+    model_pack_id: str = "education",
 ) -> dict[str, Any]:
     return {
         "record_type": "EscalationRecord",
@@ -122,7 +122,7 @@ def _make_esc_record(
         "actor_role": "subject",
         "status": "open",
         "trigger": "frustration_threshold",
-        "domain_pack_id": domain_pack_id,
+        "model_pack_id": model_pack_id,
         "target_role": "admin",
     }
 

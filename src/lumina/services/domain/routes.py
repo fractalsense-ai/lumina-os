@@ -16,6 +16,7 @@ from lumina.api.middleware import _bearer_scheme, get_current_user, require_auth
 from lumina.api.models import DomainCommitRequest, DomainPhysicsUpdateRequest, SessionResumeRequest
 from lumina.api.session import _close_session, _persist_session_container, _session_containers
 from lumina.core.domain_registry import DomainNotFoundError
+from lumina.core.pack_identity import MODEL_PACK_ACTIVATION
 from lumina.system_log.admin_operations import (
     _canonical_sha256 as admin_canonical_sha256,
     build_commitment_record,
@@ -59,9 +60,9 @@ async def domain_pack_commit(
     record = build_commitment_record(
         actor_id=req.actor_id or user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
-        commitment_type="domain_pack_activation",
+        commitment_type=MODEL_PACK_ACTIVATION,
         subject_id=subject_id,
-        summary=req.summary or f"Domain pack activation: {resolved}",
+        summary=req.summary or f"Model-pack activation: {resolved}",
         subject_version=subject_version,
         subject_hash=subject_hash,
     )
@@ -75,7 +76,7 @@ async def domain_pack_commit(
         "record_id": record["record_id"],
         "subject_hash": subject_hash,
         "subject_version": subject_version,
-        "commitment_type": "domain_pack_activation",
+        "commitment_type": MODEL_PACK_ACTIVATION,
     }
 
 
@@ -149,7 +150,7 @@ async def update_domain_physics(
     record = build_commitment_record(
         actor_id=user_data["sub"],
         actor_role=map_role_to_actor_role(user_data["role"]),
-        commitment_type="domain_pack_activation",
+        commitment_type=MODEL_PACK_ACTIVATION,
         subject_id=subject_id,
         summary=req.summary,
         subject_version=str(domain.get("version", "")),

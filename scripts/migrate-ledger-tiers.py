@@ -63,7 +63,10 @@ _SYSTEM_EVENT_TYPES = frozenset({
 
 # Events / commit types that belong to the domain tier.
 _DOMAIN_COMMITMENT_TYPES = frozenset({
+    "model_pack_activation",
+    "model_pack_rollback",
     "domain_pack_activation",
+    "domain_pack_rollback",
     "domain_role_assignment",
     "domain_role_revocation",
 })
@@ -80,7 +83,7 @@ def _classify(record: dict) -> tuple[str, str | None]:
     etype = record.get("event_type", record.get("event", ""))
 
     # ── Explicit domain_id on the record ─────────────────────
-    domain_id = record.get("domain_id") or record.get("domain_pack_id")
+    domain_id = record.get("domain_id") or record.get("model_pack_id") or record.get("domain_pack_id")
 
     # ── System tier ──────────────────────────────────────────
     if ctype in _SYSTEM_COMMITMENT_TYPES:

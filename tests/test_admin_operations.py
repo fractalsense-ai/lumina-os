@@ -106,7 +106,7 @@ def test_build_commitment_record_minimal() -> None:
     rec = build_commitment_record(
         actor_id="actor-001",
         actor_role="admin",
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         subject_id="education/algebra-v1",
         summary="Activated algebra module",
     )
@@ -127,7 +127,7 @@ def test_build_commitment_record_all_optional_fields() -> None:
     rec = build_commitment_record(
         actor_id="actor-001",
         actor_role="admin",
-        commitment_type="domain_pack_rollback",
+        commitment_type="model_pack_rollback",
         subject_id="education/algebra-v1",
         summary="Rolled back due to defect",
         subject_version="2.1.0",
@@ -153,7 +153,7 @@ def test_build_commitment_record_subject_version_only() -> None:
     rec = build_commitment_record(
         actor_id="actor-001",
         actor_role="admin",
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         subject_id="edu/alg",
         summary="Activated",
         subject_version="1.0.0",
@@ -168,7 +168,7 @@ def test_build_commitment_record_subject_hash_only() -> None:
     rec = build_commitment_record(
         actor_id="actor-001",
         actor_role="admin",
-        commitment_type="domain_pack_activation",
+        commitment_type="model_pack_activation",
         subject_id="edu/alg",
         summary="Activated",
         subject_hash="abc123",

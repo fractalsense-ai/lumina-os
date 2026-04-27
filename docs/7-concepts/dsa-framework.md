@@ -184,7 +184,7 @@ One turn of a D.S.A. session:
 
 Provenance hash lineage fields recorded in System Log metadata (when applicable):
 - Runtime policy/prompt hashes: `domain_physics_hash`, `global_prompt_hash`, `domain_prompt_hash`, `turn_interpretation_prompt_hash`, `system_prompt_hash`
-- Runtime policy identity: `domain_pack_id`, `domain_pack_version`
+- Runtime policy identity: `model_pack_id`, `model_pack_version`
 - Turn/prompt hashes: `turn_data_hash`, `prompt_contract_hash`
 - Post-payload hashes: `tool_results_hash`, `llm_payload_hash`, `response_hash`
 
