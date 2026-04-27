@@ -65,11 +65,11 @@ A `admin` can only list modules for domains they govern.
     "modules": [
       {
         "module_id": "domain/edu/pre-algebra/v1",
-        "domain_physics_path": "domain-packs/education/modules/pre-algebra/domain-physics.json"
+        "domain_physics_path": "model-packs/education/modules/pre-algebra/domain-physics.json"
       },
       {
         "module_id": "domain/edu/algebra-intro/v1",
-        "domain_physics_path": "domain-packs/education/modules/algebra-intro/domain-physics.json"
+        "domain_physics_path": "model-packs/education/modules/algebra-intro/domain-physics.json"
       }
     ],
     "count": 4

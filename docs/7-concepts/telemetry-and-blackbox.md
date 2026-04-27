@@ -131,7 +131,7 @@ Triggers are checked in two places:
 
 ## CONFIGURATION
 
-In `domain-packs/system/cfg/runtime-config.yaml`:
+In `model-packs/system/cfg/runtime-config.yaml`:
 
 ```yaml
 daemon:

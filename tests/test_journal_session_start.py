@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-# ── sys.path setup (domain-packs is hyphenated → not a Python package) ──
+# ── sys.path setup (model-packs is hyphenated → not a Python package) ──
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_CTRL_DIR = _REPO_ROOT / "domain-packs" / "education" / "controllers"
+_CTRL_DIR = _REPO_ROOT / "model-packs" / "education" / "controllers"
 if str(_CTRL_DIR) not in sys.path:
     sys.path.insert(0, str(_CTRL_DIR))
 

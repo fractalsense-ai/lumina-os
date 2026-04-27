@@ -3,7 +3,7 @@
 Centralises the importlib.util.spec_from_file_location() pattern used by
 compatibility shims in lumina.systools, lumina.lib, and lumina.tools.  These
 shims re-export public APIs from the canonical copies that now live under
-domain-packs/system/.
+model-packs/system/.
 
 This module is not part of the public API.
 """
@@ -23,7 +23,7 @@ def load_domain_pack_module(rel_path: str, module_key: str | None = None):
     ----------
     rel_path:
         Path relative to the repository root, e.g.
-        ``"domain-packs/system/domain-lib/sensors/hw_disk.py"``.
+        ``"model-packs/system/domain-lib/sensors/hw_disk.py"``.
     module_key:
         Key to register in ``sys.modules``.  Defaults to a mangled version
         of *rel_path* to avoid collisions with regular package imports.

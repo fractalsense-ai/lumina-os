@@ -138,4 +138,4 @@ for the complete daemon architecture.
 - `src/lumina/daemon/resource_monitor.py` — Resource Monitor Daemon (load-based dispatch)
 - `src/lumina/daemon/task_adapter.py` — Preemptible task execution bridge
 - `src/web/components/dashboard/DashboardPage.tsx` — Dashboard UI (daemon tab)
-- `domain-packs/system/cfg/runtime-config.yaml` — Daemon configuration
+- `model-packs/system/cfg/runtime-config.yaml` — Daemon configuration

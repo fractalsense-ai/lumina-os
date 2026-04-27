@@ -66,4 +66,4 @@ do not set the field are unaffected).
 
 ## Domain examples
 
-- **Education:** ZPD drift window, vocabulary growth baseline — see [`domain-packs/education/docs/7-concepts/baseline-before-escalation.md`](../../domain-packs/education/docs/7-concepts/baseline-before-escalation.md)
+- **Education:** ZPD drift window, vocabulary growth baseline — see [`model-packs/education/docs/7-concepts/baseline-before-escalation.md`](../../model-packs/education/docs/7-concepts/baseline-before-escalation.md)

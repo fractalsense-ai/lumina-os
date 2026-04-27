@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_EDU_CONTROLLERS = _REPO_ROOT / "domain-packs" / "education" / "controllers"
+_EDU_CONTROLLERS = _REPO_ROOT / "model-packs" / "education" / "controllers"
 
 
 def _load_post_turn():
@@ -75,8 +75,8 @@ class TestRagModuleScoping:
     def test_without_module_key_all_hits_returned(self):
         """When module_key is None, no filtering should be applied."""
         hits = [
-            _FakeHit("domain-packs/education/modules/algebra-level-1/domain-physics.json"),
-            _FakeHit("domain-packs/education/modules/pre-algebra/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/algebra-level-1/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/pre-algebra/domain-physics.json"),
         ]
         td = self._call_enrich(hits, module_key=None)
         assert len(td.get("_rag_context", [])) == 2
@@ -84,21 +84,21 @@ class TestRagModuleScoping:
     def test_sibling_module_chunks_filtered(self):
         """Chunks from /modules/<other>/ must not appear in results."""
         hits = [
-            _FakeHit("domain-packs/education/modules/algebra-level-1/domain-physics.json"),
-            _FakeHit("domain-packs/education/modules/pre-algebra/domain-physics.json"),
-            _FakeHit("domain-packs/education/docs/README.md"),
+            _FakeHit("model-packs/education/modules/algebra-level-1/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/pre-algebra/domain-physics.json"),
+            _FakeHit("model-packs/education/docs/README.md"),
         ]
         td = self._call_enrich(hits, module_key="pre-algebra")
         sources = [r["source"] for r in td["_rag_context"]]
-        assert "domain-packs/education/modules/algebra-level-1/domain-physics.json" not in sources
-        assert "domain-packs/education/modules/pre-algebra/domain-physics.json" in sources
-        assert "domain-packs/education/docs/README.md" in sources
+        assert "model-packs/education/modules/algebra-level-1/domain-physics.json" not in sources
+        assert "model-packs/education/modules/pre-algebra/domain-physics.json" in sources
+        assert "model-packs/education/docs/README.md" in sources
 
     def test_domain_level_docs_always_pass_through(self):
         """Chunks NOT under /modules/ are domain-level and always included."""
         hits = [
-            _FakeHit("domain-packs/education/cfg/runtime-config.yaml"),
-            _FakeHit("domain-packs/education/docs/7-concepts/student-commons.md"),
+            _FakeHit("model-packs/education/cfg/runtime-config.yaml"),
+            _FakeHit("model-packs/education/docs/7-concepts/student-commons.md"),
         ]
         td = self._call_enrich(hits, module_key="pre-algebra")
         assert len(td["_rag_context"]) == 2
@@ -106,13 +106,13 @@ class TestRagModuleScoping:
     def test_only_active_module_chunks_survive(self):
         """All chunks from sibling modules are removed; active module kept."""
         hits = [
-            _FakeHit("domain-packs/education/modules/algebra-1/domain-physics.json"),
-            _FakeHit("domain-packs/education/modules/algebra-intro/domain-physics.json"),
-            _FakeHit("domain-packs/education/modules/pre-algebra/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/algebra-1/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/algebra-intro/domain-physics.json"),
+            _FakeHit("model-packs/education/modules/pre-algebra/domain-physics.json"),
         ]
         td = self._call_enrich(hits, module_key="pre-algebra")
         sources = [r["source"] for r in td["_rag_context"]]
-        assert sources == ["domain-packs/education/modules/pre-algebra/domain-physics.json"]
+        assert sources == ["model-packs/education/modules/pre-algebra/domain-physics.json"]
 
     def test_processing_passes_module_key(self):
         """processing.py must pass session module_key to enrich_turn_data."""

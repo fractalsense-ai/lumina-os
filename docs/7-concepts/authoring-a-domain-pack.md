@@ -8,14 +8,14 @@ tags: [domain-pack, authoring, template, tutorial]
 
 # Authoring a Domain Pack
 
-A domain pack is a self-contained directory under `domain-packs/` that
+A domain pack is a self-contained directory under `model-packs/` that
 teaches Lumina how to operate in a specific knowledge domain.  Domain
 packs are the primary extension mechanism — they define the rules
 (invariants), automated responses (standing orders), escalation policy,
 entity profiles, and runtime adapters that shape every conversation.
 
 This guide walks you through creating a new domain pack from the
-`domain-packs/template/` scaffold.
+`model-packs/template/` scaffold.
 
 ---
 
@@ -31,7 +31,7 @@ This guide walks you through creating a new domain pack from the
 ## Step 1: Copy the Template
 
 ```bash
-cp -r domain-packs/template domain-packs/my-domain
+cp -r model-packs/template model-packs/my-domain
 ```
 
 Then do a global find-and-replace:
@@ -123,7 +123,7 @@ The runtime loads `.json`, not `.yaml`.  After editing, convert:
 python -c "import yaml, json, sys; \
   json.dump(yaml.safe_load(open(sys.argv[1])), \
   open(sys.argv[1].replace('.yaml','.json'),'w'), indent=2)" \
-  domain-packs/my-domain/modules/my-module/domain-physics.yaml
+  model-packs/my-domain/modules/my-module/domain-physics.yaml
 ```
 
 Validate against the schema:
@@ -199,13 +199,13 @@ Each module gets an entry in `module_map` with a fully-qualified ID:
 ```yaml
 module_map:
   domain/mydom/my-module/v1:
-    domain_physics_path: domain-packs/my-domain/modules/my-module/domain-physics.json
+    domain_physics_path: model-packs/my-domain/modules/my-module/domain-physics.json
     initial_module_state:
       score: 0.0
     adapters:
       # Override the default adapters for this specific module:
       domain_step:
-        module_path: domain-packs/my-domain/controllers/custom_adapters.py
+        module_path: model-packs/my-domain/controllers/custom_adapters.py
         callable: custom_domain_step
 ```
 

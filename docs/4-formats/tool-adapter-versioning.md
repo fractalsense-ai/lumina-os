@@ -30,7 +30,7 @@ the tool. The `version` field in the adapter YAML is a semantic version string a
 primary versioning identifier for that adapter.
 
 Tool adapter YAMLs are **not** indexed in `docs/MANIFEST.yaml`. Each domain pack maintains its
-own `MANIFEST.yaml` at the pack root (e.g., `domain-packs/education/MANIFEST.yaml`) that indexes
+own `MANIFEST.yaml` at the pack root (e.g., `model-packs/education/MANIFEST.yaml`) that indexes
 the pack's adapters and domain-library modules.
 
 ---

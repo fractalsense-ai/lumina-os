@@ -12,7 +12,7 @@ def watchdog():
 
 threading.Thread(target=watchdog, daemon=True).start()
 
-os.environ["LUMINA_RUNTIME_CONFIG_PATH"] = "domain-packs/education/cfg/runtime-config.yaml"
+os.environ["LUMINA_RUNTIME_CONFIG_PATH"] = "model-packs/education/cfg/runtime-config.yaml"
 os.environ.pop("LUMINA_DOMAIN_REGISTRY_PATH", None)
 
 import lumina.api.server as srv

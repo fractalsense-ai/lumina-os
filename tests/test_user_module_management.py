@@ -27,7 +27,7 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Load adapters via importlib ───────────────────────────────
-_GOV_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "governance_adapters.py"
+_GOV_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "governance_adapters.py"
 _gov_spec = importlib.util.spec_from_file_location("gov_adapters_umm", str(_GOV_PATH))
 _gov_mod = importlib.util.module_from_spec(_gov_spec)  # type: ignore[arg-type]
 sys.modules["gov_adapters_umm"] = _gov_mod
@@ -36,7 +36,7 @@ _gov_spec.loader.exec_module(_gov_mod)  # type: ignore[union-attr]
 _edu_maybe_promote = _gov_mod._maybe_promote_query_type
 _edu_fallback = _gov_mod._deterministic_command_fallback
 
-_SYS_PATH = _REPO_ROOT / "domain-packs" / "system" / "controllers" / "runtime_adapters.py"
+_SYS_PATH = _REPO_ROOT / "model-packs" / "system" / "controllers" / "runtime_adapters.py"
 _sys_spec = importlib.util.spec_from_file_location("sys_adapters_umm", str(_SYS_PATH))
 _sys_mod = importlib.util.module_from_spec(_sys_spec)  # type: ignore[arg-type]
 sys.modules["sys_adapters_umm"] = _sys_mod
@@ -61,7 +61,7 @@ def _mock_cfg() -> MagicMock:
     cfg.DOMAIN_REGISTRY.list_modules_for_domain.return_value = [
         {"module_id": "edu-core", "domain_id": "education"},
     ]
-    cfg.DOMAIN_REGISTRY.list_domains.return_value = [{"domain_id": "education", "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml"}]
+    cfg.DOMAIN_REGISTRY.list_domains.return_value = [{"domain_id": "education", "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml"}]
     return cfg
 
 

@@ -1,0 +1,408 @@
+# version: 1.0.0
+# last_updated: 2026-04-04
+runtime:
+  global_system_prompt_path: docs/5-standards/global-system-prompt.md
+  domain_system_prompt_path: model-packs/education/prompts/domain-persona-v1.md
+  turn_interpretation_prompt_path: model-packs/education/domain-lib/reference/turn-interpretation-spec-v1.md
+
+  domain_physics_path: model-packs/education/modules/general-education/domain-physics.json
+  domain_level_physics_path: model-packs/education/domain-physics.json
+  subject_profile_path: model-packs/education/profiles/student.yaml
+
+  # ── Hierarchical profile templates (Base → Domain → Role) ──
+  base_profile_path: model-packs/system/cfg/base-entity-profile.yaml
+  domain_profile_extension_path: model-packs/education/cfg/domain-profile-extension.yaml
+  profile_templates:
+    default: model-packs/education/profiles/student.yaml
+    domain_authority: model-packs/education/profiles/domain_authority.yaml
+    teacher: model-packs/education/profiles/teacher.yaml
+    teaching_assistant: model-packs/education/profiles/teaching_assistant.yaml
+    student: model-packs/education/profiles/student.yaml
+    parent: model-packs/education/profiles/parent.yaml
+
+  # Module routing: maps a student profile's domain_id to the correct domain-physics file.
+  # The static domain_physics_path above is the default fallback for sessions without a domain_id.
+
+  # SLM weight overrides: reclassify prompt types for the education domain.
+  # Turn interpretation defaults to LOW (SLM-preferred).  Set to "high" to
+  # force LLM if SLM quality is insufficient for nuanced student parsing.
+  slm_weight_overrides:
+    turn_interpretation: low
+
+  # ── Module Map ───────────────────────────────────────────────────────
+  # Thin registry — full config lives in each module's module-config.yaml.
+  # The runtime loader auto-discovers and merges the sidecar file;
+  # any keys set inline here take precedence over the sidecar.
+  module_map:
+    domain/edu/general-education/v1:
+      module_path: model-packs/education/modules/general-education
+    domain/edu/pre-algebra/v1:
+      module_path: model-packs/education/modules/pre-algebra
+    domain/edu/algebra-intro/v1:
+      module_path: model-packs/education/modules/algebra-intro
+    domain/edu/algebra-1/v1:
+      module_path: model-packs/education/modules/algebra-1
+    domain/edu/algebra-level-1/v1:
+      module_path: model-packs/education/modules/algebra-level-1
+    domain/edu/domain-authority/v1:
+      module_path: model-packs/education/modules/domain-authority
+    domain/edu/teacher/v1:
+      module_path: model-packs/education/modules/teacher
+    domain/edu/teaching-assistant/v1:
+      module_path: model-packs/education/modules/teaching-assistant
+    domain/edu/guardian/v1:
+      module_path: model-packs/education/modules/guardian
+
+  # Role-to-default-module routing: maps domain roles to their default module.
+  role_to_default_module:
+    domain_authority: domain/edu/domain-authority/v1
+    teacher: domain/edu/teacher/v1
+    teaching_assistant: domain/edu/teaching-assistant/v1
+    student: domain/edu/general-education/v1
+    parent: domain/edu/guardian/v1
+
+  domain_roles:
+    domain_authority: { tier: admin,          label: "Education Domain Lead" }
+    teacher:          { tier: operator,        label: "Teacher",               may_assign: [student, parent] }
+    teaching_assistant: { tier: half_operator, label: "Teaching Assistant" }
+    student:          { tier: user,            label: "Student" }
+    parent:           { tier: half_operator,   label: "Guardian/Parent" }
+    observer:         { tier: guest,           label: "Observer" }
+
+  access_control:
+    required_role: user
+    min_tier: guest
+
+  additional_specs:
+    - model-packs/education/world-sim/magic-circle-consent-v1.md
+    - model-packs/education/world-sim/world-sim-spec-v1.md
+    - model-packs/education/world-sim/artifact-and-mastery-spec-v1.md
+    - model-packs/education/world-sim/mud-world-builder-spec-v1.md
+
+
+  pre_turn_checks:
+    -
+      id: consent_boundary
+      enabled: true
+      description: "Require valid consent record before session proceeds; enforces Principle 8"
+      on_failure: escalate
+
+  turn_input_defaults:
+    correctness: partial
+    hint_used: false
+    response_latency_sec: 10.0
+    frustration_marker_count: 0
+    repeated_error: false
+    off_task_ratio: 0.0
+    step_count: 0
+    problem_solved: false
+
+  turn_input_schema:
+    correctness:
+      type: enum
+      values:
+        - correct
+        - incorrect
+        - partial
+      default: partial
+    hint_used:
+      type: bool
+      default: false
+    response_latency_sec:
+      type: float
+      minimum: 0.0
+      default: 10.0
+    frustration_marker_count:
+      type: int
+      minimum: 0
+      default: 0
+    repeated_error:
+      type: bool
+      default: false
+    off_task_ratio:
+      type: float
+      minimum: 0.0
+      maximum: 1.0
+      default: 0.0
+    step_count:
+      type: int
+      minimum: 0
+      default: 0
+    problem_solved:
+      type: bool
+      default: false
+
+  action_prompt_type_map:
+    request_more_steps: more_steps_request
+    request_verification_retry: verification_request
+    request_method_justification: method_justification_request
+    trigger_targeted_hint: hint
+    inject_domain_rule: inject_domain_rule
+    advance_tier: task_presentation
+    definition_lookup: definition_lookup
+    task_complete: task_complete
+    # Governance role action mappings
+    governance_command: governance_command
+    governance_status: governance_status
+    governance_progress: governance_progress
+    governance_management: governance_management
+    governance_escalation: governance_escalation
+    governance_general: governance_general
+
+  deterministic_templates:
+    hint: "Let's take one small step on {task_id}. Show the next equivalence-preserving move."
+    more_steps_request: "Please show your work step-by-step for {task_id} and keep each operation balanced."
+    verification_request: "Almost there! Please substitute your answer back into the original equation for {task_id} to verify it is correct."
+    scaffold: "Let's break {task_id} into smaller steps and do one move at a time."
+    zpd_scaffold: "Let's simplify this and do one clear step for {task_id}."
+    pause_or_break: "Let's pause briefly. When ready, we will continue with one smaller step."
+    definition_lookup: "{term}: {definition} Example: {example_in_context}"
+    zpd_intervene_or_escalate: "Let's pause and reset. We can continue with a smaller step once you're ready."
+    method_justification_request: "You used a non-standard method on {task_id}. Can you explain why your approach works?"
+    task_complete: "Correct! Now solve: {task_id}. Show each step."
+    default: "Continue with {task_id}. Share your next step and we will verify it together."
+    # Governance role templates
+    governance_command: "Processing your administrative request."
+    governance_status: "Here is the current status for your domain."
+    governance_progress: "Here is the progress overview for your domain."
+    governance_management: "Processing your module management request."
+    governance_escalation: "Here are the current escalations requiring attention."
+    governance_general: "How can I assist you with domain governance today?"
+
+  deterministic_templates_mud:
+    hint: "{guide_npc}: A {obstacle_theme} blocks the path in {zone}, {protagonist}. Take one small step on {task_id} to continue."
+    scaffold: "{guide_npc}: Let us break this {obstacle_theme} into smaller pieces, {protagonist}. One move at a time in {zone}."
+    zpd_scaffold: "{guide_npc}: This {obstacle_theme} is tricky, {protagonist}. Let us simplify and do one clear step for {task_id}."
+    verification_request: "{guide_npc}: Hold, {protagonist}! Before the {obstacle_theme} in {zone} falls, substitute your answer back into the original equation for {task_id} to prove it."
+    task_complete: "{guide_npc}: Well done, {protagonist}! The {obstacle_theme} in {zone} is defeated. Now face the next challenge: {task_id}."
+    task_presentation: "{guide_npc}: Welcome to {zone}, {protagonist}. A new {obstacle_theme} stands between you and the {macguffin}. Solve {task_id} to proceed."
+    default: "{guide_npc}: The {obstacle_theme} awaits in {zone}, {protagonist}. Continue with {task_id} to reach the {macguffin}."
+
+  tool_call_policies:
+    request_verification_retry:
+      -
+        tool_id: algebra_parser
+        payload:
+          call_type: "verify_solution_substitution"
+          equation: "{task_spec.current_problem.equation}"
+          target_variable: "{task_spec.current_problem.target_variable}"
+          expected_answer: "{task_spec.current_problem.expected_answer}"
+    tool_request:
+      -
+        tool_id: calculator
+        payload:
+          expression: "{turn_data.tool_expression}"
+
+# ── Domain Operation Handlers ─────────────────────────────────────────
+# Operations registered here are dispatched by the admin command pipeline
+# before the system elif chain.  Each entry maps an operation name to a
+# handler callable, plus HITL and min-role metadata.
+# See docs/7-concepts/command-execution-pipeline.md
+operation_handlers:
+  request_module_assignment:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: false
+    min_role: user
+  assign_student:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  remove_student:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  request_teacher_assignment:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  request_ta_assignment:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_module:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_modules:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  remove_module:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  switch_active_module:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_ta:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+  assign_guardian:
+    module_path: model-packs/education/controllers/education_operations.py
+    callable: handle_operation
+    hitl_exempt: true
+    min_role: user
+
+adapters:
+  state_builder:
+    module_path: model-packs/education/controllers/learning_adapters.py
+    callable: build_initial_learning_state
+  domain_step:
+    module_path: model-packs/education/controllers/learning_adapters.py
+    callable: domain_step
+  turn_interpreter:
+    module_path: model-packs/education/controllers/learning_adapters.py
+    callable: interpret_turn_input
+  nlp_pre_interpreter:
+    module_path: model-packs/education/controllers/nlp_pre_interpreter.py
+    callable: nlp_preprocess
+  pre_turn_resume:
+    module_path: model-packs/education/controllers/education_pre_turn_resume.py
+    callable: education_pre_turn_resume
+  post_turn_processor:
+    module_path: model-packs/education/controllers/education_post_turn.py
+    callable: education_post_turn
+  post_turn_timer:
+    module_path: model-packs/education/controllers/education_post_turn.py
+    callable: education_reset_timer
+  profile_serializer:
+    module_path: model-packs/education/controllers/education_profile_serializer.py
+    callable: education_serialize_profile
+  turn_0_presenter:
+    module_path: model-packs/education/controllers/education_turn0.py
+    callable: education_turn0_check
+  escalation_context:
+    module_path: model-packs/education/controllers/education_escalation_context.py
+    callable: education_escalation_context
+  slm_normalizer:
+    module_path: model-packs/education/controllers/slm_normalizer.py
+    callable: normalize_slm_command
+  task_initializer:
+    module_path: model-packs/education/controllers/problem_generator.py
+    callable: initialize_task
+  tools:
+    calculator:
+      module_path: model-packs/education/controllers/tool_adapters.py
+      callable: calculator_tool
+    substitution_checker:
+      module_path: model-packs/education/controllers/tool_adapters.py
+      callable: substitution_checker_tool
+    algebra_parser:
+      module_path: model-packs/education/controllers/algebra_tools.py
+      callable: algebra_parser_tool
+    generate_problem:
+      module_path: model-packs/education/controllers/problem_generator.py
+      callable: generate_problem
+    extract_physics_patch:
+      module_path: model-packs/education/controllers/governance_adapters.py
+      callable: extract_physics_patch
+    detect_novel_synthesis:
+      module_path: model-packs/education/controllers/governance_adapters.py
+      callable: detect_novel_synthesis
+  api_routes:
+    post_vocabulary_metric:
+      path: /api/user/{user_id}/vocabulary-metric
+      method: POST
+      module_path: model-packs/education/controllers/api_handlers.py
+      callable: post_vocabulary_metric
+      roles: []
+      request_body:
+        vocabulary_complexity_score: {type: float, ge: 0.0, le: 1.0, required: true}
+        lexical_diversity: {type: float, ge: 0.0, le: 1.0}
+        avg_word_length: {type: float, ge: 0.0}
+        embedding_spread: {type: float, ge: 0.0}
+        domain_terms_detected: {type: list}
+        buffer_turns: {type: int, ge: 0}
+        measurement_valid: {type: bool}
+    dashboard_vocabulary_growth:
+      path: /api/dashboard/education/vocabulary-growth
+      method: GET
+      module_path: model-packs/education/controllers/api_handlers.py
+      callable: dashboard_vocabulary_growth
+      roles: [root, admin, teacher]
+    # ── Escalation management (domain-owned) ──────────────────
+    list_escalations:
+      path: /api/escalations
+      method: GET
+      module_path: model-packs/education/controllers/escalation_handlers.py
+      callable: list_escalations
+      roles: []
+    get_escalation_detail:
+      path: /api/escalations/{escalation_id}
+      method: GET
+      module_path: model-packs/education/controllers/escalation_handlers.py
+      callable: get_escalation_detail
+      roles: []
+    clear_stale_escalations:
+      path: /api/escalations/stale
+      method: DELETE
+      module_path: model-packs/education/controllers/escalation_handlers.py
+      callable: clear_stale_escalations
+      roles: []
+    resolve_escalation:
+      path: /api/escalations/{escalation_id}/resolve
+      method: POST
+      module_path: model-packs/education/controllers/escalation_handlers.py
+      callable: resolve_escalation
+      roles: []
+      request_body: {}
+      commit_guard: true
+    # ── Roster status dashboard (domain-owned) ──────────────────
+    roster_status:
+      path: /api/dashboard/education/roster-status
+      method: GET
+      module_path: model-packs/education/controllers/dashboard_handlers.py
+      callable: roster_status
+      roles: []
+    # ── Session unlock (domain-owned) ─────────────────────────
+    session_unlock:
+      path: /api/sessions/{session_id}/unlock
+      method: POST
+      module_path: model-packs/education/controllers/session_unlock_handlers.py
+      callable: unlock_session
+      roles: []
+      request_body:
+        pin: {type: str, required: true}
+    # ── Safe Person handshake (journal wellness) ──────────────
+    designate_safe_person:
+      path: /api/user/{user_id}/safe-person
+      method: POST
+      module_path: model-packs/education/controllers/ops/safe_person.py
+      callable: designate_safe_person
+      roles: [root, admin, teacher]
+      request_body:
+        safe_person_id: {type: str, required: true}
+    safe_person_acknowledge:
+      path: /api/safe-person/acknowledge
+      method: POST
+      module_path: model-packs/education/controllers/ops/safe_person.py
+      callable: safe_person_acknowledge
+      roles: []
+      request_body:
+        token: {type: str, required: true}
+    revoke_safe_person:
+      path: /api/user/{user_id}/safe-person
+      method: DELETE
+      module_path: model-packs/education/controllers/ops/safe_person.py
+      callable: revoke_safe_person
+      roles: [root, admin, teacher]
+  tools:
+    breathing_regulation:
+      module_path: model-packs/education/controllers/journal_adapters.py
+      callable: breathing_regulation_tool
+  action_prompt_type_map:
+    journal_tier1_breathing: journal_tier1_breathing
+    journal_tier2_opt_in_ask: journal_tier2_opt_in_ask
+    journal_tier3_safe_person_alert: journal_tier3_safe_person_alert

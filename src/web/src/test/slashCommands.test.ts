@@ -8,7 +8,7 @@ import {
 import { registerPlugin, _resetForTesting } from '@/plugins/PluginRegistry'
 import type { DomainPlugin } from '@/plugins/types'
 
-// Education plugin commands (mirroring domain-packs/education/web/plugin.ts)
+// Education plugin commands (mirroring model-packs/education/web/plugin.ts)
 const educationPlugin: DomainPlugin = {
   id: 'education-test',
   register(reg) {
@@ -86,7 +86,7 @@ const educationPlugin: DomainPlugin = {
   },
 }
 
-// System plugin role equivalences and commands (mirroring domain-packs/system/web/plugin.ts)
+// System plugin role equivalences and commands (mirroring model-packs/system/web/plugin.ts)
 const systemPlugin: DomainPlugin = {
   id: 'system-test',
   register(reg) {

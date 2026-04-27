@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DOMAIN_PACKS = REPO_ROOT / "domain-packs"
+DOMAIN_PACKS = REPO_ROOT / "model-packs"
 SYSTEM_PACK = DOMAIN_PACKS / "system"
 EDUCATION_PACK = DOMAIN_PACKS / "education"
 AGRICULTURE_PACK = DOMAIN_PACKS / "agriculture"

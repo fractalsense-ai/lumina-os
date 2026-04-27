@@ -33,7 +33,7 @@ log = logging.getLogger("lumina.persona-builder")
 
 # ── Universal Base Identity ───────────────────────────────────
 #
-# Source of truth: domain-packs/system/cfg/system-physics.yaml  »  universal_base_identity
+# Source of truth: model-packs/system/cfg/system-physics.yaml  »  universal_base_identity
 # Compiled render: docs/5-standards/global-system-prompt.md
 #
 # This string MUST precede every system prompt in the codebase.
@@ -188,7 +188,7 @@ def _load_prompt_file(rel_path: str, fallback: str) -> str:
 def _get_command_translator_directive() -> str:
     """Return the COMMAND_TRANSLATOR directive, loaded from file if available."""
     return _load_prompt_file(
-        "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md",
+        "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md",
         _COMMAND_TRANSLATOR_FALLBACK,
     )
 

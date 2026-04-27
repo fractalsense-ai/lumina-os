@@ -123,7 +123,7 @@ decomposition, governance panel components live in the **system** domain pack, n
 the framework `src/web/` directory:
 
 ```
-domain-packs/system/web/
+model-packs/system/web/
   plugin.ts                        — registers dashboard tabs and sidebar panels via PluginRegistry
   components/
     EscalationQueue.tsx            — Escalation list and resolution actions
@@ -161,13 +161,13 @@ A typical domain authority session:
 
 ## Source Files
 
-- `domain-packs/system/web/plugin.ts` — System domain plugin (registers dashboard tabs + sidebar panels)
-- `domain-packs/system/web/components/EscalationQueue.tsx` — Escalation management
-- `domain-packs/system/web/components/IngestionReview.tsx` — Ingestion review
-- `domain-packs/system/web/components/DaemonPanel.tsx` — Daemon panel
-- `domain-packs/system/web/components/StagedCommandsPanel.tsx` — Staged command management
-- `domain-packs/system/web/components/SystemLogPanel.tsx` — System log viewer
-- `domain-packs/system/web/components/DaemonMonitorPanel.tsx` — Daemon status monitor
+- `model-packs/system/web/plugin.ts` — System domain plugin (registers dashboard tabs + sidebar panels)
+- `model-packs/system/web/components/EscalationQueue.tsx` — Escalation management
+- `model-packs/system/web/components/IngestionReview.tsx` — Ingestion review
+- `model-packs/system/web/components/DaemonPanel.tsx` — Daemon panel
+- `model-packs/system/web/components/StagedCommandsPanel.tsx` — Staged command management
+- `model-packs/system/web/components/SystemLogPanel.tsx` — System log viewer
+- `model-packs/system/web/components/DaemonMonitorPanel.tsx` — Daemon status monitor
 - `src/web/plugins/PluginRegistry.ts` — Central plugin registry
 - `src/web/plugins/types.ts` — Plugin type definitions
 - `src/web/components/dashboard/DashboardPage.tsx` — Main dashboard container

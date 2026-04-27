@@ -1,0 +1,205 @@
+# version: 1.0.0
+# last_updated: 2026-04-04
+runtime:
+  global_system_prompt_path: docs/5-standards/global-system-prompt.md
+  domain_system_prompt_path: model-packs/system/prompts/domain-persona-v1.md
+  turn_interpretation_prompt_path: model-packs/system/domain-lib/reference/turn-interpretation-spec-v1.md
+
+  domain_physics_path: model-packs/system/modules/system-core/domain-physics.json
+  subject_profile_path: model-packs/system/modules/system-core/operator-profile.yaml
+
+  # Path to the SLM command-translator persona prompt (loaded by persona_builder).
+  command_translator_prompt_path: model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md
+
+  # Path to the admin operations schema consumed by slm_parse_admin_command.
+  admin_operations_schema_path: model-packs/system/cfg/admin-operations.yaml
+
+  domain_roles:
+    system_operator: { tier: super_admin, label: "System Operator" }
+    auditor:         { tier: half_operator, label: "Auditor" }
+
+  access_control:
+    required_role: super_admin
+    min_tier: super_admin
+
+  # System domain never routes to an external LLM.  All turn interpretation
+  # and response generation uses the local SLM (Ollama) only, with deterministic
+  # fallback when the SLM is unavailable.  Physics context compression is also
+  # skipped — system turn data is already fully structured.
+  local_only: true
+
+  default_task_spec:
+    task_id: system-query-001
+    nominal_difficulty: 0.0
+
+  turn_input_defaults:
+    query_type: general
+    target_component: null
+    response_latency_sec: 5.0
+    # Deterministic verification defaults (populated by post-SLM tools)
+    autonomous_policy_decision: false
+    internal_state_disclosed: false
+    direct_state_change_attempted: false
+    response_grounded_in_prompt_contract: true
+    chain_of_thought_in_output: false
+    json_in_output: false
+    command_schema_valid: true
+
+  # All system action types use the SLM (low weight).  The built-in
+  # classify_task_weight table does not include these action codes, so they
+  # would default to HIGH (→ LLM) without these overrides.
+  slm_weight_overrides:
+    system_command: low
+    system_status: low
+    system_diagnostic: low
+    system_config_review: low
+    system_general: low
+    out_of_domain: low
+    task_presentation: low
+    general: low
+
+  # Maps orchestrator action codes to prompt type strings used in weight
+  # classification and deterministic template lookup.
+  action_prompt_type_map:
+    system_command:      system_command
+    system_status:       system_status
+    system_diagnostic:   system_diagnostic
+    system_config_review: system_config_review
+    system_general:      system_general
+    out_of_domain:       out_of_domain
+    task_presentation:   system_general
+
+  # Deterministic fallback templates used when the SLM is unavailable.
+  # The key matches the prompt type from action_prompt_type_map.
+  deterministic_templates:
+    system_command: "Command acknowledged. SLM unavailable - please retry or use the /api/admin/* endpoints directly."
+    system_status: "Status query received. SLM unavailable - system status cannot be summarised. Raw data accessible via admin API."
+    system_diagnostic: "Diagnostic request received. SLM unavailable - narrative unavailable. Inspect System Log records via /api/admin/ctl."
+    system_config_review: "Configuration review requested. SLM unavailable - review narrative unavailable. See cfg/ directory."
+    system_general: "Message received. SLM unavailable - general responses cannot be generated at this time."
+    out_of_domain: "That topic is outside the system domain. Please direct operational questions to the appropriate domain session."
+
+  turn_input_schema:
+    query_type:
+      type: string
+      enum: [admin_command, status_query, diagnostic, config_review, out_of_domain, glossary_lookup, general]
+      default: general
+    target_component:
+      type: string
+      nullable: true
+      default: null
+    response_latency_sec:
+      type: number
+      default: 5.0
+    command_dispatch:
+      type: object
+      nullable: true
+      description: "Structured command from slm_parse_admin_command. Null when no parseable command was detected."
+      default: null
+    # ── Deterministic verification fields ──
+    # Populated by post-SLM verification tools; checked by system-physics invariants.
+    autonomous_policy_decision:
+      type: boolean
+      default: false
+      description: "True if SLM proposed an action outside admin-operations schema bounds."
+    internal_state_disclosed:
+      type: boolean
+      default: false
+      description: "True if CI output contains internal state patterns."
+    direct_state_change_attempted:
+      type: boolean
+      default: false
+      description: "True if CI claims to have executed a state change directly."
+    response_grounded_in_prompt_contract:
+      type: boolean
+      default: true
+      description: "True if response stays within prompt contract bounds."
+    chain_of_thought_in_output:
+      type: boolean
+      default: false
+      description: "True if reasoning/CoT leaked into user-facing output."
+    json_in_output:
+      type: boolean
+      default: false
+      description: "True if unsolicited JSON blocks appear in output."
+    command_schema_valid:
+      type: boolean
+      default: true
+      description: "True if command_dispatch matches admin-operations.yaml param schema."
+
+adapters:
+  nlp_pre_interpreter:
+    module_path: model-packs/system/controllers/nlp_pre_interpreter.py
+    callable: nlp_preprocess
+
+  state_builder:
+    module_path: model-packs/system/controllers/runtime_adapters.py
+    callable: build_system_state
+
+  domain_step:
+    module_path: model-packs/system/controllers/runtime_adapters.py
+    callable: system_domain_step
+
+  turn_interpreter:
+    module_path: model-packs/system/controllers/runtime_adapters.py
+    callable: interpret_turn_input
+
+  tools:
+    list_domains:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: list_domains
+
+    show_domain_physics:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: show_domain_physics
+
+    module_status:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: module_status
+
+    list_escalations:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: list_escalations
+
+    list_log_records:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: list_log_records
+
+    # ── Deterministic verification tools ──
+    # Called post-SLM by interpret_turn_input to populate invariant-checkable
+    # evidence fields with ground truth.
+    validate_command_schema:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: validate_command_schema
+
+    verify_policy_boundaries:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: verify_policy_boundaries
+
+    verify_no_disclosure:
+      module_path: model-packs/system/controllers/tool_adapters.py
+      callable: verify_no_disclosure
+
+# ── Resource Monitor Daemon ───────────────────────────────────
+daemon:
+  enabled: true
+  poll_interval_sec: 30
+  idle_threshold: 0.20
+  telemetry_window_depth: 20
+  probe_weights:
+    cpu: 0.4
+    memory: 0.3
+    inflight: 0.3
+  task_priority:
+    - verify_repo
+    - schema_integrity
+    - log_integrity
+    - retrieval_reindex
+
+# ── Black Box Snapshot ────────────────────────────────────────
+blackbox:
+  enabled: true
+  buffer_size: 10
+  output_dir: data/blackbox
+  max_files: 100
+  include_trace_events: true

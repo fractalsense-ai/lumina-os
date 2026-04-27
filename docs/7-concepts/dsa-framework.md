@@ -206,8 +206,8 @@ Earlier documents may use `sensor` where this spec now uses `domain lib`. In thi
 
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json) — Domain schema
-- [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example)
-- [`../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../domain-packs/education/reference-implementations/zpd-monitor-v0.2.py) — education domain lib reference implementation (example)
+- [`../model-packs/education/schemas/compressed-state-schema-v1.json`](../model-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example)
+- [`../model-packs/education/reference-implementations/zpd-monitor-v0.2.py`](../model-packs/education/reference-implementations/zpd-monitor-v0.2.py) — education domain lib reference implementation (example)
 
 ## SEE ALSO
 

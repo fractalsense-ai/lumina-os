@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # seed-system-physics-log.sh — Seed the system-physics System Log with a
-# CommitmentRecord for the active domain-packs/system/cfg/system-physics.json.
+# CommitmentRecord for the active model-packs/system/cfg/system-physics.json.
 #
-# Computes the canonical JSON SHA-256 of domain-packs/system/cfg/system-physics.json and appends
+# Computes the canonical JSON SHA-256 of model-packs/system/cfg/system-physics.json and appends
 # a system_physics_activation CommitmentRecord to the system log ledger at
 # <LUMINA_LOG_DIR>/system/system.jsonl.
 #
@@ -21,7 +21,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_ROOT"
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
-SYSTEM_PHYSICS_FILE="domain-packs/system/cfg/system-physics.json"
+SYSTEM_PHYSICS_FILE="model-packs/system/cfg/system-physics.json"
 ACTOR_ID="system-operator"
 LOG_DIR=""
 

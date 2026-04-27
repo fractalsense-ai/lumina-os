@@ -114,7 +114,7 @@ Field definitions use standard JSON Schema keywords (`type`, `enum`, `minimum`, 
 
 **Schema ID:** `lumina:evidence:education:v1`
 
-**File:** `domain-packs/education/modules/algebra-level-1/evidence-schema.json`
+**File:** `model-packs/education/modules/algebra-level-1/evidence-schema.json`
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -152,7 +152,7 @@ A complete education `evidence_summary` record looks like:
 
 **Schema ID:** `lumina:evidence:agriculture:v1`
 
-**File:** `domain-packs/agriculture/modules/operations-level-1/evidence-schema.json`
+**File:** `model-packs/agriculture/modules/operations-level-1/evidence-schema.json`
 
 | Field | Type | Description |
 |-------|------|-------------|

@@ -25,7 +25,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-_EDU_CONTROLLERS = REPO_ROOT / "domain-packs" / "education" / "controllers"
+_EDU_CONTROLLERS = REPO_ROOT / "model-packs" / "education" / "controllers"
 if str(_EDU_CONTROLLERS) not in sys.path:
     sys.path.insert(0, str(_EDU_CONTROLLERS))
 

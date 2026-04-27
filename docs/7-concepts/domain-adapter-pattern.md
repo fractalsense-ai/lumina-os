@@ -188,7 +188,7 @@ The core engine reads the field by name via `turn_data.get("my_signal")`. If the
 
 ```python
 # At the end of interpret_turn_input() in
-# domain-packs/education/controllers/runtime_adapters.py
+# model-packs/education/controllers/runtime_adapters.py
 
 # A problem is fully solved when correctness is confirmed by substitution
 # and the step-count minimum has been met. This flag is consumed by the
@@ -235,7 +235,7 @@ All engine contract fields must be populated by the domain pack's `interpret_tur
 ## Reference: Education Domain Adapter Structure
 
 ```
-domain-packs/education/
+model-packs/education/
 ├── cfg/
 │   └── runtime-config.yaml          ← declares defaults, schema, tool policies
 ├── domain-lib/
@@ -260,7 +260,7 @@ domain-packs/education/
 The system domain (`domain/sys/system-core/v1`) serves the special `system` role (root operators). It has no generative task: it is a read-only introspection surface for the Lumina OS runtime itself. This makes it a useful reference for the **minimal viable domain pack** pattern.
 
 ```
-domain-packs/system/
+model-packs/system/
 ├── cfg/
 │   └── runtime-config.yaml          ← local_only: true; slm_weight_overrides;
 │                                       adapters.tools; deterministic_templates
@@ -276,7 +276,7 @@ The system domain sets `local_only: true` in its `runtime-config.yaml`. This fla
 If the SLM is unavailable, the turn resolves through the domain's `deterministic_templates` in the runtime config. The LLM is not used as a fallback.
 
 ```yaml
-# domain-packs/system/cfg/runtime-config.yaml (excerpt)
+# model-packs/system/cfg/runtime-config.yaml (excerpt)
 local_only: true
 
 deterministic_templates:
@@ -314,6 +314,6 @@ If `command_dispatch` is non-null in evidence (populated by `slm_parse_admin_com
 - [`execution-route-compilation(7)`](execution-route-compilation.md) — ahead-of-time route compilation from physics pointers (validates tool and library references)
 - [`nlp-semantic-router(7)`](nlp-semantic-router.md) — Tier 1 domain classification and Tier 2 NLP pre-interpreter
 - [`edge-vectorization(7)`](edge-vectorization.md) — per-domain vector stores built from the same adapter-indexer discovery pass
-- [`domain-packs/education/controllers/governance_adapters.py`](../../domain-packs/education/controllers/governance_adapters.py) — education governance adapter with domain-specific NLP verb/noun command routing
-- [`domain-packs/education/cfg/admin-operations.yaml`](../../domain-packs/education/cfg/admin-operations.yaml) — education-tailored admin operations descriptions for SLM intent matching
+- [`model-packs/education/controllers/governance_adapters.py`](../../model-packs/education/controllers/governance_adapters.py) — education governance adapter with domain-specific NLP verb/noun command routing
+- [`model-packs/education/cfg/admin-operations.yaml`](../../model-packs/education/cfg/admin-operations.yaml) — education-tailored admin operations descriptions for SLM intent matching
 

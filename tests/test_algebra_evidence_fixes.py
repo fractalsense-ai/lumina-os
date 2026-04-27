@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-_EDU_CONTROLLERS = REPO_ROOT / "domain-packs" / "education" / "controllers"
+_EDU_CONTROLLERS = REPO_ROOT / "model-packs" / "education" / "controllers"
 if str(_EDU_CONTROLLERS) not in sys.path:
     sys.path.insert(0, str(_EDU_CONTROLLERS))
 
@@ -54,7 +54,7 @@ def _load_runtime_adapters():
 def _load_strip_fn():
     os.environ.setdefault(
         "LUMINA_RUNTIME_CONFIG_PATH",
-        "domain-packs/education/cfg/runtime-config.yaml",
+        "model-packs/education/cfg/runtime-config.yaml",
     )
     module_path = REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     spec = importlib.util.spec_from_file_location("lumina.api.server", str(module_path))

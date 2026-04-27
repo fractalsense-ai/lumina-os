@@ -18,7 +18,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def _import_dashboard_handlers():
     """Import the dashboard_handlers module from the education domain pack."""
-    path = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "dashboard_handlers.py"
+    path = _REPO_ROOT / "model-packs" / "education" / "controllers" / "dashboard_handlers.py"
     spec = importlib.util.spec_from_file_location("dashboard_handlers", str(path))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -27,7 +27,7 @@ def _import_dashboard_handlers():
 
 def _import_escalation_handlers():
     """Import escalation_handlers from the education domain pack."""
-    path = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "escalation_handlers.py"
+    path = _REPO_ROOT / "model-packs" / "education" / "controllers" / "escalation_handlers.py"
     spec = importlib.util.spec_from_file_location("escalation_handlers", str(path))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

@@ -28,7 +28,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 def _load_student_yaml() -> dict[str, Any]:
     from lumina.core.yaml_loader import load_yaml
 
-    path = _REPO_ROOT / "domain-packs" / "education" / "profiles" / "student.yaml"
+    path = _REPO_ROOT / "model-packs" / "education" / "profiles" / "student.yaml"
     return load_yaml(path)
 
 
@@ -36,7 +36,7 @@ def _load_runtime_config() -> dict[str, Any]:
     from lumina.core.yaml_loader import load_yaml
     from conftest import merge_module_config_sidecars
 
-    path = _REPO_ROOT / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"
+    path = _REPO_ROOT / "model-packs" / "education" / "cfg" / "runtime-config.yaml"
     cfg = load_yaml(path)
     module_map = cfg.get("runtime", {}).get("module_map", {})
     merge_module_config_sidecars(module_map)
@@ -238,7 +238,7 @@ class TestLearningAdapterThreeTier:
 
         adapter_path = (
             _REPO_ROOT
-            / "domain-packs"
+            / "model-packs"
             / "education"
             / "controllers"
             / "learning_adapters.py"
@@ -323,7 +323,7 @@ class TestFreeformAdapterThreeTier:
 
         adapter_path = (
             _REPO_ROOT
-            / "domain-packs"
+            / "model-packs"
             / "education"
             / "controllers"
             / "freeform_adapters.py"
@@ -369,7 +369,7 @@ class TestSVABaseline:
 
         path = (
             _REPO_ROOT
-            / "domain-packs"
+            / "model-packs"
             / "education"
             / "controllers"
             / "education_profile_serializer.py"

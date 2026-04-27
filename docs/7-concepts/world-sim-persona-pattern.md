@@ -29,7 +29,7 @@ A complete world-sim persona is defined by three spec files, owned by the domain
 | `magic-circle-consent-v1.md` | **Activation gate** — the persona does not turn on until the participant gives informed consent. The consent process is the "magic circle" that marks the boundary between real interaction and immersive framing. |
 | `artifact-and-mastery-spec-v1.md` | **Reward surface** — earned milestones (artifacts) may be presented with in-world names. Only the display name is part of the persona; the functional definition (mastery threshold, skills required) is invariant. |
 
-All three files live under `domain-packs/<domain>/world-sim/`.
+All three files live under `model-packs/<domain>/world-sim/`.
 
 > **Key principle:** The persona is the skin. The domain physics is the skeleton. The skeleton never changes because the skin does.
 
@@ -144,7 +144,7 @@ If `world_sim_override` is absent, the module inherits the domain-wide `world_si
 
 ## Implementation Checklist (for new domain packs)
 
-- [ ] Create `domain-packs/<domain>/world-sim/` directory
+- [ ] Create `model-packs/<domain>/world-sim/` directory
 - [ ] Author `world-sim-spec-v1.md` — choose static or dynamic mode; define at least one theme
 - [ ] Author `magic-circle-consent-v1.md` — adapt participant/authority terminology for the domain
 - [ ] Author `artifact-and-mastery-spec-v1.md` — define artifacts and boss challenges; map in-world names
@@ -158,15 +158,15 @@ If `world_sim_override` is absent, the module inherits the domain-wide `world_si
 
 ## Domain Extensions
 
-- **Education — MUD Dynamic World Builder:** An advanced dynamic persona that generates 8 narrative constants (zone, protagonist, antagonist, guide NPC, macguffin, variable skin, obstacle theme, failure state) locked for the entire session. See [`domain-packs/education/docs/7-concepts/mud-world-builder.md`](../../domain-packs/education/docs/7-concepts/mud-world-builder.md)
+- **Education — MUD Dynamic World Builder:** An advanced dynamic persona that generates 8 narrative constants (zone, protagonist, antagonist, guide NPC, macguffin, variable skin, obstacle theme, failure state) locked for the entire session. See [`model-packs/education/docs/7-concepts/mud-world-builder.md`](../../model-packs/education/docs/7-concepts/mud-world-builder.md)
 
 ---
 
 ## References
 
 - [`domain-adapter-pattern.md`](domain-adapter-pattern.md) — engine contract fields, three-layer distinction (tool-adapters / domain-lib / runtime-adapter)
-- [`domain-packs/education/world-sim/world-sim-spec-v1.md`](../../domain-packs/education/world-sim/world-sim-spec-v1.md) — education reference implementation: persona parameters
-- [`domain-packs/education/world-sim/magic-circle-consent-v1.md`](../../domain-packs/education/world-sim/magic-circle-consent-v1.md) — education reference implementation: consent activation gate
-- [`domain-packs/education/world-sim/artifact-and-mastery-spec-v1.md`](../../domain-packs/education/world-sim/artifact-and-mastery-spec-v1.md) — education reference implementation: reward surface
-- [`domain-packs/education/world-sim/mud-world-builder-spec-v1.md`](../../domain-packs/education/world-sim/mud-world-builder-spec-v1.md) — MUD World Builder: advanced dynamic persona (education domain)
+- [`model-packs/education/world-sim/world-sim-spec-v1.md`](../../model-packs/education/world-sim/world-sim-spec-v1.md) — education reference implementation: persona parameters
+- [`model-packs/education/world-sim/magic-circle-consent-v1.md`](../../model-packs/education/world-sim/magic-circle-consent-v1.md) — education reference implementation: consent activation gate
+- [`model-packs/education/world-sim/artifact-and-mastery-spec-v1.md`](../../model-packs/education/world-sim/artifact-and-mastery-spec-v1.md) — education reference implementation: reward surface
+- [`model-packs/education/world-sim/mud-world-builder-spec-v1.md`](../../model-packs/education/world-sim/mud-world-builder-spec-v1.md) — MUD World Builder: advanced dynamic persona (education domain)
 - [`../../specs/principles-v1.md`](../../specs/principles-v1.md) — Principle 8 (consent boundary), enforced by magic circle

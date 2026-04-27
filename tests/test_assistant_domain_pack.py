@@ -23,7 +23,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PACK = REPO_ROOT / "domain-packs" / "assistant"
+PACK = REPO_ROOT / "model-packs" / "assistant"
 
 # Ensure controllers importable
 _CONTROLLERS_DIR = str(PACK / "controllers")
@@ -1147,7 +1147,7 @@ class TestAssistantOperations:
 class TestAssistantInDomainRegistry:
     def test_assistant_in_registry(self):
         registry = yaml.safe_load(
-            (REPO_ROOT / "domain-packs" / "system" / "cfg" / "domain-registry.yaml").read_text()
+            (REPO_ROOT / "model-packs" / "system" / "cfg" / "domain-registry.yaml").read_text()
         )
         domains = registry.get("domains", {})
         assert "assistant" in domains

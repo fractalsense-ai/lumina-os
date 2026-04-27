@@ -24,7 +24,7 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Load escalation_handlers via importlib ────────────────────
-_ESC_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "escalation_handlers.py"
+_ESC_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "escalation_handlers.py"
 _esc_spec = importlib.util.spec_from_file_location("edu_esc_handlers", str(_ESC_PATH))
 _esc_mod = importlib.util.module_from_spec(_esc_spec)  # type: ignore[arg-type]
 sys.modules["edu_esc_handlers"] = _esc_mod
@@ -34,7 +34,7 @@ list_escalations = _esc_mod.list_escalations
 resolve_escalation = _esc_mod.resolve_escalation
 
 # ── Load education_escalation_context ─────────────────────────
-_CTX_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "education_escalation_context.py"
+_CTX_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "education_escalation_context.py"
 _ctx_spec = importlib.util.spec_from_file_location("edu_esc_ctx", str(_CTX_PATH))
 _ctx_mod = importlib.util.module_from_spec(_ctx_spec)  # type: ignore[arg-type]
 sys.modules["edu_esc_ctx"] = _ctx_mod

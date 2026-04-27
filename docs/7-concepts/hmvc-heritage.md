@@ -38,7 +38,7 @@ routes to it. This is exactly how Lumina works.
 
 | HMVC Concept | Lumina Equivalent | Location | Notes |
 |---|---|---|---|
-| **Module** (self-contained app) | **Domain Pack** | `domain-packs/{domain}/` | Each pack is a bounded cognitive subsystem — education, agriculture, system admin |
+| **Module** (self-contained app) | **Domain Pack** | `model-packs/{domain}/` | Each pack is a bounded cognitive subsystem — education, agriculture, system admin |
 | **Model** (data, rules, state) | **Physics + Schemas + Evidence** | `modules/{mod}/domain-physics.*`, `schemas/`, `evidence-schema.json` | Invariants, standing orders, entity state schemas, evidence vocabulary |
 | **Controller** (input→logic→output) | **Controllers directory** | `controllers/runtime_adapters.py`, `nlp_pre_interpreter.py`, `tool_adapters.py` | Runtime adapter (synthesis), NLP pre-interpreter (information gate), tool adapters (active verifiers) |
 | **View** (presentation layer) | **Prompts + World-Sim Persona** | `prompts/`, `world-sim/` | Domain system override, turn interpretation prompt, narrative framing |
@@ -152,14 +152,14 @@ prose changes.
 Additionally, each domain pack declares a `ui` section in its `runtime-config.yaml`.
 This section is the **declarative View binding** for the frontend:
 
-- `plugin_bundle` — path to the domain's built ES module (e.g. `domain-packs/education/web/dist/plugin.js`)
+- `plugin_bundle` — path to the domain's built ES module (e.g. `model-packs/education/web/dist/plugin.js`)
 - `slash_commands` — array of domain-contributed slash commands
 - `dashboard_tabs` — array of tab definitions (id, label, endpoint, roles, type)
 
 The legacy `ui_manifest` (title, subtitle, theme) is still read for backward
 compatibility, but dashboard panels and sidebar registrations are now plugin-owned.
 
-Each domain pack owns its frontend code in `domain-packs/{domain}/web/`:
+Each domain pack owns its frontend code in `model-packs/{domain}/web/`:
 
 ```
 web/
@@ -238,7 +238,7 @@ domain-pack controllers. The naming distinction (`systools` for engine utilities
 The HMVC promise: adding a new module requires zero changes to the framework. Lumina
 honours this. To add a new domain pack:
 
-1. Create `domain-packs/{new-domain}/` with the canonical layout
+1. Create `model-packs/{new-domain}/` with the canonical layout
 2. Author `modules/{module}/domain-physics.yaml` (Model)
 3. Implement `controllers/runtime_adapters.py` and `controllers/nlp_pre_interpreter.py` (Controller)
 4. Write `prompts/domain-system-override.md` (View)
@@ -249,7 +249,7 @@ honours this. To add a new domain pack:
 No file in `src/lumina/` is touched. No existing domain pack is modified. The engine
 loads the new pack at session start and routes through it — exactly as HMVC prescribes.
 
-For the complete authoring process, see `domain-packs/README.md`. For the `pack.yaml`
+For the complete authoring process, see `model-packs/README.md`. For the `pack.yaml`
 manifest format that declares pack identity and component inventory, see the `pack.yaml`
 file at the root of any domain pack directory.
 

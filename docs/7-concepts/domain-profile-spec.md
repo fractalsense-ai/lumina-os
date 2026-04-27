@@ -95,7 +95,7 @@ Validate the JSON against the schema before committing:
 
 ```bash
 python reference-implementations/yaml-to-json-converter.py \
-  domain-packs/education/modules/algebra-level-1/domain-physics.json \
+  model-packs/education/modules/algebra-level-1/domain-physics.json \
   --schema standards/domain-physics-schema-v1.json
 ```
 
@@ -107,7 +107,7 @@ Before the domain pack is used operationally, commit its hash to the System Logs
 
 ```bash
 python reference-implementations/system-log-validator.py \
-  --commit domain-packs/education/modules/algebra-level-1/domain-physics.json \
+  --commit model-packs/education/modules/algebra-level-1/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger path/to/ledger.jsonl
 ```
@@ -132,7 +132,7 @@ Every version must have a CHANGELOG entry. Format:
 ## Domain Pack File Layout
 
 ```
-domain-packs/{org}/{subject-level}/
+model-packs/{org}/{subject-level}/
 ├── domain-physics.json          ← authoritative domain physics
 ├── tool-adapters/
 │   └── {tool-name}-adapter-v{N}.yaml
@@ -269,6 +269,6 @@ For the full access control specification, see [`rbac-spec-v1.md`](rbac-spec-v1.
 ## References
 
 - [`../standards/domain-physics-schema-v1.json`](../standards/domain-physics-schema-v1.json)
-- [`../domain-packs/README.md`](../domain-packs/README.md)
-- [`../domain-packs/education/modules/algebra-level-1/`](../domain-packs/education/modules/algebra-level-1/) — worked example
+- [`../model-packs/README.md`](../model-packs/README.md)
+- [`../model-packs/education/modules/algebra-level-1/`](../model-packs/education/modules/algebra-level-1/) — worked example
 - [`../reference-implementations/yaml-to-json-converter.py`](../reference-implementations/yaml-to-json-converter.py)

@@ -82,7 +82,7 @@ for vector-based domain classification — see §F.
 
 A domain store contains embeddings derived **only** from that domain pack's files:
 `domain-physics.json`, glossary entries, `domain-lib/` specifications, tool adapter
-descriptions, and domain-scoped documentation under `domain-packs/<domain>/docs/`.  No
+descriptions, and domain-scoped documentation under `model-packs/<domain>/docs/`.  No
 cross-domain content enters a domain store.
 
 This means a per-domain search never returns content from another domain — structurally

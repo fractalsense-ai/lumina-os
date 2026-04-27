@@ -140,7 +140,7 @@ form for backward compatibility.
    ``domain-physics.json``.
 2. If your records aren't already shaped as ``SignalSample``, add a
    ``to_signal_samples(...)`` adapter to a group library — see
-   ``domain-packs/agriculture/domain-lib/sensors/environmental_sensors.py``
+   ``model-packs/agriculture/domain-lib/sensors/environmental_sensors.py``
    for the reference pattern.
 3. (Optional) Provide ``message_overrides`` for any (band, direction)
    you want to phrase domain-appropriately. Anything you don't override

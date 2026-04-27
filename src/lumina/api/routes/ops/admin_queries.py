@@ -303,7 +303,7 @@ async def execute(
             task_list = list(_daemon_mod._daemon._task_priority)
         else:
             try:
-                rt = load_yaml(Path("domain-packs/system/cfg/runtime-config.yaml"))
+                rt = load_yaml(Path("model-packs/system/cfg/runtime-config.yaml"))
                 task_list = rt.get("daemon", {}).get("task_priority", [])
             except Exception:
                 pass

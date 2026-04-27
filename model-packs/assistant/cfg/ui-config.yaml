@@ -1,0 +1,96 @@
+# ── Assistant Domain — UI Configuration ───────────────────────────────
+# Auto-discovered by the runtime loader (same directory, conventional name).
+# Merged into runtime-config.yaml.  Inline definitions take precedence.
+#
+# version: 1.0.0
+# last_updated: 2026-04-20
+
+ui_manifest:
+  title: "Project Lumina"
+  subtitle: "Assistant"
+  domain_label: "Assistant"
+  consent_heading: "Project Lumina — Assistant"
+  consent_text: "I'm here to help with questions, creative tasks, planning, and more. I don't store personal information beyond your session preferences."
+  consent_button_label: "Get Started"
+  placeholder_text: "Ask me anything..."
+  theme:
+    primary: "oklch(0.50 0.10 250)"
+    accent: "oklch(0.68 0.14 160)"
+    background: "oklch(0.97 0.01 250)"
+
+  # ── System-role → Domain-role mapping ──────────────────────
+  system_role_to_domain_role:
+    root: domain_authority
+    admin: domain_authority
+    super_admin: domain_authority
+    operator: user
+    half_operator: user
+    user: user
+
+  panels:
+    - id: intent_distribution
+      label: "Intent Distribution"
+      endpoint: "/api/dashboard/assistant/intent-distribution"
+      roles: [root, admin]
+      type: chart
+    - id: task_completion
+      label: "Task Completion"
+      endpoint: "/api/dashboard/assistant/task-completion"
+      roles: [root, admin]
+      type: metric
+    - id: satisfaction_trend
+      label: "Satisfaction Trend"
+      endpoint: "/api/dashboard/assistant/satisfaction-trend"
+      roles: [root, admin]
+      type: chart
+
+  # ── Role-based UI layouts ──────────────────────────────────
+  role_layouts:
+    domain_authority:
+      inherits: user
+      sidebar_panels:
+        - id: domain_overview
+          label: "Domain Overview"
+          component: DataPanel
+          data_source: domain_overview
+        - id: user_directory
+          label: "User Directory"
+          component: DataPanel
+          data_source: user_directory
+        - id: module_directory
+          label: "Module Management"
+          component: DataPanel
+          data_source: module_directory
+        - id: escalation_queue
+          label: "Escalation Queue"
+          component: EscalationQueue
+        - id: system_log
+          label: "System Log"
+          component: SystemLogPanel
+      capabilities:
+        - manage_users
+        - view_all_telemetry
+        - resolve_escalations
+        - manage_physics
+    user:
+      sidebar_panels:
+        - id: self_profile
+          label: "My Profile"
+          component: DataPanel
+          data_source: self_profile
+        - id: self_preferences
+          label: "Preferences"
+          component: DataPanel
+          data_source: self_preferences
+        - id: task_list
+          label: "My Tasks"
+          component: DataPanel
+          data_source: task_list
+      capabilities:
+        - view_my_profile
+        - update_my_preferences
+        - manage_my_tasks
+
+# ── Frontend UI contributions ─────────────────────────────
+ui:
+  plugin_bundle: model-packs/assistant/web/dist/plugin.js

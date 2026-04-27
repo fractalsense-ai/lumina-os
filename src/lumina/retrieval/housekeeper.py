@@ -1,6 +1,6 @@
 """housekeeper.py — Background document indexing for the MiniLM retrieval layer.
 
-Walks ``docs/`` trees (root and every ``domain-packs/*/docs/``), domain-physics
+Walks ``docs/`` trees (root and every ``model-packs/*/docs/``), domain-physics
 files, and standards — then indexes all discoverable content
 into a :class:`VectorStore`.  Content-hash dedup ensures unchanged files are
 not re-embedded.
@@ -37,7 +37,7 @@ def discover_doc_trees(repo_root: Path = REPO_ROOT) -> list[Path]:
     root_docs = repo_root / "docs"
     if root_docs.is_dir():
         trees.append(root_docs)
-    packs = repo_root / "domain-packs"
+    packs = repo_root / "model-packs"
     if packs.is_dir():
         for pack in sorted(packs.iterdir()):
             pack_docs = pack / "docs"
@@ -65,8 +65,8 @@ def discover_structured_files(repo_root: Path = REPO_ROOT) -> list[Path]:
             files.extend(sorted(d.rglob("*.json")))
             files.extend(sorted(d.rglob("*.yaml")))
 
-    # Domain-physics files from domain-packs
-    packs = repo_root / "domain-packs"
+    # Domain-physics files from model-packs
+    packs = repo_root / "model-packs"
     if packs.is_dir():
         for pack in sorted(packs.iterdir()):
             if not pack.is_dir():
@@ -88,7 +88,7 @@ def discover_structured_files(repo_root: Path = REPO_ROOT) -> list[Path]:
 
 def discover_domain_packs(repo_root: Path = REPO_ROOT) -> list[str]:
     """Return sorted list of domain-pack names that exist on disk."""
-    packs_dir = repo_root / "domain-packs"
+    packs_dir = repo_root / "model-packs"
     if not packs_dir.is_dir():
         return []
     return sorted(d.name for d in packs_dir.iterdir() if d.is_dir())
@@ -102,7 +102,7 @@ def discover_domain_files(
 
     Returns ``(md_files, structured_files)``.
     """
-    pack_root = repo_root / "domain-packs" / domain_id
+    pack_root = repo_root / "model-packs" / domain_id
     md_files: list[Path] = []
     structured: list[Path] = []
 
@@ -454,7 +454,7 @@ def rebuild_group_library_dependents(
     affected: list[str] = []
 
     for domain_id in discover_domain_packs(repo_root):
-        pack_root = repo_root / "domain-packs" / domain_id / "modules"
+        pack_root = repo_root / "model-packs" / domain_id / "modules"
         if not pack_root.is_dir():
             continue
         for physics_path in pack_root.rglob("domain-physics.json"):

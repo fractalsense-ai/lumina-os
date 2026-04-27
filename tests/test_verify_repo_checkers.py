@@ -44,14 +44,14 @@ def _write_runtime_cfg(edu_dir: Path, content: str) -> None:
 
 def _make_full_runtime_config(tmp_path: Path) -> None:
     """Create a complete valid runtime-config.yaml plus all target files."""
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     edu_dir.mkdir(parents=True, exist_ok=True)
 
     for rel in [
         "specs/domain-system-prompt.md",
         "specs/turn-interpretation-prompt.md",
-        "domain-packs/education/domain-physics.json",
-        "domain-packs/education/profiles/student.yaml",
+        "model-packs/education/domain-physics.json",
+        "model-packs/education/profiles/student.yaml",
     ]:
         p = tmp_path / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -62,8 +62,8 @@ def _make_full_runtime_config(tmp_path: Path) -> None:
         "runtime:\n"
         "  domain_system_prompt_path: specs/domain-system-prompt.md\n"
         "  turn_interpretation_prompt_path: specs/turn-interpretation-prompt.md\n"
-        "  domain_physics_path: domain-packs/education/domain-physics.json\n"
-        "  subject_profile_path: domain-packs/education/profiles/student.yaml\n",
+        "  domain_physics_path: model-packs/education/domain-physics.json\n"
+        "  subject_profile_path: model-packs/education/profiles/student.yaml\n",
     )
 
 
@@ -73,14 +73,14 @@ def _make_full_runtime_config(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_check_runtime_config_paths_value_not_str(tmp_path: Path) -> None:
     """Required key present but value is not a string triggers errors.append + continue."""
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     # Write a runtime config where domain_system_prompt_path is missing (None in yaml)
     _write_runtime_cfg(
         edu_dir,
         "runtime:\n"
         "  turn_interpretation_prompt_path: specs/turn.md\n"
-        "  domain_physics_path: domain-packs/education/domain-physics.json\n"
-        "  subject_profile_path: domain-packs/education/profiles/student.yaml\n",
+        "  domain_physics_path: model-packs/education/domain-physics.json\n"
+        "  subject_profile_path: model-packs/education/profiles/student.yaml\n",
         # domain_system_prompt_path is absent → value is None → not isinstance(value, str)
     )
     errors: list[str] = []
@@ -94,7 +94,7 @@ def test_check_runtime_config_paths_value_not_str(tmp_path: Path) -> None:
 def test_check_runtime_config_paths_additional_specs_not_a_list(tmp_path: Path) -> None:
     """additional_specs that is not a list (e.g. a scalar) triggers an error."""
     _make_full_runtime_config(tmp_path)
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     content = (edu_dir / "runtime-config.yaml").read_text(encoding="utf-8")
     # Append additional_specs as a scalar (invalid format)
     content += "  additional_specs: not-a-list\n"
@@ -110,7 +110,7 @@ def test_check_runtime_config_paths_additional_specs_not_a_list(tmp_path: Path) 
 def test_check_runtime_config_paths_additional_specs_dict_item_valid(tmp_path: Path) -> None:
     """additional_specs dict item with valid 'path' key resolves correctly."""
     _make_full_runtime_config(tmp_path)
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     # Create the target spec file
     spec_file = tmp_path / "specs" / "extra.md"
     spec_file.parent.mkdir(parents=True, exist_ok=True)
@@ -133,7 +133,7 @@ def test_check_runtime_config_paths_additional_specs_dict_item_valid(tmp_path: P
 def test_check_runtime_config_paths_additional_specs_invalid_item(tmp_path: Path) -> None:
     """additional_specs item that is neither string nor meaningful dict triggers error."""
     _make_full_runtime_config(tmp_path)
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
 
     # Write a runtime config manually where additional_specs has an empty/missing path
     # We'll write a YAML where the spec entry is an empty string → not path_value
@@ -155,7 +155,7 @@ def test_check_runtime_config_paths_additional_specs_invalid_item(tmp_path: Path
 @pytest.mark.unit
 def test_check_algebra_version_alignment_json_parse_error(tmp_path: Path) -> None:
     """Invalid domain-physics.json triggers the exception handler error."""
-    alg_dir = tmp_path / "domain-packs" / "education" / "modules" / "algebra-level-1"
+    alg_dir = tmp_path / "model-packs" / "education" / "modules" / "algebra-level-1"
     alg_dir.mkdir(parents=True, exist_ok=True)
 
     (alg_dir / "domain-physics.json").write_text("INVALID JSON {{{", encoding="utf-8")
@@ -165,8 +165,8 @@ def test_check_algebra_version_alignment_json_parse_error(tmp_path: Path) -> Non
     (tmp_path / "examples" / "README.md").write_text(
         "Algebra Level 1 v2.0.0\n", encoding="utf-8"
     )
-    (tmp_path / "domain-packs").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "domain-packs" / "README.md").write_text(
+    (tmp_path / "model-packs").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "model-packs" / "README.md").write_text(
         "| Education — Algebra Level 1 | `education/modules/algebra-level-1` | 2.0.0 |\n",
         encoding="utf-8",
     )
@@ -232,7 +232,7 @@ def test_check_frontend_essentials_all_present(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_no_physics_files(tmp_path: Path) -> None:
     """No domain-physics.json files → no errors."""
-    (tmp_path / "domain-packs").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "model-packs").mkdir(parents=True, exist_ok=True)
     errors: list[str] = []
     with _patch_root(tmp_path):
         check_domain_tool_adapter_linkage(errors)
@@ -242,7 +242,7 @@ def test_check_domain_tool_adapter_linkage_no_physics_files(tmp_path: Path) -> N
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_no_tool_adapters_declared(tmp_path: Path) -> None:
     """Physics file with no tool_adapters → no errors."""
-    module_dir = tmp_path / "domain-packs" / "education" / "algebra-level-1"
+    module_dir = tmp_path / "model-packs" / "education" / "algebra-level-1"
     module_dir.mkdir(parents=True, exist_ok=True)
     physics = {"id": "algebra-level-1", "version": "1.0.0"}
     (module_dir / "domain-physics.json").write_text(json.dumps(physics), encoding="utf-8")
@@ -256,7 +256,7 @@ def test_check_domain_tool_adapter_linkage_no_tool_adapters_declared(tmp_path: P
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_adapter_dir_missing(tmp_path: Path) -> None:
     """tool_adapters declared but tool-adapters/ directory missing → error."""
-    module_dir = tmp_path / "domain-packs" / "education" / "algebra-level-1"
+    module_dir = tmp_path / "model-packs" / "education" / "algebra-level-1"
     module_dir.mkdir(parents=True, exist_ok=True)
     physics = {
         "id": "algebra-level-1",
@@ -276,7 +276,7 @@ def test_check_domain_tool_adapter_linkage_declared_id_not_in_adapters(
     tmp_path: Path,
 ) -> None:
     """Declared adapter id not found in tool-adapters/*.yaml → error."""
-    module_dir = tmp_path / "domain-packs" / "education" / "algebra-level-1"
+    module_dir = tmp_path / "model-packs" / "education" / "algebra-level-1"
     adapter_dir = module_dir / "tool-adapters"
     adapter_dir.mkdir(parents=True, exist_ok=True)
 
@@ -299,7 +299,7 @@ def test_check_domain_tool_adapter_linkage_declared_id_not_in_adapters(
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_declared_id_found(tmp_path: Path) -> None:
     """Declared adapter id found in tool-adapters/*.yaml → no error."""
-    module_dir = tmp_path / "domain-packs" / "education" / "algebra-level-1"
+    module_dir = tmp_path / "model-packs" / "education" / "algebra-level-1"
     adapter_dir = module_dir / "tool-adapters"
     adapter_dir.mkdir(parents=True, exist_ok=True)
 

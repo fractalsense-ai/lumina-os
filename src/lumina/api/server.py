@@ -1,4 +1,4 @@
-﻿"""
+"""
 lumina-api-server.py — Project Lumina Integration Server
 
 Generic runtime host for D.S.A. orchestration:
@@ -491,7 +491,7 @@ async def _start_idle_cleanup() -> None:
 
     daemon_cfg: dict = {}
     try:
-        _cfg_path = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "runtime-config.yaml"
+        _cfg_path = _REPO_ROOT / "model-packs" / "system" / "cfg" / "runtime-config.yaml"
         if _cfg_path.exists():
             _raw = _load_yaml(_cfg_path)
             daemon_cfg = _raw.get("daemon", {})

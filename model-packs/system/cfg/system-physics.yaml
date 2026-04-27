@@ -1,0 +1,874 @@
+# System Physics — Conversational Interface Layer
+# version: 1.1.0
+# last_updated: 2026-04-04
+# Conforms to: lumina-core-v1.0.0
+# Schema: standards/system-physics-schema-v1.json
+# ============================================================
+#
+# SOURCE OF TRUTH for the Project Lumina Conversational Interface (CI) layer.
+# This document defines the invariants, standing orders, escalation triggers,
+# and output contract that govern the CI regardless of which domain is active.
+#
+# Changes to this file require:
+#   1. Semantic version bump (version field below)
+#   2. Compilation to system-physics.json (YAML -> JSON)
+#   3. CommitmentRecord (system_physics_activation) in the system log
+#      with the SHA-256 hash of the compiled system-physics.json
+#      before the updated physics takes operational effect.
+#
+# Human-readable rendering: docs/5-standards/global-system-prompt.md
+# ============================================================
+
+id: system/lumina/conversational-interface/v1
+version: "1.4.0"
+
+meta_authority_id: root
+
+conforms_to: "lumina-core-v1.0.0"
+
+description: >
+  System-layer physics for the Project Lumina Conversational Interface.
+  Defines the invariants the CI must always uphold, the bounded automated
+  responses for violations, and the escalation path to the Meta Authority.
+  These rules are unconditional — they apply before any domain contract
+  is loaded and cannot be overridden by domain configuration.
+
+# ── Universal Base Identity ───────────────────────────────────
+#
+# Source of truth for the identity string prepended to every LLM/SLM
+# system prompt by src/lumina/core/persona_builder.py.
+# Human-readable rendering: docs/5-standards/global-system-prompt.md
+#
+# This text is the foundation layer that precedes ALL operational role
+# directives regardless of context (conversational, librarian, physics
+# interpreter, command translator, logic scraper, daemon batch).
+
+universal_base_identity: >
+  You are Project Lumina, a library computer access retrieval system for a
+  higher order complex system. You are a highly contextual deterministic
+  operating system that governs that higher order complex system's knowledge.
+
+# ── System Identity ───────────────────────────────────────────
+#
+# Canonical identity block. Prevents the CI from hallucinating platform
+# names drawn from domain-level immersion themes (e.g. "Helios" is a
+# narrative overlay in the education domain, not the system name).
+
+system_identity:
+  system_name: "Project Lumina"
+  description: >
+    A contextual deterministic operating system that governs domain
+    knowledge through physics-based governance, prompt contracts, and
+    human-in-the-loop oversight.
+  disambiguation_note: >
+    Immersion themes and narrative overlays (e.g. space exploration
+    themes, world-sim character names) belong to individual domain packs.
+    They are NOT the platform name. When asked about your identity, you
+    are Project Lumina.
+
+# ── Invariants ───────────────────────────────────────────────
+
+invariants:
+
+  # === CRITICAL INVARIANTS ===
+
+  - id: no_autonomous_policy
+    description: >
+      The CI must not make autonomous policy decisions outside the bounds
+      of the active domain physics and orchestrator prompt contract.
+      It is a translator of prompt contracts into user-facing language,
+      not an independent policy actor.
+    severity: critical
+    check: "autonomous_policy_decision == false"
+    standing_order_on_violation: enforce_contract_boundaries
+
+  - id: no_internal_disclosure
+    description: >
+      The CI must not disclose internal confidence scores, private policy
+      internals, or sensitive runtime state to the user unless the active
+      domain configuration explicitly permits it.
+    severity: critical
+    check: "internal_state_disclosed == false OR domain_permits_disclosure == true"
+    standing_order_on_violation: retract_and_self_correct
+
+  - id: no_false_capability_claims
+    description: >
+      The CI must not claim capabilities that are not present in the
+      active prompt contract. Hidden features, future capabilities, or
+      capabilities belonging to other domain configurations must not be
+      presented as available.
+    severity: critical
+    check: "claimed_capabilities SUBSET_OF active_prompt_contract.capabilities"
+    standing_order_on_violation: retract_and_self_correct
+
+  - id: prompt_contract_fidelity
+    description: >
+      All CI responses must be grounded in the active orchestrator
+      prompt contract. The CI may not fabricate domain content,
+      domain rules, or subject state that is not derived from the
+      active contract.
+    severity: critical
+    check: "response_grounded_in_prompt_contract == true"
+    standing_order_on_violation: retract_and_self_correct
+
+  # === WARNING INVARIANTS ===
+
+  - id: no_unsolicited_json
+    description: >
+      The CI must not produce raw JSON output unless the user has
+      explicitly requested it or the active domain contract requires it.
+      Structured data payloads embedded in conversational responses
+      degrade the user experience and may leak internal state.
+    severity: warning
+    check: "json_in_output == false OR user_requested_json == true OR domain_requires_json == true"
+    standing_order_on_violation: strip_and_reformat_output
+
+  - id: no_chain_of_thought_leakage
+    description: >
+      Internal reasoning steps and chain-of-thought must not appear
+      in user-facing output. Responses must present only conclusions,
+      not the orchestrator's reasoning process.
+    severity: warning
+    check: "chain_of_thought_in_output == false"
+    standing_order_on_violation: strip_and_reformat_output
+
+  - id: no_direct_execution
+    description: >
+      The CI must not directly execute state changes, issue file writes,
+      alter domain physics, modify RBAC, or perform any action that mutates
+      system or domain state. All state-changing commands must be expressed
+      as a structured JSON proposal conforming to the applicable admin
+      command schema, validated by the relevant deterministic tool, and
+      approved by a system-level user via the HITL review gate before any
+      execution occurs. Physics files are standing orders and escalation
+      routes — they govern the CI's routing behaviour; they do not grant
+      execution authority.
+    severity: critical
+    check: "direct_state_change_attempted == false"
+    standing_order_on_violation: enforce_contract_boundaries
+
+# ── Standing Orders ──────────────────────────────────────────
+
+standing_orders:
+
+  - id: enforce_contract_boundaries
+    action: enforce_contract_boundaries
+    trigger_condition: no_autonomous_policy
+    max_attempts: 1
+    escalation_on_exhaust: true
+    description: >
+      Immediately halt the response in progress. Reframe the output
+      to stay strictly within the active prompt contract. If the required
+      action cannot be expressed within contract bounds, surface an
+      ambiguity notice to the user and escalate.
+
+  - id: retract_and_self_correct
+    action: retract_and_self_correct
+    trigger_condition: "no_internal_disclosure OR no_false_capability_claims OR prompt_contract_fidelity"
+    max_attempts: 1
+    escalation_on_exhaust: true
+    description: >
+      Retract the offending output. Issue a corrected response that
+      remains within the terms of the active prompt contract and ci
+      output contract. If self-correction is not possible in one
+      attempt, escalate to the Meta Authority.
+
+  - id: strip_and_reformat_output
+    action: strip_and_reformat_output
+    trigger_condition: "no_unsolicited_json OR no_chain_of_thought_leakage"
+    max_attempts: 2
+    escalation_on_exhaust: false
+    description: >
+      Remove the non-conformant portion of the output (raw JSON block
+      or chain-of-thought segment) and reissue the response in
+      conformant conversational text. Log a TraceEvent for each
+      occurrence.
+
+  - id: domain_routing_clarify
+    action: request_domain_clarification
+    trigger_condition: "no_domain_resolvable"
+    max_attempts: 2
+    escalation_on_exhaust: true
+    description: >
+      When no active domain can be resolved for the current session,
+      ask the user for clarification about the intended context.
+      After max_attempts without a resolvable domain, escalate to
+      the Meta Authority for routing resolution.
+
+# ── Escalation Triggers ──────────────────────────────────────
+
+escalation_triggers:
+
+  - id: critical_invariant_unresolvable
+    condition: >
+      A critical system invariant (no_autonomous_policy,
+      no_internal_disclosure, no_false_capability_claims, or
+      prompt_contract_fidelity) was violated and the standing order
+      exhausted its single attempt without achieving a conformant output.
+    target_role: meta_authority
+    sla_minutes: 15
+
+  - id: domain_routing_failure
+    condition: >
+      No domain could be resolved for the current session and the
+      domain_routing_clarify standing order exhausted its attempts
+      without the user supplying a resolvable domain context.
+    target_role: meta_authority
+    sla_minutes: 60
+
+  - id: ci_contract_breach_persistent
+    condition: >
+      strip_and_reformat_output standing order was applied and the
+      same violation (unsolicited JSON or chain-of-thought leakage)
+      reoccurred within the same session after correction, indicating
+      a systematic rather than incidental breach.
+    target_role: meta_authority
+    sla_minutes: 15
+
+# ── CI Output Contract ────────────────────────────────────────
+#
+# Machine-readable source of truth for CI output behaviour.
+# Human-readable rendering lives in docs/5-standards/global-system-prompt.md.
+# ─────────────────────────────────────────────────────────────
+
+ci_output_contract:
+  output_mode: conversational_text
+  chain_of_thought: disallowed
+  raw_json_output: only_if_explicitly_requested
+  grounding_requirement: must_derive_from_prompt_contract
+  capability_claims: bounded_by_active_prompt_contract
+  internal_state_disclosure: prohibited_unless_domain_permits
+  # -- Command Execution Policy
+  direct_execution: prohibited
+  state_change_mechanism: proposal_schema_only
+  proposal_validation_requirement: domain_scoped_tool_required
+  proposal_approval_requirement: hitl_required_before_execution
+  physics_file_role: standing_orders_and_escalation_routes
+
+# ────────────────────────────────────────────────────────────────────────────
+# Deterministic Gating Contract
+# ────────────────────────────────────────────────────────────────────────────
+# Both SLM (local-only) and LLM (external) outputs pass through the SAME
+# deterministic pipeline.  There are no exemptions based on model type.
+# This contract is enforced by strict=True in the InspectionPipeline
+# (src/lumina/api/processing.py) regardless of the local_only flag.
+#
+# Pipeline stages (executed in order for every turn):
+#
+#   1. NLP Pre-Interpreter Anchoring
+#      Domain-specific nlp_pre_interpreter produces deterministic anchors
+#      (keyword matches, regex extractions) that are injected into the
+#      SLM/LLM prompt as grounding context.
+#
+#   2. Turn Interpretation (Evidence Extraction)
+#      The SLM or LLM classifies the operator/student message into a
+#      structured evidence dict.  Default fields fill any gaps.
+#
+#   3. Deterministic Tool Verification (Ground Truth Override)
+#      Domain-scoped verification tools OVERWRITE evidence fields with
+#      ground truth.  Education: algebra parser.  System: policy boundary
+#      verifier + disclosure scanner.  Agriculture: collar sensor.
+#      This is the critical gate: the SLM/LLM cannot bypass deterministic
+#      verification by producing different evidence.
+#
+#   4. Inspection Middleware (Schema + Invariant Check)
+#      InspectionPipeline runs three sub-stages: NLP preprocess → schema
+#      validation → invariant evaluation.  Strict mode is always on.
+#      Failed invariants trigger standing orders.
+#
+#   5. Standing Order Evaluation
+#      If an invariant is violated, the linked standing order fires with
+#      bounded max_attempts.  Exhausted standing orders escalate per the
+#      escalation_triggers configuration.
+#
+#   6. HITL Gate for State-Changing Actions
+#      All mutation proposals (command_dispatch) are staged as action cards
+#      for human review.  Only HITL-exempt read-only operations bypass this.
+
+deterministic_gating_contract:
+  strict_mode: always
+  model_type_exemptions: none
+  pipeline_stages:
+    - nlp_pre_interpreter
+    - turn_interpretation
+    - deterministic_tool_verification
+    - inspection_middleware
+    - standing_order_evaluation
+    - hitl_gate
+  verification_tools_by_domain:
+    system:
+      - validate_command_schema
+      - verify_policy_boundaries
+      - verify_no_disclosure
+    education:
+      - algebra_parser
+    agriculture:
+      - collar_sensor
+
+# ────────────────────────────────────────────────────────────────────────────
+# Glossary — Lumina infrastructure controlled vocabulary
+# ────────────────────────────────────────────────────────────────────────────
+# Surfaced by the glossary-intercept pipeline when admins or auditors query
+# term definitions in the system domain.  Terms are lowercase; aliases list
+# alternate forms a human operator might use.
+
+glossary:
+
+  - term: commitment_record
+    definition: >-
+      A hash-chained ledger entry recording a policy decision, activation,
+      session lifecycle event, or permission change.  CommitmentRecords are
+      append-only and form the backbone of the Lumina audit trail.
+    aliases:
+      - commitment
+      - policy commitment
+    related_terms:
+      - system_logs
+      - trace_event
+    example_in_context: >-
+      When a Domain Authority activates a new domain-physics version, the
+      runtime writes a commitment_record of type domain_physics_activation
+      to the system log.
+
+  - term: trace_event
+    definition: >-
+      A hash-chained ledger entry logged after each orchestrator turn.  It
+      carries provenance hashes — domain_physics_hash, system_physics_hash,
+      prompt_contract_hash — enabling full turn-level auditability.
+    aliases:
+      - trace
+      - ctl event
+    related_terms:
+      - system_logs
+      - commitment_record
+    example_in_context: >-
+      Every time the orchestrator completes a turn it appends a trace_event
+      to the domain System Log that includes the SHA-256 of the active
+      system-physics.json.
+
+  - term: escalation_record
+    definition: >-
+      A hash-chained ledger entry created when the orchestrator cannot resolve
+      a situation within its authorised action space and must defer to a human
+      Meta Authority.
+    aliases:
+      - escalation
+    related_terms:
+      - escalation_trigger
+      - meta_authority
+      - system_logs
+    example_in_context: >-
+      If all standing-order attempts are exhausted, an escalation_record is
+      appended to the System Logs and a human Meta Authority is notified.
+
+  - term: system_logs
+    definition: >-
+      The append-only, hash-chained log that records all decisions, outcomes,
+      escalations, and policy commitments.  Operates at both the system level
+      (LUMINA_LOG_DIR/system/) and per domain/session.
+    aliases:
+      - System Log
+      - ledger
+      - audit ledger
+    related_terms:
+      - commitment_record
+      - trace_event
+      - escalation_record
+    example_in_context: >-
+      A half_operator can replay the full system_logs for a session to
+      reconstruct every orchestrator decision from first principles.
+
+  - term: system_physics
+    definition: >-
+      The machine-readable policy layer governing the Conversational Interface
+      unconditionally — before and regardless of which domain is active.
+      Stored in cfg/system-physics.yaml (source) and cfg/system-physics.json
+      (compiled runtime form).
+    aliases:
+      - system physics
+      - global physics
+      - CI layer
+    related_terms:
+      - domain_physics
+      - invariant
+      - standing_order
+    example_in_context: >-
+      The system_physics file defines the no-deception invariant that the
+      orchestrator evaluates on every turn, in every domain.
+
+  - term: domain_physics
+    definition: >-
+      The machine-readable policy layer authored by a Domain Authority for a
+      specific domain module.  Defines standing orders, invariants, escalation
+      triggers, glossary, and tool adapters in scope for that domain.
+    aliases:
+      - domain physics
+    related_terms:
+      - system_physics
+      - domain_pack
+      - admin
+    example_in_context: >-
+      The education domain_physics defines the scaffolding_only invariant;
+      if violated the standing order apply_zpdcorrection fires.
+
+  - term: prompt_contract
+    definition: >-
+      The assembled, layered input packet sent to the LLM at each orchestrator
+      turn.  Built from: Global Base Prompt + Domain Physics + Module State +
+      NLP anchors.  The LLM is constrained to this contract.
+    aliases:
+      - prompt contract
+      - prompt packet
+    related_terms:
+      - orchestrator
+      - tool_adapter
+    example_in_context: >-
+      The prompt_contract for a student session includes the ZPD state and
+      the domain glossary alongside the system physics output rules.
+
+  - term: standing_order
+    definition: >-
+      A bounded, pre-authorised automated response the orchestrator takes when
+      a specific invariant is violated.  Standing orders have a max_attempts
+      limit; exhaustion triggers escalation.
+    aliases:
+      - standing order
+    related_terms:
+      - invariant
+      - escalation_trigger
+    example_in_context: >-
+      The standing_order apply_safe_close fires up to 3 times when the
+      session_integrity_monitor invariant is violated before escalating.
+
+  - term: invariant
+    definition: >-
+      A system or domain rule the orchestrator evaluates on every turn.  When
+      violated, the associated standing order fires.  Critical invariants halt
+      autonomous action; warning invariants trigger correction.
+    aliases: []
+    related_terms:
+      - standing_order
+      - system_physics
+      - domain_physics
+    example_in_context: >-
+      The no_deception invariant in system_physics is severity: critical;
+      a violation immediately halts the turn and triggers human review.
+
+  - term: escalation_trigger
+    definition: >-
+      A condition defined in system or domain physics that causes the
+      orchestrator to defer to a human Meta Authority when it cannot resolve
+      the situation within its authorised action space.
+    aliases:
+      - escalation trigger
+    related_terms:
+      - escalation_record
+      - meta_authority
+      - standing_order
+    example_in_context: >-
+      The escalation_trigger repeated_invariant_violation fires when
+      max_attempts is exhausted and targets the admin role.
+
+  - term: policy_commitment_gate
+    definition: >-
+      A startup check that verifies the SHA-256 hash of the active
+      domain-physics.json matches a CommitmentRecord in the System Logs before any
+      session executes.  Prevents silently modified policies from taking effect.
+    aliases:
+      - policy gate
+      - commitment gate
+      - startup gate
+    related_terms:
+      - commitment_record
+      - system_logs
+      - domain_physics
+    example_in_context: >-
+      The policy_commitment_gate halts server startup if the education
+      domain-physics.json hash is absent from the system log.
+
+  - term: domain_pack
+    definition: >-
+      A self-contained directory providing all domain-specific behaviour:
+      prompts, domain physics, tool adapters, runtime config, and optional
+      domain-lib components.  Loaded at server startup via
+      LUMINA_RUNTIME_CONFIG_PATH.
+    aliases:
+      - domain pack
+      - domain module
+    related_terms:
+      - domain_physics
+      - admin
+      - domain_registry
+    example_in_context: >-
+      The model-packs/education/ folder is the education domain_pack;
+      it contains the full physics, tools, and runtime config for the
+      tutoring domain.
+
+  - term: admin
+    definition: >-
+      The human expert role (teacher, agronomist, clinician, operator) who
+      authors a domain pack and owns its domain physics.  The Domain Authority
+      is the ultimate decision-maker for their domain's rules.
+    aliases:
+      - domain authority
+      - DA
+    related_terms:
+      - meta_authority
+      - domain_pack
+      - domain_physics
+    example_in_context: >-
+      The admin for the education pack may update the ZPD
+      thresholds in domain-physics.json; the change must be committed to
+      the System Logs before it takes effect.
+
+  - term: meta_authority
+    definition: >-
+      The governance level above a Domain Authority.  Receives escalations,
+      approves scope changes, and can override or extend domain policies.  At
+      the system level, meta_authority is the root role.
+    aliases:
+      - meta authority
+      - MA
+    related_terms:
+      - admin
+      - escalation_record
+      - escalation_trigger
+    example_in_context: >-
+      An escalation_record is routed to the meta_authority when the
+      orchestrator exhausts all standing-order attempts in a session.
+
+  - term: domain_registry
+    definition: >-
+      The YAML/JSON file (cfg/domain-registry.yaml) that maps domain
+      identifiers to runtime config paths and keyword lists, enabling
+      multi-domain routing via classify_domain().
+    aliases:
+      - domain registry
+      - registry
+    related_terms:
+      - domain_pack
+      - orchestrator
+    example_in_context: >-
+      When a user message arrives, classify_domain() consults the
+      domain_registry and returns the domain whose keyword list best
+      matches the message.
+
+  - term: pseudonymous_id
+    definition: >-
+      A session-scoped token used in place of canonical identity attributes
+      within the orchestration layer.  Canonical identity is held in a
+      separate access-controlled store; the AI layer operates only on
+      pseudonymous tokens.
+    aliases:
+      - pseudonymous id
+      - session token
+      - anon id
+    related_terms:
+      - rbac
+      - system_logs
+    example_in_context: >-
+      The trace_event carries a pseudonymous_id, not the student's real
+      name, ensuring the System Logs is auditable without exposing PII.
+
+  - term: rbac
+    definition: >-
+      Role-Based Access Control.  Lumina uses a chmod-style octal permission
+      model (rwx / owner / group / others) enforced on every API request via
+      JWT role claims.  Six roles: root, admin, super_admin, operator,
+      half_operator, user.
+    aliases:
+      - role-based access control
+      - permissions
+      - roles
+    related_terms:
+      - pseudonymous_id
+      - admin
+      - meta_authority
+    example_in_context: >-
+      A half_operator role has read-only rbac permissions on System Log entries but
+      cannot activate or roll back domain physics.
+
+  - term: tool_adapter
+    definition: >-
+      A YAML-declared, Python-backed verifier called by the orchestrator's
+      policy system on specific resolved actions.  Tool adapters are the
+      deterministic verification layer — they override specific LLM-produced
+      evidence fields with verified values.
+    aliases:
+      - tool adapter
+      - adapter
+    related_terms:
+      - prompt_contract
+      - orchestrator
+      - domain_physics
+    example_in_context: >-
+      The check_zpd_position tool_adapter re-evaluates the student's ZPD
+      state from the domain-lib signal and writes the verified value into
+      the prompt contract before the LLM sees it.
+
+  - term: orchestrator
+    definition: >-
+      The D.S.A. (Domain–State–Action) engine inside the core runtime.
+      Assembles the prompt contract, invokes the LLM, runs tool-adapter
+      verification, evaluates invariants, and commits or escalates the
+      resulting decision.
+    aliases:
+      - PPA engine
+      - D.S.A. orchestrator
+      - core engine
+    related_terms:
+      - prompt_contract
+      - tool_adapter
+      - system_logs
+    example_in_context: >-
+      The orchestrator evaluates every system_physics invariant after
+      each LLM response before committing the turn to the System Logs.
+
+  - term: domain_lib
+    definition: >-
+      Domain-owned passive state estimators called by the runtime adapter
+      each turn to update mutable entity state (e.g., ZPD position, fluency
+      level, fatigue signal).  The core engine never calls domain-lib
+      components directly.
+    aliases:
+      - domain lib
+      - domain library
+    related_terms:
+      - domain_pack
+      - orchestrator
+      - tool_adapter
+    example_in_context: >-
+      The education domain_lib exposes fluency_monitor and zpd_estimator;
+      both are called by the education runtime adapter before each
+      orchestrator turn.
+
+  - term: novel_synthesis
+    definition: >-
+      A flag set when the reasoning engine identifies a non-obvious connection
+      or approach that does not match any known pattern in the active domain
+      physics. Requires two-key verification before the system records it as
+      a validated innovation.
+    aliases:
+      - novel synthesis
+      - novel pattern
+      - creative synthesis
+    related_terms:
+      - two_key_verification
+      - invariant
+      - escalation_trigger
+      - domain_physics
+    example_in_context: >-
+      The algebra domain's standard_method_preferred invariant fires with
+      signal_type NOVEL_PATTERN when the subject uses an unrecognized
+      solution method. The domain authority reviews and either verifies
+      or rejects the synthesis.
+
+  - term: two_key_verification
+    definition: >-
+      A verification gate requiring two independent confirmations before the
+      system accepts a novel synthesis event. Key 1 is the LLM or domain
+      adapter flagging novel_synthesis true. Key 2 is the Domain Authority
+      (human-in-the-loop) confirming the logic is sound.
+    aliases:
+      - two key verification
+      - two-key gate
+      - two key gate
+      - dual key
+    related_terms:
+      - novel_synthesis
+      - escalation_trigger
+      - admin
+      - commitment_record
+    example_in_context: >-
+      After the orchestrator flags a novel synthesis, an escalation record
+      is created for domain authority review. The domain authority resolves
+      it with a novel_synthesis_verified or novel_synthesis_rejected
+      commitment record, completing the two-key gate.
+
+  - term: model_id
+    definition: >-
+      The identifier of the LLM model used for a given turn, recorded in
+      TraceEvent metadata for cross-domain performance benchmarking and
+      model-to-domain optimization telemetry.
+    aliases:
+      - model identifier
+      - llm model id
+      - language model id
+    related_terms:
+      - model_version
+      - trace_event
+      - novel_synthesis
+    example_in_context: >-
+      A TraceEvent's metadata contains model_id "claude-sonnet-4-20250514"
+      and model_version "2025-05-14", enabling the system to track which
+      model produced novel synthesis events across domains.
+
+  - term: model_version
+    definition: >-
+      The version or revision string of the LLM model used for a given turn,
+      recorded alongside model_id in TraceEvent metadata for model drift
+      detection and performance regression tracking.
+    aliases:
+      - model version
+      - llm version
+      - model revision
+    related_terms:
+      - model_id
+      - trace_event
+      - novel_synthesis
+    example_in_context: >-
+      When a provider updates a model, a drop in the verified novel
+      synthesis rate for a domain may indicate capability regression.
+      The model_version field pinpoints exactly which revision caused it.
+
+  - term: slm
+    definition: >-
+      Small Language Model — a lightweight, locally-hosted language model
+      used for low-weight tasks such as glossary definition rendering,
+      domain physics interpretation (context compression), and admin
+      command translation. Runs alongside the NLP pipeline to further
+      reduce ambiguity before the LLM receives the assembled prompt packet.
+    aliases:
+      - small language model
+      - small model
+      - local model
+      - librarian model
+    related_terms:
+      - task_weight
+      - compute_distribution
+      - weight_boundary
+    example_in_context: >-
+      When a user asks "what is a coefficient?", the glossary intercept
+      matches the term and the SLM renders a fluent, contextualized
+      definition — the LLM is never invoked.
+
+  - term: task_weight
+    definition: >-
+      Classification of a prompt type as either low-weight (handled by
+      the SLM) or high-weight (handled by the LLM). Low-weight includes
+      definitions, formatting, field validation, physics interpretation,
+      and admin commands. High-weight includes creative response generation,
+      complex problem solving, and novel synthesis.
+    aliases:
+      - task weight
+      - weight class
+      - prompt weight
+    related_terms:
+      - slm
+      - compute_distribution
+      - weight_boundary
+    example_in_context: >-
+      A definition_lookup prompt type has task_weight LOW and routes to
+      the SLM; an instruction prompt type has task_weight HIGH and routes
+      to the LLM.
+
+  - term: compute_distribution
+    definition: >-
+      The architectural principle of routing tasks to the most
+      cost-effective compute tier. Low-weight tasks go to the SLM
+      (cheaper, faster, local); high-weight tasks go to the LLM
+      (more capable, cloud-hosted). This preserves the LLM's reasoning
+      space by pre-digesting context and handling administrative work.
+    aliases:
+      - compute segregation
+      - model routing
+      - weight routing
+    related_terms:
+      - slm
+      - task_weight
+      - weight_boundary
+    example_in_context: >-
+      In an enterprise deployment with a small SLM cluster, sensor feed
+      physics interpretation runs entirely on local SLMs; only complex
+      diagnostic reasoning routes to the LLM.
+
+  - term: weight_boundary
+    definition: >-
+      Configuration-level control over how much work the SLM handles.
+      Three tiers — definitions_only (glossary lookups), definitions_and_physics
+      (plus physics interpretation and context compression), full (plus admin
+      command translation).
+    aliases:
+      - weight boundary
+      - slm boundary
+      - compute boundary
+    related_terms:
+      - slm
+      - task_weight
+      - compute_distribution
+    example_in_context: >-
+      The system physics slm_config.weight_boundary field is set to
+      definitions_and_physics, enabling the SLM to match incoming sensor
+      signals against domain invariants and compress context.
+
+  - term: physics_interpreter
+    definition: >-
+      The SLM role that matches incoming signals (NLP anchors, sensor data,
+      tool outputs) against domain physics (invariants, standing orders,
+      glossary) to produce compressed context. Identifies which invariants
+      are relevant, which glossary terms apply, and suggests pre-populated
+      evidence fields — reducing the ambiguity the LLM must resolve.
+    aliases:
+      - physics interpretation
+      - context compressor
+      - signal interpreter
+    related_terms:
+      - slm
+      - domain_physics
+      - invariant
+      - context_compression
+    example_in_context: >-
+      A soil moisture sensor reports 12%. The SLM physics interpreter
+      matches this against the moisture_deficit invariant and the irrigation
+      glossary term, producing a compressed context dict for the LLM.
+
+  - term: command_translator
+    definition: >-
+      The SLM role that parses natural language admin instructions into
+      structured system-level commands. The SLM only translates — all
+      execution goes through existing admin endpoints with full RBAC
+      enforcement. Unauthorized commands are rejected at the endpoint
+      layer, not the SLM layer.
+    aliases:
+      - command translation
+      - admin translator
+      - natural language commands
+    related_terms:
+      - slm
+      - rbac
+      - admin
+    example_in_context: >-
+      A domain authority says "update the coefficient threshold in algebra
+      to 0.8". The SLM translates this to {operation: update_domain_physics,
+      target: algebra, params: {updates: {coefficient_threshold: 0.8}}}.
+      The update endpoint then checks can_govern_domain() before executing.
+
+  - term: context_compression
+    definition: >-
+      The process of reducing raw incoming signals and domain physics into
+      a compact, structured context dict before the LLM sees it. Performed
+      by the SLM physics interpreter alongside the NLP pipeline. The result
+      is a _slm_context metadata block in turn_data, similar to _nlp_anchors.
+    aliases:
+      - context reduction
+      - signal compression
+      - pre-digestion
+    related_terms:
+      - slm
+      - physics_interpreter
+      - prompt_contract
+    example_in_context: >-
+      The _slm_context block contains matched_invariants, relevant_glossary_terms,
+      a one-sentence context_summary, and suggested_evidence_fields — giving
+      the LLM a pre-digested view of what matters this turn.
+
+slm_config:
+  enabled: true
+  default_provider: local
+  weight_boundary: definitions_and_physics
+  fallback_on_unavailable: deterministic
+  local_endpoint: "http://localhost:11434"
+  admin_command_translation: true
+  timeout_seconds: 60
+
+

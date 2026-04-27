@@ -25,7 +25,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Load education governance_adapters via importlib ──────────
 _GOV_PATH = (
-    _REPO_ROOT / "domain-packs" / "education" / "controllers" / "governance_adapters.py"
+    _REPO_ROOT / "model-packs" / "education" / "controllers" / "governance_adapters.py"
 )
 _gov_spec = importlib.util.spec_from_file_location("governance_adapters", str(_GOV_PATH))
 _gov_mod = importlib.util.module_from_spec(_gov_spec)  # type: ignore[arg-type]
@@ -37,7 +37,7 @@ _edu_interpret_turn = _gov_mod.interpret_turn_input
 
 # ── Load system runtime_adapters via importlib ────────────────
 _SYS_PATH = (
-    _REPO_ROOT / "domain-packs" / "system" / "controllers" / "runtime_adapters.py"
+    _REPO_ROOT / "model-packs" / "system" / "controllers" / "runtime_adapters.py"
 )
 _sys_spec = importlib.util.spec_from_file_location("sys_runtime_adapters", str(_SYS_PATH))
 _sys_mod = importlib.util.module_from_spec(_sys_spec)  # type: ignore[arg-type]
@@ -48,7 +48,7 @@ _sys_maybe_promote = _sys_mod._maybe_promote_query_type
 
 # ── Load NLP pre-interpreter via importlib ────────────────────
 _NLP_PATH = (
-    _REPO_ROOT / "domain-packs" / "education" / "controllers" / "nlp_pre_interpreter.py"
+    _REPO_ROOT / "model-packs" / "education" / "controllers" / "nlp_pre_interpreter.py"
 )
 _nlp_spec = importlib.util.spec_from_file_location("nlp_pre_interp", str(_NLP_PATH))
 _nlp_mod = importlib.util.module_from_spec(_nlp_spec)  # type: ignore[arg-type]

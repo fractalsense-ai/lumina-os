@@ -56,7 +56,7 @@ def _auth_header(token: str) -> dict[str, str]:
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -65,7 +65,7 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
     # from multi-domain test modules loaded earlier in the suite).
     mod.DOMAIN_REGISTRY = DomainRegistry(
         repo_root=_REPO_ROOT,
-        single_config_path="domain-packs/education/cfg/runtime-config.yaml",
+        single_config_path="model-packs/education/cfg/runtime-config.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
     mod._session_containers.clear()
@@ -90,7 +90,7 @@ def client(api_module):
 
 @pytest.fixture
 def multi_api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "domain-packs/system/cfg/domain-registry.yaml")
+    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "model-packs/system/cfg/domain-registry.yaml")
     monkeypatch.delenv("LUMINA_RUNTIME_CONFIG_PATH", raising=False)
     mod = _load_api_module("lumina_api_server_fgh_multi")
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -99,7 +99,7 @@ def multi_api_module(monkeypatch: pytest.MonkeyPatch):
     mod.PERSISTENCE.load_subject_profile = _load_yaml
     mod.DOMAIN_REGISTRY = DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path="domain-packs/system/cfg/domain-registry.yaml",
+        registry_path="model-packs/system/cfg/domain-registry.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
     monkeypatch.setattr(auth, "JWT_SECRET", "test-secret-fgh-multi")

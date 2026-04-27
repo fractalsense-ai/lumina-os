@@ -17,8 +17,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repoRoot
 
 $packages = @(
-    "domain-packs/education/web",
-    "domain-packs/system/web",
+    "model-packs/education/web",
+    "model-packs/system/web",
     "src/web"
 )
 

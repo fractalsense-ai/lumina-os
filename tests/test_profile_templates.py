@@ -338,11 +338,11 @@ class TestEnsureUserProfile:
 # ---------------------------------------------------------------------------
 
 class TestRealLayerFiles:
-    """Verify the actual YAML files in domain-packs/ compose correctly."""
+    """Verify the actual YAML files in model-packs/ compose correctly."""
 
-    BASE_PATH = REPO_ROOT / "domain-packs" / "system" / "cfg" / "base-entity-profile.yaml"
-    DOMAIN_EXT = REPO_ROOT / "domain-packs" / "education" / "cfg" / "domain-profile-extension.yaml"
-    PROFILES_DIR = REPO_ROOT / "domain-packs" / "education" / "profiles"
+    BASE_PATH = REPO_ROOT / "model-packs" / "system" / "cfg" / "base-entity-profile.yaml"
+    DOMAIN_EXT = REPO_ROOT / "model-packs" / "education" / "cfg" / "domain-profile-extension.yaml"
+    PROFILES_DIR = REPO_ROOT / "model-packs" / "education" / "profiles"
 
     @pytest.mark.parametrize("role,expected_key,absent_key", [
         ("student", "learning_state", "educator_state"),

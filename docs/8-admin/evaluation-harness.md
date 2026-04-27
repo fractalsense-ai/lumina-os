@@ -163,7 +163,7 @@ Education example signals:
 - `consecutive_incorrect: 3`, `hint_count: 3`, `frustration_marker_count: 2`
 
 Domain-specific worked examples:
-- [`../domain-packs/education/evaluation-tests.md`](../domain-packs/education/evaluation-tests.md)
+- [`../model-packs/education/evaluation-tests.md`](../model-packs/education/evaluation-tests.md)
 
 ---
 
@@ -192,7 +192,7 @@ python -m pytest reference-implementations/ -k "test_harness" -v
 python -m pytest reference-implementations/ -k "test_harness_transcript" -v
 ```
 
-The reference implementation includes test stubs that implement these test cases against domain-lib references and `reference-implementations/system-log-validator.py`. For education-specific examples, see `domain-packs/education/evaluation-tests.md`.
+The reference implementation includes test stubs that implement these test cases against domain-lib references and `reference-implementations/system-log-validator.py`. For education-specific examples, see `model-packs/education/evaluation-tests.md`.
 
 ---
 

@@ -222,7 +222,7 @@ When `receive_escalations: true` is set on a domain role and a student profile's
 
 ## Student Profile Assignment Fields
 
-The education domain student profile (`domain-packs/education/schemas/student-profile-schema-v1.json`) includes two fields that connect students to their domain role holders:
+The education domain student profile (`model-packs/education/schemas/student-profile-schema-v1.json`) includes two fields that connect students to their domain role holders:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -309,4 +309,4 @@ See [`standards/group-definition-schema-v1.json`](../../standards/group-definiti
 - [`docs/8-admin/escalation-pin-unlock.md`](../8-admin/escalation-pin-unlock.md) — Teacher-initiated session freeze and PIN unlock workflow
 - [`docs/7-concepts/zero-trust-architecture.md`](zero-trust-architecture.md) — Zero-trust architecture
 - [`src/lumina/api/routes/admin.py`](../../src/lumina/api/routes/admin.py) — domain-scoped `list_users` filtering and `invite_user` DA access enforcement
-- [`domain-packs/system/modules/system-core/domain-physics.json`](../../domain-packs/system/modules/system-core/domain-physics.json) — canonical `min_role_policy` and role hierarchy configuration
+- [`model-packs/system/modules/system-core/domain-physics.json`](../../model-packs/system/modules/system-core/domain-physics.json) — canonical `min_role_policy` and role hierarchy configuration

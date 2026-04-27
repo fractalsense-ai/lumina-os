@@ -1,0 +1,85 @@
+# Student Profile Template — Pre-Algebra (Grades 6–7)
+# Conforms to: model-packs/education/schemas/student-profile-schema-v1.json
+# Module: domain/edu/pre-algebra/v1
+# Prerequisites: None (entry-level module)
+# Next module: domain/edu/algebra-intro/v1
+# ============================================================
+# Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
+# with the student's assigned pseudonymous token.
+# ============================================================
+
+# version: 1.0.0
+# last_updated: 2026-04-04
+student_id: "<PSEUDONYMOUS_ID>"
+domain_id: "domain/edu/pre-algebra/v1"
+display_name: null  # Optional nickname; not required
+
+# ── Preferences (IMMERSION ONLY — never affects grading) ────
+preferences:
+  interests: []
+  dislikes: []
+  preferred_explanation_style: step_by_step
+  language: en
+
+# ── Learning State (initial defaults) ───────────────────────
+learning_state:
+  affect:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+
+  # Mastery keys are the invariant IDs tested by this module.
+  # Updated by the ZPD monitor after each turn. Clamped to [0, 1].
+  mastery:
+    equivalence_preserved: 0.0           # Law 1 — Balance Principle
+    reversibility_order_correct: 0.0     # Law 2 — Inverse Operations (new field)
+    inequality_direction_preserved: 0.0  # Direction-flip rule (Artifact 5)
+    solution_verifies: 0.0               # Substitution verification
+
+  challenge_band:
+    min_challenge: 0.25
+    max_challenge: 0.75
+
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+    hint_flags: []
+
+  challenge: 0.2    # Start low — entry-level module, establish baseline first
+  uncertainty: 0.9  # High initial uncertainty — student is unassessed
+
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null
+
+# ── Artifact Progress ────────────────────────────────────────
+# Each artifact is unlocked after mastery >= 0.8 on required skills,
+# confirmed by its boss challenge (1 attempt per session, no hints).
+artifact_progress:
+  variables_and_expressions: null       # null = not yet attempted
+  order_of_operations: null
+  single_step_equations: null
+  multi_step_linear_equations: null
+  linear_inequalities: null
+
+# ── Session History ──────────────────────────────────────────
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# ── Consent ──────────────────────────────────────────────────
+consent:
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
+
+updated_utc: null

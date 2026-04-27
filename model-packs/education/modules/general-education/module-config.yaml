@@ -1,0 +1,63 @@
+# version: 1.0.0
+# last_updated: 2026-04-19
+#
+# Module: general-education (Student Commons — freeform journaling)
+# Extracted from runtime-config.yaml module_map entry:
+#   domain/edu/general-education/v1
+
+domain_physics_path: model-packs/education/modules/general-education/domain-physics.json
+domain_system_prompt_path: model-packs/education/prompts/student-commons-persona-v1.md
+turn_interpretation_prompt_path: model-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
+
+initial_module_state:
+  journaling_entry_count: 0
+  last_reflection_utc: null
+  # ── Wellness intervention counters ──────────────────────
+  sustained_elevation_count: 0        # Turns with active Tier 1 signal
+  cross_session_elevation_count: 0    # Sessions with Tier 2+ triggers
+  tier1_triggered_count: 0            # Lifetime Tier 1 interventions
+  tier2_opt_in_pending: false         # Awaiting student's opt-in acknowledgement
+  safe_person_alerted: false          # Tier 3 alert already sent this period
+  vocabulary_tracking:
+    baseline_complexity: null
+    current_complexity: null
+    growth_delta: 0.0
+    domain_vocabulary: {}
+    measurement_window_turns: 20
+    baseline_sessions_remaining: 3
+    baseline_samples: []
+    last_measured_utc: null
+    session_history: []
+
+default_task_spec:
+  task_id: student-commons-freeform-001
+  nominal_difficulty: 0.0
+
+turn_input_schema:
+  journal_entity_salt:
+    type: string
+    nullable: true
+    default: null
+    description: "Device-local hex salt for entity hashing. Never persisted server-side."
+
+turn_input_defaults:
+  intent_type: "journaling"
+  off_task_ratio: 0.0
+  frustration_marker_count: 0
+  correctness: "n/a"
+  response_latency_sec: 5.0
+  problem_solved: false
+
+adapters:
+  state_builder:
+    module_path: model-packs/education/controllers/freeform_adapters.py
+    callable: freeform_build_initial_state
+  domain_step:
+    module_path: model-packs/education/controllers/freeform_adapters.py
+    callable: freeform_domain_step
+  turn_interpreter:
+    module_path: model-packs/education/controllers/freeform_adapters.py
+    callable: freeform_interpret_turn_input
+
+ui_overrides:
+  subtitle: "Student Commons"

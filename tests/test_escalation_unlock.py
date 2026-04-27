@@ -53,7 +53,7 @@ def clear_pin_store():
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()

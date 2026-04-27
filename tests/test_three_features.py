@@ -42,7 +42,7 @@ def _load_api_module(module_name: str = "lumina.api.server"):
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -55,7 +55,7 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def multi_api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "domain-packs/system/cfg/domain-registry.yaml")
+    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "model-packs/system/cfg/domain-registry.yaml")
     monkeypatch.delenv("LUMINA_RUNTIME_CONFIG_PATH", raising=False)
     mod = _load_api_module("lumina_api_server_threefeat_multi")
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -64,7 +64,7 @@ def multi_api_module(monkeypatch: pytest.MonkeyPatch):
     mod.PERSISTENCE.load_subject_profile = _load_yaml
     mod.DOMAIN_REGISTRY = DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path="domain-packs/system/cfg/domain-registry.yaml",
+        registry_path="model-packs/system/cfg/domain-registry.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
     monkeypatch.setattr(auth, "JWT_SECRET", "test-secret-three-features-multi")
@@ -336,20 +336,20 @@ class TestSystemIdentityConfig:
 
     @pytest.mark.unit
     def test_system_physics_json_has_identity(self) -> None:
-        path = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "system-physics.json"
+        path = _REPO_ROOT / "model-packs" / "system" / "cfg" / "system-physics.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         assert "system_identity" in data
         assert data["system_identity"]["system_name"] == "Project Lumina"
 
     @pytest.mark.unit
     def test_universal_base_identity_contains_name(self) -> None:
-        path = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "system-physics.json"
+        path = _REPO_ROOT / "model-packs" / "system" / "cfg" / "system-physics.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         assert "Project Lumina" in data["universal_base_identity"]
 
     @pytest.mark.unit
     def test_disambiguation_note_present(self) -> None:
-        path = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "system-physics.json"
+        path = _REPO_ROOT / "model-packs" / "system" / "cfg" / "system-physics.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         note = data["system_identity"]["disambiguation_note"]
         assert "immersion" in note.lower()
@@ -366,13 +366,13 @@ class TestDepartmentTag:
 
     @pytest.mark.unit
     def test_algebra1_department(self) -> None:
-        path = _REPO_ROOT / "domain-packs" / "education" / "modules" / "algebra-1" / "domain-physics.json"
+        path = _REPO_ROOT / "model-packs" / "education" / "modules" / "algebra-1" / "domain-physics.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         assert data["department"] == "Mathematics"
 
     @pytest.mark.unit
     def test_agriculture_department(self) -> None:
-        path = _REPO_ROOT / "domain-packs" / "agriculture" / "modules" / "operations-level-1" / "domain-physics.json"
+        path = _REPO_ROOT / "model-packs" / "agriculture" / "modules" / "operations-level-1" / "domain-physics.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         assert data["department"] == "Field Operations"
 

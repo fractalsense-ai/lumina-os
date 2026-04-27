@@ -35,14 +35,14 @@ Optional but recommended:
 - `example-entity-*.yaml` — example profiles for testing
 - `docs/` — domain-scoped man-page documentation tree (see §1.0a)
 
-> **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`domain-packs/education/schemas/student-profile-schema-v1.json`](../domain-packs/education/schemas/student-profile-schema-v1.json) for education). The entity profile template is named according to the domain's own conventions (e.g., `student-profile-template.yaml` for education, `operator-profile-template.yaml` for agriculture) and must validate against that domain-specific schema.
+> **Subject profile schema note:** Each domain pack defines its own subject profile schema in its `schemas/` directory (e.g., [`model-packs/education/schemas/student-profile-schema-v1.json`](../model-packs/education/schemas/student-profile-schema-v1.json) for education). The entity profile template is named according to the domain's own conventions (e.g., `student-profile-template.yaml` for education, `operator-profile-template.yaml` for agriculture) and must validate against that domain-specific schema.
 
 ### 1.0 Domain Structure Contract
 
 To keep domain ownership explicit and avoid cross-domain coupling, packs must follow this contract:
 
-- **Pack-level domain folder** (`domain-packs/{domain}/`) owns domain-wide context and contracts.
-- **Module-level folder** (`domain-packs/{domain}/{module}/`) owns module truth: invariants, standing orders, escalation triggers, thresholds/tolerances.
+- **Pack-level domain folder** (`model-packs/{domain}/`) owns domain-wide context and contracts.
+- **Module-level folder** (`model-packs/{domain}/{module}/`) owns module truth: invariants, standing orders, escalation triggers, thresholds/tolerances.
 - **`domain-lib/`** holds deterministic domain estimation/reference specifications used by domain-lib implementations.
 - **`world-sim/`** is optional and separate from `domain-lib/`; it provides interaction/world framing, not normative thresholds.
 - **`tool-adapters/`** are active deterministic tools and must be explicitly linked from module `domain-physics` via `tool_adapters` IDs.
@@ -185,7 +185,7 @@ A domain's subject state schema must conform to the following structural require
 - All fields must be populated by deterministic domain-lib logic (see [`domain-state-lib-contract-v1.md`](domain-state-lib-contract-v1.md))
 - Schema changes that add required fields or alter field semantics require a version bump
 
-> **Education domain example:** The education domain's compressed learner state schema is at [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and operating-band thresholds — all concepts specific to educational assessment.
+> **Education domain example:** The education domain's compressed learner state schema is at [`../model-packs/education/schemas/compressed-state-schema-v1.json`](../model-packs/education/schemas/compressed-state-schema-v1.json). It includes affect (SVA), per-skill mastery, challenge, uncertainty, and operating-band thresholds — all concepts specific to educational assessment.
 
 See [`domain-state-lib-contract-v1.md`](domain-state-lib-contract-v1.md) for the domain-lib contract that populates the state.
 

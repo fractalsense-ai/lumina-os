@@ -57,7 +57,7 @@ Consent Timestamp:     2026-03-02T09:59:43Z
 Domain Pack Commitment
 ----------------------
 CommitmentRecord ID: <uuid>
-Module Physics JSON: domain-packs/<domain>/<module>/domain-physics.json
+Module Physics JSON: model-packs/<domain>/<module>/domain-physics.json
 Domain Pack Hash:    <sha256>
 Policy Version:      <semver>
 Committed At:        2026-03-01T08:00:00Z

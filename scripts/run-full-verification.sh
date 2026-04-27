@@ -172,7 +172,7 @@ if [ "$SKIP_API_SCENARIOS" = "false" ]; then
         export LUMINA_PORT="$API_PORT"
 
         if [ -z "${LUMINA_RUNTIME_CONFIG_PATH:-}" ]; then
-            DEFAULT_RUNTIME_CONFIG="domain-packs/education/runtime-config.yaml"
+            DEFAULT_RUNTIME_CONFIG="model-packs/education/runtime-config.yaml"
             echo "LUMINA_RUNTIME_CONFIG_PATH not set; defaulting to '$DEFAULT_RUNTIME_CONFIG' for local API startup."
             export LUMINA_RUNTIME_CONFIG_PATH="$DEFAULT_RUNTIME_CONFIG"
         fi

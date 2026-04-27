@@ -3,7 +3,7 @@ version: 1.0.0
 last_updated: 2026-03-20
 ---
 
-# Project Lumina — Documentation Index
+# Lumina Framework — Documentation Index
 
 **Version:** 1.0.0  
 **Status:** Active  
@@ -12,6 +12,11 @@ last_updated: 2026-03-20
 ---
 
 Documentation is organized using the UNIX man-page section convention.
+
+Lumina is a neuro-symbolic systems framework: the runtime engine lives in
+`src/lumina/`, while authored modeled systems live in `model-packs/`.
+See [lumina-framework-ontology(7)](7-concepts/lumina-framework-ontology.md)
+for the engine/model-pack/module vocabulary.
 
 | Section | Name | Contents |
 |---------|------|----------|
@@ -38,7 +43,7 @@ Documentation is organized using the UNIX man-page section convention.
 
 ---
 
-Domain-specific documentation (education prompts, agriculture adapters, etc.) stays in [`../domain-packs/`](../domain-packs/).
+Model-pack-specific documentation (education prompts, agriculture adapters, etc.) stays in [`../model-packs/`](../model-packs/).
 
 ---
 

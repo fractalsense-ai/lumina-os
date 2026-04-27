@@ -158,7 +158,7 @@ adapters:
     post_vocabulary_metric:
       path: /api/user/{user_id}/vocabulary-metric
       method: POST
-      module_path: domain-packs/education/controllers/api_handlers.py
+      module_path: model-packs/education/controllers/api_handlers.py
       callable: post_vocabulary_metric
       roles: []
       request_body:
@@ -166,7 +166,7 @@ adapters:
     dashboard_vocabulary_growth:
       path: /api/dashboard/education/vocabulary-growth
       method: GET
-      module_path: domain-packs/education/controllers/api_handlers.py
+      module_path: model-packs/education/controllers/api_handlers.py
       callable: dashboard_vocabulary_growth
       roles: [root, admin, teacher]
 ```

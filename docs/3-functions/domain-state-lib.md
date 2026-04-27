@@ -51,7 +51,7 @@ Domain-lib update rules must be expressible in plain arithmetic or simple condit
 
 ### 4. Subject State Schema Conformance
 
-Domain-lib outputs must map to fields defined in the domain's own subject state schema, located in the domain pack's `schemas/` directory (e.g., [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) for the education domain). Domains may leave fields unpopulated if they are not applicable, but must not define fields outside their schema without a schema version bump.
+Domain-lib outputs must map to fields defined in the domain's own subject state schema, located in the domain pack's `schemas/` directory (e.g., [`../model-packs/education/schemas/compressed-state-schema-v1.json`](../model-packs/education/schemas/compressed-state-schema-v1.json) for the education domain). Domains may leave fields unpopulated if they are not applicable, but must not define fields outside their schema without a schema version bump.
 
 ### 5. Domain Lib Directory
 
@@ -106,6 +106,6 @@ Earlier versions and file paths use `sensor` and `sensor array`. In this reposit
 
 ## References
 
-- [`../domain-packs/education/schemas/compressed-state-schema-v1.json`](../domain-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example instantiation)
-- [`../domain-packs/education/domain-lib/README.md`](../domain-packs/education/domain-lib/README.md) — education domain lib components
+- [`../model-packs/education/schemas/compressed-state-schema-v1.json`](../model-packs/education/schemas/compressed-state-schema-v1.json) — education domain subject state schema (example instantiation)
+- [`../model-packs/education/domain-lib/README.md`](../model-packs/education/domain-lib/README.md) — education domain lib components
 - [`lumina-core-v1.md`](lumina-core-v1.md) — core conformance spec (Section 3: Compressed State Conformance)

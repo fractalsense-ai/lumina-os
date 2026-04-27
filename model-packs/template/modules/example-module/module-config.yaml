@@ -1,0 +1,39 @@
+# version: 0.1.0
+# last_updated: 2026-04-19
+#
+# Module: example-module
+# Per-module configuration — auto-discovered by the runtime loader.
+# See runtime-config.yaml for the module_map registry that points here.
+
+# TODO: Points to your module's domain-physics file.
+domain_physics_path: model-packs/template/modules/example-module/domain-physics.json
+
+initial_module_state:
+  # TODO: Define whatever state your domain step needs to track.
+  #       This is the seed state for brand-new sessions.
+  score: 0.0
+  uncertainty: 0.5
+  turn_count: 0
+
+# TODO: Define default task spec for this module.
+default_task_spec:
+  task_id: example-task-001
+  nominal_difficulty: 0.4
+  skills_required:
+    - observe
+    - report
+
+# TODO: Define domain step parameters for this module.
+domain_step_params:
+  window_turns: 5
+  drift_threshold: 0.4
+
+turn_input_defaults:
+  # TODO: Fallback values the turn interpreter uses when the SLM
+  #       omits a field.  Keys must match your turn-interpretation spec.
+  on_track: true
+  response_latency_sec: 5.0
+  off_task_ratio: 0.0
+
+ui_overrides:
+  subtitle: "Example Module"

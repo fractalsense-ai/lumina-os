@@ -1,4 +1,4 @@
-﻿"""
+"""
 lumina-api-server.py — Project Lumina Integration Server
 
 Generic runtime host for D.S.A. orchestration:
@@ -88,7 +88,7 @@ _explicit_registry = os.environ.get("LUMINA_DOMAIN_REGISTRY_PATH")
 DOMAIN_REGISTRY_PATH: str | None = (
     _explicit_registry
     if _explicit_registry
-    else (None if RUNTIME_CONFIG_PATH else "domain-packs/system/cfg/domain-registry.yaml")
+    else (None if RUNTIME_CONFIG_PATH else "model-packs/system/cfg/domain-registry.yaml")
 )
 PERSISTENCE_BACKEND = os.environ.get("LUMINA_PERSISTENCE_BACKEND", "filesystem").strip().lower()
 DB_URL = os.environ.get("LUMINA_DB_URL")
@@ -2612,7 +2612,7 @@ def _get_daemon_scheduler() -> Any:
 
         d_cfg: dict[str, Any] = {}
         try:
-            rt = load_yaml(Path("domain-packs/system/cfg/runtime-config.yaml"))
+            rt = load_yaml(Path("model-packs/system/cfg/runtime-config.yaml"))
             d_cfg = rt.get("daemon", {})
         except Exception:
             pass

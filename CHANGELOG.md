@@ -13,7 +13,14 @@ They intentionally diverge: the specification leads, the implementation follows.
 
 ---
 
-## [Unreleased] — Signal Decomposition Framework (Phase H) + Affect Monitoring Pipeline (Phases F & G)
+## [Unreleased] — Lumina Framework Repositioning + Signal Decomposition Framework (Phase H) + Affect Monitoring Pipeline (Phases F & G)
+
+### Changed — Lumina Framework / Model-Pack Repositioning
+
+- Repositioned the public project identity from **Lumina OS** toward **Lumina Neuro-Symbolic Systems Framework** / **Lumina Framework**.
+- Renamed the repository pack directory from `domain-packs/` to `model-packs/` and updated path references across configs, docs, scripts, tests, web plugin discovery, examples, and manifest entries.
+- Added `docs/7-concepts/lumina-framework-ontology.md`, defining Lumina as the engine/framework, model-packs as pluggable modeled systems (the “mods” layer), and modules as subsystem routines/workflows inside a modeled system.
+- Updated README, docs index, model-pack directory README, and contributor guidance to use model-pack terminology while leaving deeper compatibility identifiers such as `domain_pack_id` for the follow-up identifier-migration slice.
 
 ### Added — Phase H: Signal Decomposition Framework
 
@@ -22,8 +29,8 @@ They intentionally diverge: the specification leads, the implementation follows.
 - **`standards/spectral-advisory-schema-v1.json`** — formal schema for `learning_state.spectral_advisories[*]` records (`advisory_id`, `signal`, `band`, `direction`, `z_score`, `message`, `created_utc`, `expires_utc`).
 - **Generalised daemon task** — `rhythm_fft_analysis` in `src/lumina/daemon/tasks.py` now reads `domain_physics["signals"]` and iterates every declared signal on every actor, with no SVA hard-coding. Direction is normalised to the symbolic vocabulary (`positive` / `negative` / `neutral`) at the advisory boundary; `Proposal.detail.direction` retains the integer form for back-compat.
 - **Generalised in-session consumer** — `journal_domain_step` advisory pull now delegates to `lumina.signals.pull_active_advisory`, which arbitrates across all signals (not just SVA axes) by `advisory_priority` → `band_priority` → recency.
-- **Scope Y education delegation** — `domain-packs/education/domain-lib/affect_monitor.py` is now a delegating shim over `lumina.signals`, and the education pack ships its own `signals` physics block declaring SVA axes with education-flavored `message_overrides`.
-- **Agriculture POC** — `domain-packs/agriculture/modules/operations-level-1/domain-physics.json` declares four sensor signals (`soil_pH`, `soil_moisture`, `air_temperature`, `motor_vibration`) with per-signal `message_overrides`. New `to_signal_samples(...)` adapter on `domain-packs/agriculture/domain-lib/sensors/environmental_sensors.py` bridges `SensorReading` records to `SignalSample`. Proves the framework runs end-to-end on a non-affect domain with no framework changes.
+- **Scope Y education delegation** — `model-packs/education/domain-lib/affect_monitor.py` is now a delegating shim over `lumina.signals`, and the education pack ships its own `signals` physics block declaring SVA axes with education-flavored `message_overrides`.
+- **Agriculture POC** — `model-packs/agriculture/modules/operations-level-1/domain-physics.json` declares four sensor signals (`soil_pH`, `soil_moisture`, `air_temperature`, `motor_vibration`) with per-signal `message_overrides`. New `to_signal_samples(...)` adapter on `model-packs/agriculture/domain-lib/sensors/environmental_sensors.py` bridges `SensorReading` records to `SignalSample`. Proves the framework runs end-to-end on a non-affect domain with no framework changes.
 - **Documentation**:
   - `docs/7-concepts/signal-decomposition-framework.md` — concept doc covering the instruments-vs-reactions principle, the `signals` block contract, the advisory schema, and the steps to onboard a new domain.
   - `docs/3-functions/signals.md` — public API reference for `lumina.signals` including the dual integer/symbolic direction vocabulary.
@@ -61,8 +68,8 @@ They intentionally diverge: the specification leads, the implementation follows.
 
 ### Changed
 
-- `domain-packs/education/controllers/journal_adapters.py` — added `profile_data`, `persistence`, `user_id`, `session_id` plumbing through `journal_domain_step`; advisory attached at all five tier return points (warmup, tier3, tier2, tier1, ok).
-- `domain-packs/education/controllers/freeform_adapters.py` — `freeform_domain_step` now forwards new advisory plumbing kwargs to `journal_domain_step`.
+- `model-packs/education/controllers/journal_adapters.py` — added `profile_data`, `persistence`, `user_id`, `session_id` plumbing through `journal_domain_step`; advisory attached at all five tier return points (warmup, tier3, tier2, tier1, ok).
+- `model-packs/education/controllers/freeform_adapters.py` — `freeform_domain_step` now forwards new advisory plumbing kwargs to `journal_domain_step`.
 - `src/lumina/api/session.py` — `domain_lib_step_fn` lambda now uses `inspect.signature` to forward `profile`, `persistence`, `user_id`, and `session_id` only when the underlying step function accepts them, preserving compatibility with non-journal domain steps.
 - `src/lumina/daemon/tasks.py` — `rhythm_fft_analysis` now persists spectral findings as advisories on `learning_state.spectral_advisories` in addition to writing `Proposal` records.
 

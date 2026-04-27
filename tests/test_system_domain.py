@@ -27,7 +27,7 @@ import pytest
 # Make domain-pack controllers importable without installing the package.
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-_CONTROLLERS = _REPO_ROOT / "domain-packs" / "system" / "controllers"
+_CONTROLLERS = _REPO_ROOT / "model-packs" / "system" / "controllers"
 # Ensure system controllers path is FIRST so it takes precedence
 if str(_CONTROLLERS) in sys.path:
     sys.path.remove(str(_CONTROLLERS))

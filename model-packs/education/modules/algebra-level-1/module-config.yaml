@@ -1,0 +1,69 @@
+# version: 1.0.0
+# last_updated: 2026-04-19
+#
+# Module: algebra-level-1
+# Extracted from runtime-config.yaml module_map entry:
+#   domain/edu/algebra-level-1/v1
+
+domain_physics_path: model-packs/education/modules/algebra-level-1/domain-physics.json
+
+initial_module_state:
+  affect: { salience: 0.5, valence: 0.0, arousal: 0.5 }
+  mastery:
+    equivalence_preserved: 0.0
+    no_illegal_operations: 0.0
+    solution_verifies: 0.0
+    show_work_minimum: 0.0
+  challenge_band: { min_challenge: 0.3, max_challenge: 0.7 }
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+    hint_flags: []
+  challenge: 0.3
+  uncertainty: 0.8
+  fluency: { current_tier: tier_1, consecutive_correct: 0 }
+
+default_task_spec:
+  task_id: algebra-level-1-basics-001
+  nominal_difficulty: 0.45
+
+domain_step_params:
+  min_challenge: 0.3
+  max_challenge: 0.7
+  drift_window_turns: 10
+  minor_drift_threshold: 0.3
+  major_drift_threshold: 0.5
+  persistence_required: 3
+  fluency_monitor:
+    target_consecutive_successes: 3
+    time_threshold_seconds: 120
+    tier_progression:
+      - tier_1
+      - tier_2
+      - tier_3
+
+adapters:
+  task_initializer:
+    module_path: model-packs/education/modules/algebra-level-1/problem_generator.py
+    callable: initialize_task
+
+ui_overrides:
+  subtitle: "Algebra Level 1 — Foundations"
+
+turn_input_schema:
+  equivalence_preserved:
+    type: bool
+  substitution_check:
+    type: bool
+    default: false
+  method_recognized:
+    type: bool
+    default: false
+  illegal_operations:
+    type: list
+    default: []

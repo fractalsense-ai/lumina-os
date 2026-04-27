@@ -153,7 +153,7 @@ if (-not $SkipApiScenarios) {
             $env:LUMINA_PORT = "$apiPort"
 
             if ([string]::IsNullOrWhiteSpace($env:LUMINA_RUNTIME_CONFIG_PATH)) {
-                $defaultRuntimeConfig = "domain-packs/education/runtime-config.yaml"
+                $defaultRuntimeConfig = "model-packs/education/runtime-config.yaml"
                 Write-Host "LUMINA_RUNTIME_CONFIG_PATH not set; defaulting to '$defaultRuntimeConfig' for local API startup."
                 $env:LUMINA_RUNTIME_CONFIG_PATH = $defaultRuntimeConfig
             }

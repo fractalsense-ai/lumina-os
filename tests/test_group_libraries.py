@@ -219,14 +219,14 @@ class TestRealGroupResources:
         return Path(__file__).resolve().parents[1]
 
     def test_agriculture_has_group_library(self, repo_root: Path):
-        agri = repo_root / "domain-packs" / "agriculture"
+        agri = repo_root / "model-packs" / "agriculture"
         if not agri.is_dir():
             pytest.skip("Agriculture domain pack not found")
         libs, _ = scan_group_resources(agri)
         assert any("environmental_sensors" in k for k in libs)
 
     def test_environmental_sensors_file_exists(self, repo_root: Path):
-        sensors = repo_root / "domain-packs" / "agriculture" / "domain-lib" / "environmental_sensors.py"
+        sensors = repo_root / "model-packs" / "agriculture" / "domain-lib" / "environmental_sensors.py"
         if not sensors.is_file():
             pytest.skip("environmental_sensors.py not found")
         content = sensors.read_text(encoding="utf-8")

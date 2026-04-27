@@ -1,0 +1,69 @@
+# Student Profile Template — Algebra Level 1
+# Conforms to: model-packs/education/schemas/student-profile-schema-v1.json
+# ============================================================
+# Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
+# with the student's assigned pseudonymous token.
+# ============================================================
+
+# version: 1.0.0
+# last_updated: 2026-04-04
+student_id: "<PSEUDONYMOUS_ID>"
+domain_id: "domain/edu/algebra-level-1/v1"
+display_name: null  # Optional nickname; not required
+
+# ── Preferences (IMMERSION ONLY — never affects grading) ────
+preferences:
+  interests: []
+  dislikes: []
+  preferred_explanation_style: step_by_step
+  language: en
+
+# ── Learning State (initial defaults) ───────────────────────
+learning_state:
+  affect:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+
+  mastery:
+    equivalence_preserved: 0.0
+    no_illegal_operations: 0.0
+    solution_verifies: 0.0
+    show_work_minimum: 0.0
+
+  challenge_band:
+    min_challenge: 0.3
+    max_challenge: 0.7
+
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+
+  challenge: 0.3   # Start at the low end of the challenge band
+  uncertainty: 0.8  # High initial uncertainty — we don't know the student yet
+
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null
+
+# ── Session History ──────────────────────────────────────────
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# ── Consent ──────────────────────────────────────────────────
+consent:
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
+
+updated_utc: null

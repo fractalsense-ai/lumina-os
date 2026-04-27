@@ -21,5 +21,5 @@ Worked examples, traces, and reference scenarios.
 | [examples index](../../examples/README.md) | Full examples directory listing |
 
 See also the domain pack worked examples:
-- [Education — Algebra Level 1](../../domain-packs/education/modules/algebra-level-1/) — complete domain pack
-- [Agriculture — Operations Level 1](../../domain-packs/agriculture/modules/operations-level-1/) — domain-swap proof
+- [Education — Algebra Level 1](../../model-packs/education/modules/algebra-level-1/) — complete domain pack
+- [Agriculture — Operations Level 1](../../model-packs/agriculture/modules/operations-level-1/) — domain-swap proof

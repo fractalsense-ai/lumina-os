@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 # Ensure the education domain-pack reference-implementations are importable.
-_EDU_REF = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "controllers"
+_EDU_REF = Path(__file__).resolve().parent.parent / "model-packs" / "education" / "controllers"
 if str(_EDU_REF) not in sys.path:
     sys.path.insert(0, str(_EDU_REF))
 

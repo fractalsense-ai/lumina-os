@@ -27,7 +27,7 @@ It maps every versioned artifact (docs, specs, standards, schemas) to its curren
 status, last-updated date, and SHA-256 integrity hash.
 
 Domain packs maintain their own per-pack `MANIFEST.yaml` at the root of each domain pack
-directory (e.g., `domain-packs/education/MANIFEST.yaml`). The core manifest does not index
+directory (e.g., `model-packs/education/MANIFEST.yaml`). The core manifest does not index
 domain-pack artifacts.
 
 ### AI Navigation Pattern

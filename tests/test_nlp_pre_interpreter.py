@@ -11,7 +11,7 @@ import pytest
 # ── Load the hyphenated module via importlib ────────────────
 _NLP_PATH = (
     Path(__file__).resolve().parent.parent
-    / "domain-packs"
+    / "model-packs"
     / "education"
     / "controllers"
     / "nlp_pre_interpreter.py"

@@ -53,13 +53,13 @@ _explicit_registry = os.environ.get("LUMINA_DOMAIN_REGISTRY_PATH")
 DOMAIN_REGISTRY_PATH: str | None = (
     _explicit_registry
     if _explicit_registry
-    else (None if RUNTIME_CONFIG_PATH else "domain-packs/system/cfg/domain-registry.yaml")
+    else (None if RUNTIME_CONFIG_PATH else "model-packs/system/cfg/domain-registry.yaml")
 )
 PERSISTENCE_BACKEND = os.environ.get("LUMINA_PERSISTENCE_BACKEND", "filesystem").strip().lower()
 DB_URL = os.environ.get("LUMINA_DB_URL")
 ENFORCE_POLICY_COMMITMENT = os.environ.get("LUMINA_ENFORCE_POLICY_COMMITMENT", "true").strip().lower() not in {"0", "false", "no"}
 
-_SYSTEM_PHYSICS_PATH = Path(os.environ.get("LUMINA_SYSTEM_PHYSICS_PATH", str(_REPO_ROOT / "domain-packs" / "system" / "cfg" / "system-physics.json")))
+_SYSTEM_PHYSICS_PATH = Path(os.environ.get("LUMINA_SYSTEM_PHYSICS_PATH", str(_REPO_ROOT / "model-packs" / "system" / "cfg" / "system-physics.json")))
 try:
     with open(_SYSTEM_PHYSICS_PATH, encoding="utf-8") as _fh:
         _system_physics_data = json.load(_fh)

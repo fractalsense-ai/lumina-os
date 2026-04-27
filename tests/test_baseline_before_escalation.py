@@ -18,8 +18,8 @@ import pytest
 from lumina.orchestrator.actor_resolver import ActorResolver
 
 # ── Setup: import education controllers via importlib ─────────
-_CTRL_DIR = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "controllers"
-_LIB_DIR = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "domain-lib"
+_CTRL_DIR = Path(__file__).resolve().parent.parent / "model-packs" / "education" / "controllers"
+_LIB_DIR = Path(__file__).resolve().parent.parent / "model-packs" / "education" / "domain-lib"
 
 # Ensure the controllers directory is importable (for learning_adapters / freeform_adapters).
 if str(_CTRL_DIR) not in sys.path:

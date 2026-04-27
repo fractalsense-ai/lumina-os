@@ -36,7 +36,7 @@ def _load_api_module():
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -48,7 +48,7 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
     from lumina.api import config as _cfg
     registry = DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path=str(_REPO_ROOT / "domain-packs" / "system" / "cfg" / "domain-registry.yaml"),
+        registry_path=str(_REPO_ROOT / "model-packs" / "system" / "cfg" / "domain-registry.yaml"),
     )
     monkeypatch.setattr(_cfg, "DOMAIN_REGISTRY", registry)
 

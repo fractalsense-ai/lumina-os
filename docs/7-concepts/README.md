@@ -17,6 +17,7 @@ Architectural principles, design frameworks, and system philosophy.
 |---------|-------------|
 | [principles-v1](../../specs/principles-v1.md) | Non-negotiable system principles |
 | [principles](principles.md) | Principles overview (local reference) |
+| [lumina-framework-ontology](lumina-framework-ontology.md) | Engine/model-pack/module ontology for the Lumina Neuro-Symbolic Systems Framework |
 | [dsa-framework-v1](../../specs/dsa-framework-v1.md) | D.S.A. structural schema (Domain, State, Actor) — the contract model behind PPA |
 | [dsa-framework](dsa-framework.md) | D.S.A. framework overview (local reference) |
 | [dsa-actor-model](dsa-actor-model.md) | D.S.A. Actor pillar: actor types, actor groups, signal flow, distinction from RBAC roles |
@@ -60,11 +61,11 @@ Architectural principles, design frameworks, and system philosophy.
 
 | Concept | New location |
 |---------|-------------|
-| [learning-profile](learning-profile.md) | Moved to [`domain-packs/education/docs/7-concepts/`](../../domain-packs/education/docs/7-concepts/learning-profile.md) |
-| [student-commons](student-commons.md) | See [`domain-packs/education/docs/7-concepts/`](../../domain-packs/education/docs/7-concepts/student-commons.md) |
+| [learning-profile](learning-profile.md) | Moved to [`model-packs/education/docs/7-concepts/`](../../model-packs/education/docs/7-concepts/learning-profile.md) |
+| [student-commons](student-commons.md) | See [`model-packs/education/docs/7-concepts/`](../../model-packs/education/docs/7-concepts/student-commons.md) |
 | [daemon-batch-processing](../8-admin/daemon-batch-processing.md) | Moved to [Section 8 — Admin](../8-admin/) |
 | [governance-dashboard](../8-admin/governance-dashboard.md) | Moved to [Section 8 — Admin](../8-admin/) |
 | [logic-scraping](../8-admin/logic-scraping.md) | Moved to [Section 8 — Admin](../8-admin/) |
 | [llm-assisted-governance-adapters](../8-admin/llm-assisted-governance-adapters.md) | Moved to [Section 8 — Admin](../8-admin/) |
 
-These documents define the foundational design philosophy of Project Lumina. All implementation decisions trace back to these concepts.
+These documents define the foundational design philosophy of the Lumina Framework. All implementation decisions trace back to these concepts.

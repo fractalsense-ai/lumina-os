@@ -16,7 +16,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def _load_detect_fn():
     # Ensure server module can initialize (needs at least one domain config path)
-    os.environ.setdefault("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    os.environ.setdefault("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     module_path = _REPO_ROOT / "src" / "lumina" / "api" / "server.py"
     spec = importlib.util.spec_from_file_location("lumina.api.server", str(module_path))
     if spec is None or spec.loader is None:

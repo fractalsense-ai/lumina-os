@@ -157,7 +157,7 @@ and a flat-file numpy vector store.
 The MiniLM housekeeper indexes all Markdown files under:
 
 1. Root `docs/` (sections 1–8)
-2. Every `domain-packs/*/docs/` tree (same section layout)
+2. Every `model-packs/*/docs/` tree (same section layout)
 
 Documents are chunked at `## ` heading boundaries. Each chunk is embedded
 independently and stored with its content SHA-256 hash for dedup.
@@ -174,7 +174,7 @@ independently and stored with its content SHA-256 hash for dedup.
 Vector search results are filtered by the same scope rules as structured
 retrieval. A session in the `education` domain may only receive chunks whose
 `source_path` falls within `docs/` (system-wide) or
-`domain-packs/education/docs/` (domain-scoped). Cross-domain doc chunks are
+`model-packs/education/docs/` (domain-scoped). Cross-domain doc chunks are
 excluded.
 
 ### Artifact type

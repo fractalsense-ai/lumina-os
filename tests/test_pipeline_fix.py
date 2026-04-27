@@ -324,7 +324,7 @@ class TestPerModuleLocalOnly:
         from lumina.core.yaml_loader import load_yaml
         from conftest import merge_module_config_sidecars
 
-        cfg = load_yaml(str(REPO_ROOT / "domain-packs/education/cfg/runtime-config.yaml"))
+        cfg = load_yaml(str(REPO_ROOT / "model-packs/education/cfg/runtime-config.yaml"))
         module_map = cfg.get("runtime", {}).get("module_map", {})
         merge_module_config_sidecars(module_map)
 
@@ -346,7 +346,7 @@ class TestPerModuleLocalOnly:
         from lumina.core.yaml_loader import load_yaml
         from conftest import merge_module_config_sidecars
 
-        cfg = load_yaml(str(REPO_ROOT / "domain-packs/education/cfg/runtime-config.yaml"))
+        cfg = load_yaml(str(REPO_ROOT / "model-packs/education/cfg/runtime-config.yaml"))
         module_map = cfg.get("runtime", {}).get("module_map", {})
         merge_module_config_sidecars(module_map)
 
@@ -374,14 +374,14 @@ class TestGovernanceTechnicalManuals:
     """Education domain-lib must include governance Technical Manuals."""
 
     def test_command_interpreter_spec_exists(self) -> None:
-        path = REPO_ROOT / "domain-packs/education/domain-lib/reference/command-interpreter-spec-v1.md"
+        path = REPO_ROOT / "model-packs/education/domain-lib/reference/command-interpreter-spec-v1.md"
         assert path.exists(), "Missing command-interpreter-spec-v1.md"
         text = path.read_text(encoding="utf-8")
         assert "Command Interpreter Specification" in text
         assert "education" in text.lower()
 
     def test_governance_turn_interpretation_spec_exists(self) -> None:
-        path = REPO_ROOT / "domain-packs/education/domain-lib/reference/governance-turn-interpretation-spec-v1.md"
+        path = REPO_ROOT / "model-packs/education/domain-lib/reference/governance-turn-interpretation-spec-v1.md"
         assert path.exists(), "Missing governance-turn-interpretation-spec-v1.md"
         text = path.read_text(encoding="utf-8")
         assert "Governance Turn Interpretation" in text
@@ -389,7 +389,7 @@ class TestGovernanceTechnicalManuals:
 
     def test_command_spec_covers_all_operations(self) -> None:
         """Command interpreter spec should reference all key operations."""
-        path = REPO_ROOT / "domain-packs/education/domain-lib/reference/command-interpreter-spec-v1.md"
+        path = REPO_ROOT / "model-packs/education/domain-lib/reference/command-interpreter-spec-v1.md"
         text = path.read_text(encoding="utf-8")
 
         key_operations = [
@@ -407,7 +407,7 @@ class TestGovernanceTechnicalManuals:
 
     def test_governance_spec_contrasts_with_learning(self) -> None:
         """Governance TM should explicitly contrast with learning evidence."""
-        path = REPO_ROOT / "domain-packs/education/domain-lib/reference/governance-turn-interpretation-spec-v1.md"
+        path = REPO_ROOT / "model-packs/education/domain-lib/reference/governance-turn-interpretation-spec-v1.md"
         text = path.read_text(encoding="utf-8")
         # Must mention that governance does NOT produce ZPD/correctness
         assert "correctness" in text

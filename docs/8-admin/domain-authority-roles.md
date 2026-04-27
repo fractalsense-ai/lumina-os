@@ -183,5 +183,5 @@ For the full specification, see [`../specs/rbac-spec-v1.md`](../specs/rbac-spec-
 - [`../specs/rbac-spec-v1.md`](../specs/rbac-spec-v1.md) — RBAC specification
 - [`../standards/rbac-permission-schema-v1.json`](../standards/rbac-permission-schema-v1.json) — permission schema
 - [`../standards/role-definition-schema-v1.json`](../standards/role-definition-schema-v1.json) — role definition schema
-- Consent contract specification — see the relevant domain pack's consent documentation (e.g., [`../domain-packs/education/world-sim/magic-circle-consent-v1.md`](../domain-packs/education/world-sim/magic-circle-consent-v1.md) for education)
+- Consent contract specification — see the relevant domain pack's consent documentation (e.g., [`../model-packs/education/world-sim/magic-circle-consent-v1.md`](../model-packs/education/world-sim/magic-circle-consent-v1.md) for education)
 - [`../standards/lumina-core-v1.md`](../standards/lumina-core-v1.md) — conformance requirements

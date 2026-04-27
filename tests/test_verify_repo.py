@@ -265,7 +265,7 @@ def test_check_auth_infrastructure_missing_all(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_no_domain_packs(tmp_path: Path) -> None:
-    domain_packs = tmp_path / "domain-packs"
+    domain_packs = tmp_path / "model-packs"
     domain_packs.mkdir()
     errors: list[str] = []
     with __import__("unittest.mock", fromlist=["patch"]).patch.object(verify_mod, "REPO_ROOT", tmp_path):
@@ -275,7 +275,7 @@ def test_check_domain_tool_adapter_linkage_no_domain_packs(tmp_path: Path) -> No
 
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_no_declared_adapters(tmp_path: Path) -> None:
-    mod_dir = tmp_path / "domain-packs" / "edu" / "module-1"
+    mod_dir = tmp_path / "model-packs" / "edu" / "module-1"
     mod_dir.mkdir(parents=True)
     physics = mod_dir / "domain-physics.json"
     physics.write_text(json.dumps({"id": "edu-1", "version": "1.0.0", "tool_adapters": []}), encoding="utf-8")
@@ -288,7 +288,7 @@ def test_check_domain_tool_adapter_linkage_no_declared_adapters(tmp_path: Path) 
 
 @pytest.mark.unit
 def test_check_domain_tool_adapter_linkage_missing_adapter(tmp_path: Path) -> None:
-    mod_dir = tmp_path / "domain-packs" / "edu" / "module-1"
+    mod_dir = tmp_path / "model-packs" / "edu" / "module-1"
     mod_dir.mkdir(parents=True)
     physics = mod_dir / "domain-physics.json"
     physics.write_text(

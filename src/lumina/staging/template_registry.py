@@ -52,7 +52,7 @@ _register(Template(
         "subsystem_configs": {},
         "glossary": [],
     },
-    target_pattern="domain-packs/{domain_short}/cfg/domain-physics.json",
+    target_pattern="model-packs/{domain_short}/cfg/domain-physics.json",
     file_format="json",
 ))
 
@@ -63,7 +63,7 @@ _register(Template(
     default_structure={
         "description": "",
     },
-    target_pattern="domain-packs/{domain_short}/cfg/evidence-schema.json",
+    target_pattern="model-packs/{domain_short}/cfg/evidence-schema.json",
     file_format="json",
 ))
 
@@ -85,7 +85,7 @@ _register(Template(
             "fallback_standing_order_id": None,
         },
     },
-    target_pattern="domain-packs/{domain_short}/modules/{module}/tool-adapters/{adapter_name}-adapter-v{major}.yaml",
+    target_pattern="model-packs/{domain_short}/modules/{module}/tool-adapters/{adapter_name}-adapter-v{major}.yaml",
     file_format="yaml",
 ))
 
@@ -98,7 +98,7 @@ _register(Template(
         "history": [],
         "preferences": {},
     },
-    target_pattern="domain-packs/{domain_short}/profiles/{profile_id}.yaml",
+    target_pattern="model-packs/{domain_short}/profiles/{profile_id}.yaml",
     file_format="yaml",
 ))
 
@@ -111,7 +111,7 @@ _register(Template(
         "confidence": 0.0,
         "tags": [],
     },
-    target_pattern="domain-packs/{domain_short}/context-hints/{hint_id}.json",
+    target_pattern="model-packs/{domain_short}/context-hints/{hint_id}.json",
     file_format="json",
 ))
 

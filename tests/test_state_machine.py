@@ -348,7 +348,7 @@ class TestToolAdapter:
         from pathlib import Path
         adapter_path = (
             Path(__file__).resolve().parents[1]
-            / "domain-packs" / "system" / "controllers"
+            / "model-packs" / "system" / "controllers"
             / "state_transaction_adapter.py"
         )
         spec = importlib.util.spec_from_file_location(

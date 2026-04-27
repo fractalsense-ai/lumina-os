@@ -1,4 +1,4 @@
-﻿"""Unit tests for DomainRegistry.resolve_default_for_user().
+"""Unit tests for DomainRegistry.resolve_default_for_user().
 
 These tests exercise the role-based default domain resolution logic
 introduced to route system-level operators to the system domain instead
@@ -24,7 +24,7 @@ def registry() -> DomainRegistry:
     """Load DomainRegistry in multi-domain mode from the real registry YAML."""
     return DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path="domain-packs/system/cfg/domain-registry.yaml",
+        registry_path="model-packs/system/cfg/domain-registry.yaml",
         # No load_runtime_context_fn needed — we only test resolve_default_for_user
     )
 
@@ -141,7 +141,7 @@ def test_single_domain_mode_always_returns_default(tmp_path: Path) -> None:
     # Point at a real runtime config so the registry initialises without error
     reg = DomainRegistry(
         repo_root=_REPO_ROOT,
-        single_config_path="domain-packs/education/cfg/runtime-config.yaml",
+        single_config_path="model-packs/education/cfg/runtime-config.yaml",
     )
     for role in ("root", "super_admin", "operator", "half_operator", "user"):
         result = reg.resolve_default_for_user({"sub": "u", "role": role, "governed_modules": []})
@@ -164,11 +164,11 @@ def test_unauthenticated_domain_used_for_none_user(tmp_path: Path) -> None:
         "role_defaults": {"root": "system", "super_admin": "system"},
         "domains": {
             "education": {
-                "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml",
                 "label": "Education",
             },
             "system": {
-                "runtime_config_path": "domain-packs/system/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/system/cfg/runtime-config.yaml",
                 "label": "System",
             },
         },
@@ -195,15 +195,15 @@ def test_unauthenticated_domain_separate_from_default(tmp_path: Path) -> None:
         "default_domain": "education",
         "domains": {
             "education": {
-                "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml",
                 "label": "Education",
             },
             "agriculture": {
-                "runtime_config_path": "domain-packs/agriculture/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/agriculture/cfg/runtime-config.yaml",
                 "label": "Agriculture",
             },
             "system": {
-                "runtime_config_path": "domain-packs/system/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/system/cfg/runtime-config.yaml",
                 "label": "System",
             },
         },
@@ -227,7 +227,7 @@ def test_unauthenticated_domain_absent_falls_back_to_default(tmp_path: Path) -> 
         "default_domain": "education",
         "domains": {
             "education": {
-                "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml",
                 "label": "Education",
             },
         },
@@ -249,7 +249,7 @@ def test_unauthenticated_domain_invalid_raises(tmp_path: Path) -> None:
         "default_domain": "education",
         "domains": {
             "education": {
-                "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+                "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml",
                 "label": "Education",
             },
         },
@@ -262,7 +262,7 @@ def test_unauthenticated_domain_invalid_raises(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_real_registry_unauthenticated_routes_to_education(registry: DomainRegistry) -> None:
-    """Integration: real domain-packs/system/cfg/domain-registry.yaml unauthenticated_domain resolves to education."""
+    """Integration: real model-packs/system/cfg/domain-registry.yaml unauthenticated_domain resolves to education."""
     assert registry.resolve_default_for_user(None) == "education"
 
 

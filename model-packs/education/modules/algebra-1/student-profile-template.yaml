@@ -1,0 +1,96 @@
+# Student Profile Template — Algebra 1 (Grade 9)
+# Conforms to: model-packs/education/schemas/student-profile-schema-v1.json
+# Module: domain/edu/algebra-1/v1
+# Prerequisites: domain/edu/algebra-intro/v1 — all 5 artifacts passed
+# Next module: None (terminal module of the core algebra curriculum)
+# ============================================================
+# Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
+# with the student's assigned pseudonymous token.
+#
+# All 6 diagnostic laws are active in this module. The sensor runs at
+# full capacity. Every mastery key below corresponds to an active invariant.
+# ============================================================
+
+# version: 1.0.0
+# last_updated: 2026-04-04
+student_id: "<PSEUDONYMOUS_ID>"
+domain_id: "domain/edu/algebra-1/v1"
+display_name: null  # Optional nickname; not required
+
+# ── Preferences (IMMERSION ONLY — never affects grading) ────
+preferences:
+  interests: []
+  dislikes: []
+  preferred_explanation_style: step_by_step
+  language: en
+
+# ── Learning State (initial defaults) ───────────────────────
+learning_state:
+  affect:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+
+  # Mastery keys are the invariant IDs tested by this module.
+  # Updated by the ZPD monitor after each turn. Clamped to [0, 1].
+  # Laws 1–3 and 5 are inherited; expected near 0.8+ from algebra-intro,
+  # but reset to 0 here until first turns confirm the grade-9 level carry-over.
+  # Laws 4 and 6 are new — assessed from scratch.
+  mastery:
+    equivalence_preserved: 0.0           # Law 1 — inherited (expected strong)
+    reversibility_order_correct: 0.0     # Law 2 — inherited (LLM-estimated)
+    substitution_valid: 0.0              # Law 3 — inherited (LLM-estimated)
+    structure_preserved: 0.0             # Law 4 — NEW in this module (LLM-estimated)
+    relationship_correctly_mapped: 0.0   # Law 5 — inherited (LLM-estimated)
+    model_accurately_transcribed: 0.0    # Law 6 — NEW in this module (LLM-estimated)
+    solution_verifies: 0.0               # Verification of every result
+    show_work_minimum: 0.0               # Step visibility requirement
+
+  challenge_band:
+    min_challenge: 0.35
+    max_challenge: 0.9
+
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+    hint_flags: []
+
+  challenge: 0.45   # Higher start — student has passed both gateway modules
+  uncertainty: 0.6  # Moderate — assessed on Laws 1–3,5 but not yet on Laws 4 or 6
+
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null
+
+# ── Artifact Progress ────────────────────────────────────────
+# Each artifact is unlocked after mastery >= 0.8 on required skills,
+# confirmed by its boss challenge (1 attempt per session, no hints).
+# null = not yet attempted; pass/fail recorded after the boss challenge.
+artifact_progress:
+  exponent_rules: null                  # Artifact 11 of 15
+  polynomial_operations: null           # Artifact 12 of 15
+  factoring_quadratics: null            # Artifact 13 of 15 — canonical Law 4 disassembly sensor
+  quadratic_graphs_and_vertex: null     # Artifact 14 of 15
+  quadratic_equations: null             # Artifact 15 of 15 — terminal full-sensor artifact (all 6 laws)
+
+# ── Session History ──────────────────────────────────────────
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# ── Consent ──────────────────────────────────────────────────
+consent:
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
+
+updated_utc: null

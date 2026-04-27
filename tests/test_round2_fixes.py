@@ -145,7 +145,7 @@ _PA_TIERS = [
 
 def _load_pa_generator():
     """Import the pre-algebra problem generator via importlib."""
-    _gen_path = _REPO_ROOT / "domain-packs" / "education" / "modules" / "pre-algebra" / "problem_generator.py"
+    _gen_path = _REPO_ROOT / "model-packs" / "education" / "modules" / "pre-algebra" / "problem_generator.py"
     _spec = importlib.util.spec_from_file_location("pa_gen_test", str(_gen_path))
     _mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
     _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
@@ -211,7 +211,7 @@ class TestModuleLevelDefaultTaskSpec:
         default_task_spec with nominal_difficulty 0.15."""
         from lumina.core.runtime_loader import load_yaml
         from conftest import merge_module_config_sidecars
-        cfg = load_yaml(str(_REPO_ROOT / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"))
+        cfg = load_yaml(str(_REPO_ROOT / "model-packs" / "education" / "cfg" / "runtime-config.yaml"))
         module_map = cfg["runtime"]["module_map"]
         merge_module_config_sidecars(module_map)
         pa_entry = module_map["domain/edu/pre-algebra/v1"]
@@ -226,7 +226,7 @@ class TestModuleLevelDefaultTaskSpec:
 # ═══════════════════════════════════════════════════════════════
 
 
-_HELPERS_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "_helpers.py"
+_HELPERS_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "_helpers.py"
 _helpers_spec = importlib.util.spec_from_file_location("edu_helpers_r2", str(_HELPERS_PATH))
 _helpers_mod = importlib.util.module_from_spec(_helpers_spec)  # type: ignore[arg-type]
 sys.modules["edu_helpers_r2"] = _helpers_mod
@@ -239,7 +239,7 @@ _ops_pkg_r2.__package__ = _OPS_PKG_R2
 sys.modules[_OPS_PKG_R2] = _ops_pkg_r2
 sys.modules[f"{_OPS_PKG_R2}._helpers"] = _helpers_mod
 
-_ROSTER_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "roster.py"
+_ROSTER_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "roster.py"
 _roster_spec = importlib.util.spec_from_file_location(
     f"{_OPS_PKG_R2}.roster", str(_ROSTER_PATH),
     submodule_search_locations=[],

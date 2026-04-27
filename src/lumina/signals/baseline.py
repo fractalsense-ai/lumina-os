@@ -1,7 +1,7 @@
 """lumina.signals.baseline — EWMA baseline + envelope + heartbeat-shape math.
 
 Generalises the per-axis math previously hardcoded in
-``domain-packs/assistant/domain-lib/affect_monitor.py`` to operate on
+``model-packs/assistant/domain-lib/affect_monitor.py`` to operate on
 any named scalar signal. Bands of bounds (range clamps) are driven by
 the caller via ``clamp`` arguments — the framework is range-agnostic.
 

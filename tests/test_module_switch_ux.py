@@ -26,7 +26,7 @@ from lumina.api.session import _default_current_task
 
 # ── Load education handlers via importlib ─────────────────────
 
-_HELPERS_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "_helpers.py"
+_HELPERS_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "_helpers.py"
 _helpers_spec = importlib.util.spec_from_file_location("edu_helpers_msu", str(_HELPERS_PATH))
 _helpers_mod = importlib.util.module_from_spec(_helpers_spec)  # type: ignore[arg-type]
 sys.modules["edu_helpers_msu"] = _helpers_mod
@@ -39,7 +39,7 @@ _ops_pkg.__package__ = _OPS_PKG
 sys.modules[_OPS_PKG] = _ops_pkg
 sys.modules[f"{_OPS_PKG}._helpers"] = _helpers_mod
 
-_MODULES_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "modules.py"
+_MODULES_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "modules.py"
 _modules_spec = importlib.util.spec_from_file_location(
     f"{_OPS_PKG}.modules", str(_MODULES_PATH),
     submodule_search_locations=[],

@@ -40,7 +40,7 @@ def _mock_cfg(users: list[dict[str, Any]] | None = None) -> MagicMock:
         "domain-authority", "teacher", "teaching-assistant", "guardian", "algebra-1",
     ]
     for mod_name in module_names:
-        dp_path = f"domain-packs/education/modules/{mod_name}/domain-physics.json"
+        dp_path = f"model-packs/education/modules/{mod_name}/domain-physics.json"
         full = _REPO_ROOT / dp_path
         if full.exists():
             edu_modules.append({
@@ -52,7 +52,7 @@ def _mock_cfg(users: list[dict[str, Any]] | None = None) -> MagicMock:
     cfg.DOMAIN_REGISTRY._repo_root = str(_REPO_ROOT)
     cfg.DOMAIN_REGISTRY._domains = {
         "education": {
-            "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml",
+            "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml",
         },
     }
 

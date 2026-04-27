@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 # Load the module via importlib (same pattern as test_zpd_monitor.py)
-_LIB = Path(__file__).resolve().parent.parent / "domain-packs" / "education" / "domain-lib" / "vocabulary_growth_monitor_v0_1.py"
+_LIB = Path(__file__).resolve().parent.parent / "model-packs" / "education" / "domain-lib" / "vocabulary_growth_monitor_v0_1.py"
 _spec = importlib.util.spec_from_file_location("vocabulary_growth_monitor_v0_1", str(_LIB))
 _mod = importlib.util.module_from_spec(_spec)
 sys.modules["vocabulary_growth_monitor_v0_1"] = _mod

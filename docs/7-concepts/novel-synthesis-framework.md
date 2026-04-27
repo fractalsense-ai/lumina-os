@@ -39,7 +39,7 @@ Novel synthesis uses a **two-key gate** — two independent confirmations before
 The first key turns when the domain's evidence extraction pipeline cannot classify the LLM's response using existing rules. This is expressed in the domain physics as a warning invariant with a `signal_type`:
 
 ```yaml
-# domain-packs/<domain>/modules/<module>/domain-physics.yaml
+# model-packs/<domain>/modules/<module>/domain-physics.yaml
 invariants:
   - id: standard_method_preferred
     severity: warning

@@ -180,8 +180,8 @@ class TestReject:
     def test_no_file_written_on_reject(self, svc: StagingService, tmp_path: Path):
         env = svc.stage_file(_PHYSICS_PAYLOAD, "domain-physics", "actor-1")
         svc.reject_staged(env.staged_id, "approver-1")
-        # No domain-packs dir created under repo root
-        assert not (tmp_path / "domain-packs").exists()
+        # No model-packs dir created under repo root
+        assert not (tmp_path / "model-packs").exists()
 
 
 # ------------------------------------------------------------------

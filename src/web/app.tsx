@@ -140,11 +140,11 @@ async function fetchDomainInfo(token?: string): Promise<DomainInfo | null> {
 }
 
 const domainPluginModules = import.meta.glob<{ default: import('@/plugins/types').DomainPlugin }>(
-  '../../domain-packs/*/web/plugin.ts',
+  '../../model-packs/*/web/plugin.ts',
 )
 
 function domainKeyFromGlobPath(path: string): string | undefined {
-  const m = path.match(/domain-packs\/([^/]+)\/web\/plugin\.ts$/)
+  const m = path.match(/model-packs\/([^/]+)\/web\/plugin\.ts$/)
   return m?.[1]
 }
 

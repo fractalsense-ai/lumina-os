@@ -17,11 +17,11 @@ from unittest.mock import MagicMock
 import pytest
 
 # ── sys.path setup ────────────────────────────────────────────────────────
-# domain-packs uses a hyphenated directory name, so it is NOT a Python
+# model-packs uses a hyphenated directory name, so it is NOT a Python
 # package root.  We add each relevant directory to sys.path directly.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_CTRL_DIR   = _REPO_ROOT / "domain-packs" / "education" / "controllers"
-_ASST_LIB   = _REPO_ROOT / "domain-packs" / "assistant" / "domain-lib"
+_CTRL_DIR   = _REPO_ROOT / "model-packs" / "education" / "controllers"
+_ASST_LIB   = _REPO_ROOT / "model-packs" / "assistant" / "domain-lib"
 
 for _p in (_CTRL_DIR, _ASST_LIB):
     _sp = str(_p)

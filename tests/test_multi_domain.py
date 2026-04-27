@@ -32,7 +32,7 @@ def _load_api_module(module_name: str = "lumina.api.server"):
 @pytest.fixture
 def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     """Load API module in multi-domain mode with the domain registry."""
-    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "domain-packs/system/cfg/domain-registry.yaml")
+    monkeypatch.setenv("LUMINA_DOMAIN_REGISTRY_PATH", "model-packs/system/cfg/domain-registry.yaml")
     # Ensure single-domain var is unset so registry takes precedence
     monkeypatch.delenv("LUMINA_RUNTIME_CONFIG_PATH", raising=False)
 
@@ -45,7 +45,7 @@ def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     # by whichever DomainRegistry was cached in lumina.api.config on first import.
     mod.DOMAIN_REGISTRY = DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path="domain-packs/system/cfg/domain-registry.yaml",
+        registry_path="model-packs/system/cfg/domain-registry.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
 

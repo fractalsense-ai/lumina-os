@@ -46,7 +46,7 @@ from lumina.signals import SignalBaseline, update_baseline, update_spectral_hist
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AGRICULTURE_PHYSICS_PATH = (
     REPO_ROOT
-    / "domain-packs"
+    / "model-packs"
     / "agriculture"
     / "modules"
     / "operations-level-1"
@@ -54,7 +54,7 @@ AGRICULTURE_PHYSICS_PATH = (
 )
 ENVIRONMENTAL_SENSORS_PATH = (
     REPO_ROOT
-    / "domain-packs"
+    / "model-packs"
     / "agriculture"
     / "domain-lib"
     / "sensors"

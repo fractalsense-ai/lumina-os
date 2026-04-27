@@ -151,7 +151,7 @@ for validation — see [`execution-route-compilation(7)`](execution-route-compil
 ## D. Agriculture Example — Environmental Sensors
 
 The agriculture domain provides the reference implementation of a Group Library:
-`domain-packs/agriculture/domain-lib/sensors/environmental_sensors.py`.
+`model-packs/agriculture/domain-lib/sensors/environmental_sensors.py`.
 
 This module provides:
 
@@ -169,7 +169,7 @@ The module is registered in `operations-level-1/domain-physics.json` under
 livestock) can reference the same library by adding it to their own physics declarations.
 
 ```
-domain-packs/agriculture/
+model-packs/agriculture/
 ├── domain-lib/
 │   ├── sensors/
 │   │   └── environmental_sensors.py    ← Group Library (shared)
@@ -264,4 +264,4 @@ reference spec changes, all referencing modules know they may need revalidation.
 - [`execution-route-compilation(7)`](execution-route-compilation.md) — route compiler validates group library dependencies at compile time
 - `src/lumina/core/adapter_indexer.py` — `GroupLibraryEntry`, `GroupToolEntry`, `scan_group_resources()`
 - `src/lumina/core/runtime_loader.py` — group resource discovery and context injection
-- `domain-packs/agriculture/domain-lib/sensors/environmental_sensors.py` — reference Group Library implementation
+- `model-packs/agriculture/domain-lib/sensors/environmental_sensors.py` — reference Group Library implementation

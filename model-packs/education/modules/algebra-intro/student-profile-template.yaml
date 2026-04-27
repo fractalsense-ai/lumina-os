@@ -1,0 +1,90 @@
+# Student Profile Template — Algebra Intro (Grade 8)
+# Conforms to: model-packs/education/schemas/student-profile-schema-v1.json
+# Module: domain/edu/algebra-intro/v1
+# Prerequisites: domain/edu/pre-algebra/v1 — all 5 artifacts passed
+# Next module: domain/edu/algebra-1/v1
+# ============================================================
+# Copy this template for each new student. Replace <PSEUDONYMOUS_ID>
+# with the student's assigned pseudonymous token.
+# ============================================================
+
+# version: 1.0.0
+# last_updated: 2026-04-04
+student_id: "<PSEUDONYMOUS_ID>"
+domain_id: "domain/edu/algebra-intro/v1"
+display_name: null  # Optional nickname; not required
+
+# ── Preferences (IMMERSION ONLY — never affects grading) ────
+preferences:
+  interests: []
+  dislikes: []
+  preferred_explanation_style: step_by_step
+  language: en
+
+# ── Learning State (initial defaults) ───────────────────────
+learning_state:
+  affect:
+    salience: 0.5
+    valence: 0.0
+    arousal: 0.5
+
+  # Mastery keys are the invariant IDs tested by this module.
+  # Updated by the ZPD monitor after each turn. Clamped to [0, 1].
+  # Note: Laws 1+2 mastery is carried forward from pre-algebra,
+  # but starts at 0 here until the first turns reassess the student.
+  mastery:
+    equivalence_preserved: 0.0           # Law 1 — inherited, expected near 0.8+ from pre-algebra
+    reversibility_order_correct: 0.0     # Law 2 — inherited (new evidence field, LLM-estimated)
+    substitution_valid: 0.0              # Law 3 — new in this module (new evidence field)
+    relationship_correctly_mapped: 0.0   # Law 5 — new in this module (new evidence field)
+    solution_verifies: 0.0               # Both-equation verification
+    show_work_minimum: 0.0               # Step visibility requirement
+
+  challenge_band:
+    min_challenge: 0.3
+    max_challenge: 0.8
+
+  recent_window:
+    window_turns: 10
+    attempts: 0
+    consecutive_incorrect: 0
+    hint_count: 0
+    outside_pct: 0.0
+    consecutive_outside: 0
+    outside_flags: []
+    hint_flags: []
+
+  challenge: 0.35   # Higher start than pre-algebra — student has passed the Gr 6-7 gateway
+  uncertainty: 0.7  # Moderate — assessed on Laws 1+2 but not yet on Laws 3 or 5
+
+  fluency:
+    current_tier: tier_1
+    consecutive_correct: 0
+
+  updated_utc: null
+
+# ── Artifact Progress ────────────────────────────────────────
+# Each artifact is unlocked after mastery >= 0.8 on required skills,
+# confirmed by its boss challenge (1 attempt per session, no hints).
+# null = not yet attempted; pass/fail recorded after the boss challenge.
+artifact_progress:
+  slope_and_rate_of_change: null        # Artifact 6 of 15
+  linear_forms_and_graphing: null       # Artifact 7 of 15
+  systems_by_graphing: null             # Artifact 8 of 15
+  systems_by_substitution: null         # Artifact 9 of 15 — canonical Law 3 sensor
+  systems_by_elimination: null          # Artifact 10 of 15
+
+# ── Session History ──────────────────────────────────────────
+session_history:
+  total_sessions: 0
+  last_session_utc: null
+  total_turns: 0
+
+# ── Consent ──────────────────────────────────────────────────
+consent:
+  magic_circle_accepted: false
+  consent_timestamp_utc: null
+  consent_version: null
+  guardian_consent: null
+
+updated_utc: null

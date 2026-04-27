@@ -27,7 +27,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Load education helpers via importlib ──────────────────────
 # _helpers.py has no relative imports so it loads standalone.
-_HELPERS_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "_helpers.py"
+_HELPERS_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "_helpers.py"
 _helpers_spec = importlib.util.spec_from_file_location("edu_helpers_am", str(_HELPERS_PATH))
 _helpers_mod = importlib.util.module_from_spec(_helpers_spec)  # type: ignore[arg-type]
 sys.modules["edu_helpers_am"] = _helpers_mod
@@ -49,7 +49,7 @@ sys.modules[_OPS_PKG_NAME] = _ops_pkg
 # Register _helpers under the fake package so relative import works
 sys.modules[f"{_OPS_PKG_NAME}._helpers"] = _helpers_mod
 
-_MODULES_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "ops" / "modules.py"
+_MODULES_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "ops" / "modules.py"
 _modules_spec = importlib.util.spec_from_file_location(
     f"{_OPS_PKG_NAME}.modules", str(_MODULES_PATH),
     submodule_search_locations=[],
@@ -63,7 +63,7 @@ assign_modules_handler = _modules_mod.assign_modules
 switch_active_module_handler = _modules_mod.switch_active_module
 
 # ── Load governance adapters for NLP tests ────────────────────
-_GOV_PATH = _REPO_ROOT / "domain-packs" / "education" / "controllers" / "governance_adapters.py"
+_GOV_PATH = _REPO_ROOT / "model-packs" / "education" / "controllers" / "governance_adapters.py"
 _gov_spec = importlib.util.spec_from_file_location("gov_adapters_am", str(_GOV_PATH))
 _gov_mod = importlib.util.module_from_spec(_gov_spec)  # type: ignore[arg-type]
 sys.modules["gov_adapters_am"] = _gov_mod

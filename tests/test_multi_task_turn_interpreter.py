@@ -25,7 +25,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ASSISTANT_PACK = REPO_ROOT / "domain-packs" / "assistant"
+ASSISTANT_PACK = REPO_ROOT / "model-packs" / "assistant"
 STANDARDS_DIR = REPO_ROOT / "standards"
 
 # ── Load the assistant runtime_adapters module in isolation ──
@@ -675,22 +675,22 @@ class TestRuntimeLoaderMultiTaskKeys:
         _dummy_cfg = {
             "runtime": {
                 "global_system_prompt_path": "docs/5-standards/global-system-prompt.md",
-                "domain_system_prompt_path": "domain-packs/assistant/prompts/domain-persona-v1.md",
-                "turn_interpretation_prompt_path": "domain-packs/assistant/domain-lib/reference/turn-interpretation-spec-v1.md",
-                "domain_physics_path": "domain-packs/assistant/modules/conversation/domain-physics.json",
-                "subject_profile_path": "domain-packs/assistant/profiles/entity.yaml",
+                "domain_system_prompt_path": "model-packs/assistant/prompts/domain-persona-v1.md",
+                "turn_interpretation_prompt_path": "model-packs/assistant/domain-lib/reference/turn-interpretation-spec-v1.md",
+                "domain_physics_path": "model-packs/assistant/modules/conversation/domain-physics.json",
+                "subject_profile_path": "model-packs/assistant/profiles/entity.yaml",
             },
             "adapters": {
                 "state_builder": {
-                    "module_path": "domain-packs/assistant/controllers/runtime_adapters.py",
+                    "module_path": "model-packs/assistant/controllers/runtime_adapters.py",
                     "callable": "build_initial_state",
                 },
                 "domain_step": {
-                    "module_path": "domain-packs/assistant/controllers/runtime_adapters.py",
+                    "module_path": "model-packs/assistant/controllers/runtime_adapters.py",
                     "callable": "domain_step",
                 },
                 "turn_interpreter": {
-                    "module_path": "domain-packs/assistant/controllers/runtime_adapters.py",
+                    "module_path": "model-packs/assistant/controllers/runtime_adapters.py",
                     "callable": "interpret_turn_input",
                 },
                 # No multi_task_turn_interpreter
@@ -698,7 +698,7 @@ class TestRuntimeLoaderMultiTaskKeys:
         }
 
         with patch.object(runtime_loader, "load_yaml", return_value=_dummy_cfg):
-            ctx = runtime_loader.load_runtime_context(REPO_ROOT, "domain-packs/assistant/cfg/runtime-config.yaml")
+            ctx = runtime_loader.load_runtime_context(REPO_ROOT, "model-packs/assistant/cfg/runtime-config.yaml")
 
         assert "multi_task_turn_interpreter_fn" in ctx
         assert ctx["multi_task_turn_interpreter_fn"] is None

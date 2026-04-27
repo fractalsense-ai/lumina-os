@@ -25,7 +25,7 @@ import pytest
 from lumina.system_log.admin_operations import can_govern_domain
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-_EDU_CONTROLLERS = REPO_ROOT / "domain-packs" / "education" / "controllers"
+_EDU_CONTROLLERS = REPO_ROOT / "model-packs" / "education" / "controllers"
 if str(_EDU_CONTROLLERS) not in sys.path:
     sys.path.insert(0, str(_EDU_CONTROLLERS))
 
@@ -228,8 +228,8 @@ def _edu_registry():
         ],
     }.get(d, [])
     reg.list_domains.return_value = [
-        {"domain_id": "education", "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml"},
-        {"domain_id": "agriculture", "runtime_config_path": "domain-packs/agriculture/cfg/runtime-config.yaml"},
+        {"domain_id": "education", "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml"},
+        {"domain_id": "agriculture", "runtime_config_path": "model-packs/agriculture/cfg/runtime-config.yaml"},
     ]
     return reg
 

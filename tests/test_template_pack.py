@@ -20,7 +20,7 @@ import yaml
 
 # ── Paths ────────────────────────────────────────────────────────────
 
-_PACK_ROOT = Path(__file__).resolve().parent.parent / "domain-packs" / "template"
+_PACK_ROOT = Path(__file__).resolve().parent.parent / "model-packs" / "template"
 _CTRL_DIR = _PACK_ROOT / "controllers"
 _STANDARDS_DIR = Path(__file__).resolve().parent.parent / "standards"
 

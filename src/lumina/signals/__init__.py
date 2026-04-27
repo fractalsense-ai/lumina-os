@@ -14,7 +14,7 @@ runs the math, and consumers (`journal_adapters`, future tooling) read
 back ``learning_state.signal_baselines`` + ``learning_state.spectral_advisories``.
 
 The historical SVA implementation in
-``domain-packs/assistant/domain-lib/affect_monitor.py`` is now a thin
+``model-packs/assistant/domain-lib/affect_monitor.py`` is now a thin
 adapter over this package.
 
 Public API:

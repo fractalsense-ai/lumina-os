@@ -16,8 +16,8 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EDU_CFG = REPO_ROOT / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"
-EDU_MODULES = REPO_ROOT / "domain-packs" / "education" / "modules"
+EDU_CFG = REPO_ROOT / "model-packs" / "education" / "cfg" / "runtime-config.yaml"
+EDU_MODULES = REPO_ROOT / "model-packs" / "education" / "modules"
 
 _EXPECTED_MODULE_IDS = [
     "domain/edu/pre-algebra/v1",

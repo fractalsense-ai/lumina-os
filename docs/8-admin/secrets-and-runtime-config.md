@@ -104,7 +104,7 @@ cp .env.example .env
 PowerShell example:
 
 ```powershell
-$env:LUMINA_RUNTIME_CONFIG_PATH = "domain-packs/education/runtime-config.yaml"
+$env:LUMINA_RUNTIME_CONFIG_PATH = "model-packs/education/runtime-config.yaml"
 $env:LUMINA_LLM_PROVIDER = "openai"
 $env:OPENAI_API_KEY = "<your-local-key>"
 $env:LUMINA_JWT_SECRET = "<32-byte-or-longer-random-secret>"
@@ -113,7 +113,7 @@ $env:LUMINA_JWT_SECRET = "<32-byte-or-longer-random-secret>"
 POSIX example:
 
 ```bash
-export LUMINA_RUNTIME_CONFIG_PATH="domain-packs/education/runtime-config.yaml"
+export LUMINA_RUNTIME_CONFIG_PATH="model-packs/education/runtime-config.yaml"
 export LUMINA_LLM_PROVIDER="openai"
 export OPENAI_API_KEY="<your-local-key>"
 export LUMINA_JWT_SECRET="<32-byte-or-longer-random-secret>"
@@ -171,10 +171,10 @@ instead of a single `LUMINA_RUNTIME_CONFIG_PATH`.
    default_domain: education
    domains:
      education:
-       runtime_config_path: domain-packs/education/runtime-config.yaml
+       runtime_config_path: model-packs/education/runtime-config.yaml
        label: Education — Algebra Level 1
      agriculture:
-       runtime_config_path: domain-packs/agriculture/runtime-config.yaml
+       runtime_config_path: model-packs/agriculture/runtime-config.yaml
        label: Agriculture — Operations
    ```
 

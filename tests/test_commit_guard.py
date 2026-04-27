@@ -472,7 +472,7 @@ class TestEscalationResolveHasLog:
     def test_resolve_escalation_has_append_log_record(self):
         # resolve_escalation moved to domain pack (education)
         _handler_path = Path(__file__).resolve().parent.parent / (
-            "domain-packs/education/controllers/escalation_handlers.py"
+            "model-packs/education/controllers/escalation_handlers.py"
         )
         source = _handler_path.read_text(encoding="utf-8")
         tree = ast.parse(source)

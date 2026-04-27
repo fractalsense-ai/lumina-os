@@ -1,6 +1,6 @@
 """Adapter Indexer — zero-AI-compute directory scanner for tool adapters.
 
-Walks ``domain-packs/*/modules/*/tool-adapters/`` directories and reads
+Walks ``model-packs/*/modules/*/tool-adapters/`` directories and reads
 YAML adapter definitions, building an index keyed by adapter ID.  Also
 discovers ``controllers/runtime_adapters.py`` and ``controllers/tool_adapters.py``
 by naming convention.
@@ -139,7 +139,7 @@ def scan_tool_adapters(domain_pack_path: Path) -> dict[str, AdapterEntry]:
     Parameters
     ----------
     domain_pack_path : Path
-        Root of a single domain pack (e.g. ``domain-packs/education``).
+        Root of a single domain pack (e.g. ``model-packs/education``).
 
     Returns
     -------
@@ -288,7 +288,7 @@ def build_router_index(domain_packs_root: Path) -> RouterIndex:
     Parameters
     ----------
     domain_packs_root : Path
-        The ``domain-packs/`` directory.
+        The ``model-packs/`` directory.
 
     Returns
     -------
@@ -323,7 +323,7 @@ def build_router_index(domain_packs_root: Path) -> RouterIndex:
         # Runtime/tool adapter modules
         for key, rel_path in scan_runtime_adapters(pack_dir).items():
             qualified_key = f"{pack_name}/{key}"
-            index.runtime_adapter_modules[qualified_key] = f"domain-packs/{pack_name}/{rel_path}"
+            index.runtime_adapter_modules[qualified_key] = f"model-packs/{pack_name}/{rel_path}"
 
         # Group libraries and group tools
         libs, grp_tools = scan_group_resources(pack_dir)

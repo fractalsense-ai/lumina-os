@@ -20,7 +20,7 @@ import pytest
 from lumina.api.runtime_helpers import render_contract_response
 
 REPO = Path(__file__).resolve().parents[1]
-RUNTIME_CFG = REPO / "domain-packs" / "education" / "cfg" / "runtime-config.yaml"
+RUNTIME_CFG = REPO / "model-packs" / "education" / "cfg" / "runtime-config.yaml"
 
 
 # ── Bug 2 regression: verification_request deterministic templates ─────
@@ -233,7 +233,7 @@ class TestInvariantSourceUsesModulePhysics:
         meaning NONE should reach the inspection gate."""
         import json
         physics_path = (
-            REPO / "domain-packs" / "education" / "modules"
+            REPO / "model-packs" / "education" / "modules"
             / "pre-algebra" / "domain-physics.json"
         )
         physics = json.loads(physics_path.read_text(encoding="utf-8"))

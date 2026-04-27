@@ -1,4 +1,4 @@
-﻿# See also:
+# See also:
 #   docs/7-concepts/domain-pack-anatomy.md
 #   docs/7-concepts/domain-adapter-pattern.md
 #   docs/7-concepts/execution-route-compilation.md
@@ -178,7 +178,7 @@ def load_runtime_context(repo_root: Path, runtime_config_path: str | None = None
     if not runtime_config_path:
         raise RuntimeError(
             "No runtime config specified. Set LUMINA_RUNTIME_CONFIG_PATH "
-            "(e.g. 'domain-packs/education/runtime-config.yaml')."
+            "(e.g. 'model-packs/education/runtime-config.yaml')."
         )
     cfg_path = runtime_config_path
     cfg = load_yaml(str(repo_root / cfg_path))

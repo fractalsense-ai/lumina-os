@@ -15,7 +15,7 @@ layout conventions the scanner expects.
 ## Directory Layout
 
 ```
-domain-packs/<domain>/
+model-packs/<domain>/
   modules/<module-name>/
     tool-adapters/
       <adapter-name>-adapter-v<version>.yaml

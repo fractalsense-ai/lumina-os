@@ -32,7 +32,7 @@ def registry() -> DomainRegistry:
     from lumina.core.runtime_loader import load_runtime_context
     return DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path="domain-packs/system/cfg/domain-registry.yaml",
+        registry_path="model-packs/system/cfg/domain-registry.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
 
@@ -161,7 +161,7 @@ def test_system_domain_has_no_static_role_aliases() -> None:
     Phase 7D replaced flat aliases with dynamic aggregation from domain
     physics files.  The static block should NOT be present.
     """
-    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp_path = _REPO_ROOT / "model-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     gov = dp.get("subsystem_configs", {}).get("governance", {})
     assert "domain_role_aliases" not in gov, (
@@ -185,7 +185,7 @@ def test_command_interpreter_spec_has_no_hardcoded_modules() -> None:
     """The command interpreter spec must not contain hardcoded module IDs."""
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8").lower()
     for pattern in _FORBIDDEN_PATTERNS:
@@ -199,7 +199,7 @@ def test_command_interpreter_spec_has_no_hardcoded_domain_roles() -> None:
     """The spec must not enumerate domain-specific roles as known values."""
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8").lower()
     # These were previously hardcoded in the role-mapping table
@@ -214,7 +214,7 @@ def test_command_interpreter_spec_mentions_dynamic_discovery() -> None:
     """The spec should reference dynamic discovery operations."""
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8").lower()
     assert "list_domain_rbac_roles" in content
@@ -225,10 +225,10 @@ def test_command_interpreter_spec_mentions_dynamic_discovery() -> None:
 
 
 _GOVERNANCE_FILES = [
-    "domain-packs/system/modules/system-core/domain-physics.json",
-    "domain-packs/system/prompts/domain-persona-v1.md",
-    "domain-packs/system/cfg/runtime-config.yaml",
-    "domain-packs/system/cfg/admin-operations.yaml",
+    "model-packs/system/modules/system-core/domain-physics.json",
+    "model-packs/system/prompts/domain-persona-v1.md",
+    "model-packs/system/cfg/runtime-config.yaml",
+    "model-packs/system/cfg/admin-operations.yaml",
 ]
 
 
@@ -245,7 +245,7 @@ def test_no_nightcycle_ops_in_governance(rel_path: str) -> None:
 
 @pytest.mark.unit
 def test_admin_operations_has_daemon_ops() -> None:
-    fpath = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "admin-operations.yaml"
+    fpath = _REPO_ROOT / "model-packs" / "system" / "cfg" / "admin-operations.yaml"
     content = fpath.read_text(encoding="utf-8")
     assert "trigger_daemon_task" in content
     assert "daemon_status" in content
@@ -256,7 +256,7 @@ def test_admin_operations_has_daemon_ops() -> None:
 @pytest.mark.unit
 def test_admin_operations_has_new_discovery_ops() -> None:
     """admin-operations.yaml includes list_users, get_domain_physics, list_daemon_tasks."""
-    fpath = _REPO_ROOT / "domain-packs" / "system" / "cfg" / "admin-operations.yaml"
+    fpath = _REPO_ROOT / "model-packs" / "system" / "cfg" / "admin-operations.yaml"
     content = fpath.read_text(encoding="utf-8")
     assert "list_users" in content
     assert "get_domain_physics" in content
@@ -269,7 +269,7 @@ def test_admin_operations_has_new_discovery_ops() -> None:
 @pytest.mark.unit
 def test_domain_physics_operation_ids_complete() -> None:
     """All discovery operations are in the domain-physics operation_ids list."""
-    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp_path = _REPO_ROOT / "model-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     op_ids = dp["subsystem_configs"]["admin_operations"]["operation_ids"]
     for op in [
@@ -283,7 +283,7 @@ def test_domain_physics_operation_ids_complete() -> None:
 @pytest.mark.unit
 def test_domain_physics_hitl_exempt_complete() -> None:
     """All discovery operations are in the hitl_policy.system_exempt list."""
-    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp_path = _REPO_ROOT / "model-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     exempt = dp["subsystem_configs"]["admin_operations"]["hitl_policy"]["system_exempt"]
     for op in [
@@ -296,7 +296,7 @@ def test_domain_physics_hitl_exempt_complete() -> None:
 @pytest.mark.unit
 def test_domain_physics_min_role_for_sensitive_ops() -> None:
     """list_users and invite_user require admin; get_domain_physics requires admin."""
-    dp_path = _REPO_ROOT / "domain-packs/system/modules/system-core/domain-physics.json"
+    dp_path = _REPO_ROOT / "model-packs/system/modules/system-core/domain-physics.json"
     dp = json.loads(dp_path.read_text(encoding="utf-8"))
     min_role = dp["subsystem_configs"]["governance"]["min_role_policy"]
     assert min_role["list_users"] == "admin"
@@ -312,7 +312,7 @@ def test_domain_physics_min_role_for_sensitive_ops() -> None:
 def test_command_interpreter_spec_mentions_list_users() -> None:
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8")
     assert "list_users" in content
@@ -322,7 +322,7 @@ def test_command_interpreter_spec_mentions_list_users() -> None:
 def test_command_interpreter_spec_mentions_get_domain_physics() -> None:
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8")
     assert "get_domain_physics" in content
@@ -332,7 +332,7 @@ def test_command_interpreter_spec_mentions_get_domain_physics() -> None:
 def test_command_interpreter_spec_mentions_list_daemon_tasks() -> None:
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8")
     assert "list_daemon_tasks" in content
@@ -522,7 +522,7 @@ def test_resource_monitor_daemon_doc_no_nightcycle() -> None:
 @pytest.mark.unit
 def test_default_module_exists_education() -> None:
     """Education domain has a general-education default module (Student Commons)."""
-    dp = _REPO_ROOT / "domain-packs/education/modules/general-education/domain-physics.json"
+    dp = _REPO_ROOT / "model-packs/education/modules/general-education/domain-physics.json"
     assert dp.exists()
     data = json.loads(dp.read_text(encoding="utf-8"))
     assert data["id"] == "domain/edu/general-education/v1"
@@ -536,7 +536,7 @@ def test_default_module_exists_education() -> None:
 @pytest.mark.unit
 def test_default_module_exists_agriculture() -> None:
     """Agriculture domain has a general-operations default module."""
-    dp = _REPO_ROOT / "domain-packs/agriculture/modules/general-operations/domain-physics.json"
+    dp = _REPO_ROOT / "model-packs/agriculture/modules/general-operations/domain-physics.json"
     assert dp.exists()
     data = json.loads(dp.read_text(encoding="utf-8"))
     assert data["id"] == "domain/agri/general-operations/v1"
@@ -547,7 +547,7 @@ def test_default_module_exists_agriculture() -> None:
 def test_pack_yaml_has_default_module_education() -> None:
     """Education pack.yaml declares default_module."""
     from lumina.core.yaml_loader import load_yaml
-    pack = load_yaml(str(_REPO_ROOT / "domain-packs/education/pack.yaml"))
+    pack = load_yaml(str(_REPO_ROOT / "model-packs/education/pack.yaml"))
     assert pack.get("default_module") == "general-education"
     assert "general-education" in (pack.get("modules") or [])
 
@@ -556,7 +556,7 @@ def test_pack_yaml_has_default_module_education() -> None:
 def test_pack_yaml_has_default_module_agriculture() -> None:
     """Agriculture pack.yaml declares default_module."""
     from lumina.core.yaml_loader import load_yaml
-    pack = load_yaml(str(_REPO_ROOT / "domain-packs/agriculture/pack.yaml"))
+    pack = load_yaml(str(_REPO_ROOT / "model-packs/agriculture/pack.yaml"))
     assert pack.get("default_module") == "general-operations"
     assert "general-operations" in (pack.get("modules") or [])
 
@@ -735,7 +735,7 @@ def test_command_interpreter_spec_has_request_module_assignment() -> None:
     """command-interpreter-spec mentions request_module_assignment."""
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8")
     assert "request_module_assignment" in content
@@ -746,7 +746,7 @@ def test_command_interpreter_spec_governed_modules_null_for_da() -> None:
     """command-interpreter-spec documents that governed_modules can be null for DA."""
     spec_path = (
         _REPO_ROOT
-        / "domain-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
+        / "model-packs/system/domain-lib/reference/command-interpreter-spec-v1.md"
     )
     content = spec_path.read_text(encoding="utf-8")
     assert "null" in content.lower() and "governed_modules" in content

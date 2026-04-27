@@ -13,14 +13,14 @@ last_updated: 2026-03-20
 
 Operational reference for the Project Lumina system domain: both the machine-readable
 policy layer (`cfg/system-physics.yaml`) that governs the Conversational Interface
-across all domains, and the live system domain pack (`domain-packs/system/`) that
+across all domains, and the live system domain pack (`model-packs/system/`) that
 provides an administration session interface for `root` and `super_admin` users.
 
 ---
 
 ## A — System domain overview
 
-The **system domain** is a full named domain pack located at `domain-packs/system/`.
+The **system domain** is a full named domain pack located at `model-packs/system/`.
 It is the default routing destination for `root` and `super_admin` users when no
 explicit `domain_id` is provided and NLP routing does not confidently match another
 domain (see `cfg/domain-registry.yaml` → `role_defaults`).
@@ -31,10 +31,10 @@ domain (see `cfg/domain-registry.yaml` → `role_defaults`).
 | System physics compiled | `cfg/system-physics.json` | Runtime-loaded, schema-validated |
 | System physics schema | `standards/system-physics-schema-v1.json` | JSON Schema for CI layer |
 | Domain registry entry | `cfg/domain-registry.yaml` → `system:` | Routing + live session config |
-| Domain pack runtime config | `domain-packs/system/cfg/runtime-config.yaml` | Full live-session config |
-| Domain physics | `domain-packs/system/modules/system-core/domain-physics.json` | Glossary, permissions, topics |
-| Domain prompts | `domain-packs/system/prompts/` | LLM persona + turn interpretation |
-| Runtime adapters | `domain-packs/system/controllers/runtime_adapters.py` | Minimal state/step/interpreter |
+| Domain pack runtime config | `model-packs/system/cfg/runtime-config.yaml` | Full live-session config |
+| Domain physics | `model-packs/system/modules/system-core/domain-physics.json` | Glossary, permissions, topics |
+| Domain prompts | `model-packs/system/prompts/` | LLM persona + turn interpretation |
+| Runtime adapters | `model-packs/system/controllers/runtime_adapters.py` | Minimal state/step/interpreter |
 | Deprecated stub | `cfg/system-runtime-config.yaml` | Superseded; retained for reference only |
 | System lib | `src/lumina/lib/system_health.py` | Passive state estimator (hw probes) |
 | Hardware probes | `src/lumina/systools/hw_disk.py` · `hw_temp.py` · `hw_memory.py` | Passive, lib-invoked only |

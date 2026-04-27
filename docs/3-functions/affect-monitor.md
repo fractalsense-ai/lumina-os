@@ -8,7 +8,7 @@ last_updated: 2026-07-17
 **Version:** 1.0.0
 **Status:** Active
 **Last updated:** 2026-07-17
-**Module:** `domain-packs/assistant/domain-lib/affect_monitor.py`
+**Module:** `model-packs/assistant/domain-lib/affect_monitor.py`
 
 ---
 

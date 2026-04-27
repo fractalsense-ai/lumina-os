@@ -366,7 +366,7 @@ class TestDiscoverDocTrees:
 
     def test_domain_pack_docs(self, tmp_path):
         (tmp_path / "docs").mkdir()
-        pack = tmp_path / "domain-packs" / "test-pack" / "docs"
+        pack = tmp_path / "model-packs" / "test-pack" / "docs"
         pack.mkdir(parents=True)
         trees = discover_doc_trees(tmp_path)
         assert pack in trees
@@ -399,7 +399,7 @@ class TestHousekeeper:
         docs = tmp_path / "docs"
         docs.mkdir()
         (docs / "README.md").write_text("# Root\n\n## Overview\n\nRoot overview text.")
-        pack = tmp_path / "domain-packs" / "edu" / "docs"
+        pack = tmp_path / "model-packs" / "edu" / "docs"
         pack.mkdir(parents=True)
         (pack / "guide.md").write_text("## Getting Started\n\nWelcome to the guide.")
         return tmp_path

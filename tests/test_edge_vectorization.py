@@ -71,20 +71,20 @@ def fake_repo(tmp_path: Path) -> Path:
     """)
 
     # Domain pack: edu
-    _write_md(repo / "domain-packs" / "edu" / "docs" / "overview.md", """\
+    _write_md(repo / "model-packs" / "edu" / "docs" / "overview.md", """\
         # Education Overview
         This domain handles educational content.
     """)
-    (repo / "domain-packs" / "edu" / "cfg").mkdir(parents=True, exist_ok=True)
+    (repo / "model-packs" / "edu" / "cfg").mkdir(parents=True, exist_ok=True)
 
     # Domain pack: agri — with group_libraries in physics
-    _write_md(repo / "domain-packs" / "agri" / "docs" / "farming.md", """\
+    _write_md(repo / "model-packs" / "agri" / "docs" / "farming.md", """\
         # Farming Docs
         Agricultural monitoring documentation.
     """)
-    (repo / "domain-packs" / "agri" / "cfg").mkdir(parents=True, exist_ok=True)
+    (repo / "model-packs" / "agri" / "cfg").mkdir(parents=True, exist_ok=True)
     _write_physics(
-        repo / "domain-packs" / "agri" / "modules" / "ops-1" / "domain-physics.json",
+        repo / "model-packs" / "agri" / "modules" / "ops-1" / "domain-physics.json",
         {
             "domain_id": "agriculture/ops-1",
             "group_libraries": [

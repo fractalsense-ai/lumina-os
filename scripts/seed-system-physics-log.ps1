@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
     Seeds the system-physics System Log with a CommitmentRecord for the active
-    domain-packs/system/cfg/system-physics.json, enabling the runtime system-physics gate.
+    model-packs/system/cfg/system-physics.json, enabling the runtime system-physics gate.
 
 .DESCRIPTION
-    Computes the canonical JSON SHA-256 of domain-packs/system/cfg/system-physics.json and
+    Computes the canonical JSON SHA-256 of model-packs/system/cfg/system-physics.json and
     appends a system_physics_activation CommitmentRecord to the system log
     ledger at <LUMINA_LOG_DIR>/system/system.jsonl.
 
@@ -16,7 +16,7 @@
 
 .PARAMETER SystemPhysicsFile
     Path to the system-physics.json to commit
-    (default: domain-packs/system/cfg/system-physics.json relative to the repo root).
+    (default: model-packs/system/cfg/system-physics.json relative to the repo root).
 
 .PARAMETER ActorId
     Pseudonymous actor ID to record in the CommitmentRecord
@@ -36,7 +36,7 @@
 #>
 param(
     [string]$PythonExe        = ".\.venv\Scripts\python.exe",
-    [string]$SystemPhysicsFile = "domain-packs\system\cfg\system-physics.json",
+    [string]$SystemPhysicsFile = "model-packs\system\cfg\system-physics.json",
     [string]$ActorId           = "system-operator",
     [string]$LogDir            = ""
 )

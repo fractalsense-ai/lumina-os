@@ -92,12 +92,12 @@ module_map:
   domain/edu/general-education/v1:
     adapters:
       domain_step:
-        module_path: domain-packs/education/controllers/runtime_adapters.py
+        module_path: model-packs/education/controllers/runtime_adapters.py
         callable: freeform_domain_step
       turn_interpreter:
-        module_path: domain-packs/education/controllers/runtime_adapters.py
+        module_path: model-packs/education/controllers/runtime_adapters.py
         callable: freeform_interpret_turn_input
-    turn_interpretation_prompt_path: domain-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
+    turn_interpretation_prompt_path: model-packs/education/domain-lib/reference/freeform-turn-interpretation-spec-v1.md
 ```
 
 ---
@@ -452,7 +452,7 @@ The standard test fixture for domain-pack operation testing:
 def api_module(monkeypatch):
     monkeypatch.setenv(
         "LUMINA_RUNTIME_CONFIG_PATH",
-        "domain-packs/education/cfg/runtime-config.yaml",
+        "model-packs/education/cfg/runtime-config.yaml",
     )
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -492,7 +492,7 @@ module-level items apply to one specific subject area (algebra-level-1, operatio
 system-core, etc.) within the domain.
 
 ```
-domain-packs/{domain}/
+model-packs/{domain}/
 │
 ├── README.md                          # Pack overview and authoring notes
 │
@@ -572,7 +572,7 @@ route handlers"). The engine reads this file at session initialisation and wires
 pack's components — no engine code changes are required to add a new domain pack.
 
 For authoring a new domain pack from scratch (8-step authoring process), see
-`domain-packs/README.md`. For the engine contract field reference, Phase A/B implementation
+`model-packs/README.md`. For the engine contract field reference, Phase A/B implementation
 contract, and three-layer component distinction in depth, see
 [`domain-adapter-pattern(7)`](domain-adapter-pattern.md).
 
@@ -632,7 +632,7 @@ enables automated chunking by `## ` headers for embedding pipelines.
 ### Integrity tracking
 
 Domain-pack doc files are tracked in the root `docs/MANIFEST.yaml` under their full
-relative paths (e.g., `domain-packs/education/docs/3-functions/fluency-monitor.md`). The
+relative paths (e.g., `model-packs/education/docs/3-functions/fluency-monitor.md`). The
 standard `manifest_integrity regen` and `check` subcommands cover domain-pack docs alongside
 system docs. New domain-pack doc files are automatically discovered by `manifest_integrity
 discover`.

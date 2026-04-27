@@ -43,8 +43,8 @@ def test_load_yaml_valid_dict(tmp_path: Path) -> None:
 
 
 def _make_runtime_config(tmp_path: Path, extra_fields: dict | None = None) -> None:
-    """Create a domain-packs/education/runtime-config.yaml with required fields."""
-    edu_dir = tmp_path / "domain-packs" / "education"
+    """Create a model-packs/education/runtime-config.yaml with required fields."""
+    edu_dir = tmp_path / "model-packs" / "education"
     edu_dir.mkdir(parents=True, exist_ok=True)
 
     # Create the target files
@@ -52,8 +52,8 @@ def _make_runtime_config(tmp_path: Path, extra_fields: dict | None = None) -> No
     for rel in [
         "specs/domain-system-prompt.md",
         "specs/turn-interpretation-prompt.md",
-        "domain-packs/education/domain-physics.json",
-        "domain-packs/education/profiles/student.yaml",
+        "model-packs/education/domain-physics.json",
+        "model-packs/education/profiles/student.yaml",
     ]:
         p = tmp_path / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -63,8 +63,8 @@ def _make_runtime_config(tmp_path: Path, extra_fields: dict | None = None) -> No
         "runtime": {
             "domain_system_prompt_path": "specs/domain-system-prompt.md",
             "turn_interpretation_prompt_path": "specs/turn-interpretation-prompt.md",
-            "domain_physics_path": "domain-packs/education/domain-physics.json",
-            "subject_profile_path": "domain-packs/education/profiles/student.yaml",
+            "domain_physics_path": "model-packs/education/domain-physics.json",
+            "subject_profile_path": "model-packs/education/profiles/student.yaml",
         }
     }
     if extra_fields:
@@ -80,8 +80,8 @@ def _make_runtime_config(tmp_path: Path, extra_fields: dict | None = None) -> No
             "runtime:\n"
             "  domain_system_prompt_path: specs/domain-system-prompt.md\n"
             "  turn_interpretation_prompt_path: specs/turn-interpretation-prompt.md\n"
-            "  domain_physics_path: domain-packs/education/domain-physics.json\n"
-            "  subject_profile_path: domain-packs/education/profiles/student.yaml\n"
+            "  domain_physics_path: model-packs/education/domain-physics.json\n"
+            "  subject_profile_path: model-packs/education/profiles/student.yaml\n"
         )
     (edu_dir / "runtime-config.yaml").write_text(content, encoding="utf-8")
 
@@ -97,7 +97,7 @@ def test_check_runtime_config_paths_all_ok(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_check_runtime_config_paths_missing_runtime_key(tmp_path: Path) -> None:
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     edu_dir.mkdir(parents=True, exist_ok=True)
     (edu_dir / "runtime-config.yaml").write_text("other: value\n", encoding="utf-8")
 
@@ -109,14 +109,14 @@ def test_check_runtime_config_paths_missing_runtime_key(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_check_runtime_config_paths_missing_target_file(tmp_path: Path) -> None:
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     edu_dir.mkdir(parents=True, exist_ok=True)
     (edu_dir / "runtime-config.yaml").write_text(
         "runtime:\n"
         "  domain_system_prompt_path: specs/missing-file.md\n"
         "  turn_interpretation_prompt_path: specs/missing-turn.md\n"
-        "  domain_physics_path: domain-packs/education/missing-physics.json\n"
-        "  subject_profile_path: domain-packs/education/profiles/missing.yaml\n",
+        "  domain_physics_path: model-packs/education/missing-physics.json\n"
+        "  subject_profile_path: model-packs/education/profiles/missing.yaml\n",
         encoding="utf-8",
     )
     errors: list[str] = []
@@ -129,7 +129,7 @@ def test_check_runtime_config_paths_missing_target_file(tmp_path: Path) -> None:
 def test_check_runtime_config_paths_with_additional_specs(tmp_path: Path) -> None:
     _make_runtime_config(tmp_path)
     # Write an additional_specs entry that exists
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     spec_file = tmp_path / "specs" / "extra-spec.md"
     spec_file.parent.mkdir(parents=True, exist_ok=True)
     spec_file.write_text("# extra", encoding="utf-8")
@@ -149,7 +149,7 @@ def test_check_runtime_config_paths_with_additional_specs(tmp_path: Path) -> Non
 @pytest.mark.unit
 def test_check_runtime_config_paths_additional_specs_missing(tmp_path: Path) -> None:
     _make_runtime_config(tmp_path)
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     runtime_cfg_path = edu_dir / "runtime-config.yaml"
     content = runtime_cfg_path.read_text(encoding="utf-8")
     content += "  additional_specs:\n    - specs/nonexistent-spec.md\n"
@@ -165,7 +165,7 @@ def test_check_runtime_config_paths_additional_specs_missing(tmp_path: Path) -> 
 def test_check_runtime_config_paths_additional_specs_plain_string(tmp_path: Path) -> None:
     """Test additional_specs with a plain string path entry."""
     _make_runtime_config(tmp_path)
-    edu_dir = tmp_path / "domain-packs" / "education"
+    edu_dir = tmp_path / "model-packs" / "education"
     spec_file = tmp_path / "specs" / "extra-spec-2.md"
     spec_file.parent.mkdir(parents=True, exist_ok=True)
     spec_file.write_text("# extra 2", encoding="utf-8")
@@ -191,7 +191,7 @@ def _make_algebra_module(
     domain_packs_row: bool = True,
 ) -> None:
     """Create all files required by check_algebra_version_alignment."""
-    alg_dir = tmp_path / "domain-packs" / "education" / "modules" / "algebra-level-1"
+    alg_dir = tmp_path / "model-packs" / "education" / "modules" / "algebra-level-1"
     alg_dir.mkdir(parents=True, exist_ok=True)
 
     # domain-physics.json is the sole source of truth
@@ -214,8 +214,8 @@ def _make_algebra_module(
     else:
         (examples_dir / "README.md").write_text("# Examples\n\nNo mentions.\n", encoding="utf-8")
 
-    # domain-packs/README.md
-    dp_dir = tmp_path / "domain-packs"
+    # model-packs/README.md
+    dp_dir = tmp_path / "model-packs"
     dp_dir.mkdir(parents=True, exist_ok=True)
     if domain_packs_row:
         row = f"| Education — Algebra Level 1 | `education/modules/algebra-level-1` | {version} |"
@@ -237,7 +237,7 @@ def test_check_algebra_version_alignment_all_ok(tmp_path: Path) -> None:
 def test_check_algebra_version_alignment_json_mismatch(tmp_path: Path) -> None:
     _make_algebra_module(tmp_path, version="3.1.0")
     # Override domain-physics.json with wrong version
-    alg_dir = tmp_path / "domain-packs" / "education" / "modules" / "algebra-level-1"
+    alg_dir = tmp_path / "model-packs" / "education" / "modules" / "algebra-level-1"
     (alg_dir / "domain-physics.json").write_text(
         json.dumps({"id": "algebra-level-1", "version": "2.0.0"}), encoding="utf-8"
     )
@@ -262,7 +262,7 @@ def test_check_algebra_version_alignment_domain_packs_readme_stale(tmp_path: Pat
     errors: list[str] = []
     with _patch_root(tmp_path):
         check_algebra_version_alignment(errors)
-    assert any("domain-packs" in e.lower() or "readme" in e.lower() for e in errors)
+    assert any("model-packs" in e.lower() or "readme" in e.lower() for e in errors)
 
 
 # ── check_markdown_relative_links with absolute-from-repo link ───────────────

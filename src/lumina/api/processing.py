@@ -14,10 +14,13 @@ See also:
 from __future__ import annotations
 
 import functools
+import importlib.util
 import inspect
 import json
 import logging
+import sys
 import time
+from pathlib import Path
 from typing import Any
 
 from lumina.api import config as _cfg
@@ -72,6 +75,22 @@ from lumina.orchestrator.ppa_orchestrator import PPAOrchestrator
 
 log = logging.getLogger("lumina-api")
 vlog = logging.getLogger("lumina.verbose")
+
+
+def _load_journal_nlp_pre_interpreter():
+    module_key = "lumina_model_packs_education_journal_nlp_pre_interpreter"
+    cached = sys.modules.get(module_key)
+    if cached is not None:
+        return cached
+    repo_root = Path(__file__).resolve().parents[3]
+    module_path = repo_root / "model-packs" / "education" / "controllers" / "journal_nlp_pre_interpreter.py"
+    spec = importlib.util.spec_from_file_location(module_key, module_path)
+    if spec is None or spec.loader is None:
+        raise ModuleNotFoundError(f"Cannot load journal NLP pre-interpreter from {module_path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[module_key] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 # Backward-compatible alias — tests import this from processing.
 _build_clarification_response = build_clarification_response
@@ -343,9 +362,7 @@ def process_message(
     # flow through to the domain step.
     if (journal_mode or journal_entity_salt) and not deterministic_response and turn_data_override is None:
         try:
-            from domain_packs.education.controllers.journal_nlp_pre_interpreter import (
-                extract_journal_evidence,
-            )
+            extract_journal_evidence = _load_journal_nlp_pre_interpreter().extract_journal_evidence
             _journal_evidence = extract_journal_evidence(
                 input_text,
                 journal_entity_salt or "",

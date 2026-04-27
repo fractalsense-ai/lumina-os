@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DOMAIN_PACKS = REPO_ROOT / "domain-packs"
+DOMAIN_PACKS = REPO_ROOT / "model-packs"
 
 ALL_TURN_SPECS = [
     DOMAIN_PACKS / "system" / "domain-lib" / "reference" / "turn-interpretation-spec-v1.md",

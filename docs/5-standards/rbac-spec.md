@@ -67,7 +67,7 @@ Tiers do **not** inherit permissions from each other. Each tier has its own defa
 Each domain pack maps its local vocabulary to framework tiers in its `runtime-config.yaml`:
 
 ```yaml
-# domain-packs/education/cfg/runtime-config.yaml (excerpt)
+# model-packs/education/cfg/runtime-config.yaml (excerpt)
 domain_roles:
   teacher:    admin
   ta:         half_operator

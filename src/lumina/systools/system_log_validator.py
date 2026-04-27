@@ -1,5 +1,5 @@
-"""Shim: canonical source at domain-packs/system/controllers/system_log_validator.py"""
+"""Shim: canonical source at model-packs/system/controllers/system_log_validator.py"""
 import sys
 from lumina.systools._domain_pack_loader import load_domain_pack_module as _l
-_canonical = _l("domain-packs/system/controllers/system_log_validator.py")
+_canonical = _l("model-packs/system/controllers/system_log_validator.py")
 sys.modules[__name__] = _canonical

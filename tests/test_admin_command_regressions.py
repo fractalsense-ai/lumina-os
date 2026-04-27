@@ -42,7 +42,7 @@ def _load_api_module():
 
 @pytest.fixture
 def api_module(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     # Reset DOMAIN_REGISTRY to a clean single-domain instance so that
@@ -50,7 +50,7 @@ def api_module(monkeypatch: pytest.MonkeyPatch):
     # registry don't pollute the "_default" domain expected here.
     mod.DOMAIN_REGISTRY = DomainRegistry(
         repo_root=_REPO_ROOT,
-        single_config_path="domain-packs/education/cfg/runtime-config.yaml",
+        single_config_path="model-packs/education/cfg/runtime-config.yaml",
         load_runtime_context_fn=load_runtime_context,
     )
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -212,7 +212,7 @@ def test_governed_modules_all_string_coerced_to_list(api_module) -> None:
 @pytest.fixture
 def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     """Fixture with multi-domain registry for domain_id resolution tests."""
-    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "domain-packs/education/cfg/runtime-config.yaml")
+    monkeypatch.setenv("LUMINA_RUNTIME_CONFIG_PATH", "model-packs/education/cfg/runtime-config.yaml")
     monkeypatch.delenv("LUMINA_DOMAIN_REGISTRY_PATH", raising=False)
     mod = _load_api_module()
     mod.PERSISTENCE = NullPersistenceAdapter()
@@ -223,7 +223,7 @@ def multi_domain_module(monkeypatch: pytest.MonkeyPatch):
     from lumina.api import config as _cfg
     registry = DomainRegistry(
         repo_root=_REPO_ROOT,
-        registry_path=str(_REPO_ROOT / "domain-packs" / "system" / "cfg" / "domain-registry.yaml"),
+        registry_path=str(_REPO_ROOT / "model-packs" / "system" / "cfg" / "domain-registry.yaml"),
         load_runtime_context_fn=load_runtime_context,
     )
     monkeypatch.setattr(_cfg, "DOMAIN_REGISTRY", registry)

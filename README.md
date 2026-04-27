@@ -1,8 +1,8 @@
-# Lumina OS
+# Lumina Neuro-Symbolic Systems Framework
 
-**A deterministic orchestration OS for domain-bounded AI systems.**
+**A deterministic neuro-symbolic framework for domain-grounded AI systems.**
 
-> TCP/IP assembles packets from layered protocols. Lumina OS does the same thing for LLMs — assembling structured prompt contracts from immutable domain rules, mutable state, and actor evidence, then verifying every output before it reaches the user.
+> TCP/IP assembles packets from layered protocols. Lumina does the same thing for LLMs — assembling structured prompt contracts from immutable domain rules, mutable state, and actor evidence, then verifying every output before it reaches the user.
 
 ---
 
@@ -18,9 +18,9 @@
 
 ---
 
-## What Is Lumina OS?
+## What Is Lumina?
 
-Lumina OS is a **zero-trust orchestration layer** that wraps any LLM in deterministic contracts. The LLM is the **processing unit**, not the authority. Everything surrounding it — input normalization, prompt assembly, output verification, and audit logging — is **deterministic and verifiable**.
+Lumina is a **zero-trust neuro-symbolic systems framework** that wraps any LLM in deterministic contracts. The LLM is the **processing unit**, not the authority. Everything surrounding it — input normalization, prompt assembly, output verification, and audit logging — is **deterministic and verifiable**.
 
 Three properties define the system:
 
@@ -30,7 +30,9 @@ Three properties define the system:
 
 3. **Every output is gated** — no LLM response reaches the user without passing through deterministic verification. Violations escalate to a human. Novel synthesis events require explicit Domain Authority approval.
 
-The core engine is **fully domain-agnostic**. All domain behavior — prompts, state models, tool adapters, and templates — lives in self-contained **domain packs** loaded at runtime. No server code changes are needed to switch domains.
+The core engine is **fully model-pack-agnostic**. All system-specific behavior — prompts, state models, tool adapters, physics, UI contributions, and templates — lives in self-contained **model-packs** loaded at runtime. No server code changes are needed to switch from a school to a farm to an assistant workspace.
+
+Think of Lumina as the engine and model-packs as the mods: the same runtime underneath, a different modeled system on top.
 
 ---
 
@@ -139,8 +141,8 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Set the runtime config
-export LUMINA_RUNTIME_CONFIG_PATH="domain-packs/education/cfg/runtime-config.yaml"
-# Windows: $env:LUMINA_RUNTIME_CONFIG_PATH="domain-packs/education/cfg/runtime-config.yaml"
+export LUMINA_RUNTIME_CONFIG_PATH="model-packs/education/cfg/runtime-config.yaml"
+# Windows: $env:LUMINA_RUNTIME_CONFIG_PATH="model-packs/education/cfg/runtime-config.yaml"
 
 # Start the server
 python -m lumina.api.server
@@ -176,7 +178,7 @@ See [`docs/1-commands/installation-and-packaging.md`](docs/1-commands/installati
 lumina-os/
 ├── src/lumina/           ← core engine (API, orchestrator, middleware, persistence, system log)
 ├── src/web/              ← Vite + React reference UI
-├── domain-packs/         ← self-contained domain knowledge + behavior
+├── model-packs/         ← self-contained modeled systems + behavior
 │   ├── education/        ← algebra, world-sim, MUD builder
 │   ├── agriculture/      ← sensor ops, group library reference implementation
 │   └── system/           ← SLM-only routing, no external LLM
@@ -211,7 +213,7 @@ All artifacts are versioned with semver headers, status fields, and SHA-256 inte
 
 ## Conformance
 
-All domain packs and implementations must conform to [`standards/lumina-core-v1.md`](standards/lumina-core-v1.md). See [`docs/5-standards/`](docs/5-standards/README.md) for the full specification index.
+All model-packs and implementations must conform to [`standards/lumina-core-v1.md`](standards/lumina-core-v1.md). See [`docs/5-standards/`](docs/5-standards/README.md) for the full specification index.
 
 ---
 
@@ -223,7 +225,7 @@ Apache 2.0 — see [LICENSE](LICENSE).
 
 ## Disclaimer
 
-Lumina OS is research/experimental software provided AS-IS under Apache 2.0 with NO WARRANTIES. No part of this project is certified for safety-critical, high-stakes, or regulated use (including with minors) without thorough independent validation.
+Lumina is research/experimental software provided AS-IS under Apache 2.0 with NO WARRANTIES. No part of this project is certified for safety-critical, high-stakes, or regulated use (including with minors) without thorough independent validation.
 
 The engine provides structural accountability (D.S.A. contracts, System Log traces) but does **not** replace human oversight, professional judgment, or legal compliance. Ultimate accountability sits with the human Domain Authority at each level, never the AI or the engine.
 

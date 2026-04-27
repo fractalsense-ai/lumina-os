@@ -54,7 +54,7 @@ Requires one of: `root`, `admin`, `super_admin`.
         "domain_id": "education",
         "label": "Education",
         "module_prefix": "edu",
-        "runtime_config_path": "domain-packs/education/cfg/runtime-config.yaml"
+        "runtime_config_path": "model-packs/education/cfg/runtime-config.yaml"
       }
     ],
     "count": 3

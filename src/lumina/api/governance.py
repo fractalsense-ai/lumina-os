@@ -1,6 +1,6 @@
 """Governance config loader and domain operation handler registry.
 
-Canonical source: domain-packs/system/modules/system-core/domain-physics.json
+Canonical source: model-packs/system/modules/system-core/domain-physics.json
 → subsystem_configs.admin_operations  (operation_ids, hitl_policy)
 → subsystem_configs.governance        (role_hierarchy, min_role_policy, domain_role_aliases)
 
@@ -55,7 +55,7 @@ def _load_governance_config() -> dict[str, Any]:
 
     # Well-known convention fallback
     if physics_path is None:
-        physics_path = repo_root / "domain-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
+        physics_path = repo_root / "model-packs" / "system" / "modules" / "system-core" / "domain-physics.json"
 
     # Minimal empty defaults — used only when the JSON is unreadable.
     result: dict[str, Any] = {

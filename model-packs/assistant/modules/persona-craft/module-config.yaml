@@ -1,0 +1,25 @@
+# version: 0.1.0
+# last_updated: 2026-04-21
+version: 0.1.0
+last_updated: 2026-04-21
+domain_physics_path: model-packs/assistant/modules/persona-craft/domain-physics.json
+
+initial_module_state:
+  turn_count: 0
+  last_persona_update_turn: null
+  setup_step: null               # Tracks which step of the guided setup the user is on
+
+default_task_spec:
+  task_id: persona-setup-001
+  nominal_difficulty: 0.0
+
+turn_input_defaults:
+  intent_type: persona
+  task_status: open
+  tool_call_requested: false
+  off_task_ratio: 0.0
+  response_latency_sec: 5.0
+  satisfaction_signal: unknown
+
+ui_overrides:
+  subtitle: "Persona Setup"

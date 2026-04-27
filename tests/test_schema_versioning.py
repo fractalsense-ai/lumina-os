@@ -139,10 +139,10 @@ class TestManifestCoverage:
         assert not missing, f"Docs not in MANIFEST: {missing}"
 
     def test_all_config_yamls_tracked(self, manifest):
-        """All YAML files in domain-packs/ that affect system state must be tracked."""
+        """All YAML files in model-packs/ that affect system state must be tracked."""
         tracked = {a["path"] for a in manifest["artifacts"]}
         on_disk = set()
-        for p in (REPO_ROOT / "domain-packs").rglob("*.yaml"):
+        for p in (REPO_ROOT / "model-packs").rglob("*.yaml"):
             rel = str(p.relative_to(REPO_ROOT)).replace("\\", "/")
             # Skip domain-pack doc manifests and directories outside state scope
             if "/docs/" in rel:
@@ -165,11 +165,11 @@ class TestManifestCoverage:
 
 # ── Config file versioning ──────────────────────────────────────────────────
 
-# Auto-discover all YAML files in domain-packs/ that affect system state.
+# Auto-discover all YAML files in model-packs/ that affect system state.
 # See: docs/7-concepts/domain-pack-anatomy.md
 def _collect_config_yamls() -> list[str]:
     paths: list[str] = []
-    for p in sorted((REPO_ROOT / "domain-packs").rglob("*.yaml")):
+    for p in sorted((REPO_ROOT / "model-packs").rglob("*.yaml")):
         rel = str(p.relative_to(REPO_ROOT)).replace("\\", "/")
         if "/docs/" in rel:
             continue

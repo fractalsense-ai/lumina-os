@@ -117,7 +117,7 @@ def fake_domain_pack(tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def fake_domain_packs_root(fake_domain_pack: Path) -> Path:
-    """Return the parent of the fake domain pack (acts as domain-packs/)."""
+    """Return the parent of the fake domain pack (acts as model-packs/)."""
     return fake_domain_pack.parent
 
 
@@ -188,7 +188,7 @@ class TestScanRealDomainPacks:
         return Path(__file__).resolve().parents[1]
 
     def test_education_adapters(self, repo_root: Path):
-        edu = repo_root / "domain-packs" / "education"
+        edu = repo_root / "model-packs" / "education"
         if not edu.is_dir():
             pytest.skip("Education domain pack not found")
         result = scan_tool_adapters(edu)
@@ -199,7 +199,7 @@ class TestScanRealDomainPacks:
         assert "adapter/edu/substitution-checker/v1" in ids
 
     def test_agriculture_adapter(self, repo_root: Path):
-        agri = repo_root / "domain-packs" / "agriculture"
+        agri = repo_root / "model-packs" / "agriculture"
         if not agri.is_dir():
             pytest.skip("Agriculture domain pack not found")
         result = scan_tool_adapters(agri)
@@ -263,9 +263,9 @@ class TestBuildRouterIndex:
 
     def test_real_domain_packs(self):
         repo_root = Path(__file__).resolve().parents[1]
-        dp_root = repo_root / "domain-packs"
+        dp_root = repo_root / "model-packs"
         if not dp_root.is_dir():
-            pytest.skip("domain-packs not found")
+            pytest.skip("model-packs not found")
         index = build_router_index(dp_root)
         assert len(index.adapters) >= 4  # 3 edu + 1 agri
         assert len(index.runtime_adapter_modules) >= 2
@@ -324,7 +324,7 @@ class TestScanGroupResourcesIntegration:
 
     def test_real_agriculture_group_libraries(self):
         repo_root = Path(__file__).resolve().parents[1]
-        agri = repo_root / "domain-packs" / "agriculture"
+        agri = repo_root / "model-packs" / "agriculture"
         if not agri.is_dir():
             pytest.skip("Agriculture domain pack not found")
         libs, _ = scan_group_resources(agri)

@@ -242,7 +242,7 @@ optional — the compiler fills in defaults and auto-resolves where possible.
 - `src/lumina/orchestrator/ppa_orchestrator.py` — `PPAOrchestrator` forwards `compiled_routes` to `ActorResolver`
 - `src/lumina/core/adapter_indexer.py` — `RouterIndex`, `GroupLibraryEntry`, `GroupToolEntry` (provide validation indexes)
 - `standards/domain-physics-schema-v1.json` — schema for `execution_policy.precompiled_routes`
-- `domain-packs/agriculture/modules/operations-level-1/domain-physics.json` — reference implementation with precompiled routes
+- `model-packs/agriculture/modules/operations-level-1/domain-physics.json` — reference implementation with precompiled routes
 
 ---
 

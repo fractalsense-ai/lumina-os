@@ -31,7 +31,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PACK = REPO_ROOT / "domain-packs" / "assistant"
+PACK = REPO_ROOT / "model-packs" / "assistant"
 _CONTROLLERS_DIR = str(PACK / "controllers")
 
 if _CONTROLLERS_DIR not in sys.path:

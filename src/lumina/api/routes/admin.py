@@ -1,7 +1,7 @@
 """Admin endpoints: audit log, manifest, HITL admin command staging.
 
 Escalation REST endpoints and session-unlock have been extracted to the
-education domain pack (domain-packs/education/controllers/) and are
+education domain pack (model-packs/education/controllers/) and are
 mounted dynamically at startup via api_routes in runtime-config.yaml.
 """
 
@@ -84,7 +84,7 @@ def _get_daemon_scheduler() -> Any:
 
         nc_cfg: dict[str, Any] = {}
         try:
-            rt = load_yaml(Path("domain-packs/system/cfg/runtime-config.yaml"))
+            rt = load_yaml(Path("model-packs/system/cfg/runtime-config.yaml"))
             nc_cfg = rt.get("daemon", {})
         except Exception:
             pass
@@ -132,7 +132,7 @@ def _has_domain_capability(user_data: dict[str, Any], module_id: str, capability
     return False
 
 
-# ── Escalation REST endpoints — moved to domain-packs/education/controllers/escalation_handlers.py
+# ── Escalation REST endpoints — moved to model-packs/education/controllers/escalation_handlers.py
 # Mounted dynamically at startup via api_routes in runtime-config.yaml.
 
 

@@ -14,8 +14,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@domain/system/*": ["../../domain-packs/system/web/*"],
-      "@domain/education/*": ["../../domain-packs/education/web/*"]
+      "@domain/system/*": ["../../model-packs/system/web/*"],
+      "@domain/education/*": ["../../model-packs/education/web/*"]
     }
   },
   "include": ["app.tsx", "components", "lib", "src"]

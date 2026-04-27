@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://projectlumina.org/model-packs/education/modules/algebra-level-1/prompt-contract-schema.json",
+  "title": "Algebra Level 1 — Prompt Contract Schema",
+  "description": "Defines the structured contract for prompts used in Algebra Level 1 sessions. Prompts must conform to this schema before being issued to the student.",
+  "type": "object",
+  "required": ["prompt_type", "domain_pack_id", "domain_pack_version", "task_id"],
+  "additionalProperties": false,
+  "properties": {
+    "prompt_type": {
+      "type": "string",
+      "enum": [
+        "task_presentation",
+        "hint",
+        "scaffold",
+        "zpd_scaffold",
+        "probe",
+        "verification_request",
+        "more_steps_request",
+        "method_justification_request",
+        "inject_domain_rule",
+        "definition_lookup",
+        "boss_challenge",
+        "pause_or_break",
+        "zpd_intervene_or_escalate",
+        "session_close_summary"
+      ],
+      "description": "Type of prompt being issued"
+    },
+    "domain_pack_id": {
+      "type": "string",
+      "const": "domain/edu/algebra-level-1/v1"
+    },
+    "domain_pack_version": {
+      "type": "string",
+      "description": "Version of the domain pack active when this prompt was generated"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Identifier for the current task"
+    },
+    "task_nominal_difficulty": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Nominal difficulty of the task (0..1)"
+    },
+    "skills_targeted": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Skills this prompt is designed to exercise"
+    },
+    "theme": {
+      "type": ["string", "null"],
+      "description": "World simulation theme applied to this prompt (immersion only)"
+    },
+    "hint_level": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "maximum": 3,
+      "description": "For hint prompts: level of hint (1=minimal, 3=nearly complete)"
+    },
+    "standing_order_trigger": {
+      "type": ["string", "null"],
+      "description": "For scaffold/intervention prompts: which standing order triggered this"
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "artifact_version": { "type": "string" },
+          "hash_verified": { "type": "boolean" }
+        }
+      },
+      "description": "Retrieved artifacts cited in this prompt (grounding contract)"
+    },
+    "grounded": {
+      "type": "boolean",
+      "description": "Whether all claims in this prompt are grounded in cited artifacts"
+    },
+    "current_problem": {
+      "type": "object",
+      "description": "The active equation context for this session, injected by the server",
+      "properties": {
+        "equation": { "type": "string", "description": "The equation to present or evaluate" },
+        "target_variable": { "type": "string", "description": "Variable to solve for" },
+        "expected_answer": { "type": "string", "description": "Correct solved form" },
+        "equation_type": { "type": "string", "description": "Tier equation type identifier" },
+        "difficulty_tier": { "type": "string", "description": "Tier ID from domain-physics" },
+        "status": { "type": "string", "enum": ["in_progress", "solved", "skipped"] }
+      }
+    },
+    "glossary_entry": {
+      "type": "object",
+      "description": "Domain glossary term injected for definition_lookup prompts",
+      "properties": {
+        "term": { "type": "string", "description": "The vocabulary term" },
+        "definition": { "type": "string", "description": "Student-appropriate definition" },
+        "example_in_context": { "type": "string", "description": "Contextual example using the term" },
+        "related_terms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Other glossary terms the student may also want to look up"
+        }
+      }
+    }
+  }
+}

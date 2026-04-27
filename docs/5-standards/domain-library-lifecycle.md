@@ -109,7 +109,7 @@ new hash before activating the pack:
 
 ```bash
 python reference-implementations/system-log-validator.py \
-  --commit domain-packs/{domain}/modules/{module}/domain-physics.json \
+  --commit model-packs/{domain}/modules/{module}/domain-physics.json \
   --actor-id <pseudonymous-id> \
   --ledger <ledger-file>
 ```

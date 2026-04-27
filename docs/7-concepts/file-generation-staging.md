@@ -54,11 +54,11 @@ Immutable registry mapping `template_id` → `Template` descriptors.
 
 | Template ID | Description | Target Pattern |
 |-------------|-------------|----------------|
-| `domain-physics` | Domain physics JSON | `domain-packs/{domain_short}/cfg/domain-physics.json` |
-| `evidence-schema` | Evidence schema JSON | `domain-packs/{domain_short}/cfg/evidence-schema.json` |
-| `tool-adapter` | Tool adapter YAML | `domain-packs/{domain_short}/modules/{module}/tool-adapters/{adapter_name}-adapter-v{major}.yaml` |
-| `student-profile` | Student/entity profile | `domain-packs/{domain_short}/profiles/{profile_id}.yaml` |
-| `context-hint` | Daemon batch context hint | `domain-packs/{domain_short}/context-hints/{hint_id}.json` |
+| `domain-physics` | Domain physics JSON | `model-packs/{domain_short}/cfg/domain-physics.json` |
+| `evidence-schema` | Evidence schema JSON | `model-packs/{domain_short}/cfg/evidence-schema.json` |
+| `tool-adapter` | Tool adapter YAML | `model-packs/{domain_short}/modules/{module}/tool-adapters/{adapter_name}-adapter-v{major}.yaml` |
+| `student-profile` | Student/entity profile | `model-packs/{domain_short}/profiles/{profile_id}.yaml` |
+| `context-hint` | Daemon batch context hint | `model-packs/{domain_short}/context-hints/{hint_id}.json` |
 
 Each template defines:
 - **required_fields** — Fields that must appear in the payload.

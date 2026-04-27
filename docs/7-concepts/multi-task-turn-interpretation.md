@@ -9,7 +9,7 @@ status: Active
 **Version:** 1.0.0
 **Status:** Active
 **Last updated:** 2026-04-24
-**Depends on:** [turn-interpretation-spec-v1](../../domain-packs/assistant/domain-lib/reference/turn-interpretation-spec-v1.md), [nlp-semantic-router](nlp-semantic-router.md)
+**Depends on:** [turn-interpretation-spec-v1](../../model-packs/assistant/domain-lib/reference/turn-interpretation-spec-v1.md), [nlp-semantic-router](nlp-semantic-router.md)
 
 ---
 
@@ -186,7 +186,7 @@ A domain pack opts into multi-task interpretation by:
    ```yaml
    adapters:
      multi_task_turn_interpreter:
-       module_path: domain-packs/assistant/controllers/runtime_adapters.py
+       module_path: model-packs/assistant/controllers/runtime_adapters.py
        callable: interpret_multi_task_input
    ```
 
@@ -194,7 +194,7 @@ A domain pack opts into multi-task interpretation by:
 
    ```yaml
    runtime:
-     multi_task_interpretation_prompt_path: domain-packs/assistant/domain-lib/reference/multi-task-turn-interpreter-spec-v1.md
+     multi_task_interpretation_prompt_path: model-packs/assistant/domain-lib/reference/multi-task-turn-interpreter-spec-v1.md
    ```
 
 When neither is present, the single-task path runs unchanged. The framework never assumes multi-task capability.

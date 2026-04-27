@@ -34,7 +34,7 @@ These fields allow dashboards, notification systems, and governance tooling to d
 
 ## Student Profile Assignment Fields
 
-Assignment fields are stored in the student profile document (`domain-packs/education/schemas/student-profile-schema-v1.json`):
+Assignment fields are stored in the student profile document (`model-packs/education/schemas/student-profile-schema-v1.json`):
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -165,5 +165,5 @@ Full endpoint documentation: [`POST /api/sessions/{session_id}/unlock`](../2-sys
 
 - [`docs/2-syscalls/lumina-api-server.md`](../2-syscalls/lumina-api-server.md) — Full endpoint reference including frozen-session behaviour
 - [`docs/7-concepts/domain-role-hierarchy.md`](../7-concepts/domain-role-hierarchy.md) — `receive_escalations` scoped capability and smart routing
-- [`domain-packs/education/schemas/student-profile-schema-v1.json`](../../domain-packs/education/schemas/student-profile-schema-v1.json) — Canonical student profile schema
+- [`model-packs/education/schemas/student-profile-schema-v1.json`](../../model-packs/education/schemas/student-profile-schema-v1.json) — Canonical student profile schema
 - [`docs/8-admin/rbac-administration.md`](rbac-administration.md) — Role and permission management
