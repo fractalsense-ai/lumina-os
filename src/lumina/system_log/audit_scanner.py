@@ -44,7 +44,7 @@ STATE_MUTATING_ENDPOINTS: dict[str, set[str]] = {
         "ingest_commit",
     },
     "domain": {
-        "domain_pack_commit",
+        "model_pack_commit",
         "update_domain_physics",
         "close_session",
     },

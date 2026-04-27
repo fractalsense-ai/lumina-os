@@ -453,27 +453,33 @@ Activate a pending user account by setting their password using the one-time inv
 
 ---
 
-### POST /api/domain-pack/commit
+### POST /api/model-pack/commit
 
 Commit a domain-physics hash to the System Logs, establishing the authoritative version for a domain.
 
 **Auth:** Bearer token required. Roles: `root`, `admin` (governed domain only).
 
+**Compatibility:** `POST /api/domain-pack/commit` remains available as a deprecated alias.
+
 ---
 
-### GET /api/domain-pack/{domain_id}/history
+### GET /api/model-pack/{domain_id}/history
 
 Return the System Logs commitment history for a domain's physics hash.
 
 **Auth:** Bearer token required. Roles: `root`, `admin`, `operator`, `half_operator`.
 
+**Compatibility:** `GET /api/domain-pack/{domain_id}/history` remains available as a deprecated alias.
+
 ---
 
-### PATCH /api/domain-pack/{domain_id}/physics
+### PATCH /api/model-pack/{domain_id}/physics
 
 Apply a live patch to a domain's physics document and auto-commit a new System Log record.
 
 **Auth:** Bearer token required. Roles: `root`, `admin` (governed domain only).
+
+**Compatibility:** `PATCH /api/domain-pack/{domain_id}/physics` remains available as a deprecated alias.
 
 ---
 

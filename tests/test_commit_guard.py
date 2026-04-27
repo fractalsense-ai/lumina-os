@@ -338,7 +338,7 @@ _EXPECTED_DECORATED = {
         "create_staged_file", "approve_staged_file", "reject_staged_file",
     ],
     "ingestion.py": ["ingest_commit"],
-    "domain.py": ["domain_pack_commit", "update_domain_physics", "close_session"],
+    "domain.py": ["model_pack_commit", "update_domain_physics", "close_session"],
     "domain_roles.py": ["assign_domain_role", "revoke_domain_role"],
     "admin.py": [
         "manifest_regen",

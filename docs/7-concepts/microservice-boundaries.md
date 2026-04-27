@@ -125,19 +125,20 @@ service is mounted on the **gateway** (the former `server.py`) so a single
 | Attribute | Value |
 |-----------|-------|
 | **Package** | `src/lumina/services/domain/` |
-| **Owns** | domain pack lifecycle, physics authoring, domain role assignment, domain-scoped sessions |
-| **Persistence** | domain pack configs, physics files, domain role assignments |
+| **Owns** | model-pack lifecycle, physics authoring, domain role assignment, domain-scoped sessions |
+| **Persistence** | model-pack configs, physics files, domain role assignments |
 | **JWT track** | Primarily domain-track; root cross-track access allowed |
 
 **Endpoints**
 
 | Method | Path | Auth Track | Notes |
 |--------|------|------------|-------|
-| POST | `/api/domain-pack/commit` | domain/admin (root/da) | Commit domain pack changes |
-| GET | `/api/domain-pack/{domain_id}/history` | any (root/da/operator/half_operator) | Pack commit history |
-| PATCH | `/api/domain-pack/{domain_id}/physics` | domain/admin (root/da) | Update domain physics |
-| GET | `/api/domain-pack/{domain_id}/sessions` | any (root/da/operator/half_operator) | List domain sessions |
-| POST | `/api/domain-pack/{domain_id}/commit` | domain/admin (root/da) | Close and commit session |
+| POST | `/api/model-pack/commit` | domain/admin (root/da) | Commit model-pack changes |
+| GET | `/api/model-pack/{domain_id}/history` | any (root/da/operator/half_operator) | Pack commit history |
+| PATCH | `/api/model-pack/{domain_id}/physics` | domain/admin (root/da) | Update domain physics |
+| POST | `/api/session/{session_id}/close` | owner/root/da | Close and commit session |
+| POST | `/api/session/{session_id}/handoff` | owner | Seal session transcript for handoff |
+| POST | `/api/session/{session_id}/resume` | authenticated | Resume from sealed transcript |
 | GET | `/api/domain-roles/defaults` | any | List default roles |
 | GET | `/api/domain-roles/{module_id}` | any | Get module roles |
 | POST | `/api/domain-roles/{module_id}/assign` | domain/admin (root/da) | Assign domain role |
@@ -255,7 +256,7 @@ event backbone.  Services emit log events by calling the bus directly
 | Consumer | Provider | Mechanism |
 |----------|----------|-----------|
 | Admin → Auth | User lookup, role update | HTTP `/api/auth/users` |
-| Ingestion → Domain | Pack commit | HTTP `/api/domain-pack/commit` |
+| Ingestion → Domain | Pack commit | HTTP `/api/model-pack/commit` |
 | Dashboard → System Log | Log queries | HTTP `/api/system-log/records` |
 | Core → Auth | Token validation | Local JWT verify (shared secret) |
 | Core → Domain | Runtime context | `DOMAIN_REGISTRY` (in-process) |

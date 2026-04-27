@@ -191,18 +191,20 @@ For background on the three-track JWT model, see [parallel-authority-tracks](../
 **Package:** `src/lumina/services/domain/`
 **Source routes:** `routes/domain.py` → `services/domain/routes.py`, `routes/domain_roles.py` → `services/domain/roles_routes.py`
 
-### Domain Pack Lifecycle
+### Model-Pack Lifecycle
+
+The `/api/model-pack/*` routes are primary. `/api/domain-pack/*` remains as a deprecated compatibility alias during the terminology migration.
 
 | Method | Path | Track | Roles | Description |
 |--------|------|-------|-------|-------------|
-| POST | `/api/domain-pack/commit` | domain / system | root, da | Commit physics hash to System Log |
-| GET | `/api/domain-pack/{domain_id}/history` | any | root, da, operator, half_operator | Physics commitment history |
-| PATCH | `/api/domain-pack/{domain_id}/physics` | domain / system | root, da | Live-patch domain physics |
+| POST | `/api/model-pack/commit` | domain / system | root, da | Commit physics hash to System Log |
+| GET | `/api/model-pack/{domain_id}/history` | any | root, da, operator, half_operator | Physics commitment history |
+| PATCH | `/api/model-pack/{domain_id}/physics` | domain / system | root, da | Live-patch domain physics |
 | POST | `/api/session/{session_id}/close` | user / system | owner, root, super_admin | Close session |
 | POST | `/api/session/{session_id}/handoff` | domain / system | root, da | Handoff session to another authority |
 | POST | `/api/session/{session_id}/resume` | domain / system | root, da | Resume handed-off session |
 
-#### PATCH `/api/domain-pack/{domain_id}/physics`
+#### PATCH `/api/model-pack/{domain_id}/physics`
 
 **Request:** `{patch: {...}}` — JSON merge-patch applied to the physics document
 **Response:** `{domain_id, new_hash, committed}`

@@ -74,7 +74,7 @@ src/lumina/services/     ← canonical service implementations (Phase 2 decompos
 ├── auth/                ← user registration, login, token issuance, invite, CRUD
 ├── system_log/          ← append-only log, hash-chain, SSE events, warnings, alerts
 ├── ingestion/           ← file upload, extraction, staging workflow
-├── domain/              ← domain pack lifecycle, physics, domain roles
+├── domain/              ← model-pack lifecycle, physics, domain roles
 ├── dashboard/           ← read-only analytics aggregation
 ├── admin/               ← escalation lifecycle, admin command pipeline
 └── registry.py          ← service discovery metadata
@@ -125,7 +125,7 @@ Each `DomainContext` carries its own System Log ledger path, conversation histor
 
 `utils/glossary.py` maintains a module-level `_CACHE` dict keyed by `domain_id`. On the first glossary-query check for a domain, the function loads and parses the domain's glossary from the physics document and stores it in the cache. Subsequent calls for the same domain are O(1) dict lookups.
 
-The cache is invalidated when `PATCH /api/domain-pack/{domain_id}/physics` commits a physics update (the route calls `_invalidate_glossary_cache(domain_id)` exported from `utils/glossary.py`).
+The cache is invalidated when `PATCH /api/model-pack/{domain_id}/physics` commits a physics update (the route calls `_invalidate_glossary_cache(domain_id)` exported from `utils/glossary.py`). The older `/api/domain-pack/{domain_id}/physics` route remains a deprecated alias.
 
 ---
 

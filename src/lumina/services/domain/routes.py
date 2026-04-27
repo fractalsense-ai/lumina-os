@@ -1,4 +1,4 @@
-"""Domain pack lifecycle endpoints and session close."""
+"""Model-pack lifecycle endpoints and session close."""
 
 from __future__ import annotations
 
@@ -30,9 +30,10 @@ log = logging.getLogger("lumina-api")
 router = APIRouter()
 
 
-@router.post("/api/domain-pack/commit")
+@router.post("/api/model-pack/commit")
+@router.post("/api/domain-pack/commit", deprecated=True)
 @requires_log_commit
-async def domain_pack_commit(
+async def model_pack_commit(
     req: DomainCommitRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> dict[str, Any]:
@@ -80,8 +81,9 @@ async def domain_pack_commit(
     }
 
 
-@router.get("/api/domain-pack/{domain_id}/history")
-async def domain_pack_history(
+@router.get("/api/model-pack/{domain_id}/history")
+@router.get("/api/domain-pack/{domain_id}/history", deprecated=True)
+async def model_pack_history(
     domain_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> list[dict[str, Any]]:
@@ -109,7 +111,8 @@ async def domain_pack_history(
     ]
 
 
-@router.patch("/api/domain-pack/{domain_id}/physics")
+@router.patch("/api/model-pack/{domain_id}/physics")
+@router.patch("/api/domain-pack/{domain_id}/physics", deprecated=True)
 @requires_log_commit
 async def update_domain_physics(
     domain_id: str,

@@ -98,14 +98,14 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-06-15
-  sha256: aa85d5d797a2dbee0162a8c42c3f8f244ad663a5869727bbef0ec764ad91f94d
+  sha256: a3f2b9869d4bf288430d342f3dc5fc9e8f4b29514d83b30ff14954aad13f1bf3
 - path: docs/2-syscalls/lumina-api-server.md
   type: doc
   section: 2
   doc_version: 1.4.0
   status: active
   last_updated: 2026-06-15
-  sha256: 2df951119549430ad22d28afe1eae440fac555ae2ae0f242a70f1210662b5e2a
+  sha256: d07b1abb7eb79360f6c3ddc393ea64c83721e7f583fda58a8fe572b86f997f1d
 - path: docs/3-functions/README.md
   type: doc
   section: 3
@@ -210,7 +210,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-18
-  sha256: 00e66de337574463d6d4e286db140c852e78400724ea0f6f5f81af3c3153c1a8
+  sha256: 89444b902a341e90352c6073d3674beabda6f14a3b7a69fdf02d1c407107bea3
 - path: docs/7-concepts/context-is-not-conversation.md
   type: doc
   section: 7
@@ -308,7 +308,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-04-11
-  sha256: 7283e66266f07e70913726e4170f9ed90622ad0759023cf6289140f72406a2be
+  sha256: a038522327989a449a8e35d3b2858caa1a486ab6cb12700087d2c73762ab9945
 - path: docs/8-admin/daemon-batch-processing.md
   type: doc
   section: 8
@@ -449,7 +449,7 @@ artifacts:
   doc_version: 1.0.0
   status: active
   last_updated: 2026-03-20
-  sha256: 5cc49dc9f519573d4b02f948a1eafa724df3fd6cfca61f3bf7444f19bef80fe2
+  sha256: 7de3c45c9276bfdd2f82afe0154c8a050452fadf79243ee274bb4e9f882b2c12
 - path: docs/7-concepts/command-execution-pipeline.md
   type: doc
   section: 7

@@ -711,8 +711,8 @@
     },
     "/api/domain-pack/commit": {
       "post": {
-        "summary": "Domain Pack Commit",
-        "operationId": "domain_pack_commit_api_domain_pack_commit_post",
+        "summary": "Model Pack Commit",
+        "operationId": "model_pack_commit_api_domain_pack_commit_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -731,7 +731,53 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Domain Pack Commit Api Domain Pack Commit Post"
+                  "title": "Response Model Pack Commit Api Domain Pack Commit Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true,
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/model-pack/commit": {
+      "post": {
+        "summary": "Model Pack Commit",
+        "operationId": "model_pack_commit_api_model_pack_commit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainCommitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Model Pack Commit Api Model Pack Commit Post"
                 }
               }
             }
@@ -756,8 +802,9 @@
     },
     "/api/domain-pack/{domain_id}/history": {
       "get": {
-        "summary": "Domain Pack History",
-        "operationId": "domain_pack_history_api_domain_pack__domain_id__history_get",
+        "summary": "Model Pack History",
+        "operationId": "model_pack_history_api_domain_pack__domain_id__history_get",
+        "deprecated": true,
         "security": [
           {
             "HTTPBearer": []
@@ -785,7 +832,56 @@
                     "type": "object",
                     "additionalProperties": true
                   },
-                  "title": "Response Domain Pack History Api Domain Pack  Domain Id  History Get"
+                  "title": "Response Model Pack History Api Domain Pack  Domain Id  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/model-pack/{domain_id}/history": {
+      "get": {
+        "summary": "Model Pack History",
+        "operationId": "model_pack_history_api_model_pack__domain_id__history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Model Pack History Api Model Pack  Domain Id  History Get"
                 }
               }
             }
@@ -807,6 +903,7 @@
       "patch": {
         "summary": "Update Domain Physics",
         "operationId": "update_domain_physics_api_domain_pack__domain_id__physics_patch",
+        "deprecated": true,
         "security": [
           {
             "HTTPBearer": []
@@ -842,6 +939,62 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Update Domain Physics Api Domain Pack  Domain Id  Physics Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/model-pack/{domain_id}/physics": {
+      "patch": {
+        "summary": "Update Domain Physics",
+        "operationId": "update_domain_physics_api_model_pack__domain_id__physics_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainPhysicsUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Domain Physics Api Model Pack  Domain Id  Physics Patch"
                 }
               }
             }

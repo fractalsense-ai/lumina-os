@@ -107,7 +107,7 @@ cause this test to fail.
 | `staging` | `approve_staged_file` | CommitmentRecord |
 | `staging` | `reject_staged_file` | CommitmentRecord |
 | `ingestion` | `ingest_commit` | IngestionRecord |
-| `domain` | `domain_pack_commit` | CommitmentRecord |
+| `domain` | `model_pack_commit` | CommitmentRecord |
 | `domain` | `update_domain_physics` | CommitmentRecord |
 | `domain` | `close_session` | TraceEvent |
 | `domain_roles` | `assign_domain_role` | CommitmentRecord |

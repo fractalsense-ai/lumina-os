@@ -1,4 +1,4 @@
-"""Tests for admin API endpoints — user management, domain pack lifecycle,
+"""Tests for admin API endpoints — user management, model-pack lifecycle,
 audit & escalation, System Log queries, and session close."""
 
 from __future__ import annotations
@@ -221,17 +221,16 @@ class TestPasswordReset:
 
 
 # ─────────────────────────────────────────────────────────────
-# Phase 2: Domain Pack Lifecycle
+# Phase 2: Model-Pack Lifecycle
 # ─────────────────────────────────────────────────────────────
 
 
 @pytest.mark.integration
-class TestDomainPackCommit:
+class TestModelPackCommit:
     def test_commit_and_history(self, client: TestClient) -> None:
         root_token = _register_root(client)
-        # Commit
         resp = client.post(
-            "/api/domain-pack/commit",
+            "/api/model-pack/commit",
             json={"domain_id": "_default", "summary": "test commit"},
             headers=_auth_header(root_token),
         )
@@ -241,6 +240,13 @@ class TestDomainPackCommit:
         assert body["subject_hash"]
         assert body["record_id"]
 
+        history_resp = client.get(
+            "/api/model-pack/_default/history",
+            headers=_auth_header(root_token),
+        )
+        assert history_resp.status_code == 200
+        assert isinstance(history_resp.json(), list)
+
     def test_non_root_non_da_rejected(self, client: TestClient) -> None:
         _register_root(client)
         user = _register_user(client, "bob")
@@ -249,11 +255,33 @@ class TestDomainPackCommit:
             json={"username": "bob", "password": "test-pass-123"},
         ).json()["access_token"]
         resp = client.post(
-            "/api/domain-pack/commit",
+            "/api/model-pack/commit",
             json={"domain_id": "_default", "summary": "test"},
             headers=_auth_header(user_token),
         )
         assert resp.status_code == 403
+
+
+@pytest.mark.integration
+class TestDomainPackCommitAlias:
+    def test_legacy_commit_alias(self, client: TestClient) -> None:
+        root_token = _register_root(client)
+        resp = client.post(
+            "/api/domain-pack/commit",
+            json={"domain_id": "_default", "summary": "legacy alias commit"},
+            headers=_auth_header(root_token),
+        )
+        assert resp.status_code == 200
+        assert resp.json()["commitment_type"] == "model_pack_activation"
+
+    def test_legacy_history_alias(self, client: TestClient) -> None:
+        root_token = _register_root(client)
+        resp = client.get(
+            "/api/domain-pack/_default/history",
+            headers=_auth_header(root_token),
+        )
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
 
 
 @pytest.mark.integration
