@@ -11,6 +11,7 @@ __pycache__/
 # Virtual environment
 .venv/
 venv/
+.venv-1/
 
 # Build / packaging
 dist/
